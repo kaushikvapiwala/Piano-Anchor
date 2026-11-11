@@ -1,0 +1,4 @@
+<resources>
+    <!-- Launcher label (Android resources). In-app text lives in ui/shell composeResources. -->
+    <string name="app_name">Piano Anchor</string>
+</resources>
