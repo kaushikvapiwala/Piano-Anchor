@@ -21,9 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # throwaway repositories below never touch the real repository.
 for _name in [n for n in os.environ if n.startswith("GIT_")]:
     del os.environ[_name]
-sys.path.insert(0, str(ROOT / ".claude" / "hooks"))
-
-sys.path.insert(0, str(ROOT / "scripts"))
+sys.path[:0] = [str(ROOT / ".claude" / "hooks"), str(ROOT / "scripts")]
 
 import check_docs  # noqa: E402
 import guard_paths  # noqa: E402
@@ -162,8 +160,7 @@ class StopFastCheckTest(TempRepo):
         run("git", "add", ".", cwd=self.repo)
         run("git", "commit", "-q", "-m", "init", cwd=self.repo)
 
-    def stop(self) -> tuple[int, str]:
-        event = "{}"
+    def stop(self, event: str = "{}") -> tuple[int, str]:
         err = io.StringIO()
         with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(self.repo)}):
             with mock.patch("sys.stdin", io.StringIO(event)), mock.patch("sys.stderr", err), redirect_stdout(io.StringIO()):
@@ -194,6 +191,21 @@ class StopFastCheckTest(TempRepo):
         self.assertEqual(self.stop()[0], 0)  # a later turn
         self.assertEqual(self.runs(), 1)
 
+    def test_commit_of_a_checked_tree_is_not_rechecked(self) -> None:
+        (self.repo / "new.txt").write_text("x")
+        self.assertEqual(self.stop()[0], 0)
+        run("git", "add", "new.txt", cwd=self.repo)
+        run("git", "commit", "-q", "-m", "add", cwd=self.repo)
+        self.assertEqual(self.stop()[0], 0)
+        self.assertEqual(self.runs(), 1)
+
+    def test_failure_reported_to_a_subagent_still_blocks_the_main_session(self) -> None:
+        (self.repo / "FAIL").write_text("")
+        subagent = '{"agent_id": "a1", "agent_type": "implementer"}'
+        self.assertEqual(self.stop(subagent)[0], 2)
+        self.assertEqual(self.stop(subagent)[0], 0)
+        self.assertEqual(self.stop()[0], 2)
+
     def test_allows_stop_outside_a_git_repository(self) -> None:
         with tempfile.TemporaryDirectory() as plain:
             with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": plain}):
@@ -213,7 +225,9 @@ class StopFastCheckTest(TempRepo):
 class SettingsTest(unittest.TestCase):
     """The implementer subagent must face the same fastCheck gate as the main session; scouts must not."""
 
-    hooks = json.loads((ROOT / ".claude" / "settings.json").read_text())["hooks"]
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.hooks = json.loads((ROOT / ".claude" / "settings.json").read_text())["hooks"]
 
     def test_implementer_subagent_stop_runs_the_stop_hook(self) -> None:
         (entry,) = self.hooks["SubagentStop"]

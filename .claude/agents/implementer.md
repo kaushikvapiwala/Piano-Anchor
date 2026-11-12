@@ -13,7 +13,7 @@ You implement exactly one spec issue in this repository.
 - Nothing else. **Never open `../Research/`** or any path outside the repository. Every fact you need is in the issue.
 
 ## Steps
-1. `git switch main && git pull --ff-only`, then `git switch -c <type>/<short-name>` (Conventional Commit type from the issue).
+1. If `git status --porcelain` shows changes, stop and report them (they belong to the orchestrator). Else `git switch main && git pull --ff-only`, then `git switch -c <type>/<short-name>` (Conventional Commit type from the issue).
 2. Write the issue's named test cases first; run them and see them fail.
 3. Implement until they pass. Keep to the issue's files, signatures and `Tunables` names. Add the repo docs the issue lists (`docs/algorithms/*`, `docs/protocols/*`) in your own words.
 4. `./gradlew fastCheck` until green. Fix the cause; never weaken a test, rule or coverage gate, and never add `@ExcludeFromCoverage` unless the issue says so.

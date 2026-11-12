@@ -49,7 +49,7 @@ def check_references(files: list[str]) -> list[str]:
     # check-ignore exits 1 when nothing is ignored, and aborts the whole batch on a path outside the repo (e.g.
     # `../Research/`), so those are left out. Each token is also sent with a trailing "/" so directory-only
     # patterns (`dir/`) match even when the directory is absent (CI).
-    inside = [t.strip("/") for t in tokens if t.strip("/") and resolve("", t.strip("/")) is not None]
+    inside = {resolve("", t.strip("/")) for t in tokens if PATH_LIKE.match(t)} - {None}
     candidates = [form for t in inside for form in (t, t + "/")]
     ignored = {line.rstrip("/") for line in git("check-ignore", "--stdin", ok_codes=(0, 1), stdin="\n".join(candidates))}
 
