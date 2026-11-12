@@ -13,7 +13,8 @@ public interface MidiOutputPort {
     public val outputDevices: Flow<List<MidiDevice>>
 
     /**
-     * Sends [bytes] to [device]: one or more complete MIDI messages, delivered in order.
+     * Sends [bytes] to [device]: one or more complete MIDI messages, delivered in order. Completeness is the
+     * caller's job; adapters only check the first byte and forward the bytes unchanged.
      * Suspends until the platform has accepted the bytes.
      * @throws IllegalArgumentException if [bytes] is empty or does not start with a status byte (0x80–0xFF).
      * @throws MidiDeviceUnavailableException if [device] is not listed.

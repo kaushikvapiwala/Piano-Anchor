@@ -95,6 +95,17 @@ abstract class MidiInputPortContractTest {
         }
 
     @Test
+    fun messagesWithoutACollectorAreDropped() =
+        runTest {
+            val h = createHarness()
+            h.deliver(byteArrayOf(NOTE_ON, C4, VELOCITY))
+            val events = collect(h)
+            h.deliver(byteArrayOf(CONTROL_CHANGE, SUSTAIN, PEDAL_DOWN))
+            assertEquals(1, events.size)
+            assertIs<ControlChange>(events[0])
+        }
+
+    @Test
     fun openingAnAbsentDeviceFails() =
         runTest {
             val h = createHarness()

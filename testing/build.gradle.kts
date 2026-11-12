@@ -8,7 +8,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":core:ports"))
-            api(project(":engine"))
+            implementation(project(":engine"))
             api(libs.kotlinx.coroutines.test)
             api(kotlin("test"))
         }

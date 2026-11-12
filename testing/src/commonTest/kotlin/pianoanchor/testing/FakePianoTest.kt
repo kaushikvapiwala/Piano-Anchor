@@ -2,6 +2,8 @@ package pianoanchor.testing
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -14,6 +16,7 @@ import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.SysEx
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -142,6 +145,42 @@ class FakePianoTest {
         runTest {
             val custom = MidiDevice("x", "X")
             assertEquals(listOf(custom), FakePiano(device = custom).outputDevices.first())
+        }
+
+    @Test
+    fun outOfRangeChannelOrVelocityIsRejected() {
+        val piano = FakePiano()
+        assertFailsWith<IllegalArgumentException> { piano.press(c4, channel = 16) }
+        assertFailsWith<IllegalArgumentException> { piano.press(c4, channel = -1) }
+        assertFailsWith<IllegalArgumentException> { piano.release(c4, velocity = 128) }
+        assertFailsWith<IllegalArgumentException> { piano.release(c4, velocity = -1) }
+    }
+
+    @Test
+    fun replyScriptCannotChangeTheSentHistory() =
+        runTest {
+            val piano = FakePiano()
+            piano.replyTo = { request ->
+                request[1] = 0
+                null
+            }
+            piano.send(piano.device, IDENTITY_REQUEST)
+            assertContentEquals(IDENTITY_REQUEST, piano.sent.single())
+        }
+
+    @Test
+    fun collectorThatStopsEarlyDoesNotBreakPlayback() =
+        runTest {
+            val piano = FakePiano()
+            var firstOnly: List<MidiEvent> = emptyList()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                firstOnly = piano.events(piano.device).take(1).toList()
+            }
+            val events = collect(piano)
+            piano.press(c4)
+            piano.release(c4)
+            assertEquals(1, firstOnly.size)
+            assertEquals(2, events.size)
         }
 
     private fun TestScope.collect(piano: FakePiano): MutableList<MidiEvent> {

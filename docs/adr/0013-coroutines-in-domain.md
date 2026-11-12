@@ -11,7 +11,8 @@ callbacks.
 ## Decision
 - `:core:ports` depends on `kotlinx-coroutines-core` (`api`) so ports can expose `Flow`. It is the only new
   import the domain allows. It is KMP-native, Apache-2.0, and already in the version catalog (desktop uses it).
-- `:testing` depends on `kotlinx-coroutines-test` (`api`) for `runTest` in contract tests, and on `:engine` so
+- `:testing` depends on `kotlinx-coroutines-test` (`api`) for `runTest` in contract tests, and on `:engine`
+  (`implementation`, not exposed to its users) so
   `FakePiano` decodes bytes with the real `MidiParser`.
 - Alternative rejected: callback listener interfaces. Every consumer would then rebuild a `Flow` on top of them.
 

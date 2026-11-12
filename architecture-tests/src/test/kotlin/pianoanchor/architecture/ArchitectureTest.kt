@@ -28,6 +28,7 @@ class ArchitectureTest {
     private companion object {
         val domainRoots = listOf("pianoanchor.core", "pianoanchor.engine")
         val adapterRoots = listOf("pianoanchor.ui", "pianoanchor.app", "pianoanchor.desktop", "pianoanchor.testing")
+        val domainImportRoots = domainRoots + listOf("kotlin", "kotlinx.coroutines")
         val frameworkRoots = listOf("android", "androidx", "org.jetbrains.compose", "org.koin", "java", "javax")
         val portNames = ports.map { it.name }.toSet()
 
@@ -62,6 +63,13 @@ class ArchitectureTest {
         production.files
             .filter { underAny(it.packagee?.name, domainRoots) }
             .assertFalse(strict = true) { file -> file.imports.any { underAny(it.name, frameworkRoots) } }
+    }
+
+    @Test
+    fun `domain code imports only Kotlin, kotlinx coroutines and domain code (docs ARCHITECTURE - Dependency rules)`() {
+        production.files
+            .filter { underAny(it.packagee?.name, domainRoots) }
+            .assertTrue(strict = true) { file -> file.imports.all { underAny(it.name, domainImportRoots) } }
     }
 
     @Test

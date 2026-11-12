@@ -33,6 +33,6 @@ Driven port: MIDI messages sent to instruments (e.g. SysEx requests). Contract: 
 | Function | Description |
 |---|---|
 | `val outputDevices: Flow<List<MidiDevice>>` | Output devices currently available; same emission rules as [MidiInputPort.inputDevices]. |
-| `suspend fun send(device: MidiDevice, bytes: ByteArray)` | Sends [bytes] to [device]: one or more complete MIDI messages, delivered in order. Suspends until the platform has accepted the bytes. |
+| `suspend fun send(device: MidiDevice, bytes: ByteArray)` | Sends [bytes] to [device]: one or more complete MIDI messages, delivered in order. Completeness is the caller's job; adapters only check the first byte and forward the bytes unchanged. Suspends until the platform has accepted the bytes. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/MidiOutputPortContractTest.kt`

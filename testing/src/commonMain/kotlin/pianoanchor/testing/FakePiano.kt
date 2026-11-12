@@ -18,6 +18,8 @@ const val DEFAULT_VELOCITY = 64
 private const val NOTE_OFF_STATUS = 0x80
 private const val NOTE_ON_STATUS = 0x90
 private const val STATUS_MIN = 0x80
+private val CHANNEL_RANGE = 0..15
+private val DATA_RANGE = 0..127
 
 /**
  * In-memory piano for tests; implements both MIDI ports for one device.
@@ -29,7 +31,7 @@ class FakePiano(
 ) : MidiInputPort,
     MidiOutputPort {
     private val devices = MutableStateFlow(listOf(device))
-    private var parser = MidiParser()
+    private val parser = MidiParser()
     private val collectors = mutableListOf<Channel<MidiEvent>>()
     private val sentCopies = mutableListOf<ByteArray>()
 
@@ -64,13 +66,13 @@ class FakePiano(
         requireListed(device)
         val copy = bytes.copyOf()
         sentCopies.add(copy)
-        replyTo(copy)?.let(::play)
+        replyTo(copy.copyOf())?.let(::play)
     }
 
     /** Plays raw bytes as if the piano sent them now. */
     fun play(bytes: ByteArray) {
         if (devices.value.isEmpty()) return
-        parser.feed(bytes, clock.nowNanos()).forEach { event -> collectors.forEach { it.trySend(event) } }
+        parser.feed(bytes, clock.nowNanos()).forEach { event -> collectors.toList().forEach { it.trySend(event) } }
     }
 
     /** Shortcut for a Note On (status 0x90 + [channel]). */
@@ -78,14 +80,14 @@ class FakePiano(
         note: MidiNote,
         velocity: Int = DEFAULT_VELOCITY,
         channel: Int = 0,
-    ) = play(byteArrayOf((NOTE_ON_STATUS + channel).toByte(), note.number.toByte(), velocity.toByte()))
+    ) = playChannelMessage(NOTE_ON_STATUS, note, velocity, channel)
 
     /** Shortcut for a Note Off (status 0x80 + [channel], release velocity [velocity]). */
     fun release(
         note: MidiNote,
         velocity: Int = DEFAULT_VELOCITY,
         channel: Int = 0,
-    ) = play(byteArrayOf((NOTE_OFF_STATUS + channel).toByte(), note.number.toByte(), velocity.toByte()))
+    ) = playChannelMessage(NOTE_OFF_STATUS, note, velocity, channel)
 
     /** Removes the device from both device lists and completes open `events` flows. */
     fun unplug() {
@@ -95,8 +97,19 @@ class FakePiano(
 
     /** Lists the device again (starts plugged in). Parser state is reset. */
     fun plugIn() {
-        parser = MidiParser()
+        parser.reset()
         devices.value = listOf(device)
+    }
+
+    private fun playChannelMessage(
+        status: Int,
+        note: MidiNote,
+        velocity: Int,
+        channel: Int,
+    ) {
+        require(channel in CHANNEL_RANGE) { "channel must be in $CHANNEL_RANGE, was $channel" }
+        require(velocity in DATA_RANGE) { "velocity must be in $DATA_RANGE, was $velocity" }
+        play(byteArrayOf((status + channel).toByte(), note.number.toByte(), velocity.toByte()))
     }
 
     private fun requireListed(requested: MidiDevice) {
