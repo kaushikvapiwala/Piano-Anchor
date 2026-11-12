@@ -6,3 +6,4 @@ Every engine threshold, from the KDoc in `engine/src/commonMain/kotlin/pianoanch
 | Name | Value | Meaning | Why | Source |
 |---|---|---|---|---|
 | `CHORD_CLUSTER_MS` | 90 | Notes whose onsets fall within this many milliseconds of a cluster's first note form one chord. | a chord is one physical gesture, so the window is absolute (not tempo-scaled, not widened for beginners). | practice-mode scorers group chord tones within 50–90 ms; score-alignment research uses a tighter 35 ms simultaneity threshold (Nakamura et al., ISMIR 2017). 90 ms suits beginners. |
+hand edit
