@@ -21,6 +21,14 @@
           { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop_fastcheck.py\"", "timeout": 900 }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "^implementer$",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop_fastcheck.py\"", "timeout": 900 }
+        ]
+      }
     ]
   }
 }

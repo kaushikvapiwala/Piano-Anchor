@@ -47,6 +47,9 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 - PR title = Conventional Commit (`feat(engine): …`); it becomes the squash commit. Sign off: `git commit -s`.
 - Never force-push or rewrite pushed history; add commits. Never commit secrets, `local.properties`,
   build output or `.claude/worktrees/`.
+- AI loop: an Opus session orchestrates and reviews; the `implementer` subagent (`.claude/agents/`, Sonnet)
+  writes code from one spec issue and can't finish while `fastCheck` fails (`SubagentStop` hook); Haiku
+  subagents only locate and quote. Specs are GitHub issues (label `spec`), never committed.
 - **Ratchet rule:** when review catches a new kind of mistake, add the cheapest permanent guard: an
   architecture or detekt rule, a test, or one line in this file.
 

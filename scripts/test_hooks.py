@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the git hooks (.githooks/), the gitlink guard and the Claude Code hooks (.claude/hooks/).
+"""Tests for the git hooks (.githooks/), the gitlink guard, docsCheck and the Claude Code hooks and settings (.claude/).
 
 Run by `./gradlew hooksTest` (part of fastCheck). Git hooks run against throwaway repositories.
 """
@@ -21,8 +21,9 @@ ROOT = Path(__file__).resolve().parent.parent
 # throwaway repositories below never touch the real repository.
 for _name in [n for n in os.environ if n.startswith("GIT_")]:
     del os.environ[_name]
-sys.path.insert(0, str(ROOT / ".claude" / "hooks"))
+sys.path[:0] = [str(ROOT / ".claude" / "hooks"), str(ROOT / "scripts")]
 
+import check_docs  # noqa: E402
 import guard_paths  # noqa: E402
 import stop_fastcheck  # noqa: E402
 from hooklib import failure_summary  # noqa: E402
@@ -159,8 +160,7 @@ class StopFastCheckTest(TempRepo):
         run("git", "add", ".", cwd=self.repo)
         run("git", "commit", "-q", "-m", "init", cwd=self.repo)
 
-    def stop(self) -> tuple[int, str]:
-        event = "{}"
+    def stop(self, event: str = "{}") -> tuple[int, str]:
         err = io.StringIO()
         with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(self.repo)}):
             with mock.patch("sys.stdin", io.StringIO(event)), mock.patch("sys.stderr", err), redirect_stdout(io.StringIO()):
@@ -191,6 +191,21 @@ class StopFastCheckTest(TempRepo):
         self.assertEqual(self.stop()[0], 0)  # a later turn
         self.assertEqual(self.runs(), 1)
 
+    def test_commit_of_a_checked_tree_is_not_rechecked(self) -> None:
+        (self.repo / "new.txt").write_text("x")
+        self.assertEqual(self.stop()[0], 0)
+        run("git", "add", "new.txt", cwd=self.repo)
+        run("git", "commit", "-q", "-m", "add", cwd=self.repo)
+        self.assertEqual(self.stop()[0], 0)
+        self.assertEqual(self.runs(), 1)
+
+    def test_failure_reported_to_a_subagent_still_blocks_the_main_session(self) -> None:
+        (self.repo / "FAIL").write_text("")
+        subagent = '{"agent_id": "a1", "agent_type": "implementer"}'
+        self.assertEqual(self.stop(subagent)[0], 2)
+        self.assertEqual(self.stop(subagent)[0], 0)
+        self.assertEqual(self.stop()[0], 2)
+
     def test_allows_stop_outside_a_git_repository(self) -> None:
         with tempfile.TemporaryDirectory() as plain:
             with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": plain}):
@@ -205,6 +220,37 @@ class StopFastCheckTest(TempRepo):
         (self.repo / "FAIL").unlink()
         self.assertEqual(self.stop()[0], 0)
         self.assertEqual(self.runs(), 2)
+
+
+class SettingsTest(unittest.TestCase):
+    """The implementer subagent must face the same fastCheck gate as the main session; scouts must not."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.hooks = json.loads((ROOT / ".claude" / "settings.json").read_text())["hooks"]
+
+    def test_implementer_subagent_stop_runs_the_stop_hook(self) -> None:
+        (entry,) = self.hooks["SubagentStop"]
+        self.assertEqual(entry["hooks"], self.hooks["Stop"][0]["hooks"])
+        self.assertRegex("implementer", entry["matcher"])
+        self.assertNotRegex("Explore", entry["matcher"])
+        self.assertNotRegex("general-purpose", entry["matcher"])
+
+
+class DocsCheckTest(TempRepo):
+    def problems(self, doc: str) -> list[str]:
+        (self.repo / ".gitignore").write_text("secret.properties\n")
+        (self.repo / "secret.properties").write_text("")
+        (self.repo / "DOC.md").write_text(doc)
+        with mock.patch.object(check_docs, "ROOT", self.repo):
+            return check_docs.check_references(check_docs.git("ls-files", "--others", "--exclude-standard"))
+
+    def test_skips_ignored_paths_even_next_to_a_path_outside_the_repo(self) -> None:
+        # git check-ignore aborts the whole batch on `../x`, which once made every ignored path "missing".
+        self.assertEqual(self.problems("`../Research/` and `secret.properties`\n"), [])
+
+    def test_reports_a_missing_path(self) -> None:
+        self.assertEqual(self.problems("`missing.md`\n"), ["DOC.md: backticked path `missing.md` does not exist"])
 
 
 class FailureSummaryTest(unittest.TestCase):
