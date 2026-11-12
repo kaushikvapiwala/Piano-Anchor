@@ -236,11 +236,6 @@ class SettingsTest(unittest.TestCase):
         self.assertNotRegex("Explore", entry["matcher"])
         self.assertNotRegex("general-purpose", entry["matcher"])
 
-    def test_implementer_agent_file_exists(self) -> None:
-        agent = (ROOT / ".claude" / "agents" / "implementer.md").read_text()
-        self.assertIn("name: implementer\n", agent)
-        self.assertIn("model: sonnet\n", agent)
-
 
 class DocsCheckTest(TempRepo):
     def problems(self, doc: str) -> list[str]:

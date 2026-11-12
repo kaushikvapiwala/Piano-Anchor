@@ -39,15 +39,7 @@ val hooksTest =
         workingDir(rootDir)
         commandLine("python3", "-I", "scripts/test_hooks.py")
         // Up to date until a tested file or the tests change (the marker file is the output).
-        inputs.files(
-            "scripts/test_hooks.py",
-            "scripts/check_no_gitlinks.sh",
-            "scripts/check_docs.py",
-            ".githooks",
-            ".claude/hooks",
-            ".claude/settings.json",
-            ".claude/agents",
-        )
+        inputs.files("scripts", ".githooks", ".claude/hooks", ".claude/settings.json")
         val marker = layout.buildDirectory.file("hooksTest/passed")
         outputs.file(marker)
         doLast { marker.get().asFile.writeText("ok") }

@@ -45,11 +45,15 @@ def check_references(files: list[str]) -> list[str]:
     paths = set(files) | {str(p) for f in files for p in PurePosixPath(f).parents if str(p) != "."}
     docs = [f for f in files if f.endswith(".md")]
     texts = {rel: FENCE.sub("", (ROOT / rel).read_text(encoding="utf-8")) for rel in docs}
-    tokens = {t.split("#")[0].rstrip("/.,") for text in texts.values() for t in PATH_TOKEN.findall(text)}
+    # Backticked (token, path) pairs per doc; only path-like ones are checked.
+    refs = {
+        rel: [(t, path) for t in PATH_TOKEN.findall(text) if PATH_LIKE.match(path := t.split("#")[0].rstrip("/.,"))]
+        for rel, text in texts.items()
+    }
     # check-ignore exits 1 when nothing is ignored, and aborts the whole batch on a path outside the repo (e.g.
     # `../Research/`), so those are left out. Each token is also sent with a trailing "/" so directory-only
     # patterns (`dir/`) match even when the directory is absent (CI).
-    inside = {resolve("", t.strip("/")) for t in tokens if PATH_LIKE.match(t)} - {None}
+    inside = {resolve("", path.strip("/")) for pairs in refs.values() for _, path in pairs} - {None}
     candidates = [form for t in inside for form in (t, t + "/")]
     ignored = {line.rstrip("/") for line in git("check-ignore", "--stdin", ok_codes=(0, 1), stdin="\n".join(candidates))}
 
@@ -57,9 +61,8 @@ def check_references(files: list[str]) -> list[str]:
     errors = []
     for rel, text in texts.items():
         doc_dir = posixpath.dirname(rel)
-        for token in PATH_TOKEN.findall(text):
-            path = token.split("#")[0].rstrip("/.,")
-            if not PATH_LIKE.match(path) or path.strip("/") in ignored:
+        for token, path in refs[rel]:
+            if resolve("", path.strip("/")) in ignored:
                 continue
             if "/" in path and path.split("/")[0] not in roots:
                 continue
