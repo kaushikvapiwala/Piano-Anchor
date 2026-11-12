@@ -1,12 +1,18 @@
 package pianoanchor.architecture
 
-import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.provider.KoParentProvider
 import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import pianoanchor.architecture.Sources.TESTING
+import pianoanchor.architecture.Sources.ports
+import pianoanchor.architecture.Sources.production
+import pianoanchor.architecture.Sources.tests
+import pianoanchor.architecture.Sources.tunables
+import pianoanchor.architecture.Sources.under
+import pianoanchor.architecture.Sources.underAny
 
 /**
  * Hexagonal architecture and convention rules. Each rule names the doc that explains it.
@@ -19,28 +25,9 @@ class ArchitectureTest {
     )
 
     private companion object {
-        // Parsed once for all tests (JUnit creates a new instance per test method).
-        val production = Konsist.scopeFromProduction()
-        val tests = Konsist.scopeFromTest()
-
         val domainRoots = listOf("pianoanchor.core", "pianoanchor.engine")
         val adapterRoots = listOf("pianoanchor.ui", "pianoanchor.app", "pianoanchor.desktop", "pianoanchor.testing")
         val frameworkRoots = listOf("android", "androidx", "org.jetbrains.compose", "org.koin", "java", "javax")
-        const val PORTS = "pianoanchor.core.ports"
-        const val TESTING = "pianoanchor.testing"
-
-        /** True when [name] is [root] itself or lives below it (so `engine` doesn't match `engineering`). */
-        fun under(
-            name: String?,
-            root: String,
-        ) = name != null && (name == root || name.startsWith("$root."))
-
-        fun underAny(
-            name: String?,
-            roots: List<String>,
-        ) = roots.any { under(name, it) }
-
-        val ports = production.interfaces(includeNested = false).filter { under(it.packagee?.name, PORTS) }
         val portNames = ports.map { it.name }.toSet()
 
         /** True when the declaration implements a project port, directly or via base classes/sub-interfaces. */
@@ -87,12 +74,7 @@ class ArchitectureTest {
 
     @Test
     fun `every port has an abstract contract test in testing (docs ARCHITECTURE - Testing)`() {
-        val contractTests =
-            production
-                .classes()
-                .filter { under(it.packagee?.name, TESTING) && it.hasAbstractModifier }
-                .map { it.name }
-                .toSet()
+        val contractTests = Sources.contractTests.map { it.name }.toSet()
         ports.assertTrue(strict = true) { "${it.name}ContractTest" in contractTests }
     }
 
@@ -122,15 +104,13 @@ class ArchitectureTest {
     }
 
     @Test
-    fun `every engine tunable documents why and source (docs algorithms README)`() {
-        production
-            .objects()
-            .filter { it.name == "Tunables" }
-            .flatMap { it.properties() }
-            .assertTrue(strict = true) { property ->
-                val text = property.kDoc?.text.orEmpty()
-                text.contains("Why:") && text.contains("Source:")
-            }
+    fun `every engine tunable documents why once, then source once (docs algorithms README)`() {
+        tunables.assertTrue(strict = true) { property ->
+            val text = property.kDoc?.text.orEmpty()
+            val why = text.indexOf("Why:")
+            val source = text.indexOf("Source:")
+            why >= 0 && source > why && why == text.lastIndexOf("Why:") && source == text.lastIndexOf("Source:")
+        }
     }
 
     @Test
