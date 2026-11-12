@@ -69,9 +69,21 @@ tasks.register("fastCheck") {
     dependsOn("spotlessCheck", docsCheck, gitlinkCheck, hooksTest)
 }
 
+// Every module: a project with no child projects (`:core` and `:ui` are only folders that group modules).
+// A module without a build file would silently drop out of ciBuild, so it fails the build instead.
+val modulePaths =
+    subprojects.filter { it.childProjects.isEmpty() }.map {
+        check(it.buildFile.exists()) { "Module ${it.path} has no build.gradle.kts, so ciBuild would skip it." }
+        it.path
+    }
+
 // What CI's build job runs; the pre-push hook runs the same task so the two can't drift.
+// Task names inside dependsOn() resolve in the root project only (name selection across modules happens
+// only on the command line), so each module's tasks are listed by path. Every module applies
+// pianoanchor.quality, which provides `fastCheck`; a module without it fails ciBuild ("task not found").
 tasks.register("ciBuild") {
     group = "verification"
-    description = "Everything CI builds and verifies: fastCheck, check and both apps."
-    dependsOn("fastCheck", "check", ":app-android:assembleDebug", ":app-desktop:compileKotlin")
+    description = "Everything CI builds and verifies: fastCheck and check in every module, and the Android app."
+    dependsOn("fastCheck", "check", ":app-android:assembleDebug")
+    dependsOn(modulePaths.flatMap { listOf("$it:fastCheck", "$it:check") })
 }
