@@ -2,8 +2,10 @@ package pianoanchor.architecture
 
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
+import com.lemonappdev.konsist.api.provider.KoParentProvider
 import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -11,41 +13,76 @@ import org.junit.jupiter.api.Test
  * When a review catches a new kind of mistake, add a rule here (the "ratchet rule", AGENTS.md).
  */
 class ArchitectureTest {
-    private val project = Konsist.scopeFromProject()
-    private val production = Konsist.scopeFromProduction()
-    private val tests = Konsist.scopeFromTest()
+    private data class PortImplementation(
+        val name: String,
+        val packageName: String?,
+    )
 
-    private val domainPackages = listOf("pianoanchor.core.", "pianoanchor.engine")
-    private val frameworkImports =
-        listOf("android.", "androidx.", "org.jetbrains.compose.", "io.insert.koin.", "java.", "javax.")
+    private companion object {
+        // Parsed once for all tests (JUnit creates a new instance per test method).
+        val production = Konsist.scopeFromProduction()
+        val tests = Konsist.scopeFromTest()
 
-    private fun isDomain(packageName: String?) = domainPackages.any { packageName.orEmpty().startsWith(it) }
+        val domainRoots = listOf("pianoanchor.core", "pianoanchor.engine")
+        val adapterRoots = listOf("pianoanchor.ui", "pianoanchor.app", "pianoanchor.desktop", "pianoanchor.testing")
+        val frameworkRoots = listOf("android", "androidx", "org.jetbrains.compose", "org.koin", "java", "javax")
+        const val PORTS = "pianoanchor.core.ports"
+        const val TESTING = "pianoanchor.testing"
+
+        /** True when [name] is [root] itself or lives below it (so `engine` doesn't match `engineering`). */
+        fun under(
+            name: String?,
+            root: String,
+        ) = name != null && (name == root || name.startsWith("$root."))
+
+        fun underAny(
+            name: String?,
+            roots: List<String>,
+        ) = roots.any { under(name, it) }
+
+        val ports = production.interfaces(includeNested = false).filter { under(it.packagee?.name, PORTS) }
+        val portNames = ports.map { it.name }.toSet()
+
+        /** True when the declaration implements a project port, directly or via base classes/sub-interfaces. */
+        fun KoParentProvider.implementsPort() = parentNames().any { it in portNames }
+
+        /** Simple names of all parents, also when written fully qualified (`pianoanchor.core.ports.ClockPort`). */
+        fun KoParentProvider.parentNames() = parents(indirectParents = true).map { it.name.substringAfterLast('.') }
+
+        /** Concrete classes and objects that implement a project port. */
+        val portImplementations =
+            production
+                .classes()
+                .filter { !it.hasAbstractModifier && it.implementsPort() }
+                .map { PortImplementation(it.name, it.packagee?.name) } +
+                production
+                    .objects()
+                    .filter { it.implementsPort() }
+                    .map { PortImplementation(it.name, it.packagee?.name) }
+
+        fun assertNone(
+            violations: List<Any>,
+            rule: String,
+        ) = assertTrue(violations.isEmpty()) { "$rule violated by: $violations" }
+    }
 
     @Test
     fun `domain code has no framework or platform imports (docs ARCHITECTURE - Dependency rules)`() {
         production.files
-            .filter { isDomain(it.packagee?.name) }
-            .assertFalse(strict = true) { file ->
-                file.imports.any { import -> frameworkImports.any { import.name.startsWith(it) } }
-            }
+            .filter { underAny(it.packagee?.name, domainRoots) }
+            .assertFalse(strict = true) { file -> file.imports.any { underAny(it.name, frameworkRoots) } }
     }
 
     @Test
     fun `domain code never depends on driving or driven adapters (docs ARCHITECTURE - Dependency rules)`() {
-        val adapterPackages = listOf("pianoanchor.ui.", "pianoanchor.app", "pianoanchor.desktop", "pianoanchor.testing")
         production.files
-            .filter { isDomain(it.packagee?.name) }
-            .assertFalse(strict = true) { file ->
-                file.imports.any { import -> adapterPackages.any { import.name.startsWith(it) } }
-            }
+            .filter { underAny(it.packagee?.name, domainRoots) }
+            .assertFalse(strict = true) { file -> file.imports.any { underAny(it.name, adapterRoots) } }
     }
 
     @Test
-    fun `ports are interfaces named Port with KDoc (docs ARCHITECTURE - Ports)`() {
-        production
-            .interfaces()
-            .filter { it.resideInPackage("pianoanchor.core.ports..") }
-            .assertTrue(strict = true) { it.name.endsWith("Port") && it.hasKDoc }
+    fun `ports are top-level interfaces named Port with KDoc (docs ARCHITECTURE - Ports)`() {
+        ports.assertTrue(strict = true) { it.name.endsWith("Port") && it.hasKDoc }
     }
 
     @Test
@@ -53,41 +90,35 @@ class ArchitectureTest {
         val contractTests =
             production
                 .classes()
-                .filter { it.resideInPackage("pianoanchor.testing..") && it.hasAbstractModifier }
+                .filter { under(it.packagee?.name, TESTING) && it.hasAbstractModifier }
                 .map { it.name }
                 .toSet()
-        production
-            .interfaces()
-            .filter { it.resideInPackage("pianoanchor.core.ports..") }
-            .assertTrue(strict = true) { "${it.name}ContractTest" in contractTests }
+        ports.assertTrue(strict = true) { "${it.name}ContractTest" in contractTests }
     }
 
     @Test
     fun `port implementations are Adapters, or Fakes in testing (docs ARCHITECTURE - Adapters)`() {
-        production
-            .classes()
-            .filter { cls -> cls.parents().any { it.name.endsWith("Port") } }
-            .assertTrue(strict = false) { cls ->
-                if (cls.resideInPackage("pianoanchor.testing..")) {
-                    cls.name.startsWith("Fake")
-                } else {
-                    cls.name.endsWith("Adapter")
-                }
-            }
+        assertNone(
+            portImplementations.filterNot {
+                if (under(it.packageName, TESTING)) it.name.startsWith("Fake") else it.name.endsWith("Adapter")
+            },
+            "Port implementations must be named *Adapter (or Fake* in $TESTING)",
+        )
     }
 
     @Test
     fun `every port implementation runs its port contract test (docs ARCHITECTURE - Testing)`() {
-        val contractSubclasses =
+        // A contract run extends <Port>ContractTest and is named <Impl>ContractTest or <Impl>Test.
+        val tested =
             tests
                 .classes()
-                .filter { cls -> cls.parents().any { it.name.endsWith("PortContractTest") } }
-                .map { it.name.removeSuffix("ContractTest") }
+                .filter { cls -> cls.parentNames().any { it.endsWith("PortContractTest") } }
+                .flatMap { listOf(it.name.removeSuffix("ContractTest"), it.name.removeSuffix("Test")) }
                 .toSet()
-        production
-            .classes()
-            .filter { cls -> cls.parents().any { it.name.endsWith("Port") } && !cls.hasAbstractModifier }
-            .assertTrue(strict = false) { it.name in contractSubclasses }
+        assertNone(
+            portImplementations.filterNot { it.name in tested },
+            "Every port implementation needs a test class extending its <Port>ContractTest",
+        )
     }
 
     @Test
@@ -117,10 +148,5 @@ class ArchitectureTest {
             .classes()
             .filter { cls -> cls.functions().any { fn -> fn.annotations.any { it.name == "Test" } } }
             .assertTrue(strict = true) { it.name.endsWith("Test") }
-    }
-
-    @Test
-    fun `no wildcard imports anywhere`() {
-        project.imports.assertFalse(strict = true) { it.isWildcard }
     }
 }

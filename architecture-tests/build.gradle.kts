@@ -9,9 +9,14 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
-// Konsist reads every source file in the repo, which Gradle can't track as task inputs:
-// always run, never reuse a cached result.
+// Konsist reads every source file in the repo: declare them as inputs so the task reruns only when code changes.
 tasks.test {
-    outputs.upToDateWhen { false }
-    outputs.cacheIf { false }
+    inputs
+        .files(
+            fileTree(rootDir) {
+                include("**/src/**/*.kt")
+                exclude("**/build/**", "build-logic/**")
+            },
+        ).withPathSensitivity(PathSensitivity.RELATIVE)
+        .withPropertyName("repositorySources")
 }
