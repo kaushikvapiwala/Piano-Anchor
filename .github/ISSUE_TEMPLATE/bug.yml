@@ -1,0 +1,32 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Connect piano over Bluetooth\n2. Start today's session\n3. ..."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: e.g. 0.1.0 (Settings → About)
+  - type: input
+    id: device
+    attributes:
+      label: Android device and version
+      placeholder: e.g. Pixel 11 Pro, Android 17
+  - type: input
+    id: piano
+    attributes:
+      label: Piano / MIDI keyboard and connection
+      placeholder: e.g. Roland FRP-NUVOLA EX over Bluetooth MIDI

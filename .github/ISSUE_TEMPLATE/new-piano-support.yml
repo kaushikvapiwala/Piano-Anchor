@@ -1,0 +1,39 @@
+name: Support for my piano
+description: Ask for (or help add) support for a digital piano or MIDI keyboard
+labels: [instrument-support]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every MIDI keyboard already works for notes, velocity and pedals. Model support adds remote control
+        (metronome, tones, split, etc.) through a data profile. Thanks for helping!
+  - type: input
+    id: model
+    attributes:
+      label: Brand and model
+      placeholder: e.g. Yamaha P-225
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      multiple: true
+      options: [Bluetooth MIDI, USB MIDI, MIDI DIN with adapter]
+    validations:
+      required: true
+  - type: input
+    id: implementation
+    attributes:
+      label: Link to the official MIDI Implementation document (if any)
+  - type: textarea
+    id: identity
+    attributes:
+      label: MIDI identity reply (optional)
+      description: The reply bytes to the Identity Request `F0 7E 7F 06 01 F7`. A read-only probe tool will make this easy later.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Can you help test?
+      options:
+        - label: I own this instrument and can run read-only tests
