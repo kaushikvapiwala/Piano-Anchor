@@ -22,11 +22,14 @@ support, curriculum ideas and bug reports are all welcome.
 - **Formatting is automatic:** `./gradlew spotlessApply` (ktlint, official Kotlin style). Don't hand-format.
 - **Architecture:** domain code (`core/*`, `engine`) has no Android, Compose or DI imports; platform code
   lives in adapters behind ports. Architecture rules are enforced by tests.
-- PRs are **squash-merged**; `main` only changes through pull requests.
+- PRs are **squash-merged**; `main` only changes through pull requests. A PR must be up to date with
+  `main` before it merges, so its checks ran against the code it will land on (use "Update branch").
 - **Automated checks** on every PR: CI build and verify (`fastCheck`, `check`, app builds), PR conventions
-  (Conventional Commit title, DCO sign-off), Dependency Review (blocks new shipped dependencies with
+  (Conventional Commit title, DCO sign-off), Dependency Review (flags new shipped dependencies with
   moderate+ vulnerabilities or a licence outside the permissive allow-list in
   `.github/workflows/security.yml`), CodeQL code scanning, and actionlint for workflow files.
+  All except Dependency Review are required to merge; it can take up to 15 minutes, so it is advisory.
+  Fix anything it reports before merging.
 
 ## Using AI assistants
 
