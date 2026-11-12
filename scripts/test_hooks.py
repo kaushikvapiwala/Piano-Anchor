@@ -292,6 +292,36 @@ class CloudSetupTest(TempRepo):
             ],
         )
 
+    def test_writes_the_maven_mirror_init_script_idempotently_before_any_download(self) -> None:
+        init = self.repo / ".gradle" / "init.d" / "cloud-maven-mirror.init.gradle.kts"
+        for _ in range(2):
+            self.setup_run(CLAUDE_CODE_REMOTE="true", ANDROID_REPO_BASE="http://127.0.0.1:1")
+            text = init.read_text()
+            self.assertIn("https://maven-central.storage-download.googleapis.com/maven2/", text)
+            self.assertIn("repo.maven.apache.org", text)
+            self.assertIn("repo1.maven.org", text)
+            init.write_text("stale")  # the second run must overwrite it
+
+    def test_writes_no_init_script_outside_the_cloud(self) -> None:
+        self.setup_run(ANDROID_REPO_BASE="http://127.0.0.1:1")
+        self.assertFalse((self.repo / ".gradle" / "init.d").exists())
+
+    def test_finds_the_jdk_when_java_prints_a_picked_up_line_first(self) -> None:
+        bin_dir = self.repo / "bin"
+        bin_dir.mkdir()
+        java = bin_dir / "java"
+        java.write_text(
+            "#!/bin/sh\necho 'Picked up JAVA_TOOL_OPTIONS: -Xmx1g' >&2\n"
+            "echo 'openjdk version \"21.0.2\" 2024-01-16' >&2\n"
+        )
+        java.chmod(0o755)
+        path = f"{bin_dir}:{os.environ['PATH']}"
+        result = self.setup_run(CLAUDE_CODE_REMOTE="true", ANDROID_REPO_BASE="http://127.0.0.1:1", PATH=path)
+        self.assertNotIn("no JDK", result.stdout)
+        java.write_text("#!/bin/sh\necho 'openjdk version \"11.0.2\"' >&2\n")
+        result = self.setup_run(CLAUDE_CODE_REMOTE="true", ANDROID_REPO_BASE="http://127.0.0.1:1", PATH=path)
+        self.assertIn("no JDK >= 17", result.stdout)
+
     def test_reports_a_download_failure_without_blocking_the_session(self) -> None:
         result = self.setup_run(CLAUDE_CODE_REMOTE="true", ANDROID_REPO_BASE="http://127.0.0.1:1")
         self.assertEqual(result.returncode, 0)
