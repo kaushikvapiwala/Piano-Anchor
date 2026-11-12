@@ -19,6 +19,8 @@ tasks.test {
             },
         ).withPathSensitivity(PathSensitivity.RELATIVE)
         .withPropertyName("repositorySources")
+    // generateDocs rewrites docs/generated: never run the checks concurrently with it.
+    mustRunAfter("generateDocs")
     // A hand edit of a generated doc must rerun GeneratedDocsTest.
     inputs
         .files(fileTree(rootDir.resolve("docs/generated")))
@@ -33,8 +35,8 @@ tasks.register<Test>("generateDocs") {
     val testSourceSet = sourceSets.test.get()
     testClassesDirs = testSourceSet.output.classesDirs
     classpath = testSourceSet.runtimeClasspath
-    useJUnitPlatform()
     filter { includeTestsMatching("*GeneratedDocsTest") }
     systemProperty("pianoanchor.updateGeneratedDocs", "true")
+    outputs.dir(rootDir.resolve("docs/generated"))
     outputs.upToDateWhen { false }
 }
