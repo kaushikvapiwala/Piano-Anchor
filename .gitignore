@@ -39,3 +39,6 @@ google-services.json
 
 # Claude Code personal settings (shared hooks live in .claude/settings.json)
 .claude/settings.local.json
+
+# Python bytecode (the .claude/hooks scripts create it)
+__pycache__/
