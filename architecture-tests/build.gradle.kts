@@ -51,11 +51,13 @@ kover {
     }
 }
 
-// Guard: generateDocs may only run when asked for by name, never as a dependency of a check.
+// Guard: generateDocs may run only when requested, never as a dependency of another task (a plugin that wires every
+// Test task into check would otherwise bring the bug back). CI computes a fresh task graph, so it always runs there.
+val generateDocsPath = "${project.path}:generateDocs"
 gradle.taskGraph.whenReady {
-    val generate = tasks.named("generateDocs").get()
-    check(!hasTask(generate) || gradle.startParameter.taskNames.any { it.substringAfterLast(':') == "generateDocs" }) {
-        "${generate.path} is in the task graph without being requested: it would overwrite docs/generated/ " +
+    val dependents = allTasks.filter { task -> getDependencies(task).any { it.path == generateDocsPath } }
+    check(dependents.isEmpty()) {
+        "$generateDocsPath is a dependency of ${dependents.map { it.path }}: it would overwrite docs/generated/ " +
             "before GeneratedDocsTest checks it."
     }
 }
