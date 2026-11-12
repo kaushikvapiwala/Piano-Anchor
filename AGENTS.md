@@ -7,6 +7,7 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 ## Commands
 - `./gradlew fastCheck` — the gate: formatting, detekt, unit tests, 100% coverage, architecture rules, docs and hook tests
 - `./gradlew installGitHooks` — once per clone: git hooks format, run `fastCheck` and check sign-off (`.githooks/`)
+- Claude Code cloud sessions: the `SessionStart` hook runs `scripts/cloud_setup.sh` (Android SDK into `~/android-sdk`; no-op unless `CLAUDE_CODE_REMOTE=true`), so `fastCheck` works there; Gradle fetches JDK 25 itself
 - `./gradlew generateDocs` — regenerate `docs/generated/` from the code. Generated docs are regenerated, never hand-edited (`GeneratedDocsTest` fails when they are stale)
 - `./gradlew spotlessApply` — auto-format (ktlint official style). Never hand-format.
 - `./gradlew ciBuild` — everything CI's build job runs (`fastCheck` and `check` in every module, both apps); `./gradlew :app-android:assembleDebug`, `./gradlew :app-desktop:run`

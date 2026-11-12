@@ -222,6 +222,84 @@ class StopFastCheckTest(TempRepo):
         self.assertEqual(self.runs(), 2)
 
 
+class PrePushHookTest(TempRepo):
+    """Uses a fake gradlew that records each run, so no real build starts."""
+
+    ZERO = "0" * 40
+    SHA = "a" * 40
+
+    def setUp(self) -> None:
+        super().setUp()
+        gradlew = self.repo / "gradlew"
+        gradlew.write_text("#!/bin/sh\necho \"$@\" >> runs.log\n")
+        gradlew.chmod(0o755)
+
+    def push(self, *lines: str) -> int:
+        stdin = "".join(line + "\n" for line in lines)
+        result = subprocess.run(
+            [str(ROOT / ".githooks" / "pre-push"), "origin", "url"], cwd=self.repo, input=stdin, text=True, capture_output=True
+        )
+        return result.returncode
+
+    def builds(self) -> list[str]:
+        log = self.repo / "runs.log"
+        return log.read_text().splitlines() if log.exists() else []
+
+    def test_runs_ci_build_when_pushing_a_branch(self) -> None:
+        self.assertEqual(self.push(f"refs/heads/x {self.SHA} refs/heads/x {self.ZERO}"), 0)
+        self.assertEqual(self.builds(), ["--quiet ciBuild"])
+
+    def test_skips_the_build_when_every_ref_is_a_deletion(self) -> None:
+        self.assertEqual(self.push(f"(delete) {self.ZERO} refs/heads/x {self.SHA}", f"(delete) {self.ZERO} refs/heads/y {self.SHA}"), 0)
+        self.assertEqual(self.builds(), [])
+
+    def test_runs_the_build_when_a_deletion_is_mixed_with_a_push(self) -> None:
+        self.push(f"(delete) {self.ZERO} refs/heads/x {self.SHA}", f"refs/heads/y {self.SHA} refs/heads/y {self.ZERO}")
+        self.assertEqual(self.builds(), ["--quiet ciBuild"])
+
+
+class CloudSetupTest(TempRepo):
+    script = str(ROOT / "scripts" / "cloud_setup.sh")
+
+    def setup_run(self, **env: str) -> subprocess.CompletedProcess:
+        base = {k: v for k, v in os.environ.items() if k != "CLAUDE_CODE_REMOTE"}
+        base.update(HOME=str(self.repo), **env)
+        return subprocess.run([self.script], cwd=self.repo, env=base, capture_output=True, text=True, timeout=60)
+
+    def test_is_registered_as_a_session_start_hook(self) -> None:
+        hooks = json.loads((ROOT / ".claude" / "settings.json").read_text())["hooks"]
+        commands = [h["command"] for entry in hooks["SessionStart"] for h in entry["hooks"]]
+        self.assertTrue(any("scripts/cloud_setup.sh" in c for c in commands))
+
+    def test_does_nothing_outside_the_cloud(self) -> None:
+        before = (ROOT / "local.properties").read_bytes() if (ROOT / "local.properties").exists() else None
+        result = self.setup_run()
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout + result.stderr, "")
+        self.assertFalse((self.repo / "android-sdk").exists())
+        after = (ROOT / "local.properties").read_bytes() if (ROOT / "local.properties").exists() else None
+        self.assertEqual(before, after)
+
+    def test_gradle_retry_settings_are_written_once(self) -> None:
+        for _ in range(2):
+            self.setup_run(CLAUDE_CODE_REMOTE="true", ANDROID_REPO_BASE="http://127.0.0.1:1")
+        lines = (self.repo / ".gradle" / "gradle.properties").read_text().splitlines()
+        self.assertEqual(
+            lines,
+            [
+                "systemProp.org.gradle.internal.repository.max.retries=6",
+                "systemProp.org.gradle.internal.repository.initial.backoff=2000",
+            ],
+        )
+
+    def test_reports_a_download_failure_without_blocking_the_session(self) -> None:
+        result = self.setup_run(CLAUDE_CODE_REMOTE="true", ANDROID_REPO_BASE="http://127.0.0.1:1")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("download of http://127.0.0.1:1/", result.stdout)
+        self.assertIn("fastCheck will fail", result.stdout)
+        self.assertFalse((self.repo / "android-sdk" / "cmdline-tools" / "latest").exists())
+
+
 class SettingsTest(unittest.TestCase):
     """The implementer subagent must face the same fastCheck gate as the main session; scouts must not."""
 
