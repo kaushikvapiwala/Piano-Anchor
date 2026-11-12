@@ -22,9 +22,19 @@ spotless {
     }
 }
 
+val docsCheck =
+    tasks.register<Exec>("docsCheck") {
+        group = "verification"
+        description = "Checks that paths, links and modules referenced in Markdown docs exist (scripts/check_docs.py)."
+        workingDir(rootDir)
+        commandLine("python3", "scripts/check_docs.py")
+        // Not cached: the result depends on git state (which files exist), which Gradle can't fingerprint.
+        outputs.upToDateWhen { false }
+    }
+
 tasks.register("fastCheck") {
     group = "verification"
-    description = "Formats-checks root and build-logic scripts; subprojects contribute their own fastCheck."
+    description = "Checks root/build-logic formatting and docs; subprojects contribute their own fastCheck."
     // Gradle also runs `fastCheck` in every subproject that has one (task-name selection).
-    dependsOn("spotlessCheck")
+    dependsOn("spotlessCheck", docsCheck)
 }
