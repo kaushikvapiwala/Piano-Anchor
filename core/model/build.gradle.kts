@@ -3,5 +3,6 @@ plugins {
 }
 
 kotlin {
+    android { namespace = "pianoanchor.core.model" }
     explicitApi()
 }

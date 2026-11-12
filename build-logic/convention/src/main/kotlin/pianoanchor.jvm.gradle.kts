@@ -14,7 +14,6 @@ kotlin {
 
 tasks.withType<JavaCompile>().configureEach { options.release.set(17) }
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
-tasks.named("fastCheck") { dependsOn("test") }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17

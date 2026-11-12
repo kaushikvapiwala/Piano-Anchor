@@ -24,8 +24,7 @@ spotless {
 
 tasks.register("fastCheck") {
     group = "verification"
-    description = "Fast gate for every change: formatting, detekt, JVM unit tests and coverage in all modules."
+    description = "Formats-checks root and build-logic scripts; subprojects contribute their own fastCheck."
+    // Gradle also runs `fastCheck` in every subproject that has one (task-name selection).
     dependsOn("spotlessCheck")
-    // Container projects (e.g. :core) have no build file and no tasks.
-    dependsOn(subprojects.filter { it.buildFile.exists() }.map { "${it.path}:fastCheck" })
 }

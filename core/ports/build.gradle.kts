@@ -3,6 +3,7 @@ plugins {
 }
 
 kotlin {
+    android { namespace = "pianoanchor.core.ports" }
     explicitApi()
     sourceSets {
         commonMain.dependencies {

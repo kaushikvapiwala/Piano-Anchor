@@ -1,11 +1,11 @@
+import pianoanchor.catalog
+
 // Applied to every module: formatting (ktlint via Spotless), static analysis (detekt), coverage (Kover).
 plugins {
     id("com.diffplug.spotless")
     id("dev.detekt")
     id("org.jetbrains.kotlinx.kover")
 }
-
-val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
 spotless {
     kotlin {
@@ -29,9 +29,9 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEa
     compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
 }
 
-// Per-module fast gate; the root `fastCheck` aggregates these. Each module type adds its tests below.
+// Per-module fast gate. `./gradlew fastCheck` runs it in every module; koverVerify runs the JVM tests it measures.
 tasks.register("fastCheck") {
     group = "verification"
     description = "Fast gate: formatting, detekt, JVM unit tests and coverage for this module."
-    dependsOn("spotlessCheck", "detekt")
+    dependsOn("spotlessCheck", "detekt", "koverVerify")
 }

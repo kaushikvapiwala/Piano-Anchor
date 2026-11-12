@@ -3,6 +3,7 @@ plugins {
 }
 
 kotlin {
+    android { namespace = "pianoanchor.engine" }
     explicitApi()
     sourceSets {
         commonMain.dependencies {

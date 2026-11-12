@@ -1,3 +1,6 @@
+import pianoanchor.catalog
+import pianoanchor.int
+
 // Android application shell: composition root only (Activity, dependency wiring). No business logic here.
 plugins {
     id("com.android.application")
@@ -5,30 +8,13 @@ plugins {
     id("pianoanchor.quality")
 }
 
-val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
-
 android {
     namespace = "pianoanchor.app"
-    compileSdk =
-        catalog
-            .findVersion("android-compileSdk")
-            .get()
-            .requiredVersion
-            .toInt()
+    compileSdk = catalog.int("android-compileSdk")
     defaultConfig {
         applicationId = "io.github.kaushikvapiwala.pianoanchor"
-        minSdk =
-            catalog
-                .findVersion("android-minSdk")
-                .get()
-                .requiredVersion
-                .toInt()
-        targetSdk =
-            catalog
-                .findVersion("android-targetSdk")
-                .get()
-                .requiredVersion
-                .toInt()
+        minSdk = catalog.int("android-minSdk")
+        targetSdk = catalog.int("android-targetSdk")
         versionCode = 1
         versionName = "0.0.1"
     }
@@ -37,7 +23,4 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { compose = true }
-    testOptions { unitTests.isIncludeAndroidResources = true }
 }
-
-tasks.named("fastCheck") { dependsOn("testDebugUnitTest") }

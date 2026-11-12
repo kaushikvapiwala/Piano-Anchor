@@ -6,7 +6,7 @@ naming:
 style:
   MagicNumber:
     # Thresholds belong in engine Tunables (documented); tests may use literal values.
-    excludes: ['**/test/**', '**/commonTest/**', '**/desktopTest/**']
+    excludes: ['**/*Test/**', '**/test/**']
   WildcardImport:
     active: true
 complexity:

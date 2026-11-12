@@ -4,6 +4,7 @@ plugins {
 }
 
 kotlin {
+    android { namespace = "pianoanchor.testing" }
     sourceSets {
         commonMain.dependencies {
             api(project(":core:ports"))

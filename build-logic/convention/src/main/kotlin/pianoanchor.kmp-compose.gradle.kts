@@ -1,11 +1,16 @@
+import pianoanchor.catalog
+
 // Kotlin Multiplatform library with Compose Multiplatform UI.
+// UI is verified by screenshot and Compose UI tests, so it has no line-coverage gate.
 plugins {
-    id("pianoanchor.kmp-library")
+    id("pianoanchor.kmp-base")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.compose")
 }
 
-val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val composeLibraries =
+    listOf("compose-runtime", "compose-foundation", "compose-ui", "compose-material3")
+        .map { catalog.findLibrary(it).get() }
 
 kotlin {
     android {
@@ -15,17 +20,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // api: public composables expose Compose types to consumers.
-            api(catalog.findLibrary("compose-runtime").get())
-            api(catalog.findLibrary("compose-foundation").get())
-            api(catalog.findLibrary("compose-ui").get())
-            api(catalog.findLibrary("compose-material3").get())
+            composeLibraries.forEach { api(it) }
         }
-    }
-}
-
-// UI is verified by screenshot and Compose UI tests; coverage is reported here but not gated at 100%.
-kover {
-    reports {
-        verify { warningInsteadOfFailure.set(true) }
     }
 }

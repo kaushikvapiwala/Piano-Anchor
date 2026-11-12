@@ -5,7 +5,7 @@ weak spots and plans each day's practice around them. Early development; nothing
 
 ## Build
 
-Requirements: JDK 21 (Gradle downloads it automatically if missing) and the Android SDK
+Requirements: JDK 25 (Gradle downloads it automatically if missing) and the Android SDK
 (set `sdk.dir` in `local.properties` or `ANDROID_HOME`).
 
 ```sh

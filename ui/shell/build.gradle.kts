@@ -3,6 +3,7 @@ plugins {
 }
 
 kotlin {
+    android { namespace = "pianoanchor.ui.shell" }
     sourceSets {
         commonMain.dependencies {
             api(libs.compose.resources)
