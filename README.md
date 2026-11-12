@@ -15,4 +15,8 @@ Requirements: JDK 25 (Gradle downloads it automatically if missing) and the Andr
 ./gradlew :app-desktop:run             # desktop development harness
 ```
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). AI-assisted contributions are welcome under the rules there.
+
 Licensed under the [Apache License 2.0](LICENSE).
