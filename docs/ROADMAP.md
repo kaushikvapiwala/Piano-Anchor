@@ -22,6 +22,7 @@ and scaffolding from the real code.
 | Step | Status |
 |---|---|
 | MIDI event types and byte-stream parser | ✅ |
+| MIDI input/output ports, `FakePiano`, contract tests (1.2) | ✅ |
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |

@@ -32,6 +32,7 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 ## Testing
 - Pure-Kotlin modules: **100% line and branch coverage** (Kover fails the build). If code truly can't run on the
   JVM, annotate `@ExcludeFromCoverage("reason + where it is tested")`.
+- Kover counts `companion object` `val` getters as uncovered lines: put private constants at file top level instead.
 - Write the failing test first for behaviour changes. Use fakes, not mocks. Name tests after behaviour.
 - Pyramid: unit (JVM) → integration (contract tests on real adapters) → UI (screenshots, Compose UI tests) →
   few end-to-end tests on an emulator. A real piano is a manual release checklist.

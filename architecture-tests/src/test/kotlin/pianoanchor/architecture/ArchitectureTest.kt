@@ -22,16 +22,21 @@ class ArchitectureTest {
     private data class PortImplementation(
         val name: String,
         val packageName: String?,
+        val ports: Set<String>,
     )
 
     private companion object {
         val domainRoots = listOf("pianoanchor.core", "pianoanchor.engine")
         val adapterRoots = listOf("pianoanchor.ui", "pianoanchor.app", "pianoanchor.desktop", "pianoanchor.testing")
+        val domainImportRoots = domainRoots + listOf("kotlin", "kotlinx.coroutines")
         val frameworkRoots = listOf("android", "androidx", "org.jetbrains.compose", "org.koin", "java", "javax")
         val portNames = ports.map { it.name }.toSet()
 
         /** True when the declaration implements a project port, directly or via base classes/sub-interfaces. */
         fun KoParentProvider.implementsPort() = parentNames().any { it in portNames }
+
+        /** Project ports the declaration implements, directly or indirectly. */
+        fun KoParentProvider.implementedPorts() = parentNames().filter { it in portNames }.toSet()
 
         /** Simple names of all parents, also when written fully qualified (`pianoanchor.core.ports.ClockPort`). */
         fun KoParentProvider.parentNames() = parents(indirectParents = true).map { it.name.substringAfterLast('.') }
@@ -41,11 +46,11 @@ class ArchitectureTest {
             production
                 .classes()
                 .filter { !it.hasAbstractModifier && it.implementsPort() }
-                .map { PortImplementation(it.name, it.packagee?.name) } +
+                .map { PortImplementation(it.name, it.packagee?.name, it.implementedPorts()) } +
                 production
                     .objects()
                     .filter { it.implementsPort() }
-                    .map { PortImplementation(it.name, it.packagee?.name) }
+                    .map { PortImplementation(it.name, it.packagee?.name, it.implementedPorts()) }
 
         fun assertNone(
             violations: List<Any>,
@@ -58,6 +63,13 @@ class ArchitectureTest {
         production.files
             .filter { underAny(it.packagee?.name, domainRoots) }
             .assertFalse(strict = true) { file -> file.imports.any { underAny(it.name, frameworkRoots) } }
+    }
+
+    @Test
+    fun `domain code imports only Kotlin, kotlinx coroutines and domain code (docs ARCHITECTURE - Dependency rules)`() {
+        production.files
+            .filter { underAny(it.packagee?.name, domainRoots) }
+            .assertTrue(strict = true) { file -> file.imports.all { underAny(it.name, domainImportRoots) } }
     }
 
     @Test
@@ -90,15 +102,21 @@ class ArchitectureTest {
 
     @Test
     fun `every port implementation runs its port contract test (docs ARCHITECTURE - Testing)`() {
-        // A contract run extends <Port>ContractTest and is named <Impl>ContractTest or <Impl>Test.
-        val tested =
+        // Each port an implementation provides needs a test class that extends <Port>ContractTest and whose name
+        // starts with the implementation's name, e.g. FakeClockContractTest, FakePianoInputContractTest.
+        val contractRuns =
             tests
                 .classes()
-                .filter { cls -> cls.parentNames().any { it.endsWith("PortContractTest") } }
-                .flatMap { listOf(it.name.removeSuffix("ContractTest"), it.name.removeSuffix("Test")) }
-                .toSet()
+                .flatMap { cls -> cls.parentNames().filter { it.endsWith("PortContractTest") }.map { cls.name to it } }
         assertNone(
-            portImplementations.filterNot { it.name in tested },
+            portImplementations.flatMap { impl ->
+                impl.ports
+                    .filterNot { port ->
+                        contractRuns.any { (test, contract) ->
+                            contract == "${port}ContractTest" && test.startsWith(impl.name) && test.endsWith("Test")
+                        }
+                    }.map { "${impl.name} -> ${it}ContractTest" }
+            },
             "Every port implementation needs a test class extending its <Port>ContractTest",
         )
     }
