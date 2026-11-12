@@ -49,7 +49,8 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
 - Test doubles live in `testing/`, are named `Fake*`, and obey the same contract.
 
 ## Testing
-- Each port has an abstract `<Port>ContractTest` in `testing/`; every implementation has a test class
-  (`<Impl>Test` or `<Impl>ContractTest`) that extends it, so fakes and real adapters behave the same.
+- Each port has an abstract `<Port>ContractTest` in `testing/`; for every port it implements, an implementation
+  has a test class named `<Impl>…Test` that extends that contract (e.g. `FakeClockContractTest`,
+  `FakePianoInputContractTest`), so fakes and real adapters behave the same.
 - Every `*ViewModel` and `*UseCase` has a `*Test`; test classes are named `*Test`.
 - Pure modules need 100% line and branch coverage; `@ExcludeFromCoverage("reason")` marks the rare exception.

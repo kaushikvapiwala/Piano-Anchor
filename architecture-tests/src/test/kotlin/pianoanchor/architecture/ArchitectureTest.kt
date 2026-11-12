@@ -22,6 +22,7 @@ class ArchitectureTest {
     private data class PortImplementation(
         val name: String,
         val packageName: String?,
+        val ports: Set<String>,
     )
 
     private companion object {
@@ -33,6 +34,9 @@ class ArchitectureTest {
         /** True when the declaration implements a project port, directly or via base classes/sub-interfaces. */
         fun KoParentProvider.implementsPort() = parentNames().any { it in portNames }
 
+        /** Project ports the declaration implements, directly or indirectly. */
+        fun KoParentProvider.implementedPorts() = parentNames().filter { it in portNames }.toSet()
+
         /** Simple names of all parents, also when written fully qualified (`pianoanchor.core.ports.ClockPort`). */
         fun KoParentProvider.parentNames() = parents(indirectParents = true).map { it.name.substringAfterLast('.') }
 
@@ -41,11 +45,11 @@ class ArchitectureTest {
             production
                 .classes()
                 .filter { !it.hasAbstractModifier && it.implementsPort() }
-                .map { PortImplementation(it.name, it.packagee?.name) } +
+                .map { PortImplementation(it.name, it.packagee?.name, it.implementedPorts()) } +
                 production
                     .objects()
                     .filter { it.implementsPort() }
-                    .map { PortImplementation(it.name, it.packagee?.name) }
+                    .map { PortImplementation(it.name, it.packagee?.name, it.implementedPorts()) }
 
         fun assertNone(
             violations: List<Any>,
@@ -90,16 +94,20 @@ class ArchitectureTest {
 
     @Test
     fun `every port implementation runs its port contract test (docs ARCHITECTURE - Testing)`() {
-        // A contract run extends <Port>ContractTest and is named <Impl>ContractTest or <Impl>Test; an
-        // implementation of several ports adds the port role: <Impl>InputContractTest, <Impl>OutputContractTest.
-        val testNames =
+        // Each port an implementation provides needs a test class that extends <Port>ContractTest and whose name
+        // starts with the implementation's name, e.g. FakeClockContractTest, FakePianoInputContractTest.
+        val contractRuns =
             tests
                 .classes()
-                .filter { cls -> cls.parentNames().any { it.endsWith("PortContractTest") } }
-                .map { it.name }
+                .flatMap { cls -> cls.parentNames().filter { it.endsWith("PortContractTest") }.map { cls.name to it } }
         assertNone(
-            portImplementations.filterNot { impl ->
-                testNames.any { it.startsWith(impl.name) && (it.endsWith("ContractTest") || it.endsWith("Test")) }
+            portImplementations.flatMap { impl ->
+                impl.ports
+                    .filterNot { port ->
+                        contractRuns.any { (test, contract) ->
+                            contract == "${port}ContractTest" && test.startsWith(impl.name) && test.endsWith("Test")
+                        }
+                    }.map { "${impl.name} -> ${it}ContractTest" }
             },
             "Every port implementation needs a test class extending its <Port>ContractTest",
         )
