@@ -19,4 +19,22 @@ tasks.test {
             },
         ).withPathSensitivity(PathSensitivity.RELATIVE)
         .withPropertyName("repositorySources")
+    // A hand edit of a generated doc must rerun GeneratedDocsTest.
+    inputs
+        .files(fileTree(rootDir.resolve("docs/generated")))
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+        .withPropertyName("generatedDocs")
+}
+
+// Rewrites docs/generated/ from the code: the same golden test, in update mode.
+tasks.register<Test>("generateDocs") {
+    group = "documentation"
+    description = "Regenerates docs/generated/ from the code (GeneratedDocsTest in update mode)."
+    val testSourceSet = sourceSets.test.get()
+    testClassesDirs = testSourceSet.output.classesDirs
+    classpath = testSourceSet.runtimeClasspath
+    useJUnitPlatform()
+    filter { includeTestsMatching("*GeneratedDocsTest") }
+    systemProperty("pianoanchor.updateGeneratedDocs", "true")
+    outputs.upToDateWhen { false }
 }
