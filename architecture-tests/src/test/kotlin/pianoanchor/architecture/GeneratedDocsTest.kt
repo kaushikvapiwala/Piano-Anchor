@@ -45,7 +45,8 @@ class GeneratedDocsTest {
 
         fun paragraphs(text: String) = text.split(blankLines).map { it.oneLine() }.filter { it.isNotEmpty() }
 
-        fun KoPropertyDeclaration.initializer() = text.substringAfter("=").oneLine()
+        /** The value as written in source (not parsed from [KoPropertyDeclaration.text], which includes the KDoc). */
+        fun KoPropertyDeclaration.initializer() = value.orEmpty().oneLine()
 
         fun KoFunctionDeclaration.signature(): String {
             val params = parameters.joinToString(", ") { "${it.name}: ${it.type.sourceType}" }
@@ -138,7 +139,7 @@ class GeneratedDocsTest {
                 file.parentFile.mkdirs()
                 file.writeText(rendered)
             } else {
-                assertTrue(file.isFile && file.readText() == rendered) {
+                assertEquals(rendered, file.takeIf { it.isFile }?.readText()) {
                     "docs/generated/$name.md is stale or was edited by hand. " +
                         "Run ./gradlew generateDocs and commit the result."
                 }
