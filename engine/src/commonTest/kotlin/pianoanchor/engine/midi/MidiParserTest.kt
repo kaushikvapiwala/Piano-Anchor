@@ -137,14 +137,28 @@ class MidiParserTest {
     }
 
     @Test
-    fun oversizedSysExIgnoresAllRemainingDataBytes() {
-        val body = IntArray(Tunables.SYSEX_MAX_BYTES + 5) { 0x01 }
-        assertEquals(emptyList(), parse(*(intArrayOf(0xF0) + body + intArrayOf(0xF7))))
+    fun strayEndOfExclusiveIsIgnored() {
+        assertEquals(listOf(NoteOn(t, 0, c4, 100)), parse(0xF7, 0x90, 0x3C, 0x64))
     }
 
     @Test
-    fun strayEndOfExclusiveIsIgnored() {
-        assertEquals(listOf(NoteOn(t, 0, c4, 100)), parse(0xF7, 0x90, 0x3C, 0x64))
+    fun strayEndOfExclusiveCancelsPartialMessage() {
+        assertEquals(emptyList(), parse(0x90, 0x3C, 0xF7, 0x64))
+    }
+
+    @Test
+    fun strayEndOfExclusiveClearsRunningStatus() {
+        assertEquals(listOf(NoteOn(t, 0, c4, 100)), parse(0x90, 0x3C, 0x64, 0xF7, 0x3E, 0x64))
+    }
+
+    @Test
+    fun systemResetDropsPartialMessageAndRunningStatus() {
+        assertEquals(emptyList(), parse(0x90, 0x3C, 0xFF, 0x64, 0x3E, 0x64))
+    }
+
+    @Test
+    fun systemResetDropsPartialSysEx() {
+        assertEquals(emptyList(), parse(0xF0, 0x41, 0xFF, 0x10, 0xF7))
     }
 
     @Test
@@ -169,7 +183,7 @@ class MidiParserTest {
 
     @Test
     fun oversizedSysExIsDiscarded() {
-        val body = IntArray(Tunables.SYSEX_MAX_BYTES + 1) { 0x01 }
+        val body = IntArray(Tunables.SYSEX_MAX_BYTES + 5) { 0x01 }
         val input = intArrayOf(0xF0) + body + intArrayOf(0xF7, 0x90, 0x3C, 0x64)
         assertEquals(listOf(NoteOn(t, 0, c4, 100)), parse(*input))
     }

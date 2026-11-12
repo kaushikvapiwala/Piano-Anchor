@@ -37,6 +37,7 @@ public class MidiParser {
         for (i in offset until offset + count) {
             val b = bytes[i].toInt() and BYTE_MASK
             when {
+                b == SYSTEM_RESET -> reset()
                 b >= REAL_TIME_MIN -> Unit
                 b >= STATUS_MIN -> onStatus(b, timestampNanos, events)
                 else -> onData(b, timestampNanos, events)
@@ -59,26 +60,11 @@ public class MidiParser {
         timestampNanos: Long,
         events: MutableList<MidiEvent>,
     ) {
-        if (b == END_OF_SYSEX) {
-            if (inSysEx) {
-                if (!sysExOverflow) events.add(SysEx(timestampNanos, sysExBytes.toList()))
-                endSysEx()
-            }
-            return
-        }
+        if (b == END_OF_SYSEX && inSysEx && !sysExOverflow) events.add(SysEx(timestampNanos, sysExBytes.toList()))
         endSysEx()
         dataCount = 0
-        status =
-            when (b) {
-                START_OF_SYSEX -> {
-                    inSysEx = true
-                    NO_STATUS
-                }
-
-                else -> {
-                    if (b >= NO_DATA_COMMON_MIN) NO_STATUS else b
-                }
-            }
+        inSysEx = b == START_OF_SYSEX
+        status = if (inSysEx || b >= NO_DATA_COMMON_MIN) NO_STATUS else b
     }
 
     private fun endSysEx() {
@@ -123,10 +109,10 @@ public class MidiParser {
     }
 
     private fun dataBytesFor(status: Int): Int =
-        when (status) {
-            SONG_POSITION -> 2
-            TIME_CODE, SONG_SELECT -> 1
-            else -> if ((status and KIND_MASK).let { it == PROGRAM_CHANGE || it == CHANNEL_PRESSURE }) 1 else 2
+        when (status and KIND_MASK) {
+            PROGRAM_CHANGE, CHANNEL_PRESSURE -> 1
+            SYSTEM -> if (status == SONG_POSITION) 2 else 1
+            else -> 2
         }
 
     private fun emit(
@@ -165,16 +151,15 @@ private const val CHANNEL_MASK = 0x0F
 private const val KIND_MASK = 0xF0
 private const val STATUS_MIN = 0x80
 private const val REAL_TIME_MIN = 0xF8
+private const val SYSTEM_RESET = 0xFF
 private const val NOTE_OFF = 0x80
 private const val NOTE_ON = 0x90
 private const val CONTROL_CHANGE = 0xB0
 private const val PROGRAM_CHANGE = 0xC0
 private const val CHANNEL_PRESSURE = 0xD0
+private const val SYSTEM = 0xF0
 private const val START_OF_SYSEX = 0xF0
-private const val TIME_CODE = 0xF1
 private const val SONG_POSITION = 0xF2
-private const val SONG_SELECT = 0xF3
 private const val END_OF_SYSEX = 0xF7
 private const val NO_RELEASE_VELOCITY = 64
-
 private const val NO_DATA_COMMON_MIN = 0xF4

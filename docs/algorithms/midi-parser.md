@@ -23,7 +23,8 @@ one timestamp.
 ## Running status
 A channel voice status stays active, so further complete data groups repeat it. A NoteOn with velocity 0
 is reported as a NoteOff with the neutral release velocity. Real-time bytes (0xF8 and above) may appear
-anywhere, even inside a SysEx, and change no state. System common messages and SysEx cancel running status,
+anywhere, even inside a SysEx, and change no state, except System Reset (0xFF), which returns the parser
+to its power-up state as MIDI 1.0 asks of receivers. System common messages (including a stray 0xF7) and SysEx cancel running status and any partial message,
 and their data bytes are consumed or dropped. Program change, pitch bend and pressure messages are consumed
 so their data bytes are not misread, but no event is produced.
 
