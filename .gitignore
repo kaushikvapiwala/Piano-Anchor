@@ -33,3 +33,6 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Claude Code agent worktrees (local only)
+.claude/worktrees/

@@ -30,4 +30,5 @@ include(
     ":ui:shell",
     ":app-android",
     ":app-desktop",
+    ":architecture-tests",
 )
