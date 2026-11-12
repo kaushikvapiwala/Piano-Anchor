@@ -25,9 +25,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-      # Also validates the Gradle wrapper checksum.
       - name: No nested repositories (gitlinks)
         run: scripts/check_no_gitlinks.sh
+      # Also validates the Gradle wrapper checksum.
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: fastCheck, check, build apps
         run: ./gradlew fastCheck check :app-android:assembleDebug :app-desktop:compileKotlin --continue

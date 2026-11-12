@@ -61,6 +61,12 @@ class CommitMsgHookTest(TempRepo):
         self.assertEqual(result.returncode, 1)
         self.assertIn("git commit -s", result.stderr)
 
+    def test_skips_merge_commits(self) -> None:
+        run("git", "commit", "-q", "--allow-empty", "-m", "init", cwd=self.repo)
+        head = run("git", "rev-parse", "HEAD", cwd=self.repo).stdout.strip()
+        (self.repo / ".git" / "MERGE_HEAD").write_text(head + "\n")
+        self.assertEqual(self.check("Merge branch 'main'\n").returncode, 0)
+
     def test_rejects_sign_off_by_someone_else(self) -> None:
         self.assertEqual(self.check("feat: x\n\nSigned-off-by: Bob <bob@example.com>\n").returncode, 1)
 
@@ -89,7 +95,12 @@ class GuardPathsTest(unittest.TestCase):
     root = ROOT
 
     def reason(self, path: str) -> str | None:
-        return guard_paths.reason(path, self.root)
+        verdict = guard_paths.decide(path, self.root)
+        return verdict[1] if verdict and verdict[0] == "deny" else None
+
+    def asks(self, path: str) -> bool:
+        verdict = guard_paths.decide(path, self.root)
+        return verdict is not None and verdict[0] == "ask"
 
     def test_allows_repo_files(self) -> None:
         self.assertIsNone(self.reason(str(self.root / "README.md")))
@@ -105,6 +116,17 @@ class GuardPathsTest(unittest.TestCase):
     def test_denies_git_internals_and_generated_docs(self) -> None:
         self.assertIn(".git", self.reason(str(self.root / ".git" / "config")))
         self.assertIn("generated", self.reason(str(self.root / "docs" / "generated" / "ports.md")))
+
+    def test_git_and_generated_checks_ignore_case(self) -> None:
+        self.assertIsNotNone(self.reason(str(self.root / ".GIT" / "config")))
+        self.assertIsNotNone(self.reason(str(self.root / "docs" / "Generated" / "ports.md")))
+
+    def test_asks_before_editing_hooks_or_settings(self) -> None:
+        self.assertTrue(self.asks(str(self.root / ".claude" / "settings.json")))
+        self.assertTrue(self.asks(str(self.root / ".claude" / "hooks" / "guard_paths.py")))
+        self.assertTrue(self.asks(str(Path.home() / ".claude" / "settings.json")))
+        self.assertFalse(self.asks(str(Path.home() / ".claude" / "plans" / "settings.md")))
+        self.assertFalse(self.asks(str(self.root / "README.md")))
 
     def test_main_prints_a_deny_decision(self) -> None:
         event = json.dumps({"tool_input": {"file_path": "/etc/hosts"}})
@@ -161,11 +183,20 @@ class StopFastCheckTest(TempRepo):
         self.assertEqual(code, 2)
         self.assertIn("boom", err)
 
-    def test_unchanged_retry_after_a_block_is_allowed(self) -> None:
+    def test_unchanged_failing_tree_is_reported_once(self) -> None:
         (self.repo / "FAIL").write_text("")
         self.assertEqual(self.stop()[0], 2)
         self.assertEqual(self.stop(active=True)[0], 0)
+        self.assertEqual(self.stop()[0], 0)  # a later turn
         self.assertEqual(self.runs(), 1)
+
+    def test_allows_stop_outside_a_git_repository(self) -> None:
+        with tempfile.TemporaryDirectory() as plain:
+            with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": plain}):
+                out = io.StringIO()
+                with mock.patch("sys.stdin", io.StringIO("{}")), redirect_stdout(out):
+                    self.assertEqual(stop_fastcheck.main(), 0)
+        self.assertIn("no usable git repository", out.getvalue())
 
     def test_changed_retry_after_a_block_reruns_the_check(self) -> None:
         (self.repo / "FAIL").write_text("")

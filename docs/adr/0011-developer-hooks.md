@@ -14,8 +14,9 @@ must install, and our hooks only call Gradle tasks that already exist.
   `./gradlew installGitHooks` (sets `core.hooksPath`). pre-commit: gitlink guard, Spotless on staged Kotlin,
   `fastCheck`; commit-msg: DCO sign-off; pre-push: what CI's build job runs.
 - Claude Code hooks live in `.claude/settings.json` with Python scripts in `.claude/hooks/`: deny edits
-  outside the repo, in `.git/` or in generated docs (docs/generated, planned); format each edited Kotlin
-  file (Spotless IDE hook); block stopping while `fastCheck` fails.
+  outside the repo, in `.git/` or in generated docs (docs/generated, planned); ask the user before edits to
+  hook or settings files; format each edited Kotlin file (Spotless IDE hook); block stopping while
+  `fastCheck` fails (reported once per unchanged tree, so it can't loop).
 - The hooks are tested by `scripts/test_hooks.py` (`./gradlew hooksTest`, part of `fastCheck`). CI re-runs
   every check, so hooks are a convenience, never the only gate.
 
