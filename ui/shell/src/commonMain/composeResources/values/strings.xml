@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Piano Anchor</string>
+    <string name="welcome">A patient piano coach. Connect your piano to begin.</string>
+</resources>

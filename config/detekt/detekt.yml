@@ -1,0 +1,14 @@
+# Built on detekt defaults (buildUponDefaultConfig = true). Every override needs a reason.
+naming:
+  FunctionNaming:
+    # Compose @Composable functions are PascalCase.
+    ignoreAnnotated: ['Composable']
+style:
+  MagicNumber:
+    # Thresholds belong in engine Tunables (documented); tests may use literal values.
+    excludes: ['**/*Test/**', '**/test/**']
+  WildcardImport:
+    active: true
+complexity:
+  LongParameterList:
+    ignoreAnnotated: ['Composable']
