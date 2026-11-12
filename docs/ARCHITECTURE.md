@@ -17,9 +17,9 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 
 | Module | Role | Notes |
 |---|---|---|
-| `:core:model` | Domain types (e.g. `MidiNote`) | Pure Kotlin, 100% coverage |
+| `:core:model` | Domain types (e.g. `MidiNote`, `MidiEvent`) | Pure Kotlin, 100% coverage |
 | `:core:ports` | Driven ports (e.g. `ClockPort`) | Interfaces only, each with KDoc |
-| `:engine` | Coaching logic; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
+| `:engine` | Coaching logic, including the `midi` byte-stream parser; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
 | `:testing` | Fakes and abstract port contract tests | Used by all test source sets |
 | `:ui:shell` | Shared Compose root and string resources | Driving adapter; screenshot tests planned (Phase 1) |
 | `:app-android` | Android app: composition root | No business logic |

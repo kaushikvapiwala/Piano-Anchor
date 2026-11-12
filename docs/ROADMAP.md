@@ -12,11 +12,16 @@ Status: ✅ done · 🔄 in progress · ⏳ planned.
 | Security and supply-chain checks (CodeQL, Dependency Review, actionlint) | ✅ |
 | Agent guide and docs (AGENTS.md, ARCHITECTURE, ADRs, glossary, docs check) | ✅ |
 | Developer hooks (git hooks, Claude Code hooks) | ✅ |
+| Phase 0 exit verification (negative checks fail CI) | ✅ |
 
 ## Phase 1 — Walking skeleton
 Connect a piano → play C-D-E in wait mode → see a graded result → it is saved. One thin slice through every
 layer (MIDI port and adapters, parser, matcher, grading, storage, one screen), then extract agent skills
 and scaffolding from the real code.
+
+| Step | Status |
+|---|---|
+| MIDI event types and byte-stream parser | ✅ |
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |
