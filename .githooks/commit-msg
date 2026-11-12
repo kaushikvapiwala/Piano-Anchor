@@ -1,0 +1,9 @@
+#!/bin/sh
+# Commit-msg: require a Developer Certificate of Origin sign-off matching the author (git commit -s).
+# The Conventional Commit format is checked on the PR title, which becomes the squash commit on main.
+set -eu
+author="$(git var GIT_AUTHOR_IDENT | sed 's/ [0-9]* [-+][0-9]*$//')"
+if ! grep -Fqx "Signed-off-by: $author" "$1"; then
+  echo "commit-msg: missing 'Signed-off-by: $author'. Commit with: git commit -s" >&2
+  exit 1
+fi

@@ -32,9 +32,25 @@ val docsCheck =
         outputs.upToDateWhen { false }
     }
 
+val hooksTest =
+    tasks.register<Exec>("hooksTest") {
+        group = "verification"
+        description = "Tests the git hooks and Claude Code hooks (scripts/test_hooks.py)."
+        workingDir(rootDir)
+        commandLine("python3", "-I", "scripts/test_hooks.py")
+        outputs.upToDateWhen { false }
+    }
+
+tasks.register<Exec>("installGitHooks") {
+    group = "build setup"
+    description = "Points git at the repo's hooks in .githooks/ (pre-commit, commit-msg, pre-push). Run once per clone."
+    workingDir(rootDir)
+    commandLine("git", "config", "core.hooksPath", ".githooks")
+}
+
 tasks.register("fastCheck") {
     group = "verification"
-    description = "Checks root/build-logic formatting and docs; subprojects contribute their own fastCheck."
+    description = "Checks root/build-logic formatting, docs and hooks; subprojects contribute their own fastCheck."
     // Gradle also runs `fastCheck` in every subproject that has one (task-name selection).
-    dependsOn("spotlessCheck", docsCheck)
+    dependsOn("spotlessCheck", docsCheck, hooksTest)
 }

@@ -5,7 +5,8 @@ weak spots and plans each day's practice. Kotlin Multiplatform + Compose Multipl
 Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs/glossary.md`.
 
 ## Commands
-- `./gradlew fastCheck` — the gate: formatting, detekt, unit tests, 100% coverage, architecture rules, docs check
+- `./gradlew fastCheck` — the gate: formatting, detekt, unit tests, 100% coverage, architecture rules, docs and hook tests
+- `./gradlew installGitHooks` — once per clone: git hooks format, run `fastCheck` and check sign-off (`.githooks/`)
 - `./gradlew spotlessApply` — auto-format (ktlint official style). Never hand-format.
 - `./gradlew check` — everything CI runs; `./gradlew :app-android:assembleDebug`, `./gradlew :app-desktop:run`
 - One module: `./gradlew :engine:desktopTest`, `./gradlew :architecture-tests:test`
