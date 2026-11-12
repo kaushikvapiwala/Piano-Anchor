@@ -40,3 +40,22 @@ tasks.register<Test>("generateDocs") {
     outputs.dir(rootDir.resolve("docs/generated"))
     outputs.upToDateWhen { false }
 }
+
+// Kover measures every Test task by default, so koverVerify (in fastCheck and check) would run generateDocs and
+// overwrite a hand edit before GeneratedDocsTest could catch it.
+kover {
+    currentProject {
+        instrumentation {
+            disabledForTestTasks.add("generateDocs")
+        }
+    }
+}
+
+// Guard: generateDocs may only run when asked for by name, never as a dependency of a check.
+gradle.taskGraph.whenReady {
+    val generate = tasks.named("generateDocs").get()
+    check(!hasTask(generate) || gradle.startParameter.taskNames.any { it.substringAfterLast(':') == "generateDocs" }) {
+        "${generate.path} is in the task graph without being requested: it would overwrite docs/generated/ " +
+            "before GeneratedDocsTest checks it."
+    }
+}
