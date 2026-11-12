@@ -20,16 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      # Gradle dependencies come from the graph submitted by dependency-graph(-submit).yml,
-      # so wait for that snapshot instead of reviewing an incomplete diff.
+      # Gradle dependencies come from the snapshot that dependency-graph(-submit).yml submits for
+      # the PR head SHA. It lands a few minutes after this job starts, so retry until it exists.
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: moderate
-          # The project is Apache-2.0: no GPL/AGPL dependencies (see CONTRIBUTING.md).
-          deny-licenses: >-
-            GPL-2.0, GPL-2.0-only, GPL-2.0-or-later,
-            GPL-3.0, GPL-3.0-only, GPL-3.0-or-later,
-            AGPL-3.0, AGPL-3.0-only, AGPL-3.0-or-later
+          # The project is Apache-2.0: shipped dependencies must use one of these licences
+          # (no GPL/AGPL/LGPL; see CONTRIBUTING.md). A package may pass under an OR expression.
+          allow-licenses: >-
+            Apache-2.0, MIT, MIT-0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD,
+            EPL-1.0, EPL-2.0, MPL-2.0, CC0-1.0, Unlicense, Unicode-3.0, Unicode-DFS-2016
           retry-on-snapshot-warnings: true
           retry-on-snapshot-warnings-timeout: 900
 

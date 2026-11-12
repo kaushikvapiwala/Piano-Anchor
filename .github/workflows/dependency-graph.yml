@@ -29,3 +29,7 @@ jobs:
         with:
           dependency-graph: generate-and-upload
           artifact-retention-days: 1
+          # Only what ships: the release APK and the desktop app. Build plugins and test
+          # classpaths are not distributed, so they stay out of the licence and advisory review.
+          dependency-graph-include-projects: '^:app-(android|desktop)$'
+          dependency-graph-include-configurations: '^(releaseRuntimeClasspath|runtimeClasspath)$'

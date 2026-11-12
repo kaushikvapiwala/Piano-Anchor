@@ -24,8 +24,9 @@ support, curriculum ideas and bug reports are all welcome.
   lives in adapters behind ports. Architecture rules are enforced by tests.
 - PRs are **squash-merged**; `main` only changes through pull requests.
 - **Automated checks** on every PR: CI build and verify (`fastCheck`, `check`, app builds), PR conventions
-  (Conventional Commit title, DCO sign-off), Dependency Review (blocks new dependencies with moderate+
-  vulnerabilities or GPL/AGPL licences), CodeQL code scanning, and actionlint for workflow files.
+  (Conventional Commit title, DCO sign-off), Dependency Review (blocks new shipped dependencies with
+  moderate+ vulnerabilities or a licence outside the permissive allow-list in
+  `.github/workflows/security.yml`), CodeQL code scanning, and actionlint for workflow files.
 
 ## Using AI assistants
 
