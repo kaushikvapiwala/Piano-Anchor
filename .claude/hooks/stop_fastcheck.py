@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from gradle_output import failure_summary
+from hooklib import gradle, project_root
 
 
 def git(root: Path, *args: str) -> bytes:
@@ -40,28 +40,26 @@ def warn(message: str) -> int:
 
 def main() -> int:
     event = json.load(sys.stdin)
-    root = Path(os.environ.get("CLAUDE_PROJECT_DIR") or event.get("cwd") or ".").resolve()
+    root = project_root(event)
     try:
-        state_dir = root / git(root, "rev-parse", "--git-path", "claude-hooks").decode().strip()
+        state = root / git(root, "rev-parse", "--git-path", "claude-fastcheck").decode().strip()
         current = fingerprint(root)
     except (subprocess.CalledProcessError, OSError) as error:
         return warn(f"Stop hook skipped fastCheck: no usable git repository ({error}).")
-    state_dir.mkdir(parents=True, exist_ok=True)
-    passed, failed = state_dir / "fastcheck-passed", state_dir / "fastcheck-failed"
 
-    if passed.exists() and passed.read_text() == current:
+    # The state file holds "<pass|fail> <fingerprint>" of the last run.
+    last = state.read_text() if state.exists() else ""
+    if last == f"pass {current}":
         return 0
-    if failed.exists() and failed.read_text() == current:
+    if last == f"fail {current}":
         return warn("fastCheck still fails and nothing changed since it was reported; not blocking again.")
 
-    result = subprocess.run(["./gradlew", "--quiet", "fastCheck"], cwd=root, capture_output=True, text=True)
-    if result.returncode == 0:
-        passed.write_text(current)
-        return 0
-    failed.write_text(current)
-    output = failure_summary(result.stdout + result.stderr)
-    print(f"./gradlew fastCheck fails. Fix it before finishing:\n{output}", file=sys.stderr)
-    return 2
+    failure = gradle(root, "fastCheck")
+    state.write_text(f"{'fail' if failure else 'pass'} {current}")
+    if failure:
+        print(f"./gradlew fastCheck fails. Fix it before finishing:\n{failure}", file=sys.stderr)
+        return 2
+    return 0
 
 
 if __name__ == "__main__":

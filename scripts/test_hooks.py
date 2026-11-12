@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / ".claude" / "hooks"))
 
 import guard_paths  # noqa: E402
 import stop_fastcheck  # noqa: E402
-from gradle_output import failure_summary  # noqa: E402
+from hooklib import failure_summary  # noqa: E402
 
 
 def run(*args: str, cwd: Path) -> subprocess.CompletedProcess:
@@ -95,11 +95,11 @@ class GuardPathsTest(unittest.TestCase):
     root = ROOT
 
     def reason(self, path: str) -> str | None:
-        verdict = guard_paths.decide(path, self.root)
+        verdict = guard_paths.decide(path, self.root.resolve())
         return verdict[1] if verdict and verdict[0] == "deny" else None
 
     def asks(self, path: str) -> bool:
-        verdict = guard_paths.decide(path, self.root)
+        verdict = guard_paths.decide(path, self.root.resolve())
         return verdict is not None and verdict[0] == "ask"
 
     def test_allows_repo_files(self) -> None:
@@ -124,6 +124,7 @@ class GuardPathsTest(unittest.TestCase):
     def test_asks_before_editing_hooks_or_settings(self) -> None:
         self.assertTrue(self.asks(str(self.root / ".claude" / "settings.json")))
         self.assertTrue(self.asks(str(self.root / ".claude" / "hooks" / "guard_paths.py")))
+        self.assertTrue(self.asks(str(self.root / ".githooks" / "pre-commit")))
         self.assertTrue(self.asks(str(Path.home() / ".claude" / "settings.json")))
         self.assertFalse(self.asks(str(Path.home() / ".claude" / "plans" / "settings.md")))
         self.assertFalse(self.asks(str(self.root / "README.md")))
@@ -158,8 +159,8 @@ class StopFastCheckTest(TempRepo):
         run("git", "add", ".", cwd=self.repo)
         run("git", "commit", "-q", "-m", "init", cwd=self.repo)
 
-    def stop(self, active: bool = False) -> tuple[int, str]:
-        event = json.dumps({"stop_hook_active": active})
+    def stop(self) -> tuple[int, str]:
+        event = "{}"
         err = io.StringIO()
         with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(self.repo)}):
             with mock.patch("sys.stdin", io.StringIO(event)), mock.patch("sys.stderr", err), redirect_stdout(io.StringIO()):
@@ -186,7 +187,7 @@ class StopFastCheckTest(TempRepo):
     def test_unchanged_failing_tree_is_reported_once(self) -> None:
         (self.repo / "FAIL").write_text("")
         self.assertEqual(self.stop()[0], 2)
-        self.assertEqual(self.stop(active=True)[0], 0)
+        self.assertEqual(self.stop()[0], 0)
         self.assertEqual(self.stop()[0], 0)  # a later turn
         self.assertEqual(self.runs(), 1)
 
@@ -202,7 +203,7 @@ class StopFastCheckTest(TempRepo):
         (self.repo / "FAIL").write_text("")
         self.assertEqual(self.stop()[0], 2)
         (self.repo / "FAIL").unlink()
-        self.assertEqual(self.stop(active=True)[0], 0)
+        self.assertEqual(self.stop()[0], 0)
         self.assertEqual(self.runs(), 2)
 
 

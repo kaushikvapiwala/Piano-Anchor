@@ -1,7 +1,7 @@
 #!/bin/sh
 # Fails if the index contains a gitlink (mode 160000): a nested repository or worktree that was staged by
 # accident. We use no submodules, so any gitlink is a mistake (it happened once with an agent worktree).
-# Used by the pre-commit hook and CI.
+# Run by `./gradlew gitlinkCheck` (part of fastCheck).
 set -eu
 links="$(git ls-files --stage | awk '$1 == "160000" { print $4 }')"
 if [ -n "$links" ]; then

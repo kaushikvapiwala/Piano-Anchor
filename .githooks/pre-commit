@@ -1,11 +1,9 @@
 #!/bin/sh
-# Pre-commit: block gitlinks, auto-format staged Kotlin files, then run the fast gate.
+# Pre-commit: auto-format staged Kotlin files, then run the fast gate (which also blocks gitlinks).
 # Checks run on the working tree (fast, no stashing); pre-push and CI check exactly what is committed.
 # Install once per clone: ./gradlew installGitHooks
 set -eu
 cd "$(git rev-parse --show-toplevel)"
-
-scripts/check_no_gitlinks.sh
 
 staged="$(git diff --cached --name-only --diff-filter=ACMR -- '*.kt' '*.kts')"
 if [ -n "$staged" ]; then
