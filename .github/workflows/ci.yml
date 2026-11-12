@@ -28,6 +28,20 @@ jobs:
           java-version: 25
       # Also validates the Gradle wrapper checksum.
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      # Guard: ciBuild once ran only the root project's checks, silently skipping every module's tests.
+      - name: ciBuild covers every module
+        run: |
+          plan="$(./gradlew ciBuild --dry-run --quiet)"
+          missing=0
+          for module in $(sed -n 's/^ *"\(:[^"]*\)",\{0,1\}$/\1/p' settings.gradle.kts); do
+            for task in check fastCheck; do
+              if ! grep -q "^$module:$task SKIPPED$" <<<"$plan"; then
+                echo "::error::ciBuild does not run $module:$task. Add the module's checks to ciBuild in build.gradle.kts."
+                missing=1
+              fi
+            done
+          done
+          exit "$missing"
       - name: fastCheck, check, build apps
         run: ./gradlew ciBuild --continue
       - name: Upload reports on failure
