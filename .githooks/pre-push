@@ -1,5 +1,15 @@
 #!/bin/sh
 # Pre-push: run everything CI's build job runs, so pushes rarely fail in CI.
+# Deleting remote branches pushes no code, so a push of only deletions skips the build.
 set -eu
 cd "$(git rev-parse --show-toplevel)"
+only_deletions=0
+# stdin lines: <local ref> <local sha> <remote ref> <remote sha>; a deletion has an all-zero local sha.
+while read -r _ local_sha _ _; do
+  case $local_sha in
+    *[!0]*) only_deletions=0; break ;;
+    *) only_deletions=1 ;;
+  esac
+done
+[ "$only_deletions" -eq 1 ] && exit 0
 ./gradlew --quiet ciBuild
