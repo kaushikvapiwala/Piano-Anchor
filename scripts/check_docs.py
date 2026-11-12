@@ -28,8 +28,10 @@ FENCE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
 MODULE = re.compile(r"`(:[\w:-]+)`")
 
 
-def git(*args: str, stdin: str = "", check: bool = True) -> list[str]:
-    result = subprocess.run(["git", *args], cwd=ROOT, input=stdin, capture_output=True, text=True, check=check)
+def git(*args: str, stdin: str = "", ok_codes: tuple[int, ...] = (0,)) -> list[str]:
+    result = subprocess.run(["git", *args], cwd=ROOT, input=stdin, capture_output=True, text=True)
+    if result.returncode not in ok_codes:
+        raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
     return [line for line in result.stdout.splitlines() if line]
 
 
@@ -44,10 +46,12 @@ def check_references(files: list[str]) -> list[str]:
     docs = [f for f in files if f.endswith(".md")]
     texts = {rel: FENCE.sub("", (ROOT / rel).read_text(encoding="utf-8")) for rel in docs}
     tokens = {t.split("#")[0].rstrip("/.,") for text in texts.values() for t in PATH_TOKEN.findall(text)}
-    # check-ignore exits 1 when nothing is ignored, so its exit code is not an error signal. Each token is also
-    # sent with a trailing "/" so directory-only patterns (`dir/`) match even when the directory is absent (CI).
-    candidates = [form for t in tokens for form in (t.strip("/"), t.strip("/") + "/")]
-    ignored = {line.rstrip("/") for line in git("check-ignore", "--stdin", check=False, stdin="\n".join(candidates))}
+    # check-ignore exits 1 when nothing is ignored, and aborts the whole batch on a path outside the repo (e.g.
+    # `../Research/`), so those are left out. Each token is also sent with a trailing "/" so directory-only
+    # patterns (`dir/`) match even when the directory is absent (CI).
+    inside = [t.strip("/") for t in tokens if t.strip("/") and resolve("", t.strip("/")) is not None]
+    candidates = [form for t in inside for form in (t, t + "/")]
+    ignored = {line.rstrip("/") for line in git("check-ignore", "--stdin", ok_codes=(0, 1), stdin="\n".join(candidates))}
 
     roots = {f.split("/")[0] for f in files}
     errors = []
