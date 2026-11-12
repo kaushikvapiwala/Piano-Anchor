@@ -16,6 +16,9 @@ hand. Agents also need that context cheaply: a short generated file beats readin
 - `./gradlew generateDocs` runs the same test in update mode (system property
   `pianoanchor.updateGeneratedDocs=true`) and rewrites the files. It is never up to date, and the normal `test`
   task runs after it.
+- `generateDocs` must never be a dependency of a check, or it rewrites a hand edit before the golden test sees
+  it (Kover once pulled it into `fastCheck` because it measures every `Test` task). It is excluded from Kover
+  instrumentation, and the build fails if any task depends on it.
 
 ## Consequences
 After changing `Tunables` or a port (or its KDoc), run `./gradlew generateDocs` and commit the result. The
