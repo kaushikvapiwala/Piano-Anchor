@@ -29,7 +29,8 @@ none) with numbered questions, each with your recommended answer, and add the la
 "Next up" item `(needs-owner: #N)` only if you are already editing `docs/ROADMAP.md` in a PR; otherwise the
 label is the record. Then stop.
 
-**Last line of every run** (the runner parses it; nothing after it):
+**Last line of every run** (the runner parses only your final message, so if a Stop hook makes you continue,
+repeat the line at the end; nothing after it):
 `NEXT_TASK_STATUS: <done|blocked-owner|blocked-ci|queue-empty|error> — <one-line summary>`
 - `blocked-ci`: the same PR's CI failed again after one real fix attempt in an earlier session (say so in a PR comment with the attempt count).
 - `queue-empty`: "Next up" has no item this mode can do.
@@ -136,6 +137,7 @@ an existing dependency or an obvious library). Fixes go in **new commits**; neve
 ## 5. Clean cut, then stop
 - Ratchet rule: a mistake an agent could repeat gets a check, a test, or one line in `AGENTS.md` (in this PR
   or as a "Next up" item).
+- Leave the working tree clean (the runner stops on stray changes).
 - Report in a few lines: task, PR link, follow-ups. End with the `NEXT_TASK_STATUS:` line and **stop**. Don't
   start the next task: a fresh session is cheaper and avoids context drift.
 
