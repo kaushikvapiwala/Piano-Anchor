@@ -18,9 +18,9 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | Module | Role | Notes |
 |---|---|---|
 | `:core:model` | Domain types (e.g. `MidiNote`, `MidiEvent`) | Pure Kotlin, 100% coverage |
-| `:core:ports` | Driven ports (e.g. `ClockPort`) | Interfaces only, each with KDoc |
+| `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`) | Interfaces only, each with KDoc |
 | `:engine` | Coaching logic, including the `midi` byte-stream parser; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
-| `:testing` | Fakes and abstract port contract tests | Used by all test source sets |
+| `:testing` | Fakes (e.g. `FakePiano`) and abstract port contract tests | Used by all test source sets |
 | `:ui:shell` | Shared Compose root and string resources | Driving adapter; screenshot tests planned (Phase 1) |
 | `:app-android` | Android app: composition root | No business logic |
 | `:app-desktop` | Desktop development harness | No business logic |
@@ -33,8 +33,9 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
 `docs/generated/` is produced by `./gradlew generateDocs` and checked by `GeneratedDocsTest`; never edit it by hand.
 
 ## Dependency rules
-- Domain code (`pianoanchor.core.*`, `pianoanchor.engine`) imports only Kotlin and other domain code: no
-  Android, AndroidX, Compose, Koin or `java.*`/`javax.*`.
+- Domain code (`pianoanchor.core.*`, `pianoanchor.engine`) imports only Kotlin, `kotlinx.coroutines` (for `Flow`
+  in ports, ADR 0013) and other domain code: no Android, AndroidX, Compose, Koin or `java.*`/`javax.*`.
+- `:testing` depends on `:engine` (`FakePiano` uses the real `MidiParser`).
 - Domain code never imports driving adapters (`pianoanchor.ui`, `pianoanchor.app`, `pianoanchor.desktop`)
   or test support (`pianoanchor.testing`).
 - Apps are composition roots: they wire adapters to ports and contain no business logic.

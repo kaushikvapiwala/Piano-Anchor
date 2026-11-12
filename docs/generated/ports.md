@@ -14,3 +14,25 @@ All engine timing (matching, grading, scheduling within a session) uses one cloc
 | `fun nowNanos(): Long` | Current monotonic time in nanoseconds; only differences between readings are meaningful. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/ClockPortContractTest.kt`
+
+## `MidiInputPort`
+
+Driven port: MIDI messages arriving from instruments. Contract: `pianoanchor.testing.MidiInputPortContractTest`.
+
+| Function | Description |
+|---|---|
+| `val inputDevices: Flow<List<MidiDevice>>` | Input devices currently available. Emits the current list as soon as it is collected, then a new list after every change. Never completes. |
+| `fun events(device: MidiDevice): Flow<MidiEvent>` | Opens [device] while collected and emits its messages in arrival order, each stamped in the `ClockPort` clock domain with non-decreasing timestamps. Messages that arrive while nobody collects are dropped. Completes normally when the device disconnects; cancelling the collector closes the device. Fails with [MidiDeviceUnavailableException] if [device] is not listed when collection starts. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/MidiInputPortContractTest.kt`
+
+## `MidiOutputPort`
+
+Driven port: MIDI messages sent to instruments (e.g. SysEx requests). Contract: `pianoanchor.testing.MidiOutputPortContractTest`.
+
+| Function | Description |
+|---|---|
+| `val outputDevices: Flow<List<MidiDevice>>` | Output devices currently available; same emission rules as [MidiInputPort.inputDevices]. |
+| `suspend fun send(device: MidiDevice, bytes: ByteArray)` | Sends [bytes] to [device]: one or more complete MIDI messages, delivered in order. Suspends until the platform has accepted the bytes. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/MidiOutputPortContractTest.kt`

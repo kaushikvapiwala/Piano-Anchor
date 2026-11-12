@@ -90,15 +90,17 @@ class ArchitectureTest {
 
     @Test
     fun `every port implementation runs its port contract test (docs ARCHITECTURE - Testing)`() {
-        // A contract run extends <Port>ContractTest and is named <Impl>ContractTest or <Impl>Test.
-        val tested =
+        // A contract run extends <Port>ContractTest and is named <Impl>ContractTest or <Impl>Test; an
+        // implementation of several ports adds the port role: <Impl>InputContractTest, <Impl>OutputContractTest.
+        val testNames =
             tests
                 .classes()
                 .filter { cls -> cls.parentNames().any { it.endsWith("PortContractTest") } }
-                .flatMap { listOf(it.name.removeSuffix("ContractTest"), it.name.removeSuffix("Test")) }
-                .toSet()
+                .map { it.name }
         assertNone(
-            portImplementations.filterNot { it.name in tested },
+            portImplementations.filterNot { impl ->
+                testNames.any { it.startsWith(impl.name) && (it.endsWith("ContractTest") || it.endsWith("Test")) }
+            },
             "Every port implementation needs a test class extending its <Port>ContractTest",
         )
     }

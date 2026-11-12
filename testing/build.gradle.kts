@@ -8,6 +8,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":core:ports"))
+            api(project(":engine"))
+            api(libs.kotlinx.coroutines.test)
             api(kotlin("test"))
         }
         // Contract tests live in main source sets, so pick the JUnit flavour of kotlin-test explicitly.
