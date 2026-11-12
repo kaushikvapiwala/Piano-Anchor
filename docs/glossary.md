@@ -16,3 +16,5 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Skill node | One learnable skill (e.g. "bass clef F", "C to G chord change") in the learner's skill graph. |
 | Tunable | A threshold or prior in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt`, documented with why and source. |
 | Wait mode | Practice mode where the music waits until the learner plays the right note(s). |
+
+See `docs/does-not-exist.md`.
