@@ -1,0 +1,21 @@
+#!/bin/sh
+# Pre-commit: auto-format staged Kotlin files, then run the fast gate (which also blocks gitlinks).
+# Checks run on the working tree (fast, no stashing); pre-push and CI check exactly what is committed.
+# Install once per clone: ./gradlew installGitHooks
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+
+staged="$(git diff --cached --name-only --diff-filter=ACMR -- '*.kt' '*.kts')"
+if [ -n "$staged" ]; then
+  # Re-staging a partially staged file would commit its unstaged hunks too, so only check those.
+  partial="$(git diff --name-only -- $staged)"
+  if [ -n "$partial" ]; then
+    echo "pre-commit: partially staged files, so not auto-formatting; run ./gradlew spotlessApply if fastCheck fails."
+  else
+    ./gradlew --quiet spotlessApply
+    # shellcheck disable=SC2086 # file names are newline-separated repo paths without spaces
+    git add -- $staged
+  fi
+fi
+
+./gradlew --quiet fastCheck

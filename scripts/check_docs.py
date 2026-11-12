@@ -44,8 +44,10 @@ def check_references(files: list[str]) -> list[str]:
     docs = [f for f in files if f.endswith(".md")]
     texts = {rel: FENCE.sub("", (ROOT / rel).read_text(encoding="utf-8")) for rel in docs}
     tokens = {t.split("#")[0].rstrip("/.,") for text in texts.values() for t in PATH_TOKEN.findall(text)}
-    # check-ignore exits 1 when nothing is ignored, so its exit code is not an error signal.
-    ignored = set(git("check-ignore", "--stdin", check=False, stdin="\n".join(t.strip("/") for t in tokens)))
+    # check-ignore exits 1 when nothing is ignored, so its exit code is not an error signal. Each token is also
+    # sent with a trailing "/" so directory-only patterns (`dir/`) match even when the directory is absent (CI).
+    candidates = [form for t in tokens for form in (t.strip("/"), t.strip("/") + "/")]
+    ignored = {line.rstrip("/") for line in git("check-ignore", "--stdin", check=False, stdin="\n".join(candidates))}
 
     roots = {f.split("/")[0] for f in files}
     errors = []

@@ -29,6 +29,7 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 Build configuration lives in `build-logic/` convention plugins: `pianoanchor.kmp-library` (pure modules,
 100% coverage gate), `pianoanchor.kmp-compose` (UI), `pianoanchor.android-app`, `pianoanchor.jvm`, and
 `pianoanchor.quality` (formatting, detekt, Kover, per-module `fastCheck`). Versions: `gradle/libs.versions.toml`.
+Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; see `docs/adr/0011-developer-hooks.md`.
 
 ## Dependency rules
 - Domain code (`pianoanchor.core.*`, `pianoanchor.engine`) imports only Kotlin and other domain code: no

@@ -36,3 +36,6 @@ google-services.json
 
 # Claude Code agent worktrees (local only)
 .claude/worktrees/
+
+# Claude Code personal settings (shared hooks live in .claude/settings.json)
+.claude/settings.local.json

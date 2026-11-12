@@ -32,9 +32,46 @@ val docsCheck =
         outputs.upToDateWhen { false }
     }
 
+val hooksTest =
+    tasks.register<Exec>("hooksTest") {
+        group = "verification"
+        description = "Tests the git hooks and Claude Code hooks (scripts/test_hooks.py)."
+        workingDir(rootDir)
+        commandLine("python3", "-I", "scripts/test_hooks.py")
+        // Up to date until a hook or its tests change (the marker file is the output).
+        inputs.files("scripts/test_hooks.py", "scripts/check_no_gitlinks.sh", ".githooks", ".claude/hooks")
+        val marker = layout.buildDirectory.file("hooksTest/passed")
+        outputs.file(marker)
+        doLast { marker.get().asFile.writeText("ok") }
+    }
+
+val gitlinkCheck =
+    tasks.register<Exec>("gitlinkCheck") {
+        group = "verification"
+        description = "Fails if a nested git repository (gitlink) is staged (scripts/check_no_gitlinks.sh)."
+        workingDir(rootDir)
+        commandLine("sh", "scripts/check_no_gitlinks.sh")
+        // Not cached: the result depends on the git index.
+        outputs.upToDateWhen { false }
+    }
+
+tasks.register<Exec>("installGitHooks") {
+    group = "build setup"
+    description = "Points git at the repo's hooks in .githooks/ (pre-commit, commit-msg, pre-push). Run once per clone."
+    workingDir(rootDir)
+    commandLine("git", "config", "core.hooksPath", ".githooks")
+}
+
 tasks.register("fastCheck") {
     group = "verification"
-    description = "Checks root/build-logic formatting and docs; subprojects contribute their own fastCheck."
+    description = "Checks root/build-logic formatting, docs and hooks; subprojects contribute their own fastCheck."
     // Gradle also runs `fastCheck` in every subproject that has one (task-name selection).
-    dependsOn("spotlessCheck", docsCheck)
+    dependsOn("spotlessCheck", docsCheck, gitlinkCheck, hooksTest)
+}
+
+// What CI's build job runs; the pre-push hook runs the same task so the two can't drift.
+tasks.register("ciBuild") {
+    group = "verification"
+    description = "Everything CI builds and verifies: fastCheck, check and both apps."
+    dependsOn("fastCheck", "check", ":app-android:assembleDebug", ":app-desktop:compileKotlin")
 }

@@ -10,8 +10,8 @@ Status: ✅ done · 🔄 in progress · ⏳ planned.
 | CI, PR conventions (Conventional Commits, DCO), templates, contributor guide | ✅ |
 | Architecture rules (Konsist) | ✅ |
 | Security and supply-chain checks (CodeQL, Dependency Review, actionlint) | ✅ |
-| Agent guide and docs (AGENTS.md, ARCHITECTURE, ADRs, glossary, docs check) | 🔄 |
-| Developer hooks (git hooks, Claude Code hooks) | ⏳ |
+| Agent guide and docs (AGENTS.md, ARCHITECTURE, ADRs, glossary, docs check) | ✅ |
+| Developer hooks (git hooks, Claude Code hooks) | ✅ |
 
 ## Phase 1 — Walking skeleton
 Connect a piano → play C-D-E in wait mode → see a graded result → it is saved. One thin slice through every
