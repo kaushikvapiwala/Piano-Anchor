@@ -1,0 +1,25 @@
+# Submits the graph uploaded by dependency-graph.yml to GitHub's dependency graph. It runs in the
+# base repository's context and never checks out PR code; it is the only job with contents: write.
+name: Dependency graph submit
+
+on:
+  workflow_run:
+    workflows: [Dependency graph]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    name: Submit dependency graph
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # download the artifact from the triggering run
+      contents: write # Dependency Submission API
+    steps:
+      - uses: gradle/actions/dependency-submission@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          dependency-graph: download-and-submit
