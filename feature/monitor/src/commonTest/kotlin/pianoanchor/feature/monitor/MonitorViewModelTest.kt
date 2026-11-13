@@ -201,6 +201,129 @@ class MonitorViewModelTest {
             )
         }
 
+    private val giveUpMs = Tunables.MONITOR_RECONNECT_GIVE_UP_MS
+
+    @Test
+    fun droppedDeviceThatStaysGoneGivesUpWithDeviceUnavailable() =
+        runTest(dispatcher) {
+            val vm = selected()
+            play { piano.unplug() }
+            advanceTimeBy(giveUpMs - 1)
+            runCurrent()
+            assertEquals(Connection.RECONNECTING, vm.state.value.connection)
+            assertNull(vm.state.value.error)
+
+            advanceTimeBy(1)
+            runCurrent()
+            assertEquals(Connection.NONE, vm.state.value.connection)
+            assertEquals(MonitorError.DEVICE_UNAVAILABLE, vm.state.value.error)
+            assertEquals(piano.device, vm.state.value.selected)
+            assertTrue(
+                vm.state.value.log
+                    .single()
+                    .gap,
+            )
+        }
+
+    @Test
+    fun afterGivingUpTheDeviceComingBackIsIgnoredUntilSelectedAgain() =
+        runTest(dispatcher) {
+            val vm = selected()
+            play { piano.unplug() }
+            advanceTimeBy(giveUpMs)
+            runCurrent()
+            play { piano.plugIn() }
+            assertEquals(Connection.NONE, vm.state.value.connection)
+
+            vm.select(piano.device)
+            runCurrent()
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+            play { piano.press(c4, velocity = 20) }
+            assertEquals(
+                "C4 ↓ 20",
+                vm.state.value.log
+                    .single()
+                    .text,
+            )
+        }
+
+    @Test
+    fun deviceBackBeforeGiveUpStaysConnectedPastTheWindow() =
+        runTest(dispatcher) {
+            val vm = selected()
+            play { piano.unplug() }
+            advanceTimeBy(giveUpMs - 1_000)
+            play { piano.plugIn() }
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+
+            advanceTimeBy(giveUpMs)
+            runCurrent()
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+            assertNull(vm.state.value.error)
+        }
+
+    @Test
+    fun eachDropStartsAFreshGiveUpWindow() =
+        runTest(dispatcher) {
+            val vm = selected()
+            play { piano.unplug() }
+            advanceTimeBy(giveUpMs - 1_000)
+            play { piano.plugIn() }
+            play { piano.unplug() }
+            advanceTimeBy(2_000)
+            runCurrent()
+            assertEquals(Connection.RECONNECTING, vm.state.value.connection)
+
+            advanceTimeBy(giveUpMs - 2_000)
+            runCurrent()
+            assertEquals(Connection.NONE, vm.state.value.connection)
+            assertEquals(MonitorError.DEVICE_UNAVAILABLE, vm.state.value.error)
+        }
+
+    @Test
+    fun staleListRetriesShareTheGiveUpWindow() =
+        runTest(dispatcher) {
+            val stale = StaleInput(piano)
+            val vm = MonitorViewModel(stale, piano, clock) { "2026-11-12T10:00:00Z" }
+            runCurrent()
+            vm.select(piano.device)
+            runCurrent()
+            stale.failOpens = Int.MAX_VALUE
+            play { piano.unplug() }
+            repeat(3) {
+                advanceTimeBy(giveUpMs / 4)
+                play { piano.plugIn() } // listed but not openable
+                play { piano.unplug() }
+            }
+            assertEquals(Connection.RECONNECTING, vm.state.value.connection)
+
+            advanceTimeBy(giveUpMs / 4)
+            runCurrent()
+            assertEquals(Connection.NONE, vm.state.value.connection)
+            assertEquals(MonitorError.DEVICE_UNAVAILABLE, vm.state.value.error)
+        }
+
+    @Test
+    fun staleListThenADeviceThatOpensResumesAndNeverGivesUp() =
+        runTest(dispatcher) {
+            val stale = StaleInput(piano)
+            val vm = MonitorViewModel(stale, piano, clock) { "2026-11-12T10:00:00Z" }
+            runCurrent()
+            vm.select(piano.device)
+            runCurrent()
+            stale.failOpens = 1
+            play { piano.unplug() }
+            play { piano.plugIn() } // listed but not openable
+            play { piano.unplug() }
+            play { piano.plugIn() }
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+
+            advanceTimeBy(giveUpMs + 1)
+            runCurrent()
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+            assertNull(vm.state.value.error)
+        }
+
     /** Input whose next [failOpens] `events` calls fail as if the device listing were stale. */
     private class StaleInput(
         private val delegate: FakePiano,

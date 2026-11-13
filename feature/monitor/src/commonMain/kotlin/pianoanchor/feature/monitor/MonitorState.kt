@@ -27,7 +27,11 @@ public enum class Connection {
     /** Messages from the selected device arrive. */
     CONNECTED,
 
-    /** The selected device dropped; the monitor reopens it when it is listed again. */
+    /**
+     * The selected device dropped; the monitor reopens it when it is listed again. If it is not open
+     * `Tunables.MONITOR_RECONNECT_GIVE_UP_MS` after the drop, the monitor gives up: [NONE] with
+     * [MonitorError.DEVICE_UNAVAILABLE].
+     */
     RECONNECTING,
 }
 

@@ -26,6 +26,7 @@ and scaffolding from the real code.
 | Android MIDI adapter over `MidiManager`, USB + system-opened BLE (1.4a) | ✅ |
 | Bluetooth LE MIDI discovery, connect and reconnect (1.4b) | ✅ |
 | Note monitor with JSONL fixture export (1.4m) | ✅ (owner hardware check pending) |
+| Monitor gives up reconnecting after `MONITOR_RECONNECT_GIVE_UP_MS` | ✅ |
 
 ## Next up
 The task queue for `/next-task` (`.claude/skills/next-task/`): one item per session and PR, top first.
@@ -35,9 +36,8 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
    and export a C-D-E fixture into `fixtures/` (first hardware check of the 1.4a `MidiManager` glue, the 1.4b
    scan/connect glue and the 1.4m Android wiring).
 2. **Grill session** (owner): slice 1.6 matcher (best after fixtures exist) and slice 1.5 instrument identity.
-3. **Monitor give-up** (mechanical): after a drop the note monitor shows "Reconnecting…" forever; once the adapter
-   stops retrying (`BLE_RECONNECT_GIVE_UP_MS`), show `DEVICE_UNAVAILABLE` instead (needs a port signal or a
-   monitor-side timeout; decide in the spec).
+3. **Flaky test** (mechanical): `AndroidMidiAdapterTest.failedReopensBackOffUntilOneSucceeds` failed once in
+   `fastCheck` with `UncompletedCoroutinesError` (2026-11-13) and passed on rerun; find the leaked coroutine and fix.
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |
