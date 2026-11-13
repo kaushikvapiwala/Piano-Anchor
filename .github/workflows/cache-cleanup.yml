@@ -1,0 +1,34 @@
+# Deletes a pull request's Actions caches when it closes. Only re-runs of the same PR can restore
+# them, and CodeQL writes about 1 GB per PR, which pushes the repository past its 10 GB cache limit
+# and evicts main's Gradle caches. pull_request_target gives the token actions: write for fork PRs
+# too; it is safe here because the job never checks out or runs PR code.
+name: Cache cleanup
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  delete-pr-caches:
+    name: Delete PR caches
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write # delete caches
+    steps:
+      - name: Delete caches of this PR's refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          for ref in "refs/pull/$PR/merge" "refs/pull/$PR/head"; do
+            gh cache list --ref "$ref" --limit 100 --json id --jq '.[].id' |
+              while read -r id; do
+                echo "Deleting cache $id ($ref)"
+                gh cache delete "$id"
+              done
+          done
