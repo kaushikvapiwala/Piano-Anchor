@@ -76,7 +76,9 @@ answer: each subagent has a cold-start cost. Always use the aliases `opus`, `son
 numbered questions, each with a recommended answer worded so "yes" accepts. Cover API shape, error model, edge
 cases, tunable values, test cases and scope. Facts are your job (roadmap, ADRs, `AGENTS.md`, code, a Haiku
 scout); only real decisions go to the owner. If nothing is open, say so in one line and write the spec. Write
-every agreed decision into the spec, so the implementer never has to ask.
+every agreed decision into the spec, so the implementer never has to ask. Before any UI question, read `docs/ui/`
+and the owner's design mock (the "Piano Coach Mockup" artifact; list artifacts to find it): screens follow the mock,
+so ask only where they differ from it or from `docs/ui/`.
 
 **Build vs. buy before every spec.** For each non-trivial piece, check: existing code → a dependency already
 in `gradle/libs.versions.toml` → a well-known library (Haiku scout gathers 2–3 candidates with licence, KMP
