@@ -281,7 +281,7 @@ class MonitorViewModelTest {
         }
 
     @Test
-    fun staleListGivesUpAFullWindowAfterTheLastListChange() =
+    fun staleListRetriesShareTheGiveUpWindow() =
         runTest(dispatcher) {
             val stale = StaleInput(piano)
             val vm = MonitorViewModel(stale, piano, clock) { "2026-11-12T10:00:00Z" }
@@ -290,20 +290,21 @@ class MonitorViewModelTest {
             runCurrent()
             stale.failOpens = Int.MAX_VALUE
             play { piano.unplug() }
-            advanceTimeBy(giveUpMs / 2)
-            play { piano.plugIn() } // listed but not openable
-            advanceTimeBy(giveUpMs - 1)
-            runCurrent()
+            repeat(3) {
+                advanceTimeBy(giveUpMs / 4)
+                play { piano.plugIn() } // listed but not openable
+                play { piano.unplug() }
+            }
             assertEquals(Connection.RECONNECTING, vm.state.value.connection)
 
-            advanceTimeBy(1)
+            advanceTimeBy(giveUpMs / 4)
             runCurrent()
             assertEquals(Connection.NONE, vm.state.value.connection)
             assertEquals(MonitorError.DEVICE_UNAVAILABLE, vm.state.value.error)
         }
 
     @Test
-    fun staleListThenDeviceGoneGivesUpAFullWindowLater() =
+    fun staleListThenADeviceThatOpensResumesAndNeverGivesUp() =
         runTest(dispatcher) {
             val stale = StaleInput(piano)
             val vm = MonitorViewModel(stale, piano, clock) { "2026-11-12T10:00:00Z" }
@@ -313,15 +314,14 @@ class MonitorViewModelTest {
             stale.failOpens = 1
             play { piano.unplug() }
             play { piano.plugIn() } // listed but not openable
-            play { piano.unplug() } // the list changes, without the device
-            advanceTimeBy(giveUpMs - 1)
-            runCurrent()
-            assertEquals(Connection.RECONNECTING, vm.state.value.connection)
+            play { piano.unplug() }
+            play { piano.plugIn() }
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
 
-            advanceTimeBy(1)
+            advanceTimeBy(giveUpMs + 1)
             runCurrent()
-            assertEquals(Connection.NONE, vm.state.value.connection)
-            assertEquals(MonitorError.DEVICE_UNAVAILABLE, vm.state.value.error)
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+            assertNull(vm.state.value.error)
         }
 
     /** Input whose next [failOpens] `events` calls fail as if the device listing were stale. */
