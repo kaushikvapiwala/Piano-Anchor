@@ -12,6 +12,7 @@ Driven port: the learner's completed attempts, kept across app restarts and keye
 | `suspend fun save(attempt: Attempt)` | Stores [attempt], events included. Throws [IllegalArgumentException] when its id is already stored. |
 | `suspend fun get(id: String): Attempt?` | The stored attempt with [id], or null if none is stored. |
 | `fun recent(passageId: String, limit: Int): Flow<List<Attempt>>` | The attempts of [passageId], newest first by [Attempt.startedAt] (ties in any order), at most [limit] of them. Emits the current list on collection and again after every save. Throws [IllegalArgumentException] when [limit] is not positive. |
+| `suspend fun countStartedBefore(passageId: String, before: Instant): Int` | How many attempts of [passageId] started strictly before [before]; 0 for an unknown passage. Adapters that store [Attempt.startedAt] coarser compare at that precision. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/AttemptRepositoryPortContractTest.kt`
 

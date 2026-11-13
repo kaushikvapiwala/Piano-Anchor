@@ -144,13 +144,4 @@ public object Tunables {
      * Source: the Living Studio mock (slice 1.9 spec).
      */
     public const val KEY_FLASH_MS: Long = 260
-
-    /**
-     * How many of a passage's attempts, newest first, the results screen reads to number the run ("run N").
-     *
-     * Why: bounds the run-number query.
-     *
-     * Source: far above any realistic count of runs of one passage in Phase 1 (slice 1.10 spec).
-     */
-    public const val RESULTS_HISTORY_LIMIT: Int = 1_000
 }
