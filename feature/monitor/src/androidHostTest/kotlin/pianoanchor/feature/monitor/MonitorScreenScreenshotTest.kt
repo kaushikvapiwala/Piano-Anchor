@@ -6,8 +6,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import pianoanchor.core.model.Instrument
+import pianoanchor.core.model.InstrumentIdentity
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.ui.shell.PianoAnchorTheme
+import kotlin.time.Instant
 
 /**
  * Golden screenshots of the note monitor in light and dark. `./gradlew :feature:monitor:recordRoborazziAndroidHostTest`
@@ -19,6 +22,7 @@ import pianoanchor.ui.shell.PianoAnchorTheme
 class MonitorScreenScreenshotTest {
     private val usbPiano = MidiDevice(id = "usb-1", name = "Digital Piano (USB)")
     private val blePiano = MidiDevice(id = "ble-1", name = "FP-30X")
+    private val seen = Instant.fromEpochSeconds(1_794_000_000)
     private val log =
         listOf(
             LogLine("E4 ↑ 64", 1_450),
@@ -60,6 +64,20 @@ class MonitorScreenScreenshotTest {
                 devices = listOf(usbPiano, blePiano),
                 selected = blePiano,
                 connection = Connection.CONNECTED,
+                instrument =
+                    Instrument(
+                        deviceId = blePiano.id,
+                        name = blePiano.name,
+                        identity =
+                            InstrumentIdentity(
+                                listOf(0x41),
+                                family = 0x19,
+                                model = 2,
+                                version = listOf(1, 0, 3, 0),
+                            ),
+                        firstSeen = seen,
+                        lastSeen = seen,
+                    ),
                 log = log,
                 recording = true,
                 recordedCount = 7,

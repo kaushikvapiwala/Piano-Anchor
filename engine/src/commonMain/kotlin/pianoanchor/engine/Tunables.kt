@@ -106,4 +106,15 @@ public object Tunables {
      * Source: agreed in the note-monitor grill (2026-11-11).
      */
     public const val MONITOR_RECORDING_MAX_MS: Long = 1_800_000
+
+    /**
+     * How long, in milliseconds after sending the MIDI Identity Request, the app waits for the Identity Reply before
+     * it stores the piano without an identity.
+     *
+     * Why: a piano that answers does so within tens of milliseconds, and a short wait keeps connecting snappy; many
+     * Bluetooth pianos never answer, so the wait is paid often.
+     *
+     * Source: MIDI 1.0 sets no deadline; initial guess (slice 1.5 spec), revisit after the hardware check.
+     */
+    public const val IDENTITY_REPLY_TIMEOUT_MS: Long = 1_000
 }

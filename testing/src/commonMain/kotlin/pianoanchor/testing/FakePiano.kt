@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -42,6 +43,7 @@ class FakePiano(
     MidiOutputPort,
     MidiDiscoveryPort {
     private val devices = MutableStateFlow(listOf(device))
+    private val wiredInputOnly = MutableStateFlow(false)
     private val advertisedDevices = MutableStateFlow(emptyList<MidiDevice>())
     private val parser = MidiParser()
     private val collectors = mutableListOf<Collector>()
@@ -63,12 +65,23 @@ class FakePiano(
     /** Every byte array passed to [send], in order (copies). */
     val sent: List<ByteArray> get() = sentCopies.map { it.copyOf() }
 
+    /** When true, the wired device is listed as an input only: [outputDevices] leaves it out and [send] to it fails. */
+    var inputOnly: Boolean
+        get() = wiredInputOnly.value
+        set(value) {
+            wiredInputOnly.value = value
+        }
+
+    /** When true, [send] fails with [MidiDeviceUnavailableException] after checking its bytes (gone mid-send). */
+    var failSends: Boolean = false
+
     /** Optional scripted reply: called for each [send]; non-null result is played back as incoming bytes. */
     var replyTo: (ByteArray) -> ByteArray? = { null }
 
     override val inputDevices: Flow<List<MidiDevice>> get() = devices
 
-    override val outputDevices: Flow<List<MidiDevice>> get() = devices
+    override val outputDevices: Flow<List<MidiDevice>>
+        get() = combine(devices, wiredInputOnly) { all, inputOnly -> if (inputOnly) all - device else all }
 
     override fun events(device: MidiDevice): Flow<MidiEvent> =
         flow {
@@ -89,6 +102,7 @@ class FakePiano(
         require(bytes.isNotEmpty()) { "MIDI message must not be empty" }
         require((bytes[0].toInt() and BYTE_MASK) >= STATUS_MIN) { "MIDI message must start with a status byte" }
         requireListed(device)
+        if (failSends || (inputOnly && device.id == this.device.id)) throw MidiDeviceUnavailableException(device.id)
         val copy = bytes.copyOf()
         sentCopies.add(copy)
         replyTo(copy.copyOf())?.let(::play)

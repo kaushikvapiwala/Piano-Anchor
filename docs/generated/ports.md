@@ -15,6 +15,17 @@ All engine timing (matching, grading, scheduling within a session) uses one cloc
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/ClockPortContractTest.kt`
 
+## `InstrumentRepositoryPort`
+
+Driven port: the pianos the app has seen, kept across app restarts and keyed by [Instrument.deviceId]. Contract: `pianoanchor.testing.InstrumentRepositoryPortContractTest`.
+
+| Function | Description |
+|---|---|
+| `suspend fun upsert(instrument: Instrument)` | Stores [instrument]. When its device id is already stored, replaces name, identity and lastSeen and keeps the earlier of the stored and the given firstSeen. |
+| `suspend fun get(deviceId: String): Instrument?` | The stored instrument with [deviceId], or null if none is stored. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/InstrumentRepositoryPortContractTest.kt`
+
 ## `MidiDiscoveryPort`
 
 Driven port: finding and connecting MIDI devices that are not listed until connected (e.g. Bluetooth LE). Contract: `pianoanchor.testing.MidiDiscoveryPortContractTest`.

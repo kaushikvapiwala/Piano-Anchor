@@ -11,6 +11,7 @@
     <string name="monitor_status_none">Choose a piano to see its notes.</string>
     <string name="monitor_status_connected">Connected to %1$s</string>
     <string name="monitor_status_reconnecting">%1$s dropped. Reconnecting…</string>
+    <string name="monitor_instrument_model">model %1$s/%2$s · v%3$s</string>
     <string name="monitor_record_start">Start recording</string>
     <string name="monitor_record_stop">Stop recording</string>
     <string name="monitor_recorded_count">Messages recorded: %1$s</string>

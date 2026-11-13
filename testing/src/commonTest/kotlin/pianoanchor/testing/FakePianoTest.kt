@@ -149,6 +149,41 @@ class FakePianoTest {
         }
 
     @Test
+    fun inputOnlyDeviceIsNotAnOutput() =
+        runTest {
+            val piano = FakePiano()
+            piano.inputOnly = true
+            assertEquals(listOf(piano.device), piano.inputDevices.first())
+            assertTrue(piano.outputDevices.first().isEmpty())
+            assertFailsWith<MidiDeviceUnavailableException> { piano.send(piano.device, IDENTITY_REQUEST) }
+            piano.inputOnly = false
+            assertEquals(listOf(piano.device), piano.outputDevices.first())
+        }
+
+    @Test
+    fun inputOnlyAppliesToTheWiredDeviceOnly() =
+        runTest {
+            val piano = FakePiano()
+            val ble = MidiDevice(id = "ble:1", name = "BLE")
+            piano.advertised = listOf(ble)
+            piano.scan().first { ble in it }
+            piano.connect(ble)
+            piano.inputOnly = true
+            assertEquals(listOf(ble), piano.outputDevices.first())
+            piano.send(ble, IDENTITY_REQUEST)
+            assertEquals(1, piano.sent.size)
+        }
+
+    @Test
+    fun failingSendsThrowAndSendNothing() =
+        runTest {
+            val piano = FakePiano()
+            piano.failSends = true
+            assertFailsWith<MidiDeviceUnavailableException> { piano.send(piano.device, IDENTITY_REQUEST) }
+            assertTrue(piano.sent.isEmpty())
+        }
+
+    @Test
     fun outOfRangeChannelOrVelocityIsRejected() {
         val piano = FakePiano()
         assertFailsWith<IllegalArgumentException> { piano.press(c4, channel = 16) }
