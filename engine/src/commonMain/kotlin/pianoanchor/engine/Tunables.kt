@@ -117,4 +117,22 @@ public object Tunables {
      * Source: MIDI 1.0 sets no deadline; initial guess (slice 1.5 spec), revisit after the hardware check.
      */
     public const val IDENTITY_REPLY_TIMEOUT_MS: Long = 1_000
+
+    /**
+     * Lowest accuracy (0.0–1.0) of a wait-mode attempt graded `Band.CLEAN`.
+     *
+     * Why: "clean" should allow at most a rare slip on longer passages.
+     *
+     * Source: matches the M1 ≥ 95% classification bar; initial guess, tune from the learner's data.
+     */
+    public const val BAND_CLEAN_MIN_ACCURACY: Double = 0.95
+
+    /**
+     * Lowest accuracy (0.0–1.0) of a wait-mode attempt graded `Band.GOOD`; below it the band is `KEEP_PRACTISING`.
+     *
+     * Why: about one slip per five notes is still a run worth building on.
+     *
+     * Source: initial guess (slice 1.7 spec); tune from the learner's data.
+     */
+    public const val BAND_GOOD_MIN_ACCURACY: Double = 0.80
 }

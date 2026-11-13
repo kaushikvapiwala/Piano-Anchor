@@ -3,6 +3,18 @@
 
 Every port interface in `pianoanchor.core.ports`, from its KDoc.
 
+## `AttemptRepositoryPort`
+
+Driven port: the learner's completed attempts, kept across app restarts and keyed by [Attempt.id]. Contract: `pianoanchor.testing.AttemptRepositoryPortContractTest`.
+
+| Function | Description |
+|---|---|
+| `suspend fun save(attempt: Attempt)` | Stores [attempt], events included. Throws [IllegalArgumentException] when its id is already stored. |
+| `suspend fun get(id: String): Attempt?` | The stored attempt with [id], or null if none is stored. |
+| `fun recent(passageId: String, limit: Int): Flow<List<Attempt>>` | The attempts of [passageId], newest first by [Attempt.startedAt] (ties in any order), at most [limit] of them. Emits the current list on collection and again after every save. Throws [IllegalArgumentException] when [limit] is not positive. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/AttemptRepositoryPortContractTest.kt`
+
 ## `ClockPort`
 
 Driven port: a monotonic time source in nanoseconds.

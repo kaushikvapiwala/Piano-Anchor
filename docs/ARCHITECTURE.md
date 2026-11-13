@@ -17,9 +17,9 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 
 | Module | Role | Notes |
 |---|---|---|
-| `:core:model` | Domain types (e.g. `MidiNote`, `MidiEvent`) | Pure Kotlin, 100% coverage |
-| `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`, `MidiDiscoveryPort`, `InstrumentRepositoryPort`) | Interfaces only, each with KDoc |
-| `:engine` | Coaching logic: the `midi` byte-stream parser, the `matcher` (wait mode), built-in `content` passages; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
+| `:core:model` | Domain types (e.g. `MidiNote`, `MidiEvent`, `Attempt`) | Pure Kotlin, 100% coverage |
+| `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`, `MidiDiscoveryPort`, `InstrumentRepositoryPort`, `AttemptRepositoryPort`) | Interfaces only, each with KDoc |
+| `:engine` | Coaching logic: the `midi` byte-stream parser, the `matcher` (wait mode), `grading`, built-in `content` passages; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
 | `:testing` | Fakes (e.g. `FakePiano`) and abstract port contract tests | Used by all test source sets; until slice 1.8, `:app-android` also uses `FakeInstrumentRepository` as its in-memory instrument store |
 | `:platform:android-midi` | Driven adapters over Android's MIDI service: `AndroidMidiAdapter` (both MIDI ports and Bluetooth LE discovery), `AndroidClockAdapter` | Logic in `commonMain`, 100% coverage on the JVM; `androidMain` glue excluded (see Testing) |
 | `:ui:shell` | Shared Compose root, `PianoAnchorTheme` (`docs/ui/living-studio.md`) and string resources | Driving adapter |
