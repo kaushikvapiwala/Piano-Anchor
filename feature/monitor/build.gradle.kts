@@ -42,7 +42,14 @@ tasks.named("fastCheck") { dependsOn("verifyRoborazziAndroidHostTest") }
 // settings). Resolve it through Gradle instead and run Robolectric offline against that copy.
 val robolectricSdk by configurations.creating
 dependencies { robolectricSdk(libs.robolectric.android.all) }
-val robolectricSdkDir = layout.buildDirectory.dir("robolectric-sdk")
+// Kept under the Gradle user home, not build/: Robolectric's native loader reads the jar location back from a URL
+// without decoding it, so a space in the checkout path (e.g. "Digital Piano App") made the jar "missing".
+val robolectricSdkDir =
+    layout.dir(
+        provider {
+            gradle.gradleUserHomeDir.resolve("piano-anchor/robolectric-sdk/${project.name}")
+        },
+    )
 val syncRobolectricSdk =
     tasks.register<Sync>("syncRobolectricSdk") {
         from(robolectricSdk)
