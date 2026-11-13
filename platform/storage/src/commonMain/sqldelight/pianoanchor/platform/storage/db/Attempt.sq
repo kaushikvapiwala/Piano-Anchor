@@ -47,3 +47,6 @@ SELECT * FROM attempt_event WHERE attempt_id = ? ORDER BY seq;
 
 selectRecent:
 SELECT * FROM attempt WHERE passage_id = ? ORDER BY started_at_ms DESC LIMIT ?;
+
+countStartedBefore:
+SELECT COUNT(*) FROM attempt WHERE passage_id = ? AND started_at_ms < ?;

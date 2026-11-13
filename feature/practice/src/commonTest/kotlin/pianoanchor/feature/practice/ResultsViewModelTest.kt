@@ -95,6 +95,22 @@ class ResultsViewModelTest {
         }
 
     @Test
+    fun theRunNumberIsCountedWithoutLoadingTheHistory() =
+        runTest(dispatcher) {
+            listOf(attempt("a-1", 100), attempt("a-2", 200)).forEach { attempts.save(it) }
+            val countOnly =
+                object : AttemptRepositoryPort by attempts {
+                    override fun recent(
+                        passageId: String,
+                        limit: Int,
+                    ) = error("recent must not be used")
+                }
+            val vm = ResultsViewModel("a-2", countOnly).also { runCurrent() }
+
+            assertEquals(2, (vm.state.value as ResultsState.Ready).runNumber)
+        }
+
+    @Test
     fun anUnknownPassageShowsItsRawId() =
         runTest(dispatcher) {
             val vm = results("a-1", attempt("a-1", 100, passageId = "builtin:gone"))

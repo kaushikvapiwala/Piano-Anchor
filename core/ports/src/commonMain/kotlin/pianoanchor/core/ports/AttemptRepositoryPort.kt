@@ -2,6 +2,7 @@ package pianoanchor.core.ports
 
 import kotlinx.coroutines.flow.Flow
 import pianoanchor.core.model.Attempt
+import kotlin.time.Instant
 
 /**
  * Driven port: the learner's completed attempts, kept across app restarts and keyed by [Attempt.id].
@@ -23,4 +24,13 @@ public interface AttemptRepositoryPort {
         passageId: String,
         limit: Int,
     ): Flow<List<Attempt>>
+
+    /**
+     * How many attempts of [passageId] started strictly before [before]; 0 for an unknown passage. Adapters that store
+     * [Attempt.startedAt] coarser compare at that precision.
+     */
+    public suspend fun countStartedBefore(
+        passageId: String,
+        before: Instant,
+    ): Int
 }

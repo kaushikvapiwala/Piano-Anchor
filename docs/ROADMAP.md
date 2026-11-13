@@ -58,9 +58,6 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 4. **Keep a known identity on a missed reply** (decision): `InstrumentRepositoryPort.upsert` replaces the identity, so
    a reconnect whose Identity Reply is lost erases a stored model. Decide whether a null identity keeps the stored one
    (contract change, then `COALESCE` in `Instrument.sq`).
-5. **Count runs without loading them** (mechanical): the results screen numbers a run by reading up to
-   `RESULTS_HISTORY_LIMIT` whole attempts (each with its events) through `recent`. Add a count query to
-   `AttemptRepositoryPort` (attempts of a passage started before an instant; `COUNT` in SQL) and use it.
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
 

@@ -83,6 +83,14 @@ public class SqlAttemptRepositoryAdapter(
             }
     }
 
+    override suspend fun countStartedBefore(
+        passageId: String,
+        before: Instant,
+    ): Int =
+        withContext(dispatcher) {
+            queries.countStartedBefore(passageId, before.toEpochMilliseconds()).executeAsOne().toInt()
+        }
+
     private fun withEvents(row: AttemptRow) =
         Attempt(
             id = row.id,

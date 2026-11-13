@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.ports.AttemptRepositoryPort
+import kotlin.time.Instant
 
 /** In-memory [AttemptRepositoryPort]: safe to call from any thread, forgets everything when the process ends. */
 class FakeAttemptRepository : AttemptRepositoryPort {
@@ -32,4 +33,9 @@ class FakeAttemptRepository : AttemptRepositoryPort {
                 .take(limit)
         }
     }
+
+    override suspend fun countStartedBefore(
+        passageId: String,
+        before: Instant,
+    ): Int = attempts.value.values.count { it.passageId == passageId && it.startedAt < before }
 }

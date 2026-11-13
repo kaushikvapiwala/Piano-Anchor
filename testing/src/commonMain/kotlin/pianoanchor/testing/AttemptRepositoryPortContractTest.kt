@@ -49,6 +49,11 @@ abstract class AttemptRepositoryPortContractTest {
         events = events,
     )
 
+    private suspend fun AttemptRepositoryPort.countBefore(
+        beforeSeconds: Long,
+        passageId: String = "c-d-e",
+    ) = countStartedBefore(passageId, Instant.fromEpochSeconds(beforeSeconds))
+
     @Test
     fun unknownIdIsNull() =
         runTest {
@@ -101,6 +106,28 @@ abstract class AttemptRepositoryPortContractTest {
                 }
             repository.save(newer)
             assertEquals(listOf(newer, older), bothSeen.await())
+        }
+
+    @Test
+    fun countStartedBeforeCountsOnlyOlderAttemptsOfThePassage() =
+        runTest {
+            val repository = createSubject()
+            listOf(
+                attempt("a-1", startedAtSeconds = 1_000),
+                attempt("a-2", startedAtSeconds = 2_000),
+                attempt("a-3", startedAtSeconds = 3_000),
+                attempt("b-1", startedAtSeconds = 1_500, passageId = "other"),
+            ).forEach { repository.save(it) }
+            assertEquals(2, repository.countBefore(beforeSeconds = 3_000))
+            assertEquals(1, repository.countBefore(beforeSeconds = 2_000))
+            assertEquals(0, repository.countBefore(beforeSeconds = 1_000))
+            assertEquals(0, repository.countBefore(beforeSeconds = 9_000, passageId = "unknown"))
+        }
+
+    @Test
+    fun countStartedBeforeIsZeroWhenNothingIsStored() =
+        runTest {
+            assertEquals(0, createSubject().countBefore(beforeSeconds = 9_000))
         }
 
     @Test
