@@ -68,4 +68,4 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
   "Next, and why" come when their data exists; empty columns are blank, not placeholders.
 - **Try again**: 44 dp plum pill bottom right; it practises the passage again on the same piano. Back goes to the
   pianos.
-- **Not found**: the error card "Couldn't find this run" with "Back".
+- **Not found**: the error card "Couldn't find this run" with "Back to pianos".

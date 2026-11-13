@@ -32,6 +32,7 @@ private val Mist = Color(0xFFCFC8D3)
 private val Divider = Color(0xFFEEE9EF)
 private val ChipBorder = Color(0xFFD9CFDC)
 private val DividerDark = Color(0xFF3F3B45)
+private val Graphite = Color(0xFF2A2730)
 
 private val LightColors =
     lightColorScheme(
@@ -90,7 +91,7 @@ private val LightFeedback =
         upcomingNote = Ink,
         targetBand = Color(0xFFFBE3B0),
         whiteKey = Color.White,
-        blackKey = Color(0xFF2A2730),
+        blackKey = Graphite,
         keyBorder = Mist,
         page = PaperDark,
         tile = Color.White,
@@ -105,10 +106,10 @@ private val DarkFeedback =
         upcomingNote = PaperDark,
         targetBand = Color(0xFFFBE3B0),
         whiteKey = PaperDark,
-        blackKey = Color(0xFF2A2730),
+        blackKey = Graphite,
         keyBorder = InkSecondary,
         page = Ink,
-        tile = Color(0xFF2A2730),
+        tile = Graphite,
     )
 
 private val LocalPianoAnchorColors = staticCompositionLocalOf { LightFeedback }

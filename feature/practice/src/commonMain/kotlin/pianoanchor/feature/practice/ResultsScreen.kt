@@ -25,12 +25,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.PluralStringResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.Band
 import pianoanchor.feature.practice.resources.Res
-import pianoanchor.feature.practice.resources.practice_back
+import pianoanchor.feature.practice.resources.practice_back_to_pianos
 import pianoanchor.feature.practice.resources.practice_list_join
 import pianoanchor.feature.practice.resources.results_caption
 import pianoanchor.feature.practice.resources.results_headline_clean
@@ -79,7 +80,7 @@ public fun ResultsScreen(
                 ResultsState.NotFound -> {
                     ErrorCard(
                         message = stringResource(Res.string.results_not_found),
-                        action = stringResource(Res.string.practice_back),
+                        action = stringResource(Res.string.practice_back_to_pianos),
                         onAction = onBack,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -187,22 +188,10 @@ private fun PitchTile(
 /** "every note right", or the slips that are not zero: "1 wrong note", "2 wrong notes, 1 chord incomplete". */
 @Composable
 private fun pitchDetail(state: ResultsState.Ready): String {
-    val wrong = state.wrongNotes
-    val incomplete = state.incompleteChords
     val slips =
         listOfNotNull(
-            if (wrong >
-                0
-            ) {
-                pluralStringResource(Res.plurals.results_pitch_wrong_notes, wrong, wrong.toString())
-            } else {
-                null
-            },
-            if (incomplete > 0) {
-                pluralStringResource(Res.plurals.results_pitch_incomplete_chords, incomplete, incomplete.toString())
-            } else {
-                null
-            },
+            slip(Res.plurals.results_pitch_wrong_notes, state.wrongNotes),
+            slip(Res.plurals.results_pitch_incomplete_chords, state.incompleteChords),
         )
     return if (slips.isEmpty()) {
         stringResource(Res.string.results_pitch_every_note_right)
@@ -210,3 +199,10 @@ private fun pitchDetail(state: ResultsState.Ready): String {
         slips.joinToString(stringResource(Res.string.practice_list_join))
     }
 }
+
+/** "[count] …" from [plural], or null when [count] is zero. */
+@Composable
+private fun slip(
+    plural: PluralStringResource,
+    count: Int,
+): String? = if (count > 0) pluralStringResource(plural, count, count.toString()) else null

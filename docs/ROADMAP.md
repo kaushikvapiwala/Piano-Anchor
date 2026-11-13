@@ -56,10 +56,14 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
    and `fastCheck` goes red there. Clear the variable in the tests unless a test sets it.
 4. **Storage failure model** (decision): with SQLite behind the repository ports, `upsert`/`save` can fail (disk
    full, corrupt file), and the monitor's identify step doesn't catch it, so one failure ends MIDI collection. Decide
-   the ports' error model (e.g. a domain `StorageUnavailableException`) and how the monitor and practice screen react.
+   the ports' error model (e.g. a domain `StorageUnavailableException`) and how the monitor, practice and results
+   screens react (a failing read on Results crashes today).
 5. **Keep a known identity on a missed reply** (decision): `InstrumentRepositoryPort.upsert` replaces the identity, so
    a reconnect whose Identity Reply is lost erases a stored model. Decide whether a null identity keeps the stored one
    (contract change, then `COALESCE` in `Instrument.sq`).
+6. **Count runs without loading them** (mechanical): the results screen numbers a run by reading up to
+   `RESULTS_HISTORY_LIMIT` whole attempts (each with its events) through `recent`. Add a count query to
+   `AttemptRepositoryPort` (attempts of a passage started before an instant; `COUNT` in SQL) and use it.
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
 
