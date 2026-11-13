@@ -55,7 +55,7 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 - Never force-push or rewrite pushed history; add commits. Never commit secrets, `local.properties`,
   build output or `.claude/worktrees/`.
 - AI loop: an Opus session orchestrates and reviews; the `implementer` subagent (`.claude/agents/`, Sonnet)
-  writes code from one spec issue and can't finish while `fastCheck` fails (`SubagentStop` hook); Haiku
+  writes code from one spec issue and can't finish while `fastCheck` fails (`SubagentStop` hook; `.claude/hooks/stop_fastcheck.py` also skips when another Gradle build runs, and the cloud dispatcher sets `PIANO_ANCHOR_STOP_HOOK=subagent-only` so only subagent stops run it); Haiku
   subagents only locate and quote. Specs are GitHub issues (label `spec`), never committed.
 - **Ratchet rule:** when review catches a new kind of mistake, add the cheapest permanent guard: an
   architecture or detekt rule, a test, or one line in this file.

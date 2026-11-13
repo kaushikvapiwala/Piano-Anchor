@@ -160,11 +160,53 @@ class StopFastCheckTest(TempRepo):
         run("git", "add", ".", cwd=self.repo)
         run("git", "commit", "-q", "-m", "init", cwd=self.repo)
 
-    def stop(self, event: str = "{}") -> tuple[int, str]:
-        err = io.StringIO()
-        with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(self.repo)}):
-            with mock.patch("sys.stdin", io.StringIO(event)), mock.patch("sys.stderr", err), redirect_stdout(io.StringIO()):
-                return stop_fastcheck.main(), err.getvalue()
+    def stop(self, event: str = "{}", env: dict[str, str] | None = None, build_running: bool = False) -> tuple[int, str]:
+        err, out = io.StringIO(), io.StringIO()
+        self.stdout = out
+        with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(self.repo), **(env or {})}):
+            with mock.patch("sys.stdin", io.StringIO(event)), mock.patch("sys.stderr", err), redirect_stdout(out):
+                with mock.patch.object(stop_fastcheck, "other_build_running", return_value=build_running):
+                    return stop_fastcheck.main(), err.getvalue()
+
+    def state_file(self) -> Path:
+        return self.repo / ".git" / "claude-fastcheck"
+
+    def test_subagent_only_skips_the_main_session_stop(self) -> None:
+        env = {"PIANO_ANCHOR_STOP_HOOK": "subagent-only"}
+        for event in ("{}", '{"hook_event_name": "Stop"}'):
+            self.assertEqual(self.stop(event, env)[0], 0)
+        self.assertEqual(self.runs(), 0)
+        self.assertFalse(self.state_file().exists())
+
+    def test_subagent_only_still_checks_subagent_stops(self) -> None:
+        env = {"PIANO_ANCHOR_STOP_HOOK": "subagent-only"}
+        for event in ('{"agent_id": "a1"}', '{"hook_event_name": "SubagentStop", "agent_id": "a1"}'):
+            self.assertEqual(self.stop(event, env)[0], 0)
+        self.assertEqual(self.runs(), 1)
+        self.assertTrue(self.state_file().exists())
+
+    def test_running_gradle_build_skips_the_check_without_state(self) -> None:
+        self.assertEqual(self.stop(build_running=True)[0], 0)
+        self.assertIn("another Gradle build is running", self.stdout.getvalue())
+        self.assertEqual(self.runs(), 0)
+        self.assertFalse(self.state_file().exists())
+        self.assertEqual(self.stop()[0], 0)
+        self.assertEqual(self.runs(), 1)
+
+    def test_detector_ignores_idle_daemons_and_our_own_tree(self) -> None:
+        root = Path("/nonexistent-root")
+        ps = f"{os.getpid()} java GradleWrapperMain\n77 java -cp x GradleDaemon\n"
+        done = subprocess.CompletedProcess([], 0, stdout=ps)
+        with mock.patch("subprocess.run", return_value=done):
+            self.assertFalse(stop_fastcheck.other_build_running(root))
+
+    def test_detector_finds_a_wrapper_client(self) -> None:
+        ps = "99999991 java -classpath gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain fastCheck\n"
+        with mock.patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, stdout=ps)):
+            with mock.patch.object(stop_fastcheck, "own_ancestors", return_value=set()):
+                found = stop_fastcheck.other_build_running(self.repo)
+        # Linux: its /proc cwd does not exist, so it is not ours; macOS: any wrapper client counts.
+        self.assertEqual(found, not Path("/proc/self").exists())
 
     def runs(self) -> int:
         log = self.repo / "runs.log"
