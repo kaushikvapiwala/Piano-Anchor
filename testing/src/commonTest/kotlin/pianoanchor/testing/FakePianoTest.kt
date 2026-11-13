@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
@@ -190,6 +191,35 @@ class FakePianoTest {
         }
         return events
     }
+
+    @Test
+    fun connectingADroppedDeviceListsItAtOnceAndCancelsTheReconnect() =
+        runTest {
+            val piano = FakePiano()
+            val ble = MidiDevice(id = "ble:1", name = "BLE")
+            piano.advertised = listOf(ble)
+            piano.scan().first { ble in it }
+            piano.connect(ble)
+            piano.drop(ble, backgroundScope)
+            piano.connect(ble)
+            piano.disconnect(ble)
+            advanceUntilIdle()
+            assertEquals(listOf(piano.device), piano.inputDevices.first())
+        }
+
+    @Test
+    fun wiredNotesDoNotReachTheEventsOfAConnectedBluetoothDevice() =
+        runTest {
+            val piano = FakePiano()
+            val ble = MidiDevice(id = "ble:1", name = "BLE")
+            piano.advertised = listOf(ble)
+            piano.scan().first { ble in it }
+            piano.connect(ble)
+            val bleEvents = mutableListOf<MidiEvent>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { piano.events(ble).toList(bleEvents) }
+            piano.press(c4)
+            assertTrue(bleEvents.isEmpty())
+        }
 
     private companion object {
         val IDENTITY_REQUEST = byteArrayOf(0xF0.toByte(), 0x7E, 0x7F, 0x06, 0x01, 0xF7.toByte())

@@ -24,15 +24,16 @@ and scaffolding from the real code.
 | MIDI event types and byte-stream parser | ✅ |
 | MIDI input/output ports, `FakePiano`, contract tests (1.2) | ✅ |
 | Android MIDI adapter over `MidiManager`, USB + system-opened BLE (1.4a) | ✅ |
+| Bluetooth LE MIDI discovery, connect and reconnect (1.4b) | ✅ |
 
 ## Next up
 The task queue for `/next-task` (`.claude/skills/next-task/`): one item per session and PR, top first.
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets.
 
-1. **Slice 1.4b** — Bluetooth LE MIDI discovery, connect and reconnect: spec #24.
-2. **Slice 1.4m** — note monitor with fixture export: spec #25 [#24]. Then the owner checks a phone and
-   piano over BLE and records a C-D-E fixture (first hardware check of the 1.4a `MidiManager` glue).
-3. **Grill session** (owner): slice 1.6 matcher (best after fixtures exist) and slice 1.5 instrument identity.
+1. **Slice 1.4m** — note monitor with fixture export: spec #25. Then the owner checks a phone and
+   piano over BLE and records a C-D-E fixture (first hardware check of the 1.4a `MidiManager` glue and the 1.4b
+   scan/connect glue).
+2. **Grill session** (owner): slice 1.6 matcher (best after fixtures exist) and slice 1.5 instrument identity.
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |

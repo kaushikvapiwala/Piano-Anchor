@@ -10,5 +10,9 @@ style:
   WildcardImport:
     active: true
 complexity:
+  TooManyFunctions:
+    # detekt's default test excludes, plus testing/: its contract tests (one function per case) and fakes (whole
+    # ports) live in main source sets.
+    excludes: ['**/test/**', '**/*Test/**', '**/testing/src/**']
   LongParameterList:
     ignoreAnnotated: ['Composable']

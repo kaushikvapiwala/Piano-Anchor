@@ -27,6 +27,9 @@ internal fun identify(devices: List<SystemDevice>): List<ListedDevice> {
     }
 }
 
+/** The id of the Bluetooth device at [address]: `ble:<ADDRESS>`, so it is the same before and after connecting. */
+internal fun bluetoothId(address: String): String = "ble:${address.uppercase()}"
+
 private fun baseId(device: SystemDevice): String {
     val manufacturer = device.manufacturer.present()
     val product = device.product.present()
@@ -38,7 +41,7 @@ private fun baseId(device: SystemDevice): String {
         }
 
         device.transport == Transport.BLUETOOTH && address != null -> {
-            "ble:${address.uppercase()}"
+            bluetoothId(address)
         }
 
         else -> {
@@ -50,4 +53,4 @@ private fun baseId(device: SystemDevice): String {
 private fun displayName(device: SystemDevice): String =
     device.name.present() ?: device.product.present() ?: FALLBACK_DEVICE_NAME
 
-private fun String?.present(): String? = this?.takeIf { it.isNotBlank() }
+internal fun String?.present(): String? = this?.takeIf { it.isNotBlank() }

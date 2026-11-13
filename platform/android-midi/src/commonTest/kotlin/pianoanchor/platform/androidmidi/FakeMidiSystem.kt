@@ -1,10 +1,13 @@
 package pianoanchor.platform.androidmidi
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import pianoanchor.core.model.BluetoothUnavailableException
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -24,6 +27,9 @@ internal val PIANO =
         name = "Acme Stage Piano",
     )
 
+/** First system id given to opened Bluetooth devices, clear of the USB fixtures' ids. */
+private const val BLUETOOTH_SYSTEM_IDS = 100
+
 /**
  * In-memory [MidiSystem]. Like Android, it calls back on another thread: [deliver] and [unplug] run the adapter's
  * callbacks on `Dispatchers.Default` and return once they have finished.
@@ -35,6 +41,8 @@ internal class FakeMidiSystem(
     private val inputs = ConcurrentHashMap<Int, OpenInput>()
     private val nextStamp = AtomicLong(0)
     private val sentBytes = CopyOnWriteArrayList<ByteArray>()
+    private val advertising = MutableStateFlow(emptyList<BluetoothAdvertisement>())
+    private val nextSystemId = AtomicInteger(BLUETOOTH_SYSTEM_IDS)
 
     /** When false, opening any device fails (as if it went away just before). */
     var opensSucceed = true
@@ -46,6 +54,17 @@ internal class FakeMidiSystem(
     val inputsClosed = AtomicInteger(0)
     val outputsOpened = AtomicInteger(0)
     val outputsClosed = AtomicInteger(0)
+    val bluetoothOpened = AtomicInteger(0)
+    val bluetoothClosed = AtomicInteger(0)
+
+    /** What [bluetoothProblem] reports; null means Bluetooth LE works. */
+    var bluetoothState: BluetoothUnavailableException.Reason? = null
+
+    /** When true, [scanBluetooth] fails as if the platform refused to start the scan. */
+    var scansFail = false
+
+    /** When false, [openBluetooth] succeeds but the device never shows up in [devices] (link lost in between). */
+    var listsOpenedBluetooth = true
 
     /** Every byte range handed to an open sender, in order (copies). */
     val sent: List<ByteArray> get() = sentBytes.toList()
@@ -83,6 +102,43 @@ internal class FakeMidiSystem(
                 outputsClosed.incrementAndGet()
             }
         }
+    }
+
+    override fun bluetoothProblem(): BluetoothUnavailableException.Reason? = bluetoothState
+
+    override fun scanBluetooth(): Flow<BluetoothAdvertisement> =
+        flow {
+            if (scansFail) throw BluetoothUnavailableException(BluetoothUnavailableException.Reason.BLUETOOTH_OFF)
+            advertising.collect { all -> all.forEach { emit(it) } }
+        }
+
+    /** Lists an advertising device as a new Bluetooth system device (new system id, as Android does each time). */
+    override suspend fun openBluetooth(address: String): AutoCloseable? {
+        val advertisement = advertising.value.firstOrNull { it.address == address }
+        if (!opensSucceed || advertisement == null) return null
+        bluetoothOpened.incrementAndGet()
+        val device =
+            SystemDevice(
+                systemId = nextSystemId.getAndIncrement(),
+                transport = Transport.BLUETOOTH,
+                inputPorts = 1,
+                outputPorts = 1,
+                name = advertisement.name,
+                bluetoothAddress = address,
+            )
+        if (listsOpenedBluetooth) plugIn(device)
+        return AutoCloseable {
+            bluetoothClosed.incrementAndGet()
+            list.update { devices -> devices - device }
+        }
+    }
+
+    /** Adds an advertisement (repeats allowed); every running scan sees all current ones again. */
+    fun advertise(advertisement: BluetoothAdvertisement) = advertising.update { it + advertisement }
+
+    /** The link of the connected Bluetooth device at [address] drops, as Android reports it: the device is removed. */
+    suspend fun dropBluetooth(address: String) {
+        list.value.filter { it.bluetoothAddress == address }.forEach { unplug(it.systemId) }
     }
 
     /** The device with [systemId] sends `bytes[offset until offset + count]` in one platform callback. */
