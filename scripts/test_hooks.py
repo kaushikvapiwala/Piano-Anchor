@@ -204,9 +204,18 @@ class StopFastCheckTest(TempRepo):
         ps = "99999991 java -classpath gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain fastCheck\n"
         with mock.patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, stdout=ps)):
             with mock.patch.object(stop_fastcheck, "own_ancestors", return_value=set()):
-                found = stop_fastcheck.other_build_running(self.repo)
-        # Linux: its /proc cwd does not exist, so it is not ours; macOS: any wrapper client counts.
-        self.assertEqual(found, not Path("/proc/self").exists())
+                with mock.patch.object(stop_fastcheck, "runs_in", return_value=True):
+                    self.assertTrue(stop_fastcheck.other_build_running(self.repo))
+                with mock.patch.object(stop_fastcheck, "runs_in", return_value=False):
+                    self.assertFalse(stop_fastcheck.other_build_running(self.repo))
+
+    def test_runs_in_checks_the_process_directory_where_it_can(self) -> None:
+        # The test process itself works in a temp dir, never inside a fresh repo root elsewhere.
+        if Path("/proc/self").exists():
+            self.assertFalse(stop_fastcheck.runs_in(os.getpid(), Path("/nonexistent-root")))
+            self.assertTrue(stop_fastcheck.runs_in(os.getpid(), Path(os.getcwd())))
+        else:
+            self.assertTrue(stop_fastcheck.runs_in(os.getpid(), Path("/nonexistent-root")))
 
     def runs(self) -> int:
         log = self.repo / "runs.log"

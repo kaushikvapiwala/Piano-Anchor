@@ -57,6 +57,18 @@ def own_ancestors() -> set[int]:
     return pids
 
 
+def runs_in(pid: int, root: Path) -> bool:
+    """Whether process `pid` works inside `root`. Linux: its /proc cwd (unreadable means no). macOS: no cheap
+    cwd lookup, so every process counts."""
+    proc = Path(f"/proc/{pid}")
+    if not Path("/proc/self").exists():
+        return True
+    try:
+        return (proc / "cwd").resolve(strict=True).is_relative_to(root.resolve())
+    except OSError:
+        return False
+
+
 def other_build_running(root: Path) -> bool:
     """True if a Gradle wrapper client (it exists only while a build runs; idle daemons don't count) is running.
 
@@ -69,13 +81,8 @@ def other_build_running(root: Path) -> bool:
         pid, _, args = line.strip().partition(" ")
         if not pid.isdigit() or int(pid) in mine or "GradleWrapperMain" not in args:
             continue
-        cwd = Path(f"/proc/{pid}/cwd")
-        if cwd.parent.exists():  # Linux
-            try:
-                if not cwd.resolve().is_relative_to(root.resolve()):
-                    continue
-            except OSError:
-                continue
+        if not runs_in(int(pid), root):
+            continue
         return True
     return False
 
