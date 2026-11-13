@@ -35,7 +35,15 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 1. **Hardware check** (owner): install the debug app, connect a piano over BLE, play keys, survive a disconnect
    and export a C-D-E fixture into `fixtures/` (first hardware check of the 1.4a `MidiManager` glue, the 1.4b
    scan/connect glue and the 1.4m Android wiring).
-2. **Grill session** (owner): slice 1.6 matcher (best after fixtures exist) and slice 1.5 instrument identity.
+2. **Slice 1.5** — instrument identity via MIDI Identity Request: spec #36.
+3. **Slice 1.6** — wait-mode matcher: spec #37.
+4. **Slice 1.7** — grading and attempt storage port: spec #38 [#37].
+5. **Slice 1.8** — SQLDelight storage adapter: spec #39 [#36, #38].
+6. **Slice 1.9** — wait-mode practice screen (Living Studio mock): spec #40 [#37, #38].
+7. **Slice 1.10** — results screen (Living Studio mock): spec #41 [#40]. Then the owner's end-to-end check on a
+   phone and piano (play C-D-E, see Results, the run survives an app restart) closes Phase 1.
+
+Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test to the matcher.
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |
