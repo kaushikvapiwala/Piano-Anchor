@@ -66,6 +66,19 @@ public object Tunables {
     public const val BLE_RECONNECT_GIVE_UP_MS: Long = 300_000
 
     /**
+     * How long, in milliseconds after the selected device drops, the note monitor waits for it to be open again before
+     * it stops reconnecting and reports the device as unavailable.
+     *
+     * Why: the monitor cannot see when the adapter stops retrying, so it waits [BLE_RECONNECT_GIVE_UP_MS] (counted over
+     * backoff waits only) plus one [BLE_RECONNECT_MAX_MS] step as margin for the time the last attempts take; a USB
+     * piano unplugged that long is reported too instead of waiting forever.
+     *
+     * Source: derived from [BLE_RECONNECT_GIVE_UP_MS] + [BLE_RECONNECT_MAX_MS]; revisit with them after the T8 soak
+     * test.
+     */
+    public const val MONITOR_RECONNECT_GIVE_UP_MS: Long = 330_000
+
+    /**
      * How long, in milliseconds, a Bluetooth LE MIDI device that Android reports as opened may take to show up in the
      * device list; if it doesn't, the open counts as failed and the handle is closed.
      *

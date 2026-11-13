@@ -3,14 +3,17 @@ package pianoanchor.feature.monitor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.MidiDevice
@@ -129,31 +132,29 @@ public class MonitorViewModel(
         mutableState.update { it.copy(error = null) }
     }
 
+    /** Shows [device] until it is unavailable: not openable when selected, or not back within the give-up time. */
     private suspend fun monitor(device: MidiDevice) {
-        try {
-            collect(device)
-        } catch (_: MidiDeviceUnavailableException) {
-            mutableState.update { it.copy(connection = Connection.NONE, error = MonitorError.DEVICE_UNAVAILABLE) }
-            return
-        }
-        while (true) {
-            // events() completed: the device dropped. Mark the gap, then reopen it as soon as it is listed.
-            val gap = LogLine("", millisSince(clock.nowNanos()), gap = true)
-            mutableState.update { it.copy(connection = Connection.RECONNECTING).withLine(gap) }
-            do {
-                input.inputDevices.first { device.isListedIn(it) }
-                val reopened =
-                    try {
-                        collect(device) // returns when it drops again
-                        true
-                    } catch (_: MidiDeviceUnavailableException) {
-                        // Listed but not openable (a stale list): wait for the list to change, then try again.
-                        mutableState.update { it.copy(connection = Connection.RECONNECTING) }
-                        input.inputDevices.drop(1).first()
-                        false
-                    }
-            } while (!reopened)
-        }
+        val relisted = input.inputDevices.filter { device.isListedIn(it) }
+        var reconnecting = false
+        do {
+            val listed =
+                try {
+                    collect(device) // returns when the device drops
+                    // Mark the gap, then reopen the device as soon as it is listed again.
+                    val gap = LogLine("", millisSince(clock.nowNanos()), gap = true)
+                    mutableState.update { it.copy(connection = Connection.RECONNECTING).withLine(gap) }
+                    reconnecting = true
+                    relisted.arrives()
+                } catch (_: MidiDeviceUnavailableException) {
+                    // While reconnecting this is a stale list (listed but not openable): wait for it to change.
+                    reconnecting &&
+                        run {
+                            mutableState.update { it.copy(connection = Connection.RECONNECTING) }
+                            input.inputDevices.drop(1).arrives() && relisted.arrives()
+                        }
+                }
+        } while (listed)
+        mutableState.update { it.copy(connection = Connection.NONE, error = MonitorError.DEVICE_UNAVAILABLE) }
     }
 
     private suspend fun collect(device: MidiDevice) {
@@ -182,6 +183,13 @@ private fun MonitorState.withLine(line: LogLine) = copy(log = (listOf(line) + lo
 private val BLUETOOTH_ERRORS = setOf(MonitorError.BLUETOOTH_PERMISSION, MonitorError.BLUETOOTH_OFF)
 
 private fun MidiDevice.isListedIn(devices: List<MidiDevice>) = devices.any { it.id == id }
+
+/**
+ * Whether a device list arrives within `Tunables.MONITOR_RECONNECT_GIVE_UP_MS`; when none does, the adapter has
+ * stopped reconnecting.
+ */
+private suspend fun Flow<List<MidiDevice>>.arrives(): Boolean =
+    withTimeoutOrNull(Tunables.MONITOR_RECONNECT_GIVE_UP_MS) { first() } != null
 
 private fun BluetoothUnavailableException.toMonitorError() =
     when (reason) {
