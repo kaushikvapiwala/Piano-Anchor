@@ -52,6 +52,12 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 5. **Fix: hook tests inherit `PIANO_ANCHOR_STOP_HOOK`** (mechanical): `scripts/test_hooks.py`'s Stop-hook tests pass
    the caller's environment, so in a cloud dispatcher session (`PIANO_ANCHOR_STOP_HOOK=subagent-only`) 8 of them fail
    and `fastCheck` goes red there. Clear the variable in the tests unless a test sets it.
+6. **Storage failure model** (decision): with SQLite behind the repository ports, `upsert`/`save` can fail (disk
+   full, corrupt file), and the monitor's identify step doesn't catch it, so one failure ends MIDI collection. Decide
+   the ports' error model (e.g. a domain `StorageUnavailableException`) and how the monitor and practice screen react.
+7. **Keep a known identity on a missed reply** (decision): `InstrumentRepositoryPort.upsert` replaces the identity, so
+   a reconnect whose Identity Reply is lost erases a stored model. Decide whether a null identity keeps the stored one
+   (contract change, then `COALESCE` in `Instrument.sq`).
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
 

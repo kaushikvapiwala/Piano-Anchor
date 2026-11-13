@@ -6,13 +6,19 @@ import pianoanchor.core.model.Instrument
 import pianoanchor.core.model.InstrumentIdentity
 import pianoanchor.core.ports.InstrumentRepositoryPort
 import pianoanchor.testing.InstrumentRepositoryPortContractTest
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
 
 class SqlInstrumentRepositoryAdapterTest : InstrumentRepositoryPortContractTest() {
+    private val drivers = InMemoryDrivers()
+
     override fun createSubject(): InstrumentRepositoryPort =
-        SqlInstrumentRepositoryAdapter(inMemoryDriver(), Dispatchers.Unconfined)
+        SqlInstrumentRepositoryAdapter(drivers.open(), Dispatchers.Unconfined)
+
+    @AfterTest
+    fun closeDrivers() = drivers.close()
 
     @Test
     fun threeByteManufacturerIdAndHighVersionBytesRoundTrip() =

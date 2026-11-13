@@ -11,6 +11,7 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.testing.AttemptRepositoryPortContractTest
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -19,11 +20,15 @@ import kotlin.test.assertNull
 import kotlin.time.Instant
 
 class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
-    private val driver: SqlDriver = inMemoryDriver()
+    private val drivers = InMemoryDrivers()
+    private val driver: SqlDriver = drivers.open()
     private val repository = SqlAttemptRepositoryAdapter(driver, Dispatchers.Unconfined)
 
     override fun createSubject(): AttemptRepositoryPort =
-        SqlAttemptRepositoryAdapter(inMemoryDriver(), Dispatchers.Unconfined)
+        SqlAttemptRepositoryAdapter(drivers.open(), Dispatchers.Unconfined)
+
+    @AfterTest
+    fun closeDrivers() = drivers.close()
 
     private fun attempt(events: List<MatchEvent>) =
         Attempt(

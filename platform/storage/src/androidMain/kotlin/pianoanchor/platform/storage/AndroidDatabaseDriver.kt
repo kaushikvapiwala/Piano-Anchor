@@ -11,8 +11,9 @@ import pianoanchor.platform.storage.db.PianoAnchorDatabase
 private const val DATABASE_NAME = "piano-anchor.db"
 
 /**
- * Opens the app's database ([DATABASE_NAME] in the app's database directory), creating or migrating it to the current
- * schema, with foreign keys on. The file opens lazily, on the first query.
+ * Opens the app's database ([DATABASE_NAME] in the app's no-backup directory, so Android backup never copies learner
+ * data off the device), creating or migrating it to the current schema, with foreign keys on. The file opens lazily,
+ * on the first query.
  */
 @ExcludeFromCoverage("Android SQLite needs a device; the adapters are tested on the JVM driver, this by the app")
 public fun createPianoAnchorDatabaseDriver(context: Context): SqlDriver =
@@ -26,4 +27,5 @@ public fun createPianoAnchorDatabaseDriver(context: Context): SqlDriver =
                     db.setForeignKeyConstraintsEnabled(true)
                 }
             },
+        useNoBackupDirectory = true,
     )

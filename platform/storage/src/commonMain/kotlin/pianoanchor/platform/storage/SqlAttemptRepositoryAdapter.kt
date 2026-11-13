@@ -1,7 +1,6 @@
 package pianoanchor.platform.storage
 
 import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.db.SqlDriver
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -59,7 +58,7 @@ public class SqlAttemptRepositoryAdapter(
                     accuracy = attempt.accuracy,
                     band = attempt.band.name,
                 )
-                attempt.events.forEachIndexed { seq, event -> queries.insertEvent(attempt.id, seq, event) }
+                attempt.events.forEachIndexed { seq, event -> queries.insertMatchEvent(attempt.id, seq, event) }
             }
         }
 
@@ -73,13 +72,15 @@ public class SqlAttemptRepositoryAdapter(
         limit: Int,
     ): Flow<List<Attempt>> {
         require(limit > 0) { "limit ($limit) must be positive" }
-        // Re-runs after every write to `attempt`. An attempt's events are written with it and never change, so
-        // reading them after its row is consistent.
+        // Re-runs after every write to `attempt`; one transaction reads the rows and their events together.
         return queries
             .selectRecent(passageId, limit.toLong())
             .asFlow()
-            .mapToList(dispatcher)
-            .map { rows -> withContext(dispatcher) { rows.map(::withEvents) } }
+            .map { query ->
+                withContext(dispatcher) {
+                    queries.transactionWithResult { query.executeAsList().map(::withEvents) }
+                }
+            }
     }
 
     private fun withEvents(row: AttemptRow) =
@@ -98,7 +99,7 @@ public class SqlAttemptRepositoryAdapter(
         )
 }
 
-private fun AttemptQueries.insertEvent(
+private fun AttemptQueries.insertMatchEvent(
     attemptId: String,
     seq: Int,
     event: MatchEvent,
