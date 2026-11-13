@@ -18,10 +18,10 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | Module | Role | Notes |
 |---|---|---|
 | `:core:model` | Domain types (e.g. `MidiNote`, `MidiEvent`) | Pure Kotlin, 100% coverage |
-| `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`) | Interfaces only, each with KDoc |
+| `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`, `MidiDiscoveryPort`) | Interfaces only, each with KDoc |
 | `:engine` | Coaching logic, including the `midi` byte-stream parser; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
 | `:testing` | Fakes (e.g. `FakePiano`) and abstract port contract tests | Used by all test source sets |
-| `:platform:android-midi` | Driven adapters over Android's MIDI service: `AndroidMidiAdapter` (both MIDI ports), `AndroidClockAdapter` | Logic in `commonMain`, 100% coverage on the JVM; `androidMain` glue excluded (see Testing) |
+| `:platform:android-midi` | Driven adapters over Android's MIDI service: `AndroidMidiAdapter` (both MIDI ports and Bluetooth LE discovery), `AndroidClockAdapter` | Logic in `commonMain`, 100% coverage on the JVM; `androidMain` glue excluded (see Testing) |
 | `:ui:shell` | Shared Compose root and string resources | Driving adapter; screenshot tests planned (Phase 1) |
 | `:app-android` | Android app: composition root | No business logic |
 | `:app-desktop` | Desktop development harness | No business logic |
@@ -61,3 +61,6 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
   JVM against a fake seam (`FakeMidiSystem`), contract tests included. The glue implements the seam over the real
   platform API in `androidMain`, does no decisions of its own and is `@ExcludeFromCoverage`; it is verified on a
   device (manual owner test until device tests exist). See `docs/adr/0014-platform-adapter-modules.md`.
+- An adapter that works in the background (e.g. reopening a dropped Bluetooth LE device) takes a `CoroutineScope`
+  in its internal constructor; the Android factory gives it an app-lived scope and tests pass `backgroundScope`, so
+  timing runs in virtual time (`docs/adr/0015-adapter-background-scope.md`).

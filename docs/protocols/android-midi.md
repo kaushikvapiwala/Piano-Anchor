@@ -7,8 +7,9 @@ How `:platform:android-midi` uses Android's MIDI service. Code:
 ## What the adapter sees
 - Devices come from `MidiManager`, limited to byte-stream (MIDI 1.0) devices. On Android 13+ the adapter asks for
   that transport explicitly; on older versions it uses the plain device list, which holds only byte-stream devices.
-- USB MIDI devices appear when plugged in. Bluetooth LE MIDI devices appear only after something has opened them
-  (pairing and opening is slice 1.4b); this adapter does no Bluetooth scanning and needs no Bluetooth permission.
+- USB MIDI devices appear when plugged in. Bluetooth LE MIDI devices appear only after something has opened them:
+  the adapter's own `connect` (see `docs/protocols/ble-midi.md`) or another app. Listing and USB devices need no
+  Bluetooth permission; only scanning and connecting do.
 - A device without the MIDI system feature lists no devices.
 - One device callback, registered for the life of the adapter (it is app-scoped), re-reads the whole list on every
   add or remove, so looking up a device before opening or sending costs nothing.

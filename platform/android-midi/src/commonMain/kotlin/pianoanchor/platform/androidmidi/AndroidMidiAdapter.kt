@@ -1,5 +1,6 @@
 package pianoanchor.platform.androidmidi
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -7,11 +8,15 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
+import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
+import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.midi.MidiParser
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
@@ -20,15 +25,21 @@ private const val STATUS_MIN = 0x80
 private const val BYTE_MASK = 0xFF
 
 /**
- * Driven adapter for both MIDI ports over Android's MIDI service: USB devices and Bluetooth devices the system has
- * already opened. Create it on Android with `AndroidMidiAdapter(context)`.
- * Contract: `MidiInputPortContractTest`, `MidiOutputPortContractTest`; details in `docs/protocols/android-midi.md`.
+ * Driven adapter for both MIDI ports and Bluetooth LE discovery over Android's MIDI service: USB devices, Bluetooth
+ * devices the system has already opened and Bluetooth LE devices connected through [connect], which it reopens in
+ * [scope] after a drop. Create it on Android with `AndroidMidiAdapter(context)`.
+ * Contract: `MidiInputPortContractTest`, `MidiOutputPortContractTest`, `MidiDiscoveryPortContractTest`; details in
+ * `docs/protocols/android-midi.md` and `docs/protocols/ble-midi.md`.
  */
 public class AndroidMidiAdapter internal constructor(
     private val system: MidiSystem,
+    scope: CoroutineScope,
 ) : MidiInputPort,
-    MidiOutputPort {
+    MidiOutputPort,
+    MidiDiscoveryPort {
     private val listed: Flow<List<ListedDevice>> = system.devices.map(::identify)
+    private val discovered = ConcurrentHashMap<String, String>() // Bluetooth address by device id, from scans
+    private val bluetooth = BluetoothConnections(system, listed, scope)
     private val openInputs: MutableSet<String> = ConcurrentHashMap.newKeySet()
     private val sendersLock = Mutex()
     private val senders = mutableMapOf<Int, SystemSender>() // by SystemDevice.systemId, guarded by sendersLock
@@ -100,6 +111,35 @@ public class AndroidMidiAdapter internal constructor(
                 ?: system.openOutput(target)?.also { senders[target.systemId] = it }
                 ?: throw MidiDeviceUnavailableException(device.id)
         return target.systemId to sender
+    }
+
+    override fun scan(): Flow<List<MidiDevice>> =
+        flow {
+            requireBluetooth()
+            val alreadyListed = listed.first().map { it.device.id }.toSet()
+            val found = LinkedHashMap<String, MidiDevice>()
+            emit(emptyList())
+            withTimeoutOrNull(Tunables.BLE_SCAN_TIMEOUT_MS) {
+                system.scanBluetooth().collect { advertisement ->
+                    val id = bluetoothId(advertisement.address)
+                    if (id in alreadyListed || id in found) return@collect
+                    found[id] = MidiDevice(id, advertisement.name.present() ?: FALLBACK_DEVICE_NAME)
+                    discovered[id] = advertisement.address
+                    emit(found.values.toList())
+                }
+            }
+        }
+
+    override suspend fun connect(device: MidiDevice) {
+        requireBluetooth()
+        val address = discovered[device.id] ?: throw MidiDeviceUnavailableException(device.id)
+        if (!bluetooth.connect(device.id, address)) throw MidiDeviceUnavailableException(device.id)
+    }
+
+    override suspend fun disconnect(device: MidiDevice): Unit = bluetooth.disconnect(device.id)
+
+    private fun requireBluetooth() {
+        system.bluetoothProblem()?.let { throw BluetoothUnavailableException(it) }
     }
 
     private fun List<ListedDevice>.find(

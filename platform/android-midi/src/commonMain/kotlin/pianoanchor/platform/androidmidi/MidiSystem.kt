@@ -1,6 +1,7 @@
 package pianoanchor.platform.androidmidi
 
 import kotlinx.coroutines.flow.Flow
+import pianoanchor.core.model.BluetoothUnavailableException
 
 /**
  * Thin seam over `android.media.midi`, so [AndroidMidiAdapter]'s logic runs on the JVM. Port names are from the
@@ -26,7 +27,29 @@ internal interface MidiSystem {
      * Returns null if the device can't be opened (e.g. it went away).
      */
     suspend fun openOutput(device: SystemDevice): SystemSender?
+
+    /** Null when Bluetooth LE scanning and connecting are possible (permissions granted, adapter on), else why not. */
+    fun bluetoothProblem(): BluetoothUnavailableException.Reason?
+
+    /**
+     * Scans for devices advertising the BLE MIDI service while collected and emits every advertisement, repeats
+     * included. Never completes; fails with [BluetoothUnavailableException] if the platform refuses the scan.
+     */
+    fun scanBluetooth(): Flow<BluetoothAdvertisement>
+
+    /**
+     * Asks Android's BLE MIDI service to connect the device at [address]; once connected it appears in [devices]
+     * (transport [Transport.BLUETOOTH], same address). Closing the handle disconnects it. Returns null if it can't be
+     * opened. When the link drops, Android removes the device from [devices]; the handle should still be closed.
+     */
+    suspend fun openBluetooth(address: String): AutoCloseable?
 }
+
+/** One advertisement of a BLE MIDI device: its Bluetooth [address] and the [name] it advertises, if any. */
+internal data class BluetoothAdvertisement(
+    val address: String,
+    val name: String?,
+)
 
 /** An open input port of a device (Android naming): bytes sent here go to the instrument. */
 internal interface SystemSender : AutoCloseable {
