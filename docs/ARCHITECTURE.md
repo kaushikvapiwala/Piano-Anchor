@@ -22,8 +22,9 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | `:engine` | Coaching logic, including the `midi` byte-stream parser; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
 | `:testing` | Fakes (e.g. `FakePiano`) and abstract port contract tests | Used by all test source sets |
 | `:platform:android-midi` | Driven adapters over Android's MIDI service: `AndroidMidiAdapter` (both MIDI ports and Bluetooth LE discovery), `AndroidClockAdapter` | Logic in `commonMain`, 100% coverage on the JVM; `androidMain` glue excluded (see Testing) |
-| `:ui:shell` | Shared Compose root and string resources | Driving adapter; screenshot tests planned (Phase 1) |
-| `:app-android` | Android app: composition root | No business logic |
+| `:ui:shell` | Shared Compose root, `PianoAnchorTheme` (`docs/ui/living-studio.md`) and string resources | Driving adapter |
+| `:feature:monitor` | Note monitor: `MonitorViewModel`, `MonitorScreen`; records JSONL fixtures (`fixtures/SCHEMA.md`) | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
+| `:app-android` | Android app: composition root (Koin module, permission request, file export) | No business logic |
 | `:app-desktop` | Desktop development harness | No business logic |
 | `:architecture-tests` | Konsist rules enforcing this document | Runs in `fastCheck` |
 
@@ -35,12 +36,15 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
 
 ## Dependency rules
 - Domain code (`pianoanchor.core.*`, `pianoanchor.engine`) imports only Kotlin, `kotlinx.coroutines` (for `Flow`
-  in ports, ADR 0013) and other domain code: no Android, AndroidX, Compose, Koin or `java.*`/`javax.*`.
+  in ports, ADR 0013), `kotlinx.serialization` (fixture format, ADR 0016) and other domain code: no Android,
+  AndroidX, Compose, Koin or `java.*`/`javax.*`.
 - `:testing` depends on `:engine` (`FakePiano` uses the real `MidiParser`).
 - Domain code never imports driving adapters (`pianoanchor.ui`, `pianoanchor.app`, `pianoanchor.desktop`),
   driven adapters (`pianoanchor.platform`) or test support (`pianoanchor.testing`).
 - Platform adapter modules (`platform/*`) depend on `:core:ports` and may use `:engine` helpers (e.g. `MidiParser`).
-- Apps are composition roots: they wire adapters to ports and contain no business logic.
+- Feature modules (`feature/*`, package `pianoanchor.feature`) are driving adapters: a ViewModel
+  (`androidx.lifecycle` KMP) and stateless screens, depending on ports and `:engine` only, never on adapters.
+- Apps are composition roots: they wire adapters to ports (Koin, ADR 0017) and contain no business logic.
 
 ## Ports
 - A port is a top-level interface in `core/ports`, named `*Port`, documenting its contract in KDoc.
@@ -54,7 +58,11 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
 - Each port has an abstract `<Port>ContractTest` in `testing/`; for every port it implements, an implementation
   has a test class named `<Impl>…Test` that extends that contract (e.g. `FakeClockContractTest`,
   `FakePianoInputContractTest`), so fakes and real adapters behave the same.
-- Every `*ViewModel` and `*UseCase` has a `*Test`; test classes are named `*Test`.
+- Every `*ViewModel` and `*UseCase` has a `*Test`; test classes are named `*Test`. ViewModel tests run on the JVM
+  with `Dispatchers.setMain` and the fakes from `testing/`.
+- Screens have golden screenshots (Roborazzi on Robolectric, `androidHostTest`) in light and dark, committed under
+  the module's `screenshots/` and verified by `fastCheck`; `recordRoborazziAndroidHostTest` rewrites them after an
+  intended change (`docs/adr/0018-screenshot-tests.md`).
 - Pure modules need 100% line and branch coverage; `@ExcludeFromCoverage("reason")` marks the rare exception.
 - Platform adapters split into **logic** and **glue**. The logic talks to the platform through a thin internal
   seam (e.g. `MidiSystem` in `:platform:android-midi`) and lives in `commonMain`, so it runs and is measured on the
