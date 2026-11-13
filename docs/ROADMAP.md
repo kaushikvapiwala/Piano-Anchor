@@ -32,7 +32,8 @@ and scaffolding from the real code.
 The task queue for `/next-task` (`.claude/skills/next-task/`): one item per session and PR, top first.
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets.
 
-1. **Hardware check** (owner): install the debug app, connect a piano over BLE, play keys, survive a disconnect
+1. **Hardware check** (owner): install the debug app (the `app-android-debug-<sha>` artifact of the latest CI run
+   on main, or `./gradlew :app-android:assembleDebug`), connect a piano over BLE, play keys, survive a disconnect
    and export a C-D-E fixture into `fixtures/` (first hardware check of the 1.4a `MidiManager` glue, the 1.4b
    scan/connect glue and the 1.4m Android wiring).
 2. **Slice 1.5** — instrument identity via MIDI Identity Request: spec #36.
@@ -42,6 +43,9 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 6. **Slice 1.9** — wait-mode practice screen (Living Studio mock): spec #40 [#37, #38].
 7. **Slice 1.10** — results screen (Living Studio mock): spec #41 [#40]. Then the owner's end-to-end check on a
    phone and piano (play C-D-E, see Results, the run survives an app restart) closes Phase 1.
+8. **Emulator end-to-end CI job** [first device test]: when the first instrumented end-to-end test lands (ADR 0007),
+   run it on Gradle Managed Devices (ATD image, KVM on `ubuntu-latest`) on pushes to main and nightly, not on every
+   PR. Settle first how tests feed MIDI without a piano (an in-app `MidiDeviceService` fake).
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test to the matcher.
 
