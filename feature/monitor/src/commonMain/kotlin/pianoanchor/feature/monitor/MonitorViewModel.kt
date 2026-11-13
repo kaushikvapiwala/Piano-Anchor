@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +52,7 @@ public class MonitorViewModel(
     public val state: StateFlow<MonitorState> = mutableState.asStateFlow()
 
     private var session: Job? = null
+    private var released: MidiDevice? = null
     private var scan: Job? = null
     private var selectedAtNanos = 0L
     private val recorder = FixtureRecorder()
@@ -67,6 +69,7 @@ public class MonitorViewModel(
     /** Shows [device]'s messages from now on, with a fresh log; stops (but keeps) a running recording. */
     public fun select(device: MidiDevice) {
         session?.cancel()
+        released = null
         selectedAtNanos = clock.nowNanos()
         mutableState.update {
             it.copy(
@@ -79,6 +82,23 @@ public class MonitorViewModel(
             )
         }
         session = viewModelScope.launch { monitor(device) }
+    }
+
+    /**
+     * `false` closes the selected device, keeping it selected, so another screen (practice) can open it: an input
+     * has one reader at a time, so this returns once the device is closed. `true` reopens a device closed this way,
+     * with a fresh log; otherwise it does nothing.
+     */
+    public suspend fun setDeviceOpen(open: Boolean) {
+        if (open) {
+            released?.let(::select)
+            return
+        }
+        val device = state.value.selected ?: return
+        session?.cancelAndJoin()
+        session = null
+        released = device
+        mutableState.update { it.copy(connection = Connection.NONE) }
     }
 
     /** Scans for Bluetooth pianos into [MonitorState.scanned]; ignored while a scan runs. */
@@ -159,7 +179,7 @@ public class MonitorViewModel(
             while (true) {
                 // events() completed: the device dropped. Mark the gap, then reopen it as soon as it is listed.
                 giveUp?.cancel()
-                val gap = LogLine("", millisSince(clock.nowNanos()), gap = true)
+                val gap = LogLine("", clock.nowNanos().millisAfter(selectedAtNanos), gap = true)
                 mutableState.update { it.copy(connection = Connection.RECONNECTING).withLine(gap) }
                 giveUp =
                     launch {
@@ -207,7 +227,11 @@ public class MonitorViewModel(
         }
 
     private fun onEvent(event: MidiEvent) {
-        mutableState.update { it.withLine(LogLine(event.describe(), millisSince(event.timestampNanos))) }
+        mutableState.update {
+            it.withLine(
+                LogLine(event.describe(), event.timestampNanos.millisAfter(selectedAtNanos)),
+            )
+        }
         identifier.offer(event)
         if (!state.value.recording) return
         if (recorder.add(event)) {
@@ -216,12 +240,13 @@ public class MonitorViewModel(
             mutableState.update { it.copy(recording = false, error = MonitorError.RECORDING_LIMIT) }
         }
     }
-
-    private fun millisSince(nanos: Long) = (nanos - selectedAtNanos) / NANOS_PER_MILLI
 }
 
 /** Adds [line] at the top of the log, keeping the newest `Tunables.MONITOR_LOG_LINES`. */
 private fun MonitorState.withLine(line: LogLine) = copy(log = (listOf(line) + log).take(Tunables.MONITOR_LOG_LINES))
+
+/** Milliseconds from [start] to this monotonic time, both in nanoseconds. */
+private fun Long.millisAfter(start: Long) = (this - start) / NANOS_PER_MILLI
 
 private val BLUETOOTH_ERRORS = setOf(MonitorError.BLUETOOTH_PERMISSION, MonitorError.BLUETOOTH_OFF)
 

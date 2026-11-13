@@ -13,4 +13,5 @@ public data class MonitorActions(
     val onOpenSettings: () -> Unit = {},
     val onEnableBluetooth: () -> Unit = {},
     val onDismissError: () -> Unit = {},
+    val onPractice: (MidiDevice) -> Unit = {},
 )

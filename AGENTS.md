@@ -32,6 +32,8 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
   Test doubles live in `testing/` and are named `Fake*`.
 - Thresholds live in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt`, each with `Why:` and `Source:` in its KDoc. No magic numbers.
 - Every `*ViewModel` and `*UseCase` has a `*Test`. Use cases only for logic shared by several callers.
+- An input has one reader at a time (`AndroidMidiAdapter.events` throws on a second open): when a screen hands a
+  piano to another, the old reader closes it (`cancelAndJoin`) before the next one opens it.
 - UI text goes in Compose resources (`composeResources/values/strings.xml`), never hard-coded (review-enforced until a lint rule lands).
 
 ## Testing

@@ -1,0 +1,22 @@
+<resources>
+    <string name="practice_back">Back</string>
+    <string name="practice_back_glyph">←</string>
+    <string name="practice_chord_join">+</string>
+    <string name="practice_list_join">, </string>
+    <string name="practice_mode_wait">Wait mode</string>
+    <string name="practice_tempo_wait">Wait</string>
+    <string name="practice_tempo_percent">%1$s%</string>
+    <string name="practice_tempo_disabled">%1$s, not available yet</string>
+    <string name="practice_end_run">End run</string>
+    <string name="practice_legend_correct">correct</string>
+    <string name="practice_legend_waiting">waiting for you</string>
+    <string name="practice_staff_waiting">Treble staff. Notes %1$s. Waiting for %2$s.</string>
+    <string name="practice_staff_done">Treble staff. Notes %1$s. Done.</string>
+    <string name="practice_keys_label">Live keys · play the piano</string>
+    <string name="practice_last_key_correct">%1$s · correct, moving on</string>
+    <string name="practice_last_key_wrong">%1$s · waiting for %2$s</string>
+    <string name="practice_announce_correct">Correct</string>
+    <string name="practice_announce_wrong">Wrong, %1$s</string>
+    <string name="practice_disconnected">Piano disconnected</string>
+    <string name="practice_back_to_pianos">Back to pianos</string>
+</resources>

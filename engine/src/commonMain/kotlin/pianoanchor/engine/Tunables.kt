@@ -135,4 +135,13 @@ public object Tunables {
      * Source: initial guess (slice 1.7 spec); tune from the learner's data.
      */
     public const val BAND_GOOD_MIN_ACCURACY: Double = 0.80
+
+    /**
+     * How long, in milliseconds, the practice screen's key strip flashes a pressed key as correct or wrong.
+     *
+     * Why: long enough to see which key was hit, short enough not to linger into the next note.
+     *
+     * Source: the Living Studio mock (slice 1.9 spec).
+     */
+    public const val KEY_FLASH_MS: Long = 260
 }

@@ -54,6 +54,7 @@ import pianoanchor.feature.monitor.resources.monitor_log_empty
 import pianoanchor.feature.monitor.resources.monitor_log_gap
 import pianoanchor.feature.monitor.resources.monitor_log_time
 import pianoanchor.feature.monitor.resources.monitor_no_devices
+import pianoanchor.feature.monitor.resources.monitor_practice
 import pianoanchor.feature.monitor.resources.monitor_record_start
 import pianoanchor.feature.monitor.resources.monitor_record_stop
 import pianoanchor.feature.monitor.resources.monitor_recorded_count
@@ -84,6 +85,14 @@ public fun MonitorScreen(
             devices(state, actions)
             item { StatusText(state) }
             state.instrument?.let { instrument -> item { InstrumentText(instrument) } }
+            item {
+                // Wait-mode practice on the selected piano, while it is connected.
+                val device = state.selected
+                Button(
+                    onClick = { device?.let(actions.onPractice) },
+                    enabled = device != null && state.connection == Connection.CONNECTED,
+                ) { Text(stringResource(Res.string.monitor_practice)) }
+            }
             item { RecordingControls(state, actions) }
             log(state.log)
         }
