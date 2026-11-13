@@ -39,6 +39,8 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
   JVM, annotate `@ExcludeFromCoverage("reason + where it is tested")`.
 - Kover counts `companion object` `val` getters as uncovered lines: put private constants at file top level instead.
 - Write the failing test first for behaviour changes. Use fakes, not mocks. Name tests after behaviour.
+- A fake that calls back on another thread must change shared state (e.g. a `StateFlow`) on the caller's thread:
+  while `runTest`'s body waits on another thread, virtual time can skip through background `delay`s.
 - Pyramid: unit (JVM) → integration (contract tests on real adapters) → UI (screenshots, Compose UI tests) →
   few end-to-end tests on an emulator. A real piano is a manual release checklist.
 
