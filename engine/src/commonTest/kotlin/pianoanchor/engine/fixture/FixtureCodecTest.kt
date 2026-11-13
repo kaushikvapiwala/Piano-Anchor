@@ -116,6 +116,13 @@ class FixtureCodecTest {
     }
 
     @Test
+    fun unknownClockIsRejected() {
+        val e = failureLine(file().replace("monotonic-ns", "wall-ms"))
+        assertEquals(1, e.line)
+        assertTrue("clock" in e.message.orEmpty())
+    }
+
+    @Test
     fun headerWithoutClockIsRejected() {
         assertEquals(1, failureLine(file().replace(""","clock":"monotonic-ns"""", "")).line)
     }

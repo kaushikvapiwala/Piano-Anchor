@@ -43,7 +43,8 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
   driven adapters (`pianoanchor.platform`) or test support (`pianoanchor.testing`).
 - Platform adapter modules (`platform/*`) depend on `:core:ports` and may use `:engine` helpers (e.g. `MidiParser`).
 - Feature modules (`feature/*`, package `pianoanchor.feature`) are driving adapters: a ViewModel
-  (`androidx.lifecycle` KMP) and stateless screens, depending on ports and `:engine` only, never on adapters.
+  (`androidx.lifecycle` KMP) and stateless screens, depending on ports, `:engine` and `:ui:shell` (theme), never on
+  driven adapters (`platform/*`) or apps.
 - Apps are composition roots: they wire adapters to ports (Koin, ADR 0017) and contain no business logic.
 
 ## Ports

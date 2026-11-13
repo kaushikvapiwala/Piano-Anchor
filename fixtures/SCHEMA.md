@@ -16,8 +16,8 @@ Line 1 is the header; every field is required:
 |---|---|
 | `schema` | Format version. This document describes 1; readers reject other values. |
 | `device` | The piano's display name as the platform reported it. |
-| `recordedAt` | When the recording was exported, ISO-8601 in UTC. |
-| `clock` | Clock domain of `t`: `monotonic-ns` (the app's `ClockPort`). |
+| `recordedAt` | When the recording started (wall clock), ISO-8601 in UTC. |
+| `clock` | Clock domain of `t`: must be `monotonic-ns` (the app's `ClockPort`). |
 
 Each further line is one MIDI message:
 
@@ -31,7 +31,7 @@ Each further line is one MIDI message:
 | `t` | Nanoseconds since the first message: never negative, never smaller than the line before. |
 | `bytes` | The whole message as lowercase hex pairs (readers accept uppercase), starting with a status byte (80–ff). |
 
-A reader reports the first bad line by number: missing header, wrong schema, non-hex or empty bytes, a missing
+A reader reports the first bad line by number: missing header, wrong schema or clock, non-hex or empty bytes, a missing
 status byte, or a negative or decreasing `t`.
 
 ## Canonical bytes, not a wire capture

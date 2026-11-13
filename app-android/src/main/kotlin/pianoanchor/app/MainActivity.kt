@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -17,11 +18,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import pianoanchor.feature.monitor.MonitorActions
 import pianoanchor.feature.monitor.MonitorScreen
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.ui.shell.PianoAnchorTheme
+import java.io.IOException
 
 private const val FIXTURE_MIME_TYPE = "application/x-ndjson"
 private const val FIXTURE_FILE_NAME = "piano-anchor-fixture.jsonl"
@@ -48,11 +51,22 @@ private fun MonitorRoute(viewModel: MonitorViewModel = koinViewModel()) {
         ) { viewModel.scanBluetooth() }
     val export =
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(FIXTURE_MIME_TYPE)) { uri ->
-            val jsonl = viewModel.exportJsonl()
-            if (uri != null && jsonl != null) {
-                scope.launch(Dispatchers.IO) {
-                    context.contentResolver.openOutputStream(uri)?.use { it.write(jsonl.encodeToByteArray()) }
-                }
+            if (uri == null) return@rememberLauncherForActivityResult
+            scope.launch {
+                val written =
+                    withContext(Dispatchers.IO) {
+                        val jsonl = viewModel.exportJsonl() ?: return@withContext false
+                        try {
+                            context.contentResolver
+                                .openOutputStream(
+                                    uri,
+                                )?.use { it.write(jsonl.encodeToByteArray()) } !=
+                                null
+                        } catch (_: IOException) {
+                            false
+                        }
+                    }
+                if (!written) Toast.makeText(context, R.string.export_failed, Toast.LENGTH_LONG).show()
             }
         }
     MonitorScreen(

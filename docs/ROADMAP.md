@@ -35,6 +35,9 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
    and export a C-D-E fixture into `fixtures/` (first hardware check of the 1.4a `MidiManager` glue, the 1.4b
    scan/connect glue and the 1.4m Android wiring).
 2. **Grill session** (owner): slice 1.6 matcher (best after fixtures exist) and slice 1.5 instrument identity.
+3. **Monitor give-up** (mechanical): after a drop the note monitor shows "Reconnecting…" forever; once the adapter
+   stops retrying (`BLE_RECONNECT_GIVE_UP_MS`), show `DEVICE_UNAVAILABLE` instead (needs a port signal or a
+   monitor-side timeout; decide in the spec).
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |

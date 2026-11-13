@@ -6,7 +6,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.dropWhile
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
@@ -28,7 +28,7 @@ private const val SYSEX_FRAME_BYTES = 2
 
 /**
  * The note monitor: shows live messages from the selected piano, reopens it after a drop and records a session as a
- * JSONL fixture (`fixtures/SCHEMA.md`). [recordedAt] gives the wall-clock time (ISO-8601 UTC) for an export's header.
+ * JSONL fixture (`fixtures/SCHEMA.md`). [recordedAt] gives the wall-clock time (ISO-8601 UTC) when a recording starts.
  */
 public class MonitorViewModel(
     private val input: MidiInputPort,
@@ -67,7 +67,17 @@ public class MonitorViewModel(
         if (scan?.isActive == true) return
         scan =
             viewModelScope.launch {
-                mutableState.update { it.copy(scanning = true, scanned = emptyList(), error = null) }
+                mutableState.update {
+                    it.copy(
+                        scanning = true,
+                        scanned = emptyList(),
+                        error =
+                            it.error.takeUnless { e ->
+                                e in
+                                    BLUETOOTH_ERRORS
+                            },
+                    )
+                }
                 try {
                     discovery.scan().collect { found -> mutableState.update { it.copy(scanned = found) } }
                 } catch (e: BluetoothUnavailableException) {
@@ -103,6 +113,7 @@ public class MonitorViewModel(
                 state.value.selected
                     ?.name
                     .orEmpty(),
+            recordedAt = recordedAt(),
         )
         mutableState.update { it.copy(recording = true, recordedCount = 0, error = null) }
     }
@@ -112,7 +123,7 @@ public class MonitorViewModel(
     }
 
     /** The recording as fixture JSONL, or null when nothing was recorded. */
-    public fun exportJsonl(): String? = recorder.jsonl(recordedAt)
+    public fun exportJsonl(): String? = recorder.jsonl()
 
     public fun dismissError() {
         mutableState.update { it.copy(error = null) }
@@ -120,39 +131,36 @@ public class MonitorViewModel(
 
     private suspend fun monitor(device: MidiDevice) {
         try {
-            collect(device, afterGap = false)
+            collect(device)
         } catch (_: MidiDeviceUnavailableException) {
             mutableState.update { it.copy(connection = Connection.NONE, error = MonitorError.DEVICE_UNAVAILABLE) }
             return
         }
-        // events() completed: the device dropped. Wait until it is listed again (after having left the list).
         while (true) {
-            mutableState.update { it.copy(connection = Connection.RECONNECTING) }
-            input.inputDevices.dropWhile { device.isListedIn(it) }.first { device.isListedIn(it) }
-            try {
-                collect(device, afterGap = true)
-            } catch (_: MidiDeviceUnavailableException) {
-                // It left the list again before it opened: keep waiting.
-            }
+            // events() completed: the device dropped. Mark the gap, then reopen it as soon as it is listed.
+            val gap = LogLine("", millisSince(clock.nowNanos()), gap = true)
+            mutableState.update { it.copy(connection = Connection.RECONNECTING).withLine(gap) }
+            do {
+                input.inputDevices.first { device.isListedIn(it) }
+                val reopened =
+                    try {
+                        collect(device) // returns when it drops again
+                        true
+                    } catch (_: MidiDeviceUnavailableException) {
+                        // Listed but not openable (a stale list): wait for the list to change, then try again.
+                        mutableState.update { it.copy(connection = Connection.RECONNECTING) }
+                        input.inputDevices.drop(1).first()
+                        false
+                    }
+            } while (!reopened)
         }
     }
 
-    private suspend fun collect(
-        device: MidiDevice,
-        afterGap: Boolean,
-    ) {
+    private suspend fun collect(device: MidiDevice) {
         input
             .events(device)
-            .onStart {
-                mutableState.update { it.copy(connection = Connection.CONNECTED) }
-                if (afterGap) {
-                    mutableState.update {
-                        it.withLine(
-                            LogLine("", millisSince(clock.nowNanos()), gap = true),
-                        )
-                    }
-                }
-            }.collect(::onEvent)
+            .onStart { mutableState.update { it.copy(connection = Connection.CONNECTED) } }
+            .collect(::onEvent)
     }
 
     private fun onEvent(event: MidiEvent) {
@@ -170,6 +178,8 @@ public class MonitorViewModel(
 
 /** Adds [line] at the top of the log, keeping the newest `Tunables.MONITOR_LOG_LINES`. */
 private fun MonitorState.withLine(line: LogLine) = copy(log = (listOf(line) + log).take(Tunables.MONITOR_LOG_LINES))
+
+private val BLUETOOTH_ERRORS = setOf(MonitorError.BLUETOOTH_PERMISSION, MonitorError.BLUETOOTH_OFF)
 
 private fun MidiDevice.isListedIn(devices: List<MidiDevice>) = devices.any { it.id == id }
 

@@ -2,6 +2,8 @@ package pianoanchor.feature.monitor
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -12,10 +14,13 @@ import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.MidiDeviceUnavailableException
+import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.SysEx
+import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.fixture.FixtureCodec
 import pianoanchor.engine.midi.MidiParser
@@ -133,25 +138,83 @@ class MonitorViewModelTest {
     fun droppedDeviceShowsReconnectingThenResumes() =
         runTest(dispatcher) {
             val vm = selected()
+            clock.advanceNanos(400 * ms)
             play { piano.unplug() }
             assertEquals(Connection.RECONNECTING, vm.state.value.connection)
+            assertEquals(
+                LogLine("", 400, gap = true),
+                vm.state.value.log
+                    .first(),
+            )
 
             clock.advanceNanos(3_000 * ms)
             play { piano.plugIn() }
             assertEquals(Connection.CONNECTED, vm.state.value.connection)
-            assertEquals(
-                LogLine("", 3_000, gap = true),
-                vm.state.value.log
-                    .first(),
-            )
 
             play { piano.press(e4, velocity = 70) }
+            assertEquals(listOf(LogLine("E4 ↓ 70", 3_400), LogLine("", 400, gap = true)), vm.state.value.log)
+        }
+
+    @Test
+    fun deviceBackBeforeTheMonitorNoticesResumes() =
+        runTest(dispatcher) {
+            val vm = selected()
+            play {
+                piano.unplug()
+                piano.plugIn()
+            }
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+            play { piano.press(c4, velocity = 10) }
             assertEquals(
-                LogLine("E4 ↓ 70", 3_000),
+                "C4 ↓ 10",
                 vm.state.value.log
-                    .first(),
+                    .first()
+                    .text,
             )
         }
+
+    @Test
+    fun listedButUnopenableDeviceWaitsForTheNextListChange() =
+        runTest(dispatcher) {
+            val stale = StaleInput(piano)
+            val vm = MonitorViewModel(stale, piano, clock) { "2026-11-12T10:00:00Z" }
+            runCurrent()
+            vm.select(piano.device)
+            runCurrent()
+            stale.failOpens = 1
+            play { piano.unplug() }
+            play { piano.plugIn() }
+            assertEquals(Connection.RECONNECTING, vm.state.value.connection)
+            assertEquals(
+                1,
+                vm.state.value.log
+                    .count { it.gap },
+            )
+
+            play { piano.unplug() }
+            play { piano.plugIn() }
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+            assertEquals(
+                1,
+                vm.state.value.log
+                    .count { it.gap },
+            )
+        }
+
+    /** Input whose next [failOpens] `events` calls fail as if the device listing were stale. */
+    private class StaleInput(
+        private val delegate: FakePiano,
+    ) : MidiInputPort by delegate {
+        var failOpens = 0
+
+        override fun events(device: MidiDevice): Flow<MidiEvent> =
+            if (failOpens > 0) {
+                failOpens--
+                flow { throw MidiDeviceUnavailableException(device.id) }
+            } else {
+                delegate.events(device)
+            }
+    }
 
     @Test
     fun recordingSurvivesAReconnect() =
@@ -308,6 +371,30 @@ class MonitorViewModelTest {
         }
 
     @Test
+    fun scanKeepsAnUnrelatedError() =
+        runTest(dispatcher) {
+            val vm = monitor()
+            vm.select(MidiDevice(id = "gone", name = "Gone"))
+            runCurrent()
+            vm.scanBluetooth()
+            runCurrent()
+            assertEquals(MonitorError.DEVICE_UNAVAILABLE, vm.state.value.error)
+        }
+
+    @Test
+    fun scanClearsAnEarlierBluetoothError() =
+        runTest(dispatcher) {
+            piano.bluetoothProblem = BluetoothUnavailableException.Reason.BLUETOOTH_OFF
+            val vm = monitor()
+            vm.scanBluetooth()
+            runCurrent()
+            piano.bluetoothProblem = null
+            vm.scanBluetooth()
+            runCurrent()
+            assertNull(vm.state.value.error)
+        }
+
+    @Test
     fun scanWithBluetoothOffShowsBluetoothOffError() =
         runTest(dispatcher) {
             piano.bluetoothProblem = BluetoothUnavailableException.Reason.BLUETOOTH_OFF
@@ -330,6 +417,21 @@ class MonitorViewModelTest {
             runCurrent()
 
             assertEquals(MonitorError.BLUETOOTH_OFF, vm.state.value.error)
+        }
+
+    @Test
+    fun headerTimeIsWhenTheRecordingStarted() =
+        runTest(dispatcher) {
+            var now = "2026-11-12T10:00:00Z"
+            val vm = MonitorViewModel(piano, piano, clock) { now }
+            runCurrent()
+            vm.select(piano.device)
+            runCurrent()
+            vm.startRecording()
+            now = "2026-11-12T14:00:00Z"
+            play { piano.press(c4) }
+            vm.stopRecording()
+            assertEquals("2026-11-12T10:00:00Z", FixtureCodec.decode(vm.exportJsonl()!!).header.recordedAt)
         }
 
     @Test

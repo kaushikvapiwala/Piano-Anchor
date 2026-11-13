@@ -88,6 +88,14 @@ class ArchitectureTest {
     }
 
     @Test
+    fun `features never depend on driven adapters or apps (docs ARCHITECTURE - Dependency rules)`() {
+        val forbidden = listOf("pianoanchor.platform", "pianoanchor.app", "pianoanchor.desktop", "org.koin")
+        production.files
+            .filter { under(it.packagee?.name, "pianoanchor.feature") }
+            .assertFalse(strict = true) { file -> file.imports.any { underAny(it.name, forbidden) } }
+    }
+
+    @Test
     fun `ports are top-level interfaces named Port with KDoc (docs ARCHITECTURE - Ports)`() {
         ports.assertTrue(strict = true) { it.name.endsWith("Port") && it.hasKDoc }
     }

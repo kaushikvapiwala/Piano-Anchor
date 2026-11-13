@@ -42,6 +42,7 @@ public object FixtureCodec {
         fun fail(reason: String): Nothing = throw FixtureFormatException(1, reason)
         val line = parse<HeaderLine>(text) ?: fail("missing header (schema, device, recordedAt, clock)")
         if (line.schema != SCHEMA) fail("unsupported schema ${line.schema}, expected $SCHEMA")
+        if (line.clock != MONOTONIC_NS) fail("unsupported clock \"${line.clock}\", expected \"$MONOTONIC_NS\"")
         return Fixture.Header(line.schema, line.device, line.recordedAt, line.clock)
     }
 

@@ -13,14 +13,19 @@ internal class FixtureRecorder {
     private val messages = mutableListOf<Fixture.Message>()
     private var firstNanos: Long? = null
     private var device = ""
+    private var recordedAt = ""
 
     val count: Int get() = messages.size
 
-    /** Discards the previous recording and starts one for the piano named [deviceName]. */
-    fun start(deviceName: String) {
+    /** Discards the previous recording and starts one for the piano named [deviceName], at wall-clock [recordedAt]. */
+    fun start(
+        deviceName: String,
+        recordedAt: String,
+    ) {
         messages.clear()
         firstNanos = null
         device = deviceName
+        this.recordedAt = recordedAt
     }
 
     /** Records [event]; false (and not recorded) once it lies past `Tunables.MONITOR_RECORDING_MAX_MS`. */
@@ -32,9 +37,9 @@ internal class FixtureRecorder {
         return true
     }
 
-    /** The recording as fixture JSONL with header time [recordedAt], or null when it is empty. */
-    fun jsonl(recordedAt: () -> String): String? =
+    /** The recording as fixture JSONL, or null when it is empty. */
+    fun jsonl(): String? =
         messages.takeIf { it.isNotEmpty() }?.let {
-            FixtureCodec.encode(Fixture(Fixture.Header(FixtureCodec.SCHEMA, device, recordedAt()), it.toList()))
+            FixtureCodec.encode(Fixture(Fixture.Header(FixtureCodec.SCHEMA, device, recordedAt), it.toList()))
         }
 }
