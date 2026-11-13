@@ -20,8 +20,9 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | `:core:model` | Domain types (e.g. `MidiNote`, `MidiEvent`, `Attempt`) | Pure Kotlin, 100% coverage |
 | `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`, `MidiDiscoveryPort`, `InstrumentRepositoryPort`, `AttemptRepositoryPort`) | Interfaces only, each with KDoc |
 | `:engine` | Coaching logic: the `midi` byte-stream parser, the `matcher` (wait mode), `grading`, built-in `content` passages; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
-| `:testing` | Fakes (e.g. `FakePiano`) and abstract port contract tests | Used by all test source sets; until slice 1.8, `:app-android` also uses `FakeInstrumentRepository` as its in-memory instrument store |
+| `:testing` | Fakes (e.g. `FakePiano`) and abstract port contract tests | Used by test source sets only |
 | `:platform:android-midi` | Driven adapters over Android's MIDI service: `AndroidMidiAdapter` (both MIDI ports and Bluetooth LE discovery), `AndroidClockAdapter` | Logic in `commonMain`, 100% coverage on the JVM; `androidMain` glue excluded (see Testing) |
+| `:platform:storage` | Driven adapters over the on-device SQLite database (SQLDelight, ADR 0019): `SqlInstrumentRepositoryAdapter`, `SqlAttemptRepositoryAdapter`, `createPianoAnchorDatabaseDriver` per platform | Adapters in `commonMain` over `SqlDriver`, tested on the JVM SQLite driver at 100% (generated code excluded); the Android driver factory is excluded |
 | `:ui:shell` | Shared Compose root, `PianoAnchorTheme` (`docs/ui/living-studio.md`) and string resources | Driving adapter |
 | `:feature:monitor` | Note monitor: `MonitorViewModel`, `MonitorScreen`; records JSONL fixtures (`fixtures/SCHEMA.md`) | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
 | `:app-android` | Android app: composition root (Koin module, permission request, file export) | No business logic |
@@ -38,7 +39,8 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
 - Domain code (`pianoanchor.core.*`, `pianoanchor.engine`) imports only Kotlin, `kotlinx.coroutines` (for `Flow`
   in ports, ADR 0013), `kotlinx.serialization` (fixture format, ADR 0016) and other domain code: no Android,
   AndroidX, Compose, Koin or `java.*`/`javax.*`.
-- `:testing` depends on `:engine` (`FakePiano` uses the real `MidiParser`).
+- `:testing` depends on `:engine` (`FakePiano` uses the real `MidiParser`). Only test code uses it: production code
+  outside `pianoanchor.testing` never imports it.
 - Domain code never imports driving adapters (`pianoanchor.ui`, `pianoanchor.app`, `pianoanchor.desktop`),
   driven adapters (`pianoanchor.platform`) or test support (`pianoanchor.testing`).
 - Platform adapter modules (`platform/*`) depend on `:core:ports` and may use `:engine` helpers (e.g. `MidiParser`).

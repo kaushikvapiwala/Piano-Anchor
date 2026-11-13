@@ -96,6 +96,13 @@ class ArchitectureTest {
     }
 
     @Test
+    fun `only test code uses test support (docs ARCHITECTURE - Dependency rules)`() {
+        production.files
+            .filterNot { under(it.packagee?.name, TESTING) }
+            .assertFalse(strict = true) { file -> file.imports.any { under(it.name, TESTING) } }
+    }
+
+    @Test
     fun `ports are top-level interfaces named Port with KDoc (docs ARCHITECTURE - Ports)`() {
         ports.assertTrue(strict = true) { it.name.endsWith("Port") && it.hasKDoc }
     }
