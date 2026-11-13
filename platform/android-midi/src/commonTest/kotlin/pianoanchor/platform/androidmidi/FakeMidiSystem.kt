@@ -32,7 +32,8 @@ private const val BLUETOOTH_SYSTEM_IDS = 100
 
 /**
  * In-memory [MidiSystem]. Like Android, it calls back on another thread: [deliver] and [unplug] run the adapter's
- * callbacks on `Dispatchers.Default` and return once they have finished.
+ * callbacks on `Dispatchers.Default` and return once they have finished. Device-list changes stay on the caller's
+ * thread, so virtual time can't run on while a test waits for a callback.
  */
 internal class FakeMidiSystem(
     vararg initial: SystemDevice,
@@ -152,12 +153,14 @@ internal class FakeMidiSystem(
         withContext(Dispatchers.Default) { inputs[systemId]?.onBytes?.invoke(bytes, offset, count, timestampNanos) }
     }
 
-    /** Removes the device with [systemId] from the list and tells its open input, if any. */
+    /**
+     * Tells the open input of the device with [systemId], if any, then removes the device from the list. The list
+     * changes on the caller's thread, after the hop: changed while the test body waits on another thread, `runTest`
+     * would see only background work and skip virtual time through the adapter's reconnect backoff.
+     */
     suspend fun unplug(systemId: Int) {
-        withContext(Dispatchers.Default) {
-            list.update { devices -> devices.filterNot { it.systemId == systemId } }
-            inputs[systemId]?.onClosed?.invoke()
-        }
+        withContext(Dispatchers.Default) { inputs[systemId]?.onClosed?.invoke() }
+        list.update { devices -> devices.filterNot { it.systemId == systemId } }
     }
 
     fun plugIn(device: SystemDevice) = list.update { it + device }
