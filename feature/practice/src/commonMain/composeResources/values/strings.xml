@@ -19,4 +19,22 @@
     <string name="practice_announce_wrong">Wrong, %1$s</string>
     <string name="practice_disconnected">Piano disconnected</string>
     <string name="practice_back_to_pianos">Back to pianos</string>
+    <string name="results_caption">%1$s · run %2$s · wait mode</string>
+    <string name="results_headline_clean">Every note right.</string>
+    <string name="results_headline_good">Mostly right. A few slips to tidy.</string>
+    <string name="results_headline_keep_practising">Let's go slower and try again.</string>
+    <string name="results_pitch_label">PITCH</string>
+    <string name="results_pitch_value">%1$s / %2$s</string>
+    <string name="results_pitch_every_note_right">every note right</string>
+    <plurals name="results_pitch_wrong_notes">
+        <item quantity="one">%1$s wrong note</item>
+        <item quantity="other">%1$s wrong notes</item>
+    </plurals>
+    <plurals name="results_pitch_incomplete_chords">
+        <item quantity="one">%1$s chord incomplete</item>
+        <item quantity="other">%1$s chords incomplete</item>
+    </plurals>
+    <string name="results_pitch_description">Pitch: %1$s of %2$s correct, %3$s</string>
+    <string name="results_try_again">Try again</string>
+    <string name="results_not_found">Couldn't find this run</string>
 </resources>

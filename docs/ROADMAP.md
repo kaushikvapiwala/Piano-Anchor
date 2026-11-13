@@ -31,7 +31,9 @@ and scaffolding from the real code.
 | Wait-mode matcher and the built-in C-D-E passage (1.6) | ✅ |
 | Grading (accuracy, band) and the attempt storage port (1.7) | ✅ |
 | SQLDelight storage adapter for instruments and attempts (1.8) | ✅ (on-device check with the hardware check) |
-| Wait-mode practice screen, Living Studio palette and fonts (1.9) | ✅ (a finished run returns to the monitor until 1.10) |
+| Wait-mode practice screen, Living Studio palette and fonts (1.9) | ✅ |
+| Results screen: headline by band, Pitch tile, Try again (1.10) | ✅ |
+| **Walking skeleton** | ✅ pending the owner's end-to-end hardware check (Next up 1) |
 
 ## Next up
 The task queue for `/next-task` (`.claude/skills/next-task/`): one item per session and PR, top first.
@@ -44,22 +46,24 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
    (the monitor shows "model …") and that the piano is still known after an app restart (1.8 storage). If a piano
    known to answer shows none, the request may race the input port's open: `MidiInputPort` would then need an
    "opened" signal. Also open Practice from the monitor, play C-D-E, and check the monitor shows the piano connected
-   again afterwards (1.9: the monitor closes the input for practice and reopens it on return).
-2. **Slice 1.10** — results screen (Living Studio mock): spec #41 [#40]; the app's practice route then goes to
-   Results with `finishedAttemptId` instead of back to the monitor. Then the owner's end-to-end check on a
-   phone and piano (play C-D-E, see Results, the run survives an app restart) closes Phase 1.
-3. **Emulator end-to-end CI job** [first device test]: when the first instrumented end-to-end test lands (ADR 0007),
+   again afterwards (1.9: the monitor closes the input for practice and reopens it on return). End to end (closes
+   Phase 1): play C-D-E, see Results (1.10) with "run N", Try again, and the run count survives an app restart.
+2. **Emulator end-to-end CI job** [first device test]: when the first instrumented end-to-end test lands (ADR 0007),
    run it on Gradle Managed Devices (ATD image, KVM on `ubuntu-latest`) on pushes to main and nightly, not on every
    PR. Settle first how tests feed MIDI without a piano (an in-app `MidiDeviceService` fake).
-4. **Fix: hook tests inherit `PIANO_ANCHOR_STOP_HOOK`** (mechanical): `scripts/test_hooks.py`'s Stop-hook tests pass
+3. **Fix: hook tests inherit `PIANO_ANCHOR_STOP_HOOK`** (mechanical): `scripts/test_hooks.py`'s Stop-hook tests pass
    the caller's environment, so in a cloud dispatcher session (`PIANO_ANCHOR_STOP_HOOK=subagent-only`) 8 of them fail
    and `fastCheck` goes red there. Clear the variable in the tests unless a test sets it.
-5. **Storage failure model** (decision): with SQLite behind the repository ports, `upsert`/`save` can fail (disk
+4. **Storage failure model** (decision): with SQLite behind the repository ports, `upsert`/`save` can fail (disk
    full, corrupt file), and the monitor's identify step doesn't catch it, so one failure ends MIDI collection. Decide
-   the ports' error model (e.g. a domain `StorageUnavailableException`) and how the monitor and practice screen react.
-6. **Keep a known identity on a missed reply** (decision): `InstrumentRepositoryPort.upsert` replaces the identity, so
+   the ports' error model (e.g. a domain `StorageUnavailableException`) and how the monitor, practice and results
+   screens react (a failing read on Results crashes today).
+5. **Keep a known identity on a missed reply** (decision): `InstrumentRepositoryPort.upsert` replaces the identity, so
    a reconnect whose Identity Reply is lost erases a stored model. Decide whether a null identity keeps the stored one
    (contract change, then `COALESCE` in `Instrument.sq`).
+6. **Count runs without loading them** (mechanical): the results screen numbers a run by reading up to
+   `RESULTS_HISTORY_LIMIT` whole attempts (each with its events) through `recent`. Add a count query to
+   `AttemptRepositoryPort` (attempts of a passage started before an instant; `COUNT` in SQL) and use it.
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
 

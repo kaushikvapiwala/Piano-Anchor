@@ -57,5 +57,5 @@ class PracticeScreenScreenshotTest {
     fun disconnected() = capture("disconnected", start.copy(connection = PracticeConnection.DISCONNECTED))
 }
 
-/** Android API level the screenshots render with (the newest Robolectric supports). */
-private const val SDK = 36
+/** Android API level the Robolectric tests run with (the newest Robolectric supports). */
+internal const val SDK = 36

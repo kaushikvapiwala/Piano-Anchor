@@ -14,6 +14,7 @@ import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.engine.content.Passages
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.practice.PracticeViewModel
+import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.platform.androidmidi.AndroidClockAdapter
 import pianoanchor.platform.androidmidi.AndroidMidiAdapter
 import pianoanchor.platform.storage.SqlAttemptRepositoryAdapter
@@ -38,4 +39,5 @@ val appModule =
         viewModel { (device: MidiDevice) ->
             PracticeViewModel(device, Passages.CDE, get(), get(), get()) { Uuid.random().toString() }
         }
+        viewModel { (attemptId: String) -> ResultsViewModel(attemptId, get()) }
     }

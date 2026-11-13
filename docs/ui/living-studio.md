@@ -52,3 +52,20 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
 - **Accessibility**: the staff reads as "Treble staff. Notes C4, D4, E4. Waiting for D4."; each key is named; the
   verdict is a polite live region announcing "Correct" or "Wrong, F4".
 - **Disconnected**: the error card "Piano disconnected" with "Back to pianos"; the run is discarded.
+
+## Results screen
+
+Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 12/18 dp, 10 dp gaps
+(`pianoAnchorColors.page` and `.tile`).
+
+- **Header**: back (44 dp), the caption "C-D-E · run 3 · wait mode" (Inter 11 sp, secondary) and the headline, a
+  heading (Space Grotesk 700, 22 sp) chosen by band: "Every note right." (clean), "Mostly right. A few slips to
+  tidy." (good), "Let's go slower and try again." (keep practising). The run number counts the passage's older runs.
+- **Tiles**: the mock's 4-column grid; Phase 1 fills only the first, **Pitch** (white, dark `#2A2730`, radius 16,
+  padding 10/12, 1 dp shadow): "PITCH", "3 / 3" in the correct blue (Space Grotesk 700, 22 sp) and "every note
+  right" or the slips that aren't zero ("1 wrong note", "2 wrong notes, 1 chord incomplete"). TalkBack reads it as
+  one sentence: "Pitch: 3 of 3 correct, every note right". Timing, note length and hesitation tiles, spots and
+  "Next, and why" come when their data exists; empty columns are blank, not placeholders.
+- **Try again**: 44 dp plum pill bottom right; it practises the passage again on the same piano. Back goes to the
+  pianos.
+- **Not found**: the error card "Couldn't find this run" with "Back to pianos".

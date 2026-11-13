@@ -12,18 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,8 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.feature.practice.resources.Res
-import pianoanchor.feature.practice.resources.practice_back
-import pianoanchor.feature.practice.resources.practice_back_glyph
 import pianoanchor.feature.practice.resources.practice_back_to_pianos
 import pianoanchor.feature.practice.resources.practice_disconnected
 import pianoanchor.feature.practice.resources.practice_end_run
@@ -65,7 +59,14 @@ public fun PracticeScreen(
         Column(modifier = Modifier.safeDrawingPadding()) {
             TopBar(state.passageTitle, onBack)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            if (state.connection == PracticeConnection.DISCONNECTED) DisconnectedCard(onBack)
+            if (state.connection == PracticeConnection.DISCONNECTED) {
+                ErrorCard(
+                    message = stringResource(Res.string.practice_disconnected),
+                    action = stringResource(Res.string.practice_back_to_pianos),
+                    onAction = onBack,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp).fillMaxWidth(),
+                )
+            }
             StaffView(
                 steps = state.steps,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp).fillMaxWidth().height(196.dp),
@@ -80,23 +81,12 @@ private fun TopBar(
     title: String,
     onBack: () -> Unit,
 ) {
-    val backLabel = stringResource(Res.string.practice_back)
     Row(
         modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        TextButton(
-            onClick = onBack,
-            modifier = Modifier.size(44.dp).semantics { contentDescription = backLabel },
-            contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
-        ) {
-            Text(
-                stringResource(Res.string.practice_back_glyph),
-                fontSize = 20.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+        BackButton(onBack)
         Column {
             Text(title, fontFamily = displayFontFamily, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(
@@ -150,25 +140,6 @@ private fun TempoChip(
             fontWeight = FontWeight.SemiBold,
             color = if (selected) colors.onPrimary else colors.onSurfaceVariant.copy(alpha = DISABLED_ALPHA),
         )
-    }
-}
-
-/** The living-studio error card: the piano is gone, the run was discarded. */
-@Composable
-private fun DisconnectedCard(onBack: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp).fillMaxWidth(),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, end = 8.dp)) {
-            Text(stringResource(Res.string.practice_disconnected), modifier = Modifier.weight(1f))
-            TextButton(
-                onClick = onBack,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer),
-            ) {
-                Text(stringResource(Res.string.practice_back_to_pianos))
-            }
-        }
     }
 }
 

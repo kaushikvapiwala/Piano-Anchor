@@ -25,8 +25,8 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | `:platform:storage` | Driven adapters over the on-device SQLite database (SQLDelight, ADR 0019): `SqlInstrumentRepositoryAdapter`, `SqlAttemptRepositoryAdapter`, `createPianoAnchorDatabaseDriver` per platform | Adapters in `commonMain` over `SqlDriver`, tested on the JVM SQLite driver at 100% (generated code excluded); the Android driver factory is excluded |
 | `:ui:shell` | Shared Compose root, `PianoAnchorTheme` (`docs/ui/living-studio.md`) and string resources | Driving adapter |
 | `:feature:monitor` | Note monitor: `MonitorViewModel`, `MonitorScreen`; records JSONL fixtures (`fixtures/SCHEMA.md`) | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
-| `:feature:practice` | Wait-mode practice: `PracticeViewModel` (matcher, grading, saving the attempt), `PracticeScreen` with the Canvas `StaffView` and the live `KeyStrip` | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
-| `:app-android` | Android app: composition root (Koin module, permission request, file export) and screen navigation (monitor → practice, one ViewModel store per practice run) | No business logic |
+| `:feature:practice` | Wait-mode practice: `PracticeViewModel` (matcher, grading, saving the attempt), `PracticeScreen` with the Canvas `StaffView` and the live `KeyStrip`; the run's results: `ResultsViewModel` and `ResultsScreen` | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
+| `:app-android` | Android app: composition root (Koin module, permission request, file export) and screen navigation (monitor → practice → results, Try again → practice; one ViewModel store per route) | No business logic |
 | `:app-desktop` | Desktop development harness | No business logic |
 | `:architecture-tests` | Konsist rules enforcing this document | Runs in `fastCheck` |
 
@@ -66,7 +66,8 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
   with `Dispatchers.setMain` and the fakes from `testing/`.
 - Screens have golden screenshots (Roborazzi on Robolectric, `androidHostTest`) in light and dark, committed under
   the module's `screenshots/` and verified by `fastCheck`; `recordRoborazziAndroidHostTest` rewrites them after an
-  intended change (`docs/adr/0018-screenshot-tests.md`).
+  intended change (`docs/adr/0018-screenshot-tests.md`). Controls and TalkBack labels are checked by Compose UI
+  tests (`runComposeUiTest`) in the same source set (`docs/adr/0020-compose-ui-tests.md`).
 - Pure modules need 100% line and branch coverage; `@ExcludeFromCoverage("reason")` marks the rare exception.
 - Platform adapters split into **logic** and **glue**. The logic talks to the platform through a thin internal
   seam (e.g. `MidiSystem` in `:platform:android-midi`) and lives in `commonMain`, so it runs and is measured on the

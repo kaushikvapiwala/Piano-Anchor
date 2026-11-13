@@ -28,6 +28,8 @@ kotlin {
             implementation(libs.roborazzi.compose)
             implementation(libs.robolectric)
             implementation(libs.junit4)
+            implementation(libs.compose.ui.test)
+            implementation(libs.androidx.compose.ui.test.manifest)
         }
     }
 }
