@@ -38,6 +38,8 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 - Pure-Kotlin modules: **100% line and branch coverage** (Kover fails the build). If code truly can't run on the
   JVM, annotate `@ExcludeFromCoverage("reason + where it is tested")`.
 - Kover counts `companion object` `val` getters as uncovered lines: put private constants at file top level instead.
+- Robolectric breaks on a checkout path with spaces: keep `robolectric.dependency.dir` under the Gradle user home,
+  as `feature/monitor/build.gradle.kts` does (copy that setup into new modules with Robolectric tests).
 - Write the failing test first for behaviour changes. Use fakes, not mocks. Name tests after behaviour.
 - A fake that calls back on another thread must change shared state (e.g. a `StateFlow`) on the caller's thread:
   while `runTest`'s body waits on another thread, virtual time can skip through background `delay`s.
