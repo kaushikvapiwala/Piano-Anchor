@@ -21,6 +21,7 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`) | Interfaces only, each with KDoc |
 | `:engine` | Coaching logic, including the `midi` byte-stream parser; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
 | `:testing` | Fakes (e.g. `FakePiano`) and abstract port contract tests | Used by all test source sets |
+| `:platform:android-midi` | Driven adapters over Android's MIDI service: `AndroidMidiAdapter` (both MIDI ports), `AndroidClockAdapter` | Logic in `commonMain`, 100% coverage on the JVM; `androidMain` glue excluded (see Testing) |
 | `:ui:shell` | Shared Compose root and string resources | Driving adapter; screenshot tests planned (Phase 1) |
 | `:app-android` | Android app: composition root | No business logic |
 | `:app-desktop` | Desktop development harness | No business logic |
@@ -36,8 +37,9 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
 - Domain code (`pianoanchor.core.*`, `pianoanchor.engine`) imports only Kotlin, `kotlinx.coroutines` (for `Flow`
   in ports, ADR 0013) and other domain code: no Android, AndroidX, Compose, Koin or `java.*`/`javax.*`.
 - `:testing` depends on `:engine` (`FakePiano` uses the real `MidiParser`).
-- Domain code never imports driving adapters (`pianoanchor.ui`, `pianoanchor.app`, `pianoanchor.desktop`)
-  or test support (`pianoanchor.testing`).
+- Domain code never imports driving adapters (`pianoanchor.ui`, `pianoanchor.app`, `pianoanchor.desktop`),
+  driven adapters (`pianoanchor.platform`) or test support (`pianoanchor.testing`).
+- Platform adapter modules (`platform/*`) depend on `:core:ports` and may use `:engine` helpers (e.g. `MidiParser`).
 - Apps are composition roots: they wire adapters to ports and contain no business logic.
 
 ## Ports
@@ -54,3 +56,8 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
   `FakePianoInputContractTest`), so fakes and real adapters behave the same.
 - Every `*ViewModel` and `*UseCase` has a `*Test`; test classes are named `*Test`.
 - Pure modules need 100% line and branch coverage; `@ExcludeFromCoverage("reason")` marks the rare exception.
+- Platform adapters split into **logic** and **glue**. The logic talks to the platform through a thin internal
+  seam (e.g. `MidiSystem` in `:platform:android-midi`) and lives in `commonMain`, so it runs and is measured on the
+  JVM against a fake seam (`FakeMidiSystem`), contract tests included. The glue implements the seam over the real
+  platform API in `androidMain`, does no decisions of its own and is `@ExcludeFromCoverage`; it is verified on a
+  device (manual owner test until device tests exist). See `docs/adr/0014-platform-adapter-modules.md`.

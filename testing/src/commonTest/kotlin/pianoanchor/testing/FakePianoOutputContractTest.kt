@@ -11,6 +11,6 @@ class FakePianoOutputContractTest : MidiOutputPortContractTest() {
             override val device: MidiDevice = piano.device
             override val received: List<ByteArray> get() = piano.sent
 
-            override fun unplug() = piano.unplug()
+            override suspend fun unplug() = piano.unplug()
         }
 }

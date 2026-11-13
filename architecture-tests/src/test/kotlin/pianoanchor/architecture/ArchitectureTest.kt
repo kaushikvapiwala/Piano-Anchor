@@ -27,7 +27,14 @@ class ArchitectureTest {
 
     private companion object {
         val domainRoots = listOf("pianoanchor.core", "pianoanchor.engine")
-        val adapterRoots = listOf("pianoanchor.ui", "pianoanchor.app", "pianoanchor.desktop", "pianoanchor.testing")
+        val adapterRoots =
+            listOf(
+                "pianoanchor.ui",
+                "pianoanchor.app",
+                "pianoanchor.desktop",
+                "pianoanchor.platform",
+                "pianoanchor.testing",
+            )
         val domainImportRoots = domainRoots + listOf("kotlin", "kotlinx.coroutines")
         val frameworkRoots = listOf("android", "androidx", "org.jetbrains.compose", "org.koin", "java", "javax")
         val portNames = ports.map { it.name }.toSet()
