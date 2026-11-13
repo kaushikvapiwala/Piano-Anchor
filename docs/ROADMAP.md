@@ -28,17 +28,11 @@ and scaffolding from the real code.
 The task queue for `/next-task` (`.claude/skills/next-task/`): one item per session and PR, top first.
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets.
 
-1. **Library-first agent rules** (branch docs/library-first, mechanical): `AGENTS.md` "Before writing code" gets a
-   step between 4 and 5: look for a maintained, licence-compatible library (Apache-2.0/MIT/BSD/EPL, never
-   GPL/AGPL/LGPL, KMP for shared modules) and propose it with an ADR; no dependency for a few lines; `core/*`
-   and `engine` stay free of non-kotlinx libraries; every spec fills "Hexagon placement" and libraries live in
-   adapters behind ports. `.claude/agents/implementer.md`: never add a dependency the spec doesn't name; if a
-   library would replace substantial code, stop and report it.
-2. **Slice 1.4a** — Android MIDI adapter over `MidiManager` (USB + system-opened BLE): spec #23.
-3. **Slice 1.4b** — Bluetooth LE MIDI discovery, connect and reconnect: spec #24 [#23].
-4. **Slice 1.4m** — note monitor with fixture export: spec #25 [#23, #24]. Then the owner checks a phone and
+1. **Slice 1.4a** — Android MIDI adapter over `MidiManager` (USB + system-opened BLE): spec #23.
+2. **Slice 1.4b** — Bluetooth LE MIDI discovery, connect and reconnect: spec #24 [#23].
+3. **Slice 1.4m** — note monitor with fixture export: spec #25 [#23, #24]. Then the owner checks a phone and
    piano over BLE and records a C-D-E fixture.
-5. **Grill session** (owner): slice 1.6 matcher (best after fixtures exist) and slice 1.5 instrument identity.
+4. **Grill session** (owner): slice 1.6 matcher (best after fixtures exist) and slice 1.5 instrument identity.
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |
