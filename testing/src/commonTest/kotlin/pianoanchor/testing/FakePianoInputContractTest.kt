@@ -10,8 +10,8 @@ class FakePianoInputContractTest : MidiInputPortContractTest() {
             override val port: MidiInputPort = piano
             override val device: MidiDevice = piano.device
 
-            override fun deliver(bytes: ByteArray) = piano.play(bytes)
+            override suspend fun deliver(bytes: ByteArray) = piano.play(bytes)
 
-            override fun unplug() = piano.unplug()
+            override suspend fun unplug() = piano.unplug()
         }
 }

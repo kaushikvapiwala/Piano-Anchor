@@ -18,6 +18,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Port | Interface through which the domain uses the outside world. Named `*Port`, lives in `core/ports`. |
 | Running status | MIDI shorthand: after one channel status byte, further data-byte groups reuse that status without repeating it. |
 | Skill node | One learnable skill (e.g. "bass clef F", "C to G chord change") in the learner's skill graph. |
+| Stable device id | The `MidiDevice.id` an adapter derives from what the platform reports (e.g. `usb:<manufacturer>/<product>/<serial>`, `ble:<address>`), so the same instrument keeps its id across reconnects when the platform reports enough to tell it apart. |
 | SysEx | System Exclusive: a variable-length, vendor-specific MIDI message framed by 0xF0 and 0xF7. |
 | Tunable | A threshold or prior in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt`, documented with why and source. |
 | Wait mode | Practice mode where the music waits until the learner plays the right note(s). |

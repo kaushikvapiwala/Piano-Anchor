@@ -19,7 +19,8 @@ abstract class MidiOutputPortContractTest {
         val device: MidiDevice
         val received: List<ByteArray> // what reached the instrument, in order
 
-        fun unplug()
+        /** Disconnects the device; returns after it left the device list. */
+        suspend fun unplug()
     }
 
     protected abstract fun createHarness(): OutputHarness

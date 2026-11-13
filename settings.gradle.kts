@@ -27,6 +27,7 @@ include(
     ":core:ports",
     ":engine",
     ":testing",
+    ":platform:android-midi",
     ":ui:shell",
     ":app-android",
     ":app-desktop",
