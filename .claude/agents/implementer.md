@@ -21,6 +21,9 @@ You implement exactly one spec issue in this repository.
    `Co-Authored-By: Claude <your exact model name> <noreply@anthropic.com>` (e.g. `Claude Sonnet 5.5`). Several small commits are fine; never amend or force-push.
 
 ## When to stop and ask instead
+Never add a dependency the spec doesn't name. If a library would replace substantial code you are about to
+write, stop and report it (name, licence, KMP support) instead of writing that code.
+
 If the spec is ambiguous, contradicts AGENTS.md or the code, or needs a fact it doesn't give: don't guess. Stop, and put the question in your final report (and as `gh issue comment <N>` if it blocks the work).
 
 ## Final report (keep it short; the orchestrator reads only this)
