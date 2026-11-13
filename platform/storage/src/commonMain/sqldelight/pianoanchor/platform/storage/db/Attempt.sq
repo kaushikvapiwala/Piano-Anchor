@@ -1,0 +1,49 @@
+-- Completed attempts (AttemptRepositoryPort). band is the Band enum's name.
+CREATE TABLE attempt (
+    id TEXT NOT NULL PRIMARY KEY,
+    passage_id TEXT NOT NULL,
+    device_id TEXT NOT NULL,
+    started_at_ms INTEGER NOT NULL,
+    duration_nanos INTEGER NOT NULL,
+    step_count INTEGER NOT NULL,
+    wrong_notes INTEGER NOT NULL,
+    incomplete_chords INTEGER NOT NULL,
+    accuracy REAL NOT NULL,
+    band TEXT NOT NULL
+);
+
+CREATE INDEX attempt_passage_started ON attempt(passage_id, started_at_ms DESC);
+
+-- An attempt's match events in order (seq from 0). kind names the MatchEvent subtype; note is set for a wrong note,
+-- missing (comma-separated note numbers) for an incomplete chord.
+CREATE TABLE attempt_event (
+    attempt_id TEXT NOT NULL REFERENCES attempt(id) ON DELETE CASCADE,
+    seq INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    t_nanos INTEGER NOT NULL,
+    step_index INTEGER NOT NULL,
+    note INTEGER,
+    missing TEXT,
+    PRIMARY KEY (attempt_id, seq),
+    CHECK ((kind = 'wrong_note') = (note IS NOT NULL)),
+    CHECK ((kind = 'chord_incomplete') = (missing IS NOT NULL))
+);
+
+insertAttempt:
+INSERT INTO attempt(
+    id, passage_id, device_id, started_at_ms, duration_nanos, step_count, wrong_notes, incomplete_chords, accuracy, band
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+insertEvent:
+INSERT INTO attempt_event(attempt_id, seq, kind, t_nanos, step_index, note, missing)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+selectById:
+SELECT * FROM attempt WHERE id = ?;
+
+selectEvents:
+SELECT * FROM attempt_event WHERE attempt_id = ? ORDER BY seq;
+
+selectRecent:
+SELECT * FROM attempt WHERE passage_id = ? ORDER BY started_at_ms DESC LIMIT ?;

@@ -19,6 +19,7 @@ androidx-lifecycle = "2.11.0"
 roborazzi = "1.78.0"
 robolectric = "4.17"
 junit4 = "4.13.2"
+sqldelight = "2.4.1"
 
 android-compileSdk = "37"
 android-targetSdk = "37"
@@ -47,6 +48,12 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 # Android framework jar Robolectric runs on: the SDK level in MonitorScreenScreenshotTest; the suffix matches the robolectric version.
 robolectric-android-all = { module = "org.robolectric:android-all-instrumented", version = "16-robolectric-13921718-i7" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+# SQL dialect for the SQLDelight compiler: SQLite 3.30 is the newest at or below Android minSdk 31's SQLite (3.32).
+sqldelight-dialect-sqlite330 = { module = "app.cash.sqldelight:sqlite-3-30-dialect", version.ref = "sqldelight" }
 
 
 
@@ -74,3 +81,4 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }

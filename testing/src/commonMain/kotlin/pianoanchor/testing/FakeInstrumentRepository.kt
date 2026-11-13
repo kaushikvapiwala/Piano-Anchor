@@ -5,10 +5,7 @@ import kotlinx.coroutines.flow.update
 import pianoanchor.core.model.Instrument
 import pianoanchor.core.ports.InstrumentRepositoryPort
 
-/**
- * In-memory [InstrumentRepositoryPort]: safe to call from any thread, forgets everything when the process ends.
- * Also the app's store until the SQLDelight adapter lands (roadmap slice 1.8).
- */
+/** In-memory [InstrumentRepositoryPort]: safe to call from any thread, forgets everything when the process ends. */
 class FakeInstrumentRepository : InstrumentRepositoryPort {
     private val instruments = MutableStateFlow(emptyMap<String, Instrument>())
 

@@ -28,6 +28,7 @@ include(
     ":engine",
     ":testing",
     ":platform:android-midi",
+    ":platform:storage",
     ":ui:shell",
     ":feature:monitor",
     ":app-android",
