@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The app reads a piano over Android's MIDI service; Bluetooth permissions come from :platform:android-midi. -->
+    <uses-feature android:name="android.software.midi" android:required="true" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+
     <application
+        android:name=".PianoAnchorApplication"
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"

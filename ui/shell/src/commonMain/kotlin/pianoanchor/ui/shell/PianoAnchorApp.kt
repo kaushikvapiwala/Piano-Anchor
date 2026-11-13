@@ -20,7 +20,7 @@ import pianoanchor.ui.shell.resources.welcome
 /** Root composable shared by the Android and desktop apps. */
 @Composable
 fun PianoAnchorApp(modifier: Modifier = Modifier) {
-    MaterialTheme {
+    PianoAnchorTheme {
         Surface(modifier = modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier.safeDrawingPadding().padding(24.dp),
