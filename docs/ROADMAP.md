@@ -49,6 +49,9 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 7. **Emulator end-to-end CI job** [first device test]: when the first instrumented end-to-end test lands (ADR 0007),
    run it on Gradle Managed Devices (ATD image, KVM on `ubuntu-latest`) on pushes to main and nightly, not on every
    PR. Settle first how tests feed MIDI without a piano (an in-app `MidiDeviceService` fake).
+8. **Fix: hook tests inherit `PIANO_ANCHOR_STOP_HOOK`** (mechanical): `scripts/test_hooks.py`'s Stop-hook tests pass
+   the caller's environment, so in a cloud dispatcher session (`PIANO_ANCHOR_STOP_HOOK=subagent-only`) 8 of them fail
+   and `fastCheck` goes red there. Clear the variable in the tests unless a test sets it.
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test to the matcher.
 
