@@ -31,6 +31,7 @@ include(
     ":platform:storage",
     ":ui:shell",
     ":feature:monitor",
+    ":feature:practice",
     ":app-android",
     ":app-desktop",
     ":architecture-tests",

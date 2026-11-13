@@ -27,4 +27,5 @@
     <string name="monitor_action_open_settings">Open settings</string>
     <string name="monitor_action_enable_bluetooth">Turn on Bluetooth</string>
     <string name="monitor_action_dismiss">Dismiss</string>
+    <string name="monitor_practice">Practice</string>
 </resources>

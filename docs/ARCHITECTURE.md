@@ -25,7 +25,8 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | `:platform:storage` | Driven adapters over the on-device SQLite database (SQLDelight, ADR 0019): `SqlInstrumentRepositoryAdapter`, `SqlAttemptRepositoryAdapter`, `createPianoAnchorDatabaseDriver` per platform | Adapters in `commonMain` over `SqlDriver`, tested on the JVM SQLite driver at 100% (generated code excluded); the Android driver factory is excluded |
 | `:ui:shell` | Shared Compose root, `PianoAnchorTheme` (`docs/ui/living-studio.md`) and string resources | Driving adapter |
 | `:feature:monitor` | Note monitor: `MonitorViewModel`, `MonitorScreen`; records JSONL fixtures (`fixtures/SCHEMA.md`) | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
-| `:app-android` | Android app: composition root (Koin module, permission request, file export) | No business logic |
+| `:feature:practice` | Wait-mode practice: `PracticeViewModel` (matcher, grading, saving the attempt), `PracticeScreen` with the Canvas `StaffView` and the live `KeyStrip` | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
+| `:app-android` | Android app: composition root (Koin module, permission request, file export) and screen navigation (monitor → practice, one ViewModel store per practice run) | No business logic |
 | `:app-desktop` | Desktop development harness | No business logic |
 | `:architecture-tests` | Konsist rules enforcing this document | Runs in `fastCheck` |
 

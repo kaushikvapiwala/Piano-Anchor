@@ -110,6 +110,49 @@ class MonitorViewModelTest {
         }
 
     @Test
+    fun closingTheDeviceKeepsItSelectedAndReopeningResumesIt() =
+        runTest(dispatcher) {
+            val vm = selected()
+
+            vm.setDeviceOpen(false)
+            runCurrent()
+            assertEquals(piano.device, vm.state.value.selected)
+            assertEquals(Connection.NONE, vm.state.value.connection)
+            play { piano.press(c4) }
+            assertTrue(
+                vm.state.value.log
+                    .isEmpty(),
+            ) // closed: another reader may open it now
+
+            vm.setDeviceOpen(true)
+            runCurrent()
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+            play { piano.press(d4) }
+            assertEquals(
+                listOf("D4 ↓ 64"),
+                vm.state.value.log
+                    .map { it.text },
+            )
+        }
+
+    @Test
+    fun closingWithoutASelectionAndReopeningWhatWasNotClosedDoNothing() =
+        runTest(dispatcher) {
+            val vm = monitor()
+
+            vm.setDeviceOpen(false)
+            vm.setDeviceOpen(true)
+            runCurrent()
+            assertNull(vm.state.value.selected)
+
+            vm.select(piano.device)
+            runCurrent()
+            vm.setDeviceOpen(true)
+            runCurrent()
+            assertEquals(Connection.CONNECTED, vm.state.value.connection)
+        }
+
+    @Test
     fun logKeepsOnlyTheNewestLines() =
         runTest(dispatcher) {
             val vm = selected()

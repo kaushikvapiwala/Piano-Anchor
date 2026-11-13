@@ -45,7 +45,7 @@ koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", versi
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
-# Android framework jar Robolectric runs on: the SDK level in MonitorScreenScreenshotTest; the suffix matches the robolectric version.
+# Android framework jar Robolectric runs on: the SDK level of the screenshot tests; the suffix matches the robolectric version.
 robolectric-android-all = { module = "org.robolectric:android-all-instrumented", version = "16-robolectric-13921718-i7" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }

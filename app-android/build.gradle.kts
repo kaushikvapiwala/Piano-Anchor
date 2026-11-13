@@ -5,6 +5,8 @@ plugins {
 dependencies {
     implementation(project(":ui:shell"))
     implementation(project(":feature:monitor"))
+    implementation(project(":feature:practice"))
+    implementation(project(":engine"))
     implementation(project(":platform:android-midi"))
     implementation(project(":platform:storage"))
     implementation(libs.androidx.activity.compose)
