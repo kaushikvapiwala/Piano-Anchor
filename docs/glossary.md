@@ -4,8 +4,10 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 
 | Term | Meaning |
 |---|---|
+| Accuracy | How cleanly a completed attempt was played by pitch: steps / (steps + wrong notes + incomplete chords), from 0 to 1 (`docs/algorithms/grading.md`). |
 | Adapter | Implementation of a port for a real platform or technology (e.g. Android MIDI). Named `*Adapter`. |
-| Attempt | One run of an exercise or passage, from first note to stop. |
+| Attempt | One completed run of a passage, from the first note to `PassageComplete` (`Attempt` in `:core:model`): its counts, accuracy, band and match events, stored by `AttemptRepositoryPort`. Abandoned runs are not saved. |
+| Band | The result of an attempt named for the learner: `CLEAN`, `GOOD` or `KEEP_PRACTISING`, from its accuracy and the `BAND_*_MIN_ACCURACY` tunables. |
 | BLE MIDI | MIDI over Bluetooth Low Energy. A BLE MIDI piano is found by a scan and must be connected from the app (`MidiDiscoveryPort`); pairing in the system settings pairs only Bluetooth audio. |
 | Chord window | The `CHORD_CLUSTER_MS` span from a step's first pressed note in which its other notes must follow; the matcher reports an incomplete chord when it runs out. |
 | Cold check | The first attempt of a learned item on a later day, without warm-up or hints; it measures retention. |
