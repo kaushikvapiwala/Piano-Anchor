@@ -1,5 +1,6 @@
 plugins {
     id("pianoanchor.kmp-library")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -8,6 +9,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":core:ports"))
+            implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
             implementation(project(":testing"))

@@ -29,9 +29,11 @@ abstract class MidiInputPortContractTest {
         val port: MidiInputPort
         val device: MidiDevice // listed when the harness is created
 
-        fun deliver(bytes: ByteArray) // the instrument sends these bytes now
+        /** The instrument sends these bytes now; returns after the adapter has handed the events to collectors. */
+        suspend fun deliver(bytes: ByteArray)
 
-        fun unplug()
+        /** Disconnects the device; returns after it left the device list and open `events` flows completed. */
+        suspend fun unplug()
     }
 
     protected abstract fun createHarness(): InputHarness

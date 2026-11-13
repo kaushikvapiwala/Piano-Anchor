@@ -1,0 +1,29 @@
+<resources>
+    <string name="monitor_title">Note monitor</string>
+    <string name="monitor_devices">Pianos</string>
+    <string name="monitor_no_devices">No piano found. Connect one with a USB cable, or scan for a Bluetooth piano.</string>
+    <string name="monitor_select_device">Show notes from %1$s</string>
+    <string name="monitor_scan">Scan for Bluetooth piano</string>
+    <string name="monitor_scanning">Scanning for Bluetooth pianos…</string>
+    <string name="monitor_scanned">Bluetooth pianos found</string>
+    <string name="monitor_connect">Connect</string>
+    <string name="monitor_connect_device">Connect %1$s</string>
+    <string name="monitor_status_none">Choose a piano to see its notes.</string>
+    <string name="monitor_status_connected">Connected to %1$s</string>
+    <string name="monitor_status_reconnecting">%1$s dropped. Reconnecting…</string>
+    <string name="monitor_record_start">Start recording</string>
+    <string name="monitor_record_stop">Stop recording</string>
+    <string name="monitor_recorded_count">Messages recorded: %1$s</string>
+    <string name="monitor_export">Export fixture</string>
+    <string name="monitor_log">Live notes</string>
+    <string name="monitor_log_empty">Play a key to see it here.</string>
+    <string name="monitor_log_time">%1$s ms</string>
+    <string name="monitor_log_gap">Reconnected</string>
+    <string name="monitor_error_bluetooth_permission">Piano Anchor needs the Nearby devices permission to find Bluetooth pianos.</string>
+    <string name="monitor_error_bluetooth_off">Bluetooth is off.</string>
+    <string name="monitor_error_device_unavailable">That piano is not available. Check that it is on and connected.</string>
+    <string name="monitor_error_recording_limit">Recording stopped: it reached the time limit.</string>
+    <string name="monitor_action_open_settings">Open settings</string>
+    <string name="monitor_action_enable_bluetooth">Turn on Bluetooth</string>
+    <string name="monitor_action_dismiss">Dismiss</string>
+</resources>

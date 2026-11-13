@@ -27,8 +27,16 @@ class ArchitectureTest {
 
     private companion object {
         val domainRoots = listOf("pianoanchor.core", "pianoanchor.engine")
-        val adapterRoots = listOf("pianoanchor.ui", "pianoanchor.app", "pianoanchor.desktop", "pianoanchor.testing")
-        val domainImportRoots = domainRoots + listOf("kotlin", "kotlinx.coroutines")
+        val adapterRoots =
+            listOf(
+                "pianoanchor.ui",
+                "pianoanchor.feature",
+                "pianoanchor.app",
+                "pianoanchor.desktop",
+                "pianoanchor.platform",
+                "pianoanchor.testing",
+            )
+        val domainImportRoots = domainRoots + listOf("kotlin", "kotlinx.coroutines", "kotlinx.serialization")
         val frameworkRoots = listOf("android", "androidx", "org.jetbrains.compose", "org.koin", "java", "javax")
         val portNames = ports.map { it.name }.toSet()
 
@@ -66,7 +74,7 @@ class ArchitectureTest {
     }
 
     @Test
-    fun `domain code imports only Kotlin, kotlinx coroutines and domain code (docs ARCHITECTURE - Dependency rules)`() {
+    fun `domain code imports only Kotlin, allowed kotlinx and domain code (docs ARCHITECTURE - Dependency rules)`() {
         production.files
             .filter { underAny(it.packagee?.name, domainRoots) }
             .assertTrue(strict = true) { file -> file.imports.all { underAny(it.name, domainImportRoots) } }
@@ -77,6 +85,14 @@ class ArchitectureTest {
         production.files
             .filter { underAny(it.packagee?.name, domainRoots) }
             .assertFalse(strict = true) { file -> file.imports.any { underAny(it.name, adapterRoots) } }
+    }
+
+    @Test
+    fun `features never depend on driven adapters or apps (docs ARCHITECTURE - Dependency rules)`() {
+        val forbidden = listOf("pianoanchor.platform", "pianoanchor.app", "pianoanchor.desktop", "org.koin")
+        production.files
+            .filter { under(it.packagee?.name, "pianoanchor.feature") }
+            .assertFalse(strict = true) { file -> file.imports.any { underAny(it.name, forbidden) } }
     }
 
     @Test
