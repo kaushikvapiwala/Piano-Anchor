@@ -13,6 +13,9 @@ public object Passages {
             title = "C-D-E",
             steps = listOf(C4, D4, E4).map { Step(setOf(MidiNote(it))) },
         )
+
+    /** The built-in passage with [id], or null if there is none (e.g. an attempt of a passage since removed). */
+    public fun byId(id: String): Passage? = listOf(CDE).firstOrNull { it.id == id }
 }
 
 private const val C4 = 60

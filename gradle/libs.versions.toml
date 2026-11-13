@@ -48,6 +48,9 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 # Android framework jar Robolectric runs on: the SDK level of the screenshot tests; the suffix matches the robolectric version.
 robolectric-android-all = { module = "org.robolectric:android-all-instrumented", version = "16-robolectric-13921718-i7" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
+# Compose UI tests (runComposeUiTest); the manifest artefact registers the activity they host content in.
+compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose-multiplatform" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version = "1.12.1" }
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }

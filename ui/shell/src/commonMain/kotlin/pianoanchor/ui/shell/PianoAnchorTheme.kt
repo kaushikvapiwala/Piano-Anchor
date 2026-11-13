@@ -61,7 +61,8 @@ private val DarkColors =
 /**
  * Feedback colours on top of the Material scheme: [correct] (played right), [waiting] (the note the app waits for),
  * [timing] (timing off, unused until timing exists), [wrongKey] (a wrong key), plus the staff's [staffLine] and
- * [upcomingNote] and the key strip's [targetBand], [whiteKey], [blackKey] and [keyBorder].
+ * [upcomingNote], the key strip's [targetBand], [whiteKey], [blackKey] and [keyBorder], and the results screen's
+ * [page] and its [tile]s.
  */
 @Immutable
 data class PianoAnchorColors(
@@ -75,6 +76,8 @@ data class PianoAnchorColors(
     val whiteKey: Color,
     val blackKey: Color,
     val keyBorder: Color,
+    val page: Color,
+    val tile: Color,
 )
 
 private val LightFeedback =
@@ -89,6 +92,8 @@ private val LightFeedback =
         whiteKey = Color.White,
         blackKey = Color(0xFF2A2730),
         keyBorder = Mist,
+        page = PaperDark,
+        tile = Color.White,
     )
 private val DarkFeedback =
     PianoAnchorColors(
@@ -102,6 +107,8 @@ private val DarkFeedback =
         whiteKey = PaperDark,
         blackKey = Color(0xFF2A2730),
         keyBorder = InkSecondary,
+        page = Ink,
+        tile = Color(0xFF2A2730),
     )
 
 private val LocalPianoAnchorColors = staticCompositionLocalOf { LightFeedback }

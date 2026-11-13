@@ -37,6 +37,8 @@ import pianoanchor.feature.monitor.MonitorScreen
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.practice.PracticeScreen
 import pianoanchor.feature.practice.PracticeViewModel
+import pianoanchor.feature.practice.ResultsScreen
+import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.ui.shell.PianoAnchorTheme
 import java.io.IOException
 
@@ -52,12 +54,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Where the app is: the monitor, or practising on a piano. Results (slice 1.10) will follow practice. */
+/** Where the app is: the monitor, practising on a piano, or the results of a finished run on it. */
 private sealed interface Destination {
     data object Monitor : Destination
 
     data class Practice(
         val device: MidiDevice,
+    ) : Destination
+
+    data class Results(
+        val device: MidiDevice,
+        val attemptId: String,
     ) : Destination
 }
 
@@ -71,10 +78,39 @@ private fun AppNavigation() {
         }
 
         is Destination.Practice -> {
-            // Until the Results screen exists (slice 1.10), a finished run returns to the monitor.
-            PracticeRoute(current.device, onBack = back, onFinished = { back() })
+            PracticeRoute(
+                current.device,
+                onBack = back,
+                onFinished = { destination = Destination.Results(current.device, it) },
+            )
+        }
+
+        is Destination.Results -> {
+            ResultsRoute(
+                current.attemptId,
+                onBack = back,
+                onTryAgain = { destination = Destination.Practice(current.device) },
+            )
         }
     }
+}
+
+/** Landscape while in the composition (the phone sits on the music rest), back to the system's choice after. */
+@Composable
+private fun LandscapeEffect() {
+    val activity = LocalActivity.current
+    DisposableEffect(activity) {
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        onDispose { activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    }
+}
+
+/** A ViewModel store owner that lives as long as the calling route: its ViewModels are cleared when it leaves. */
+@Composable
+private fun rememberRouteViewModelStoreOwner(): ViewModelStoreOwner {
+    val owner = remember { RouteViewModelStoreOwner() }
+    DisposableEffect(owner) { onDispose { owner.viewModelStore.clear() } }
+    return owner
 }
 
 /**
@@ -87,14 +123,9 @@ private fun PracticeRoute(
     onBack: () -> Unit,
     onFinished: (attemptId: String) -> Unit,
 ) {
-    val activity = LocalActivity.current
-    DisposableEffect(activity) {
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        onDispose { activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
-    }
-    val owner = remember { RouteViewModelStoreOwner() }
-    DisposableEffect(owner) { onDispose { owner.viewModelStore.clear() } }
-    val viewModel: PracticeViewModel = koinViewModel(viewModelStoreOwner = owner) { parametersOf(device) }
+    LandscapeEffect()
+    val viewModel: PracticeViewModel =
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device) }
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
     // Leave only once the run has closed the piano, so the monitor can reopen it (one reader per input).
@@ -102,6 +133,21 @@ private fun PracticeRoute(
     BackHandler { leave(onBack) }
     LaunchedEffect(state.finishedAttemptId) { state.finishedAttemptId?.let { id -> leave { onFinished(id) } } }
     PracticeScreen(state, onBack = { leave(onBack) })
+}
+
+/** The results of the run saved as [attemptId], landscape like practice. "Try again" practises on the same piano. */
+@Composable
+private fun ResultsRoute(
+    attemptId: String,
+    onBack: () -> Unit,
+    onTryAgain: () -> Unit,
+) {
+    LandscapeEffect()
+    val viewModel: ResultsViewModel =
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(attemptId) }
+    val state by viewModel.state.collectAsState()
+    BackHandler(onBack = onBack)
+    ResultsScreen(state, onBack = onBack, onTryAgain = onTryAgain)
 }
 
 /** A ViewModel store scoped to one route: cleared when the route leaves the composition. */

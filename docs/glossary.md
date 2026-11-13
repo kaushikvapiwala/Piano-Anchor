@@ -29,6 +29,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Port | Interface through which the domain uses the outside world. Named `*Port`, lives in `core/ports`. |
 | Practice screen | The wait-mode screen (`:feature:practice`): the passage on a treble staff with a cursor on the waiting note, and a live key strip. A completed run is graded and saved; a run that ends early is discarded. |
 | Reconnect backoff | How the adapter reopens a dropped BLE MIDI device: waits that double from `BLE_RECONNECT_INITIAL_MS` up to `BLE_RECONNECT_MAX_MS`, giving up after `BLE_RECONNECT_GIVE_UP_MS`. |
+| Results screen | The screen after a completed run (`:feature:practice`): "run N" of the passage, a headline from the band, the Pitch tile (correct steps of all, wrong notes, incomplete chords) and Try again. |
 | Running status | MIDI shorthand: after one channel status byte, further data-byte groups reuse that status without repeating it. |
 | Skill node | One learnable skill (e.g. "bass clef F", "C to G chord change") in the learner's skill graph. |
 | Stable device id | The `MidiDevice.id` an adapter derives from what the platform reports (e.g. `usb:<manufacturer>/<product>/<serial>`, `ble:<address>`), so the same instrument keeps its id across reconnects when the platform reports enough to tell it apart. |
