@@ -11,6 +11,7 @@ import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.model.NoteOn
+import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -141,6 +142,31 @@ class AndroidMidiAdapterTest {
             system.opensSucceed = false
             assertFailsWith<MidiDeviceUnavailableException> { adapter.send(piano, NOTE_ON_C4) }
             assertTrue(system.sent.isEmpty())
+        }
+
+    @Test
+    fun aClosedPlatformPortIsReportedAsUnavailableAndReopenedOnRetry() =
+        runTest {
+            adapter.send(piano, NOTE_ON_C4)
+            system.sendsFail = true
+            val failure = assertFailsWith<MidiDeviceUnavailableException> { adapter.send(piano, NOTE_ON_C4) }
+            assertIs<IOException>(failure.cause)
+            assertEquals(1, system.outputsClosed.get())
+            system.sendsFail = false
+            adapter.send(piano, SUSTAIN_DOWN)
+            assertEquals(2, system.outputsOpened.get())
+        }
+
+    @Test
+    fun aBadPlatformRangeFailsTheFlowInsteadOfThePlatformThread() =
+        runTest {
+            var failure: Throwable? = null
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                failure = runCatching { adapter.events(piano).collect {} }.exceptionOrNull()
+            }
+            system.deliver(PIANO.systemId, NOTE_ON_C4, offset = 0, count = NOTE_ON_C4.size + 1)
+            assertIs<IllegalArgumentException>(failure)
+            assertEquals(1, system.inputsClosed.get())
         }
 
     private companion object {

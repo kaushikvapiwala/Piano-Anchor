@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
  * device's view, as in Android: a device's *output* port carries what it plays, its *input* port what it receives.
  */
 internal interface MidiSystem {
-    /** The current devices, then a new list on every add or remove. Never completes. */
+    /** The current devices, then a new list on every add or remove. Never completes; reading it is cheap. */
     val devices: Flow<List<SystemDevice>>
 
     /**
@@ -30,7 +30,10 @@ internal interface MidiSystem {
 
 /** An open input port of a device (Android naming): bytes sent here go to the instrument. */
 internal interface SystemSender : AutoCloseable {
-    /** Hands `bytes[offset until offset + count]` to the platform. */
+    /**
+     * Hands `bytes[offset until offset + count]` to the platform.
+     * @throws java.io.IOException if the port is closed or the device has gone.
+     */
     fun send(
         bytes: ByteArray,
         offset: Int,

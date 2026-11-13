@@ -13,15 +13,16 @@ internal data class ListedDevice(
 
 /**
  * Gives each platform device a stable id (see `docs/protocols/android-midi.md`):
- * `usb:<manufacturer>/<product>/<serial>`, `ble:<ADDRESS>`, else `sys:<systemId>`. A device whose id is already
- * taken in [devices] gets `#<systemId>` appended. Ids are computed over the whole list, so input and output
- * listings agree.
+ * `usb:<manufacturer>/<product>/<serial>`, `ble:<ADDRESS>`, else `sys:<systemId>`. Devices are taken in
+ * [SystemDevice.systemId] order (Android numbers connections in order, so the earlier one keeps its id) and a device
+ * whose id is already taken gets `#<systemId>` appended until it is unique. Ids are computed over the whole list,
+ * so input and output listings agree. The result is in [SystemDevice.systemId] order.
  */
 internal fun identify(devices: List<SystemDevice>): List<ListedDevice> {
     val taken = mutableSetOf<String>()
-    return devices.map { system ->
-        val base = baseId(system)
-        val id = if (taken.add(base)) base else "$base#${system.systemId}".also { taken.add(it) }
+    return devices.sortedBy { it.systemId }.map { system ->
+        var id = baseId(system)
+        while (!taken.add(id)) id = "$id#${system.systemId}"
         ListedDevice(system, MidiDevice(id = id, name = displayName(system)))
     }
 }

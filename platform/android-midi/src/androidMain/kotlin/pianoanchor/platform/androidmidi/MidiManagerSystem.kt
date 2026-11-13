@@ -10,9 +10,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import pianoanchor.core.model.ExcludeFromCoverage
 import kotlin.coroutines.resume
@@ -24,8 +23,10 @@ private const val GLUE = "thin android.media.midi glue; verified by the 1.4m own
 public fun AndroidMidiAdapter(context: Context): AndroidMidiAdapter = AndroidMidiAdapter(MidiManagerSystem(context))
 
 /**
- * [MidiSystem] over `MidiManager`. Lists byte-stream (MIDI 1.0) devices only. Callbacks run on the main looper;
- * received bytes arrive on Android's binder threads. On a device without the MIDI feature it lists nothing.
+ * [MidiSystem] over `MidiManager`. Lists byte-stream (MIDI 1.0) devices only. One device callback, registered for
+ * the life of this object (the adapter is app-scoped), keeps [devices] current, so reading it costs nothing.
+ * Callbacks run on the main looper; received bytes arrive on Android's binder threads. On a device without the
+ * MIDI feature it lists nothing.
  */
 @ExcludeFromCoverage(GLUE)
 internal class MidiManagerSystem(
@@ -34,38 +35,30 @@ internal class MidiManagerSystem(
     private val manager: MidiManager? = context.getSystemService(MidiManager::class.java)
     private val handler = Handler(Looper.getMainLooper())
     private val executor = context.mainExecutor
+    private val list = MutableStateFlow<List<SystemDevice>>(emptyList())
 
-    override val devices: Flow<List<SystemDevice>> =
-        callbackFlow {
-            val manager = manager
-            if (manager == null) {
-                send(emptyList())
-                awaitClose()
-                return@callbackFlow
-            }
-            val lock = Any()
-            val emitCurrent = { synchronized(lock) { trySend(currentInfos(manager).map(::toSystemDevice)) } }
-            val callback =
+    override val devices: StateFlow<List<SystemDevice>> = list
+
+    init {
+        manager?.let { manager ->
+            register(
+                manager,
                 object : MidiManager.DeviceCallback() {
-                    override fun onDeviceAdded(device: MidiDeviceInfo) {
-                        emitCurrent()
-                    }
+                    override fun onDeviceAdded(device: MidiDeviceInfo) = refresh(manager)
 
-                    override fun onDeviceRemoved(device: MidiDeviceInfo) {
-                        emitCurrent()
-                    }
-                }
-            register(manager, callback)
-            emitCurrent() // after registering, so no change between the snapshot and the callback is missed
-            awaitClose { manager.unregisterDeviceCallback(callback) }
+                    override fun onDeviceRemoved(device: MidiDeviceInfo) = refresh(manager)
+                },
+            )
+            refresh(manager) // after registering, so no change between the snapshot and the callback is missed
         }
+    }
 
     override suspend fun openInput(
         device: SystemDevice,
         onBytes: (ByteArray, Int, Int, Long) -> Unit,
         onClosed: () -> Unit,
     ): AutoCloseable? {
-        val (manager, opened, port) = openPort(device) { it.openOutputPort(0) } ?: return null
+        val manager = manager ?: return null
         val receiver =
             object : MidiReceiver() {
                 override fun onSend(
@@ -75,6 +68,7 @@ internal class MidiManagerSystem(
                     timestamp: Long,
                 ) = onBytes(msg, offset, count, timestamp)
             }
+        // Registered before opening: a removal while the device is being opened is still seen.
         val removal =
             object : MidiManager.DeviceCallback() {
                 override fun onDeviceRemoved(info: MidiDeviceInfo) {
@@ -82,49 +76,50 @@ internal class MidiManagerSystem(
                 }
             }
         register(manager, removal)
-        port.connect(receiver)
-        return AutoCloseable {
-            manager.unregisterDeviceCallback(removal)
-            port.disconnect(receiver)
-            port.close()
-            opened.close()
-        }
+        return openPort(manager, device) { it.openOutputPort(0) }
+            ?.let { (opened, port) ->
+                port.connect(receiver)
+                AutoCloseable {
+                    manager.unregisterDeviceCallback(removal)
+                    port.disconnect(receiver)
+                    port.close()
+                    opened.close()
+                }
+            }.also { if (it == null) manager.unregisterDeviceCallback(removal) }
     }
 
     override suspend fun openOutput(device: SystemDevice): SystemSender? {
-        val (_, opened, port) = openPort(device) { it.openInputPort(0) } ?: return null
-        return object : SystemSender {
-            override fun send(
-                bytes: ByteArray,
-                offset: Int,
-                count: Int,
-            ) = port.send(bytes, offset, count)
+        val manager = manager ?: return null
+        return openPort(manager, device) { it.openInputPort(0) }?.let { (opened, port) ->
+            object : SystemSender {
+                override fun send(
+                    bytes: ByteArray,
+                    offset: Int,
+                    count: Int,
+                ) = port.send(bytes, offset, count)
 
-            override fun close() {
-                port.close()
-                opened.close()
+                override fun close() {
+                    port.close()
+                    opened.close()
+                }
             }
         }
     }
 
-    /** Opens [device] and one of its ports with [openPort]; null (and nothing left open) if either fails. */
-    private suspend fun <P> openPort(
+    private fun refresh(manager: MidiManager) =
+        synchronized(list) { list.value = currentInfos(manager).map(::toSystemDevice) }
+
+    /** Opens [device] and one of its ports with [openPort]; null, with nothing left open, if either fails. */
+    private suspend fun <P : Any> openPort(
+        manager: MidiManager,
         device: SystemDevice,
         openPort: (MidiDevice) -> P?,
-    ): OpenPort<P>? {
-        val manager = manager ?: return null
-        val opened = open(manager, device)
-        val port = opened?.let(openPort)
-        if (port == null) opened?.close()
-        return port?.let { OpenPort(manager, opened, it) }
+    ): Pair<MidiDevice, P>? {
+        val opened = open(manager, device) ?: return null
+        val port = runCatching { openPort(opened) }.onFailure { opened.close() }.getOrThrow()
+        if (port == null) opened.close()
+        return port?.let { opened to it }
     }
-
-    @ExcludeFromCoverage(GLUE) // nested classes need their own annotation
-    private data class OpenPort<P>(
-        val manager: MidiManager,
-        val device: MidiDevice,
-        val port: P,
-    )
 
     /** Opens the device that is still listed under [device]'s system id; null if it is gone or fails to open. */
     private suspend fun open(

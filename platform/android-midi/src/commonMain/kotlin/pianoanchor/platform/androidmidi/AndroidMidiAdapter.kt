@@ -13,6 +13,7 @@ import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.engine.midi.MidiParser
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
 private const val STATUS_MIN = 0x80
@@ -51,7 +52,12 @@ public class AndroidMidiAdapter internal constructor(
                     system.openInput(
                         target,
                         onBytes = { bytes, offset, count, timestamp ->
-                            stamper.feed(bytes, offset, count, timestamp).forEach { channel.trySend(it) }
+                            // Runs on a platform thread: a bad range fails this flow instead of crashing that thread.
+                            try {
+                                stamper.feed(bytes, offset, count, timestamp).forEach { channel.trySend(it) }
+                            } catch (e: IllegalArgumentException) {
+                                channel.close(e)
+                            }
                         },
                         onClosed = { channel.close() },
                     ) ?: throw MidiDeviceUnavailableException(device.id)
@@ -71,13 +77,29 @@ public class AndroidMidiAdapter internal constructor(
         val target = current.find(device) { it.inputPorts > 0 }
         sendersLock.withLock {
             closeSendersOfGoneDevices(current)
-            if (target == null) throw MidiDeviceUnavailableException(device.id)
-            val sender =
-                senders[target.systemId]
-                    ?: system.openOutput(target)?.also { senders[target.systemId] = it }
-                    ?: throw MidiDeviceUnavailableException(device.id)
-            sender.send(bytes, 0, bytes.size)
+            val (systemId, sender) = senderFor(device, target)
+            try {
+                sender.send(bytes, 0, bytes.size)
+            } catch (e: IOException) {
+                // The device went away before Android updated the list: drop the dead port so a retry reopens it.
+                senders.remove(systemId)
+                sender.close()
+                throw MidiDeviceUnavailableException(device.id).also { it.initCause(e) }
+            }
         }
+    }
+
+    /** The open sender for [target] (opened now if needed) with its system id; call with [sendersLock] held. */
+    private suspend fun senderFor(
+        device: MidiDevice,
+        target: SystemDevice?,
+    ): Pair<Int, SystemSender> {
+        if (target == null) throw MidiDeviceUnavailableException(device.id)
+        val sender =
+            senders[target.systemId]
+                ?: system.openOutput(target)?.also { senders[target.systemId] = it }
+                ?: throw MidiDeviceUnavailableException(device.id)
+        return target.systemId to sender
     }
 
     private fun List<ListedDevice>.find(

@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -37,6 +38,9 @@ internal class FakeMidiSystem(
 
     /** When false, opening any device fails (as if it went away just before). */
     var opensSucceed = true
+
+    /** When true, open senders throw [IOException] (as a closed Android port does). */
+    var sendsFail = false
 
     val inputsOpened = AtomicInteger(0)
     val inputsClosed = AtomicInteger(0)
@@ -71,6 +75,7 @@ internal class FakeMidiSystem(
                 offset: Int,
                 count: Int,
             ) {
+                if (sendsFail) throw IOException("port closed")
                 sentBytes.add(bytes.copyOfRange(offset, offset + count))
             }
 

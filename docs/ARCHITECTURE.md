@@ -60,4 +60,4 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
   seam (e.g. `MidiSystem` in `:platform:android-midi`) and lives in `commonMain`, so it runs and is measured on the
   JVM against a fake seam (`FakeMidiSystem`), contract tests included. The glue implements the seam over the real
   platform API in `androidMain`, does no decisions of its own and is `@ExcludeFromCoverage`; it is verified on a
-  device (manual owner test until device tests exist).
+  device (manual owner test until device tests exist). See `docs/adr/0014-platform-adapter-modules.md`.

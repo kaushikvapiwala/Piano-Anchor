@@ -53,6 +53,22 @@ class DeviceIdsTest {
     }
 
     @Test
+    fun theEarlierConnectionKeepsTheBareIdWhateverTheListOrder() {
+        val ids = identify(listOf(PIANO.copy(systemId = 9), PIANO)).associate { it.system.systemId to it.device.id }
+        assertEquals(mapOf(1 to "usb:Acme/Stage Piano/SN1", 9 to "usb:Acme/Stage Piano/SN1#9"), ids)
+    }
+
+    @Test
+    fun aSuffixedIdNeverCollidesWithARealId() {
+        val serialLooksSuffixed = PIANO.copy(systemId = 1, serial = "SN1#2")
+        val first = PIANO.copy(systemId = 0)
+        val second = PIANO.copy(systemId = 2)
+        val ids = identify(listOf(serialLooksSuffixed, first, second)).map { it.device.id }
+        assertEquals(ids.toSet().size, ids.size, "ids must be unique: $ids")
+        assertEquals("usb:Acme/Stage Piano/SN1#2#2", ids[2])
+    }
+
+    @Test
     fun nameFallsBackToProductThenToAGenericName() {
         assertEquals("Acme Stage Piano", nameOf(PIANO))
         assertEquals("Stage Piano", nameOf(PIANO.copy(name = "")))
