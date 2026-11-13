@@ -1,6 +1,7 @@
 package pianoanchor.feature.monitor
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import pianoanchor.core.model.Instrument
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.feature.monitor.resources.Res
 import pianoanchor.feature.monitor.resources.monitor_action_dismiss
@@ -46,6 +48,7 @@ import pianoanchor.feature.monitor.resources.monitor_error_bluetooth_permission
 import pianoanchor.feature.monitor.resources.monitor_error_device_unavailable
 import pianoanchor.feature.monitor.resources.monitor_error_recording_limit
 import pianoanchor.feature.monitor.resources.monitor_export
+import pianoanchor.feature.monitor.resources.monitor_instrument_model
 import pianoanchor.feature.monitor.resources.monitor_log
 import pianoanchor.feature.monitor.resources.monitor_log_empty
 import pianoanchor.feature.monitor.resources.monitor_log_gap
@@ -80,6 +83,7 @@ public fun MonitorScreen(
             state.error?.let { error -> item { ErrorCard(error, actions) } }
             devices(state, actions)
             item { StatusText(state) }
+            state.instrument?.let { instrument -> item { InstrumentText(instrument) } }
             item { RecordingControls(state, actions) }
             log(state.log)
         }
@@ -168,6 +172,25 @@ private fun StatusText(state: MonitorState) {
             else -> stringResource(Res.string.monitor_status_reconnecting, name)
         }
     Text(text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 8.dp))
+}
+
+/** The identified piano: its name, plus "model <family>/<model> · v<version>" when it answered. */
+@Composable
+private fun InstrumentText(instrument: Instrument) {
+    Column {
+        Text(instrument.name, style = MaterialTheme.typography.titleSmall)
+        instrument.identity?.let { identity ->
+            Text(
+                stringResource(
+                    Res.string.monitor_instrument_model,
+                    identity.family.toString(),
+                    identity.model.toString(),
+                    identity.version.joinToString("."),
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
 }
 
 @Composable

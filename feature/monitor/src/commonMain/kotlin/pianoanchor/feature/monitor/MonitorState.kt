@@ -1,11 +1,13 @@
 package pianoanchor.feature.monitor
 
+import pianoanchor.core.model.Instrument
 import pianoanchor.core.model.MidiDevice
 
 /**
  * What the note monitor shows. [devices] are listed inputs (USB and connected Bluetooth); [scanned] are Bluetooth
  * pianos found by the last scan that are not listed yet; [log] holds the newest `Tunables.MONITOR_LOG_LINES` lines,
- * newest first; [recordedCount] counts the messages in the current recording.
+ * newest first; [recordedCount] counts the messages in the current recording. [instrument] is the stored record of
+ * the selected piano once it has been identified (or did not answer) after connecting.
  */
 public data class MonitorState(
     val devices: List<MidiDevice> = emptyList(),
@@ -17,6 +19,7 @@ public data class MonitorState(
     val recording: Boolean = false,
     val recordedCount: Int = 0,
     val error: MonitorError? = null,
+    val instrument: Instrument? = null,
 )
 
 /** The link to the selected device. */

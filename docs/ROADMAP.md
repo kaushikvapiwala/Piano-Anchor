@@ -27,6 +27,7 @@ and scaffolding from the real code.
 | Bluetooth LE MIDI discovery, connect and reconnect (1.4b) | ✅ |
 | Note monitor with JSONL fixture export (1.4m) | ✅ (owner hardware check pending) |
 | Monitor gives up reconnecting after `MONITOR_RECONNECT_GIVE_UP_MS` | ✅ |
+| Instrument identity via MIDI Identity Request, in-memory instrument store (1.5) | ✅ (hardware check pending) |
 
 ## Next up
 The task queue for `/next-task` (`.claude/skills/next-task/`): one item per session and PR, top first.
@@ -35,15 +36,17 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 1. **Hardware check** (owner): install the debug app (the `app-android-debug-<sha>` artifact of the latest CI run
    on main, or `./gradlew :app-android:assembleDebug`), connect a piano over BLE, play keys, survive a disconnect
    and export a C-D-E fixture into `fixtures/` (first hardware check of the 1.4a `MidiManager` glue, the 1.4b
-   scan/connect glue and the 1.4m Android wiring).
-2. **Slice 1.5** — instrument identity via MIDI Identity Request: spec #36.
-3. **Slice 1.6** — wait-mode matcher: spec #37.
-4. **Slice 1.7** — grading and attempt storage port: spec #38 [#37].
-5. **Slice 1.8** — SQLDelight storage adapter: spec #39 [#36, #38].
-6. **Slice 1.9** — wait-mode practice screen (Living Studio mock): spec #40 [#37, #38].
-7. **Slice 1.10** — results screen (Living Studio mock): spec #41 [#40]. Then the owner's end-to-end check on a
+   scan/connect glue and the 1.4m Android wiring); note whether the piano answers the 1.5 Identity Request
+   (the monitor shows "model …"). If a piano known to answer shows none, the request may race the input port's open:
+   `MidiInputPort` would then need an "opened" signal.
+2. **Slice 1.6** — wait-mode matcher: spec #37.
+3. **Slice 1.7** — grading and attempt storage port: spec #38 [#37].
+4. **Slice 1.8** — SQLDelight storage adapter: spec #39 [#36, #38]. It replaces `FakeInstrumentRepository` in
+   `app-android`'s wiring and drops the app's dependency on `:testing`.
+5. **Slice 1.9** — wait-mode practice screen (Living Studio mock): spec #40 [#37, #38].
+6. **Slice 1.10** — results screen (Living Studio mock): spec #41 [#40]. Then the owner's end-to-end check on a
    phone and piano (play C-D-E, see Results, the run survives an app restart) closes Phase 1.
-8. **Emulator end-to-end CI job** [first device test]: when the first instrumented end-to-end test lands (ADR 0007),
+7. **Emulator end-to-end CI job** [first device test]: when the first instrumented end-to-end test lands (ADR 0007),
    run it on Gradle Managed Devices (ATD image, KVM on `ubuntu-latest`) on pushes to main and nightly, not on every
    PR. Settle first how tests feed MIDI without a piano (an in-app `MidiDeviceService` fake).
 

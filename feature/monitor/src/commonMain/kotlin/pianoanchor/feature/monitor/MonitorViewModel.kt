@@ -23,21 +23,29 @@ import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.SysEx
 import pianoanchor.core.ports.ClockPort
+import pianoanchor.core.ports.InstrumentRepositoryPort
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
+import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.engine.Tunables
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 private const val SYSEX_FRAME_BYTES = 2
 
 /**
  * The note monitor: shows live messages from the selected piano, reopens it after a drop and records a session as a
- * JSONL fixture (`fixtures/SCHEMA.md`). [recordedAt] gives the wall-clock time (ISO-8601 UTC) when a recording starts.
+ * JSONL fixture (`fixtures/SCHEMA.md`). On every connect it asks the piano who it is (MIDI Identity Request,
+ * `docs/protocols/midi-identity.md`) and stores it in [instruments]. [clock] times messages; [wallClock] gives the
+ * recording start time and when a piano was seen.
  */
 public class MonitorViewModel(
     private val input: MidiInputPort,
+    output: MidiOutputPort,
     private val discovery: MidiDiscoveryPort,
+    instruments: InstrumentRepositoryPort,
     private val clock: ClockPort,
-    private val recordedAt: () -> String,
+    private val wallClock: Clock,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MonitorState())
     public val state: StateFlow<MonitorState> = mutableState.asStateFlow()
@@ -46,6 +54,7 @@ public class MonitorViewModel(
     private var scan: Job? = null
     private var selectedAtNanos = 0L
     private val recorder = FixtureRecorder()
+    private val identifier = InstrumentIdentifier(output, instruments, wallClock)
 
     init {
         viewModelScope.launch {
@@ -60,7 +69,14 @@ public class MonitorViewModel(
         session?.cancel()
         selectedAtNanos = clock.nowNanos()
         mutableState.update {
-            it.copy(selected = device, connection = Connection.NONE, log = emptyList(), recording = false, error = null)
+            it.copy(
+                selected = device,
+                connection = Connection.NONE,
+                log = emptyList(),
+                recording = false,
+                error = null,
+                instrument = null,
+            )
         }
         session = viewModelScope.launch { monitor(device) }
     }
@@ -116,7 +132,7 @@ public class MonitorViewModel(
                 state.value.selected
                     ?.name
                     .orEmpty(),
-            recordedAt = recordedAt(),
+            recordedAt = Instant.fromEpochSeconds(wallClock.now().epochSeconds).toString(),
         )
         mutableState.update { it.copy(recording = true, recordedCount = 0, error = null) }
     }
@@ -170,15 +186,29 @@ public class MonitorViewModel(
             }
         }
 
-    private suspend fun collect(device: MidiDevice) {
-        input
-            .events(device)
-            .onStart { mutableState.update { it.copy(connection = Connection.CONNECTED) } }
-            .collect(::onEvent)
-    }
+    /** Shows [device]'s messages until it drops; identifies it once its messages flow. */
+    private suspend fun collect(device: MidiDevice): Unit =
+        coroutineScope {
+            var identifying: Job? = null
+            try {
+                input
+                    .events(device)
+                    .onStart {
+                        mutableState.update { it.copy(connection = Connection.CONNECTED) }
+                        identifying =
+                            this@coroutineScope.launch {
+                                val stored = identifier.identify(device)
+                                mutableState.update { it.copy(instrument = stored) }
+                            }
+                    }.collect(::onEvent)
+            } finally {
+                identifying?.cancel() // dropped before the reply or the timeout: the reconnect asks again
+            }
+        }
 
     private fun onEvent(event: MidiEvent) {
         mutableState.update { it.withLine(LogLine(event.describe(), millisSince(event.timestampNanos))) }
+        identifier.offer(event)
         if (!state.value.recording) return
         if (recorder.add(event)) {
             mutableState.update { it.copy(recordedCount = recorder.count) }

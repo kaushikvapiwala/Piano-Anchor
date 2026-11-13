@@ -13,6 +13,8 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Fixture | A recorded MIDI session as a JSONL file (`fixtures/SCHEMA.md`): a header, then each message's canonical bytes and its time since the first message. Feeds the matcher and replay tests. |
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hesitation | A pause before a note that is much longer than the music asks for, without a wrong note. |
+| Instrument | A piano the app has seen, stored by its stable device id (`InstrumentRepositoryPort`): display name, instrument identity if it answered, and when it was first and last seen. Per-piano data (latency, velocity curve) hangs off it. |
+| Instrument identity | What a piano reports in a MIDI Identity Reply: manufacturer id, model family, model number and four version bytes (`docs/protocols/midi-identity.md`). Null when the piano did not answer. |
 | Middle C | MIDI note 60, named C4. |
 | MIDI device | A MIDI instrument the platform can see: a stable `id` plus a display `name`. Listed by the MIDI input and output ports. |
 | MIDI event | A typed message from the piano (`NoteOn`, `NoteOff`, `ControlChange`, `SysEx`) with a monotonic timestamp, produced by the MIDI parser from raw bytes. |
