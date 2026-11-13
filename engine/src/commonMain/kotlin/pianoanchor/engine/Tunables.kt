@@ -75,4 +75,22 @@ public object Tunables {
      * Source: initial guess, far above the expected delay of one main-looper callback; revisit after the T8 test.
      */
     public const val BLE_LISTED_TIMEOUT_MS: Long = 5_000
+
+    /**
+     * How many lines the note monitor keeps in its live log (newest first); older lines are dropped.
+     *
+     * Why: enough to read back the last phrase played, while bounding the work of redrawing the log.
+     *
+     * Source: UI choice agreed in the note-monitor grill (2026-11-11).
+     */
+    public const val MONITOR_LOG_LINES: Int = 50
+
+    /**
+     * Longest note-monitor recording, in milliseconds after its first event; recording stops there with a notice.
+     *
+     * Why: bounds memory (a few MB of messages at most) while a fixture session lasts minutes.
+     *
+     * Source: agreed in the note-monitor grill (2026-11-11).
+     */
+    public const val MONITOR_RECORDING_MAX_MS: Long = 1_800_000
 }
