@@ -51,17 +51,14 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 2. **Emulator end-to-end CI job** [first device test]: when the first instrumented end-to-end test lands (ADR 0007),
    run it on Gradle Managed Devices (ATD image, KVM on `ubuntu-latest`) on pushes to main and nightly, not on every
    PR. Settle first how tests feed MIDI without a piano (an in-app `MidiDeviceService` fake).
-3. **Fix: hook tests inherit `PIANO_ANCHOR_STOP_HOOK`** (mechanical): `scripts/test_hooks.py`'s Stop-hook tests pass
-   the caller's environment, so in a cloud dispatcher session (`PIANO_ANCHOR_STOP_HOOK=subagent-only`) 8 of them fail
-   and `fastCheck` goes red there. Clear the variable in the tests unless a test sets it.
-4. **Storage failure model** (decision): with SQLite behind the repository ports, `upsert`/`save` can fail (disk
+3. **Storage failure model** (decision): with SQLite behind the repository ports, `upsert`/`save` can fail (disk
    full, corrupt file), and the monitor's identify step doesn't catch it, so one failure ends MIDI collection. Decide
    the ports' error model (e.g. a domain `StorageUnavailableException`) and how the monitor, practice and results
    screens react (a failing read on Results crashes today).
-5. **Keep a known identity on a missed reply** (decision): `InstrumentRepositoryPort.upsert` replaces the identity, so
+4. **Keep a known identity on a missed reply** (decision): `InstrumentRepositoryPort.upsert` replaces the identity, so
    a reconnect whose Identity Reply is lost erases a stored model. Decide whether a null identity keeps the stored one
    (contract change, then `COALESCE` in `Instrument.sq`).
-6. **Count runs without loading them** (mechanical): the results screen numbers a run by reading up to
+5. **Count runs without loading them** (mechanical): the results screen numbers a run by reading up to
    `RESULTS_HISTORY_LIMIT` whole attempts (each with its events) through `recent`. Add a count query to
    `AttemptRepositoryPort` (attempts of a passage started before an instant; `COUNT` in SQL) and use it.
 

@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parent.parent
 # throwaway repositories below never touch the real repository.
 for _name in [n for n in os.environ if n.startswith("GIT_")]:
     del os.environ[_name]
+# The cloud dispatcher sets PIANO_ANCHOR_STOP_HOOK=subagent-only; the Stop-hook tests set it themselves when needed.
+os.environ.pop("PIANO_ANCHOR_STOP_HOOK", None)
 sys.path[:0] = [str(ROOT / ".claude" / "hooks"), str(ROOT / "scripts")]
 
 import check_docs  # noqa: E402
