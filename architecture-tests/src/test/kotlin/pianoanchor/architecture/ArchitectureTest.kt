@@ -74,7 +74,7 @@ class ArchitectureTest {
     }
 
     @Test
-    fun `domain code imports only Kotlin, kotlinx coroutines and serialization, and domain code (docs ARCHITECTURE - Dependency rules)`() {
+    fun `domain code imports only Kotlin, allowed kotlinx and domain code (docs ARCHITECTURE - Dependency rules)`() {
         production.files
             .filter { underAny(it.packagee?.name, domainRoots) }
             .assertTrue(strict = true) { file -> file.imports.all { underAny(it.name, domainImportRoots) } }

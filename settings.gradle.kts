@@ -29,6 +29,7 @@ include(
     ":testing",
     ":platform:android-midi",
     ":ui:shell",
+    ":feature:monitor",
     ":app-android",
     ":app-desktop",
     ":architecture-tests",
