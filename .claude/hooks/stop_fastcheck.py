@@ -72,7 +72,7 @@ def other_build_running(root: Path) -> bool:
         cwd = Path(f"/proc/{pid}/cwd")
         if cwd.parent.exists():  # Linux
             try:
-                if not cwd.resolve().is_relative_to(root):
+                if not cwd.resolve().is_relative_to(root.resolve()):
                     continue
             except OSError:
                 continue
