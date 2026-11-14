@@ -44,10 +44,9 @@ import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.matcher.WaitModeMatcher
 import pianoanchor.engine.matcher.beatNanos
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Instant
-
-private const val NANOS_PER_MILLI = 1_000_000L
 
 /**
  * Practice of [passage] on [device]. Wait mode follows the piano's notes with [WaitModeMatcher]; a timed rung
@@ -120,7 +119,11 @@ public class PracticeViewModel(
         clickSetting.on.value = on
         mutableState.update { it.copy(clickOn = on) }
         val running = pattern ?: return
-        viewModelScope.launch { if (on) running.start(metronome) else metronome.stop() }
+        viewModelScope.launch {
+            if (on) running.start(metronome) else metronome.stop()
+            // The run ended (and stopped the click) while this start ran: don't leave it clicking.
+            if (on && pattern !== running) metronome.stop()
+        }
     }
 
     /**
@@ -302,12 +305,15 @@ public class PracticeViewModel(
         private var judge: TempoJudge? = null
         private var startNanos = 0L
         private var firstBeatNanos = 0L
-        private val beatNanos = beatNanos(bpm)
+        private var endNanos = 0L
+
+        /** One click: the time signature's beat unit (a quarter note is [beatNanos] of the tempo). */
+        private val beatNanos = beatNanos(bpm) * QUARTER_UNIT / passage.timeSignature.beatUnit
         private val beatsPerBar = passage.timeSignature.beats
         private val midi = mutableListOf<MidiEvent>()
 
-        /** The take's played notes, rebased so 0 is the written time of tick 0. */
-        fun notes() = PlayedNotes.from(midi).map { it.shiftedBy(-startNanos) }
+        /** The take's played notes, rebased so 0 is the written time of tick 0; keys still down end with the run. */
+        fun notes() = PlayedNotes.from(midi, endNanos).map { it.shiftedBy(-startNanos) }
 
         /** Runs until the judge's end (true) or until the piano's stream ends first (false). */
         suspend fun play(): Boolean =
@@ -334,8 +340,12 @@ public class PracticeViewModel(
             if (event is NoteOff) mutableState.update { it.released(event.note) }
             val judge = judge
             if (judge == null) {
-                // The key that starts the count-in is not graded and not part of the take.
-                if (event is NoteOn) begin(event, scope, ended)
+                // The key that starts the count-in is not graded and not part of the take; a pedal already down is.
+                if (event is NoteOn) {
+                    begin(event, scope, ended)
+                } else if (event !is NoteOff) {
+                    midi += event
+                }
                 return
             }
             midi += event
@@ -348,10 +358,11 @@ public class PracticeViewModel(
             ended: CompletableDeferred<Boolean>,
         ) {
             startedAt = clock.now()
-            firstBeatNanos = time.nowNanos() + Tunables.TEMPO_COUNT_IN_LEAD_MS * NANOS_PER_MILLI
+            firstBeatNanos = time.nowNanos() + Tunables.TEMPO_COUNT_IN_LEAD_MS.milliseconds.inWholeNanoseconds
             startNanos = firstBeatNanos + beatsPerBar * beatNanos
             val timing = TempoJudge(passage, bpm, startNanos)
             judge = timing
+            endNanos = timing.endNanos
             mutableState.update { it.copy(keysDown = it.keysDown + starter.note) }
             val click = ClickPattern(firstBeatNanos, beatNanos, beatsPerBar)
             pattern = click
@@ -422,6 +433,9 @@ public class PracticeViewModel(
         }
     }
 }
+
+/** The beat unit of a quarter note in a time signature (the 4 of 3/4). */
+private const val QUARTER_UNIT = 4
 
 private fun cursorStatus(
     step: Int,

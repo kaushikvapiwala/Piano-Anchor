@@ -30,15 +30,19 @@ public object PlayedNotes {
      * CC64 >= 64 holds sounding notes until the pedal drops below 64. Striking a pitch that is still down or still
      * sounding ends the earlier note there. CC123 (All Notes Off, also implied by CC124–127) brings every down key
      * up, as NoteOffs would; CC120 (All Sound Off) also ends every note the pedal holds, leaving the pedal as it was.
-     * A note still down or held at the end of [events] ends at the last event's time. Events are taken in timestamp
-     * order (a stable sort keeps equal times in list order). Notes come in [PLAYED_NOTE_ORDER]; other events are
-     * ignored.
+     * A note still down or held at the end of [events] ends at the last event's time, or at [endNanos] when that is
+     * later (a take whose clock ran out while keys were still down). Events are taken in timestamp order (a stable
+     * sort keeps equal times in list order). Notes come in [PLAYED_NOTE_ORDER]; other events are ignored.
      */
-    public fun from(events: List<MidiEvent>): List<PlayedNote> {
+    public fun from(
+        events: List<MidiEvent>,
+        endNanos: Long? = null,
+    ): List<PlayedNote> {
         val ordered = events.sortedBy { it.timestampNanos }
         val extraction = Extraction()
         ordered.forEach(extraction::apply)
-        return extraction.finish(ordered.lastOrNull()?.timestampNanos)
+        val last = ordered.lastOrNull()?.timestampNanos
+        return extraction.finish(listOfNotNull(last, endNanos).maxOrNull())
     }
 }
 

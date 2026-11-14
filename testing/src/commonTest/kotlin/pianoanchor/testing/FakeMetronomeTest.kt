@@ -1,11 +1,30 @@
 package pianoanchor.testing
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class FakeMetronomeTest {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun aStartGateHoldsTheStartUntilItCompletes() =
+        runTest {
+            val metronome = FakeMetronome()
+            val gate = CompletableDeferred<Unit>()
+            metronome.startGate = gate
+            launch { metronome.start(10, 20, 3) }
+            runCurrent()
+            assertNull(metronome.running.value)
+            gate.complete(Unit)
+            runCurrent()
+            assertEquals(FakeMetronome.Pattern(10, 20, 3), metronome.running.value)
+        }
+
     @Test
     fun runningIsTheCurrentPatternOrNull() =
         runTest {

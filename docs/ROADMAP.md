@@ -69,6 +69,9 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 16. **All Notes Off on the practice keyboard** (follow-up of #101): the practice screen's keys-down and wrong-key
     highlights still ignore control changes 120 and 123–127, so a key whose NoteOff was lost stays lit; clear them
     as `PlayedNotes` does (mechanical).
+17. **Wait-mode last note length** (follow-up of #65): a wait-mode run stops reading at the NoteOn that completes the
+    passage, so its stored played notes end the last note at its own key-down (zero length); keep reading until those
+    keys come up or a short timeout passes, before the analyser grades wait-mode takes (mechanical).
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never

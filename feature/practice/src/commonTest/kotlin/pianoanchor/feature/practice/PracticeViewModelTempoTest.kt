@@ -256,6 +256,59 @@ class PracticeViewModelTempoTest {
         }
 
     @Test
+    fun aKeyStillDownWhenTheRunEndsEndsWithTheRun() =
+        runPractice {
+            val vm = practice()
+            startRun(vm)
+            advance(countInMs + 2 * beatMs)
+            piano.press(e4) // held past the end: its NoteOff never reaches the take
+            runCurrent()
+            advance(runMs - 2 * beatMs)
+
+            val e = assertNotNull(attempts.get("attempt-1")).playedNotes.single()
+            assertEquals(2 * beatMs * ms, e.downNanos)
+            assertEquals(runMs * ms, e.upNanos)
+            vm.close()
+            piano.release(e4)
+        }
+
+    @Test
+    fun aPedalDownBeforeTheStartingKeyHoldsTheTakesNotes() =
+        runPractice {
+            val vm = practice()
+            vm.selectRung(TempoRung.P60)
+            runCurrent()
+            piano.play(byteArrayOf(0xB0.toByte(), 64, 127)) // sustain pedal down before the count-in
+            runCurrent()
+            press(c4) // starts the count-in
+            advance(countInMs)
+            press(c4)
+            advance(runMs)
+
+            val c = assertNotNull(attempts.get("attempt-1")).playedNotes.single()
+            assertEquals(runMs * ms, c.soundingEndNanos)
+        }
+
+    @Test
+    fun aClickTurnedOnAsTheRunEndsDoesNotKeepClicking() =
+        runPractice {
+            val vm = practice()
+            vm.toggleClick() // off
+            startRun(vm)
+            advance(countInMs)
+            val gate = CompletableDeferred<Unit>()
+            metronome.startGate = gate
+            vm.toggleClick() // on: the start waits on the gate
+            runCurrent()
+            vm.selectRung(TempoRung.WAIT) // the run ends while that start is pending
+            runCurrent()
+            gate.complete(Unit)
+            runCurrent()
+
+            assertNull(metronome.running.value)
+        }
+
+    @Test
     fun metronomeStartsWithTheCountInAndStopsAtTheEnd() =
         runPractice {
             val vm = practice()
