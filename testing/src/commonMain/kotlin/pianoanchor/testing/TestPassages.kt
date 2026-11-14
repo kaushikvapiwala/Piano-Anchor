@@ -3,12 +3,17 @@ package pianoanchor.testing
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.ScoreNote
+import pianoanchor.core.model.Skill
+import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.Step
 import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.core.model.TimeSignature
 
 /** The written tempo of every [passageOf] passage, in quarter notes per minute. */
 const val TEST_TEMPO_BPM = 60
+
+/** The skill id every [passageOf] passage exercises unless told otherwise. */
+const val TEST_SKILL_ID = "test-skill"
 
 /**
  * A test passage in 4/4 at [TEST_TEMPO_BPM]: each of [steps] is the pitches of one step, played as quarter notes
@@ -18,6 +23,7 @@ fun passageOf(
     vararg steps: Set<MidiNote>,
     id: String = "test:passage",
     title: String = "Test passage",
+    skills: Set<String> = setOf(TEST_SKILL_ID),
 ): Passage =
     Passage(
         id = id,
@@ -28,4 +34,9 @@ fun passageOf(
             },
         timeSignature = TimeSignature(beats = 4, beatUnit = 4),
         tempoBpm = TEST_TEMPO_BPM,
+        skills = skills,
     )
+
+/** A [SkillGraph] from `id to prerequisites` pairs; each title is its id. */
+fun skillGraphOf(vararg skills: Pair<String, Set<String>>): SkillGraph =
+    SkillGraph(skills.map { (id, prerequisites) -> Skill(id, id, prerequisites) })

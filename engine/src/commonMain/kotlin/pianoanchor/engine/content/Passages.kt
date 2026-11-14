@@ -22,10 +22,14 @@ public object Passages {
                 ),
             timeSignature = TimeSignature(beats = 4, beatUnit = 4),
             tempoBpm = CDE_TEMPO_BPM,
+            skills = setOf(Skills.RH_C_POSITION.id),
         )
 
+    /** Every built-in passage. */
+    public val all: List<Passage> = listOf(CDE)
+
     /** The built-in passage with [id], or null if there is none (e.g. an attempt of a passage since removed). */
-    public fun byId(id: String): Passage? = listOf(CDE).firstOrNull { it.id == id }
+    public fun byId(id: String): Passage? = all.firstOrNull { it.id == id }
 }
 
 private fun note(

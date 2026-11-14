@@ -42,15 +42,17 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Played note | One key as played (`PlayedNote` in `:core:model`): pitch, onset velocity, key down, key up and when it stopped sounding, paired from MIDI events by `PlayedNotes.from`. |
 | Port | Interface through which the domain uses the outside world. Named `*Port`, lives in `core/ports`. |
 | Practice screen | The wait-mode screen (`:feature:practice`): the passage on a treble staff with a cursor on the waiting note, and a live key strip. A completed run is graded and saved; a run that ends early is discarded. |
+| Prerequisite | A skill that must be learned before another one is introduced (`Skill.prerequisites`, by id). |
 | Rating | How a review went for the memory model: `AGAIN`, `HARD`, `GOOD` or `EASY` (`Rating` in `:core:model`). |
 | Reconnect backoff | How the adapter reopens a dropped BLE MIDI device: waits that double from `BLE_RECONNECT_INITIAL_MS` up to `BLE_RECONNECT_MAX_MS`, giving up after `BLE_RECONNECT_GIVE_UP_MS`. |
 | Results screen | The screen after a completed run (`:feature:practice`): "run N" of the passage, a headline from the band, the Pitch tile (correct steps of all, wrong notes, incomplete chords) and Try again. |
 | Retrievability | FSRS: the chance of recalling an item now, 1 right after a review and falling with the days since; `Fsrs.retrievability`. |
 | Running status | MIDI shorthand: after one channel status byte, further data-byte groups reuse that status without repeating it. |
-| Skill node | One learnable skill (e.g. "bass clef F", "C to G chord change") in the learner's skill graph. |
+| Skill node | One learnable skill (`Skill` in `:core:model`, e.g. "Right hand, C position"): a stable kebab-case id, a title and its prerequisites. Passages list the skills they exercise. |
 | Stability | FSRS: the days after which recall has fallen to 90%; grows with each successful review. Part of `MemoryState`. |
 | Stable device id | The `MidiDevice.id` an adapter derives from what the platform reports (e.g. `usb:<manufacturer>/<product>/<serial>`, `ble:<address>`), so the same instrument keeps its id across reconnects when the platform reports enough to tell it apart. |
 | Step | One moment in a passage: the keys to press together (one note, or a chord) at its onset, each with a written length in ticks (`ScoreNote`). Wait mode reads only its pitches. |
+| Skill graph | The skills and their prerequisites as a validated acyclic graph (`SkillGraph`); `unlocked` lists the skills a learner may start next. See `docs/algorithms/learner-model.md`. |
 | Sustain pedal | The right (damper) pedal, sent as control change 64; values 64–127 hold every released note sounding until it drops below 64. |
 | SysEx | System Exclusive: a variable-length, vendor-specific MIDI message framed by 0xF0 and 0xF7. |
 | Tempo ladder | The practice screen's tempo rungs: Wait, then 60/70/85/100 % of the written tempo (`TempoRung`). Each timed rung starts a tempo run. |
