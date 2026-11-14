@@ -4,16 +4,17 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 
 /**
- * What the wait-mode practice screen shows. [steps] mirror the passage with each step's status; [currentStep] is the
+ * What the wait-mode practice screen shows. [passage] is the music practised (title, rhythm and time signature for
+ * the staff); [steps] mirror its steps with each step's status; [currentStep] is the
  * step the app waits for (the last one once the passage is done); [keysDown] are the keys held right now, and
  * [wrongKeys] those of them that were wrong when pressed. [flash] is
  * the last pressed key for `Tunables.KEY_FLASH_MS`; [lastKey] is the same key until the next one is pressed (the
  * key strip's "last key" text). [finishedAttemptId] is set once the completed attempt is saved: the screen then
  * goes to Results. [saveFailed] is true while a completed attempt could not be saved (the screen offers Retry and
- * Discard).
+ * Discard). [steps] has one entry per step of [passage].
  */
 public data class PracticeState(
-    val passageTitle: String,
+    val passage: Passage,
     val steps: List<StepView>,
     val currentStep: Int = 0,
     val keysDown: Set<MidiNote> = emptySet(),
@@ -24,11 +25,17 @@ public data class PracticeState(
     val finishedAttemptId: String? = null,
     val saveFailed: Boolean = false,
 ) {
+    init {
+        require(steps.size == passage.steps.size) {
+            "practice state has ${steps.size} step views for ${passage.steps.size} steps of \"${passage.id}\""
+        }
+    }
+
     public companion object {
         /** The state before the first note of [passage]: its first step waiting, the rest upcoming. */
         public fun start(passage: Passage): PracticeState =
             PracticeState(
-                passageTitle = passage.title,
+                passage = passage,
                 steps =
                     passage.steps.mapIndexed { i, step ->
                         StepView(step.pitches, if (i == 0) StepStatus.WAITING else StepStatus.UPCOMING)

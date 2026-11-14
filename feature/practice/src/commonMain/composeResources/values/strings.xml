@@ -10,8 +10,9 @@
     <string name="practice_end_run">End run</string>
     <string name="practice_legend_correct">correct</string>
     <string name="practice_legend_waiting">waiting for you</string>
-    <string name="practice_staff_waiting">Treble staff. Notes %1$s. Waiting for %2$s.</string>
-    <string name="practice_staff_done">Treble staff. Notes %1$s. Done.</string>
+    <string name="practice_staff_waiting">Treble staff, %1$s. Notes %2$s. Waiting for %3$s.</string>
+    <string name="practice_staff_done">Treble staff, %1$s. Notes %2$s. Done.</string>
+    <string name="practice_time_signature">%1$s/%2$s</string>
     <string name="practice_keys_label">Live keys · play the piano</string>
     <string name="practice_last_key_correct">%1$s · correct, moving on</string>
     <string name="practice_last_key_wrong">%1$s · waiting for %2$s</string>

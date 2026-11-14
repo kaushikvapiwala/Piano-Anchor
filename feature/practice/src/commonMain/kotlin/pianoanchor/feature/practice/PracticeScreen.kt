@@ -63,7 +63,7 @@ public fun PracticeScreen(
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.safeDrawingPadding()) {
-            TopBar(state.passageTitle, onBack)
+            TopBar(state.passage.title, onBack)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             if (state.connection == PracticeConnection.DISCONNECTED) {
                 ErrorCard(
@@ -81,6 +81,7 @@ public fun PracticeScreen(
                 )
             }
             StaffView(
+                passage = state.passage,
                 steps = state.steps,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp).fillMaxWidth().height(196.dp),
             )
