@@ -90,7 +90,7 @@ class PracticeViewModelTest {
 
             assertEquals(PracticeState.start(Passages.CDE), vm.state.value)
             assertEquals(listOf(StepStatus.WAITING, StepStatus.UPCOMING, StepStatus.UPCOMING), vm.statuses())
-            assertEquals("C-D-E", vm.state.value.passageTitle)
+            assertEquals(Passages.CDE, vm.state.value.passage)
         }
 
     @Test

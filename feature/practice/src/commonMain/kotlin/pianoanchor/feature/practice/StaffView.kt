@@ -19,16 +19,23 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.Passage
+import pianoanchor.core.model.TimeSignature
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_chord_join
 import pianoanchor.feature.practice.resources.practice_legend_correct
@@ -36,15 +43,18 @@ import pianoanchor.feature.practice.resources.practice_legend_waiting
 import pianoanchor.feature.practice.resources.practice_list_join
 import pianoanchor.feature.practice.resources.practice_staff_done
 import pianoanchor.feature.practice.resources.practice_staff_waiting
+import pianoanchor.feature.practice.resources.practice_time_signature
 import pianoanchor.ui.shell.PianoAnchorColors
+import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
 private const val STAFF_LINES = 5
 private val LINE_GAP = 16.dp
 private val LINE_WIDTH = 1.5.dp
-private val CLEF_AREA = 64.dp
-private val END_MARGIN = 24.dp
 private val NOTEHEAD = 19.dp to 14.dp
+private val HOLLOW_RING = 2.5.dp
+private val THICK_BAR_WIDTH = 3.dp
+private val DOUBLE_BAR_SPACE = 3.dp
 private const val NOTEHEAD_ANGLE = -18f
 private val LEDGER_HALF_WIDTH = 15.dp
 private val CURSOR_WIDTH = 3.dp
@@ -59,13 +69,19 @@ private const val SHARP = "♯"
 private const val LOWEST_LINE = 0
 private const val HIGHEST_LINE = 8
 
+/** Staff positions the time signature's numbers centre on: the upper and lower halves of the staff. */
+private const val TIME_TOP_POSITION = 6
+private const val TIME_BOTTOM_POSITION = 2
+
 /**
- * The treble staff with one notehead (or stacked chord) per step, evenly spaced and coloured by [StepStatus], a
- * cursor left of the waiting step and a legend. No time signature or bar lines yet. TalkBack reads it as one
- * description: the notes and the one being waited for.
+ * The treble staff of [passage]: its time signature, one notehead (or stacked chord) per step spaced by onset
+ * ([staffLayout]) and coloured by the matching [steps] entry's [StepStatus], hollow from a half note up, bar lines and
+ * a final double bar, a cursor left of the waiting step and a legend. TalkBack reads it as one description: the time
+ * signature, the notes and the one being waited for.
  */
 @Composable
 internal fun StaffView(
+    passage: Passage,
     steps: List<StepView>,
     modifier: Modifier = Modifier,
 ) {
@@ -77,14 +93,14 @@ internal fun StaffView(
             measurer.measure(TREBLE_CLEF, TextStyle(color = colors.staffLine, fontSize = 64.sp))
         }
     val sharpStyle = TextStyle(fontSize = 20.sp)
-    val names = steps.map { it.notes.chordName() }.joinToString(stringResource(Res.string.practice_list_join))
-    val waiting = steps.firstOrNull { it.status == StepStatus.WAITING }
-    val description =
-        if (waiting == null) {
-            stringResource(Res.string.practice_staff_done, names)
-        } else {
-            stringResource(Res.string.practice_staff_waiting, names, waiting.notes.chordName())
+    val time = passage.timeSignature
+    val display = displayFontFamily
+    val (timeTop, timeBottom) =
+        remember(measurer, colors.upcomingNote, display, time) {
+            val style = TextStyle(colors.upcomingNote, 26.sp, FontWeight.Bold, fontFamily = display)
+            measurer.measure(time.beats.toString(), style) to measurer.measure(time.beatUnit.toString(), style)
         }
+    val description = staffDescription(steps, time)
     Box(modifier) {
         Canvas(Modifier.fillMaxSize().semantics { contentDescription = description }) {
             val gap = LINE_GAP.toPx()
@@ -95,24 +111,20 @@ internal fun StaffView(
                 drawLine(colors.staffLine, Offset(0f, y(line * 2)), Offset(size.width, y(line * 2)), LINE_WIDTH.toPx())
             }
             drawText(clef, topLeft = Offset(4.dp.toPx(), y(2) - clef.size.height / 2f - gap / 2))
-            val start = CLEF_AREA.toPx()
-            val slot = (size.width - start - END_MARGIN.toPx()) / steps.size
+            val timeCenter = (CLEF_AREA_DP + TIME_SIGNATURE_AREA_DP / 2).dp.toPx()
+            centered(timeTop, Offset(timeCenter, y(TIME_TOP_POSITION)))
+            centered(timeBottom, Offset(timeCenter, y(TIME_BOTTOM_POSITION)))
+            val layout = staffLayout(passage, size.width.toDp().value)
+            barLines(layout, y(HIGHEST_LINE)..y(LOWEST_LINE), colors.staffLine)
             steps.forEachIndexed { i, step ->
-                val x = start + slot * (i + 0.5f)
+                val x = layout.noteX[i].dp.toPx()
                 val color = step.status.color(colors)
                 step.notes.forEach { note ->
                     ledgerLines(note.staffPosition, x, ::y, colors.staffLine)
-                    notehead(Offset(x, y(note.staffPosition)), color)
+                    notehead(Offset(x, y(note.staffPosition)), color, hollow = note in layout.hollow[i])
                     if (note.isBlack) {
                         val sharp = measurer.measure(SHARP, sharpStyle.copy(color = color))
-                        drawText(
-                            sharp,
-                            topLeft =
-                                Offset(
-                                    x - SHARP_GAP.toPx() - sharp.size.width / 2f,
-                                    y(note.staffPosition) - sharp.size.height / 2f,
-                                ),
-                        )
+                        centered(sharp, Offset(x - SHARP_GAP.toPx(), y(note.staffPosition)))
                     }
                 }
                 if (step.status == StepStatus.WAITING) {
@@ -128,6 +140,38 @@ internal fun StaffView(
     }
 }
 
+/** TalkBack's text for the staff: "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."). */
+@Composable
+private fun staffDescription(
+    steps: List<StepView>,
+    time: TimeSignature,
+): String {
+    val timeText = stringResource(Res.string.practice_time_signature, time.beats.toString(), time.beatUnit.toString())
+    val names = steps.map { it.notes.chordName() }.joinToString(stringResource(Res.string.practice_list_join))
+    val waiting = steps.firstOrNull { it.status == StepStatus.WAITING }
+    return if (waiting == null) {
+        stringResource(Res.string.practice_staff_done, timeText, names)
+    } else {
+        stringResource(Res.string.practice_staff_waiting, timeText, names, waiting.notes.chordName())
+    }
+}
+
+/** The inner bar lines and the final double bar of [layout], spanning [staff] (top to bottom y). */
+private fun DrawScope.barLines(
+    layout: StaffLayout,
+    staff: ClosedFloatingPointRange<Float>,
+    color: Color,
+) {
+    fun bar(
+        x: Float,
+        width: Dp,
+    ) = drawLine(color, Offset(x, staff.start), Offset(x, staff.endInclusive), width.toPx())
+    layout.barLineX.forEach { bar(it.dp.toPx(), LINE_WIDTH) }
+    val finalX = layout.finalBarX.dp.toPx()
+    bar(finalX, LINE_WIDTH)
+    bar(finalX + (LINE_WIDTH / 2 + DOUBLE_BAR_SPACE + THICK_BAR_WIDTH / 2).toPx(), THICK_BAR_WIDTH)
+}
+
 /** The notes of a step, low to high, joined as a chord ("C4+E4+G4"; one note is its name). */
 @Composable
 internal fun Set<MidiNote>.chordName(): String =
@@ -140,16 +184,26 @@ private fun StepStatus.color(colors: PianoAnchorColors): Color =
         StepStatus.UPCOMING -> colors.upcomingNote
     }
 
+/** Draws [text] centred on [center]. */
+private fun DrawScope.centered(
+    text: TextLayoutResult,
+    center: Offset,
+) = drawText(text, topLeft = Offset(center.x - text.size.width / 2f, center.y - text.size.height / 2f))
+
+/** A notehead at [center]: filled, or a [HOLLOW_RING] ring of the same outer size when [hollow]. */
 private fun DrawScope.notehead(
     center: Offset,
     color: Color,
+    hollow: Boolean,
 ) {
     val (width, height) = NOTEHEAD
+    val inset = if (hollow) HOLLOW_RING.toPx() / 2 else 0f
     rotate(NOTEHEAD_ANGLE, pivot = center) {
         drawOval(
             color,
-            topLeft = Offset(center.x - width.toPx() / 2, center.y - height.toPx() / 2),
-            size = Size(width.toPx(), height.toPx()),
+            topLeft = Offset(center.x - width.toPx() / 2 + inset, center.y - height.toPx() / 2 + inset),
+            size = Size(width.toPx() - 2 * inset, height.toPx() - 2 * inset),
+            style = if (hollow) Stroke(HOLLOW_RING.toPx()) else Fill,
         )
     }
 }

@@ -43,15 +43,25 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
 - **Top bar** 52 dp with a divider: back (44 dp), title (Space Grotesk 700, 16 sp) and "Wait mode" (Inter 11 sp),
   the tempo ladder (30 dp chips, radius 15, 1.5 dp border; Wait selected in plum, 60/70/85/100 % disabled) and
   the "End run" pill (36 dp), which discards the run.
-- **Staff** 196 dp: five 1.5 dp lines 16 dp apart, treble clef, one notehead per step (19×14 dp ellipse at −18°,
-  chords stacked), evenly spaced, ledger lines below and above the staff. Done notes blue, the waiting note amber,
-  upcoming notes ink; a 3×110 dp plum cursor (85 %) left of the waiting note; legend "correct" and "waiting for
-  you" top right. No time signature, bar lines or timing marks yet.
+- **Staff** 196 dp: five 1.5 dp lines 16 dp apart, treble clef, then the time signature (two numbers stacked,
+  Space Grotesk 700 26 sp, ink). One notehead per step (19×14 dp ellipse at −18°, chords stacked), ledger lines
+  below and above the staff. Done notes blue, the waiting note amber, upcoming notes ink; a written length of a half
+  note or more is hollow (a 2.5 dp ring in the same colour), shorter notes filled. A 3×110 dp plum cursor (85 %)
+  left of the waiting note; legend "correct" and "waiting for you" top right. No stems, rests or timing marks yet.
+- **Spacing** (`StaffLayout.kt`): x is linear in ticks from just after the time signature to the final bar, which
+  sits at the last note's end. Every gap between steps (and the last note's gap to the final bar) is at least 28 dp;
+  the other gaps share the rest in proportion. If even 28 dp gaps don't fit (about 28 steps), every gap gets the
+  same width; long passages wait for scrolling.
+- **Bar lines**: 1.5 dp at each bar boundary inside the passage (a bar is beats × 4 / beat unit quarters, so 6/8 is
+  three quarters); one where a step starts sits before it by 30 dp or half the gap to the step before, whichever is
+  less; one inside a held note sits at its tick. The final double bar is 1.5 dp + 3 dp, 3 dp apart. At the 28 dp
+  minimum a sharp can touch a bar line or the note before it, and ledger lines can join; built-in passages are
+  far wider than that.
 - **Key strip**: "Live keys · play the piano" and the last key's verdict ("E4 · correct, moving on",
   "F4 · waiting for E4"), then two octaves from the C at or below the passage's lowest note. White keys 60 dp on a
   62 dp pitch, black keys 34×46 dp; the waiting step's keys carry an 18 dp amber band; held and flashing keys turn
   correct or wrong with a 150 ms colour change; the flash lasts `KEY_FLASH_MS`.
-- **Accessibility**: the staff reads as "Treble staff. Notes C4, D4, E4. Waiting for D4."; each key is named; the
+- **Accessibility**: the staff reads as "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."); each key is named; the
   verdict is a polite live region announcing "Correct" or "Wrong, F4".
 - **Disconnected**: the error card "Piano disconnected" with "Back to pianos"; the run is discarded.
 - **Save failed**: the error card "Couldn't save this run." with "Retry" (saves the same run again) and "Discard"
