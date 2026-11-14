@@ -39,6 +39,17 @@ Driven port: the pianos the app has seen, kept across app restarts and keyed by 
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/InstrumentRepositoryPortContractTest.kt`
 
+## `MetronomePort`
+
+Driven port: an audible beat. Times are in the [ClockPort] domain (monotonic nanoseconds). Contract: `pianoanchor.testing.MetronomePortContractTest`.
+
+| Function | Description |
+|---|---|
+| `suspend fun start(firstBeatNanos: Long, beatIntervalNanos: Long, beatsPerBar: Int)` | Clicks at [firstBeatNanos] and every [beatIntervalNanos] after it until [stop], accenting every [beatsPerBar]th beat starting with the first. Replaces a running pattern. Beats already in the past are skipped, keeping the phase. Throws IllegalArgumentException when [beatIntervalNanos] <= 0 or [beatsPerBar] < 1. Audio is queued a little ahead, so a beat within a few tens of milliseconds of the call may be skipped or still follow the replaced pattern: start a pattern well ahead of its first beat (a count-in leaves room for that). |
+| `suspend fun stop()` | Stops clicking; a no-op when idle. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/MetronomePortContractTest.kt`
+
 ## `MidiDiscoveryPort`
 
 Driven port: finding and connecting MIDI devices that are not listed until connected (e.g. Bluetooth LE). Contract: `pianoanchor.testing.MidiDiscoveryPortContractTest`.

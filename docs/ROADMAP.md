@@ -49,41 +49,40 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
    "opened" signal. Also open Practice from the monitor, play C-D-E, and check the monitor shows the piano connected
    again afterwards (1.9: the monitor closes the input for practice and reopens it on return). End to end (closes
    Phase 1): play C-D-E, see Results (1.10) with "run N", Try again, and the run count survives an app restart.
-2. **M1.4a Metronome port and Android click adapter** (spec #63): `MetronomePort`, synthesised clicks on a
-   low-latency `AudioTrack` in a new android-audio platform module.
-3. **M1.4b Staff rhythm** (spec #64) [#59]: time signature, bar lines, hollow half and whole notes, proportional
+2. **M1.4b Staff rhythm** (spec #64) [#59]: time signature, bar lines, hollow half and whole notes, proportional
    spacing.
-4. **M1.4c Tempo-mode runs** (spec #65) [#61, #63, #64]: tempo rungs, one-bar count-in, clock-driven cursor, live judge,
-   metronome, attempts store tempo and played notes (schema 1→2).
-5. **M1.4d Results tiles** (spec #66) [#65]: Timing, Note length and Hesitation tiles from the analyser; tempo in the
+3. **M1.4c Tempo-mode runs** (spec #65) [#61, #63, #64]: tempo rungs, one-bar count-in, clock-driven cursor, live judge,
+   metronome, attempts store tempo and played notes (schema 1→2). First run on a device doubles as the owner's by-ear
+   check of the M1.4a click (timing against the cursor, accent audible on phone speakers).
+4. **M1.4d Results tiles** (spec #66) [#65]: Timing, Note length and Hesitation tiles from the analyser; tempo in the
    caption.
-6. **M1.5 Latency calibration** (spec #67) [#63, #65, #66]: tap along to 16 clicks, a calibration port, offered before a
+5. **M1.5 Latency calibration** (spec #67) [#63, #65, #66]: tap along to 16 clicks, a calibration port, offered before a
    piano's first timed run and from the monitor (schema 2→3).
-7. **M2.1 FSRS-6 memory model** (spec #69): pure-Kotlin FSRS-6 in the engine, checked against committed py-fsrs
+6. **M2.1 FSRS-6 memory model** (spec #69): pure-Kotlin FSRS-6 in the engine, checked against committed py-fsrs
    golden vectors.
-8. **M2.2 Skill graph** (spec #70) [#59]: skills with prerequisites (validated DAG); passages declare their skills.
-9. **M2.3 Learner storage** (spec #71) [#69, #70]: review log plus cached skill state behind a learner repository port;
+7. **M2.2 Skill graph** (spec #70) [#59]: skills with prerequisites (validated DAG); passages declare their skills.
+8. **M2.3 Learner storage** (spec #71) [#69, #70]: review log plus cached skill state behind a learner repository port;
    adds kotlinx-datetime (ADR).
-10. **M2.4 Learner model** (spec #72) [#69, #70, #71]: cold checks rated from the band, learned rule, due list and daily
+9. **M2.4 Learner model** (spec #72) [#69, #70, #71]: cold checks rated from the band, learned rule, due list and daily
     limits; recorded after every saved run.
-11. **M2.5 Learner simulation exit check** (spec #73) [#72]: seeded 90-day simulation (retention, load, prerequisite
+10. **M2.5 Learner simulation exit check** (spec #73) [#72]: seeded 90-day simulation (retention, load, prerequisite
     order, recovery after a skip).
-12. **M3.1 Content format** (spec #76) [#59, #70]: note text, rights records, units; the rights document generated from the
+11. **M3.1 Content format** (spec #76) [#59, #70]: note text, rights records, units; the rights document generated from the
     content.
-13. **M3.2 Units 0–2 content** (spec #77, needs-owner: owner reviews the skill and piece list) [#76].
-14. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
-15. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
+12. **M3.2 Units 0–2 content** (spec #77, needs-owner: owner reviews the skill and piece list) [#76].
+13. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
+14. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
     start screen.
-16. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
-17. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
-18. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
+15. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
+16. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
+17. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
     exit check.
-19. **Unstable ids and kept identities** (follow-up of #56; needs-owner): a `sys:<id>` fallback id can name another
+18. **Unstable ids and kept identities** (follow-up of #56; needs-owner): a `sys:<id>` fallback id can name another
     piano after a reconnect, which then keeps the earlier piano's stored identity. Decide whether to keep identities
     only for stable `usb:`/`ble:` ids.
-20. **All Notes Off in played notes** (follow-up of #60): `PlayedNotes.from` ignores CC123/CC120, so a key whose
+19. **All Notes Off in played notes** (follow-up of #60): `PlayedNotes.from` ignores CC123/CC120, so a key whose
     NoteOff was lost stays down until the last event; end every down key there (mechanical).
-21. **Robust fitted tempo** (follow-up of #61; needs-owner): a long pause pulls the analyser's least-squares tempo, so
+20. **Robust fitted tempo** (follow-up of #61; needs-owner): a long pause pulls the analyser's least-squares tempo, so
     `Fitted` and `Untimed` hesitation checks can miss a pause and `Fitted` can report early/late notes around it.
     Decide between fitting each stretch between hesitations and a median inter-onset tempo.
 
@@ -93,7 +92,7 @@ and run the performance analyser on it (the M1 exit check on a real recording).
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |
 |---|---|---|
-| M1 | MIDI input, real-time matcher, offline analyser (🔄 M1.1 rhythm in passages, M1.2 played notes and analyser harness, and M1.3 offline analyser done: exit check met on synthetic takes, real-fixture confirmation pending the hardware check; specced: #63–#67) | Recorded fixtures with injected errors classified ≥ 95% correctly |
+| M1 | MIDI input, real-time matcher, offline analyser (🔄 M1.1 rhythm in passages, M1.2 played notes and analyser harness, and M1.3 offline analyser done: exit check met on synthetic takes, real-fixture confirmation pending the hardware check; M1.4a metronome done, the click pending an owner check by ear; specced: #64–#67) | Recorded fixtures with injected errors classified ≥ 95% correctly |
 | M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) (specced: #69–#73) | Matches reference test vectors; simulated learner behaves sensibly |
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82) | Used daily for 2 weeks |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit | All tracks share the daily plan |

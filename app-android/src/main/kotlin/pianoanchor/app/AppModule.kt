@@ -8,6 +8,7 @@ import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.ClockPort
 import pianoanchor.core.ports.InstrumentRepositoryPort
+import pianoanchor.core.ports.MetronomePort
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
@@ -15,6 +16,7 @@ import pianoanchor.engine.content.Passages
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsViewModel
+import pianoanchor.platform.androidaudio.AndroidMetronomeAdapter
 import pianoanchor.platform.androidmidi.AndroidClockAdapter
 import pianoanchor.platform.androidmidi.AndroidMidiAdapter
 import pianoanchor.platform.storage.SqlAttemptRepositoryAdapter
@@ -32,6 +34,7 @@ val appModule =
         single<MidiDiscoveryPort> { get<AndroidMidiAdapter>() }
         single<ClockPort> { AndroidClockAdapter() }
         single<Clock> { Clock.System }
+        single<MetronomePort> { AndroidMetronomeAdapter(androidContext(), get()) }
         single { createPianoAnchorDatabaseDriver(androidContext()) }
         single<InstrumentRepositoryPort> { SqlInstrumentRepositoryAdapter(get(), Dispatchers.IO) }
         single<AttemptRepositoryPort> { SqlAttemptRepositoryAdapter(get(), Dispatchers.IO) }
