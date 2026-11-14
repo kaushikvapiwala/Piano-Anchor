@@ -7,7 +7,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.ui.shell.PianoAnchorTheme
 
 /**
@@ -31,7 +33,7 @@ class PracticeScreenScreenshotTest {
             captureRoboImage("screenshots/PracticeScreen_${name}_$theme.png") {
                 PianoAnchorTheme(
                     darkTheme = dark,
-                ) { PracticeScreen(state, onBack = {}, onRetrySave = {}, onDiscard = {}) }
+                ) { PracticeScreen(state, {}, {}, {}, {}, {}) }
             }
         }
     }
@@ -52,6 +54,36 @@ class PracticeScreenScreenshotTest {
                 keysDown = setOf(f4),
                 flash = KeyFlash(f4, correct = false),
                 lastKey = KeyFlash(f4, correct = false),
+            ),
+        )
+
+    private val timed = start.copy(rung = TempoRung.P70, doneRungs = setOf(TempoRung.P60))
+
+    @Test
+    fun timedRungReady() = capture("timed_ready", timed)
+
+    @Test
+    fun countIn() = capture("count_in", timed.copy(phase = RunPhase.COUNT_IN, beat = 3))
+
+    @Test
+    fun playingWithOneTimingOffMark() =
+        capture(
+            "timed_playing",
+            timed.copy(
+                phase = RunPhase.PLAYING,
+                beat = 2,
+                currentStep = 1,
+                steps =
+                    start.steps.mapIndexed { i, step ->
+                        step.copy(status = if (i == 1) StepStatus.WAITING else StepStatus.UPCOMING)
+                    },
+                liveMarks =
+                    mapOf(
+                        ScoreNoteRef(0, MidiNote(60)) to LiveMark.TimingOff(92),
+                    ),
+                keysDown = setOf(MidiNote(60)),
+                flash = KeyFlash(MidiNote(60), correct = true, deviationMs = 92),
+                lastKey = KeyFlash(MidiNote(60), correct = true, deviationMs = 92),
             ),
         )
 

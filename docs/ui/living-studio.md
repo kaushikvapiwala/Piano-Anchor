@@ -16,7 +16,7 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
 
 - **Feedback tokens** (`MaterialTheme.pianoAnchorColors`): correct `#1F5F8B` (dark `#8CC4E8`), waiting `#E69F00`
   (dark `#F2B84B`), wrong key `#B86FA3` (dark `#E3A6D0`), timing `#D55E00` (dark `#F08A4B`, our choice: the mock
-  has none; unused until timing exists). Staff lines `#3F3B45` (dark `#CFC8D3`), upcoming notes `#1B1B1F`
+  has none; the hollow mark of a timing-off note). Staff lines `#3F3B45` (dark `#CFC8D3`), upcoming notes `#1B1B1F`
   (dark `#F7F5F2`), target-key band `#FBE3B0`.
 - **Contrast** (WCAG, against the background): all text ≥ 4.5:1 in both themes; dark marks all ≥ 8:1. In light, the
   waiting amber `#E69F00` is 2.2:1, under the 3:1 for marks, and the target band is decorative (1.3:1 on a white
@@ -41,7 +41,7 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
 915×412 dp; screenshots render at that size.
 
 - **Top bar** 52 dp with a divider: back (44 dp), title (Space Grotesk 700, 16 sp) and "Wait mode" (Inter 11 sp),
-  the tempo ladder (30 dp chips, radius 15, 1.5 dp border; Wait selected in plum, 60/70/85/100 % disabled) and
+  the tempo ladder (30 dp chips, radius 15, 1.5 dp border; the selected rung in plum, see Tempo runs) and
   the "End run" pill (36 dp), which discards the run.
 - **Staff** 196 dp: five 1.5 dp lines 16 dp apart, treble clef, then the time signature (two numbers stacked,
   Space Grotesk 700 26 sp, ink). One notehead per step (19×14 dp ellipse at −18°, chords stacked), ledger lines
@@ -66,6 +66,22 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
 - **Disconnected**: the error card "Piano disconnected" with "Back to pianos"; the run is discarded.
 - **Save failed**: the error card "Couldn't save this run." with "Retry" (saves the same run again) and "Discard"
   (drops it and starts a fresh run on the same piano).
+
+### Tempo runs
+
+- **Tempo ladder**: every chip selects its rung (selecting ends and discards the run). Selected is plum; a rung with a
+  clean timed attempt at its tempo is drawn blue and read as "60%, done". Chips keep their 30 dp look inside a 48 dp
+  touch target. The subtitle reads "Tempo run, 56 BPM".
+- **Click switch**: a 44 dp note glyph left of "End run", struck through while off; TalkBack reads "Click on" or
+  "Click off". On by default and kept until the app closes.
+- **Status line** (36 dp, between staff and keys, timed rungs only): "Play any key to count in" until the first key; then
+  one pulse dot per beat of the bar (the accent beat larger, the current beat filled), and during the count-in the
+  words "Count-in" and the beat number. The pulse is read as "Beat 2 of 4" and is not a live region (it would
+  chatter). The cursor moves in quarter-beat steps, not smoothly, so screenshots stay still.
+- **Live marks** on the staff: a correct note turns blue; a timing-off note is a hollow orange ring (`timing` token)
+  with a tag such as "+92 ms" or "−40 ms" above it; unjudged notes keep their colour and the cursor step is amber.
+- **Key strip text** in a timed run: "E4 · on time", "E4 · late, 92 ms", "E4 · early, 40 ms", "F4 · wrong note".
+  TalkBack announces "Correct", "Late, 92 ms", "Early, 40 ms" or "Wrong, F4". The staff reads "… Cursor on D4."
 
 ## Results screen
 

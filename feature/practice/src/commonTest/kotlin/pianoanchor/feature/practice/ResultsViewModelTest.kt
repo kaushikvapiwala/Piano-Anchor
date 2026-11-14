@@ -50,6 +50,8 @@ class ResultsViewModelTest {
         accuracy = 3.0 / (3 + wrongNotes),
         band = band,
         events = emptyList(),
+        tempoBpm = null,
+        playedNotes = emptyList(),
     )
 
     private suspend fun TestScope.results(

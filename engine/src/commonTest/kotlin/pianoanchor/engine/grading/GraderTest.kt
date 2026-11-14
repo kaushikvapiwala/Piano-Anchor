@@ -5,6 +5,7 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
+import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.WrongNote
 import pianoanchor.testing.passageOf
@@ -64,7 +65,26 @@ class GraderTest {
                 PassageComplete(start + 500, 2),
             )
 
-        val attempt = Grader.attempt("a-1", passage, "usb-1", wallClock, startedAtNanos = start, events = events)
+        val played =
+            PlayedNote(
+                c4,
+                velocity = 64,
+                downNanos = start + 10,
+                upNanos = start + 60,
+                soundingEndNanos =
+                    start + 80,
+            )
+
+        val attempt =
+            Grader.attempt(
+                "a-1",
+                passage,
+                "usb-1",
+                wallClock,
+                startedAtNanos = start,
+                events = events,
+                playedNotes = listOf(played),
+            )
 
         assertEquals(
             Attempt(
@@ -86,6 +106,11 @@ class GraderTest {
                         ChordIncomplete(400, 2, setOf(g4)),
                         StepCorrect(500, 2),
                         PassageComplete(500, 2),
+                    ),
+                tempoBpm = null,
+                playedNotes =
+                    listOf(
+                        PlayedNote(c4, velocity = 64, downNanos = 10, upNanos = 60, soundingEndNanos = 80),
                     ),
             ),
             attempt,

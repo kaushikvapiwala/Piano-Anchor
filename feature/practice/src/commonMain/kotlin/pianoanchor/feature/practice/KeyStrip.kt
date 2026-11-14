@@ -32,14 +32,22 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.MidiNote
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_announce_correct
+import pianoanchor.feature.practice.resources.practice_announce_early
+import pianoanchor.feature.practice.resources.practice_announce_late
 import pianoanchor.feature.practice.resources.practice_announce_wrong
 import pianoanchor.feature.practice.resources.practice_keys_label
 import pianoanchor.feature.practice.resources.practice_last_key_correct
+import pianoanchor.feature.practice.resources.practice_last_key_early
+import pianoanchor.feature.practice.resources.practice_last_key_late
+import pianoanchor.feature.practice.resources.practice_last_key_on_time
 import pianoanchor.feature.practice.resources.practice_last_key_wrong
+import pianoanchor.feature.practice.resources.practice_last_key_wrong_timed
 import pianoanchor.ui.shell.PianoAnchorColors
 import pianoanchor.ui.shell.pianoAnchorColors
+import kotlin.math.abs
 
 private val WHITE_KEY = 60.dp to 76.dp
 private val WHITE_PITCH = 62.dp
@@ -70,7 +78,7 @@ internal fun KeyStrip(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.weight(1f))
-            state.lastKey?.let { LastKeyText(it, waiting) }
+            state.lastKey?.let { LastKeyText(it, waiting, timed = state.rung != TempoRung.WAIT) }
         }
         Keys(state, waiting)
     }
@@ -81,16 +89,45 @@ internal fun KeyStrip(
 private fun LastKeyText(
     key: KeyFlash,
     waiting: Set<MidiNote>,
+    timed: Boolean,
 ) {
     val name = key.note.name
+    val ms = key.deviationMs
     val (text, announcement) =
-        if (key.correct) {
-            stringResource(Res.string.practice_last_key_correct, name) to
-                stringResource(Res.string.practice_announce_correct)
-        } else {
-            val target = waiting.chordName()
-            stringResource(Res.string.practice_last_key_wrong, name, target) to
-                stringResource(Res.string.practice_announce_wrong, name)
+        when {
+            !key.correct && timed -> {
+                stringResource(Res.string.practice_last_key_wrong_timed, name) to
+                    stringResource(Res.string.practice_announce_wrong, name)
+            }
+
+            !key.correct -> {
+                stringResource(Res.string.practice_last_key_wrong, name, waiting.chordName()) to
+                    stringResource(Res.string.practice_announce_wrong, name)
+            }
+
+            ms != null -> {
+                val late = ms > 0
+                val amount = abs(ms).toString()
+                stringResource(
+                    if (late) Res.string.practice_last_key_late else Res.string.practice_last_key_early,
+                    name,
+                    amount,
+                ) to
+                    stringResource(
+                        if (late) Res.string.practice_announce_late else Res.string.practice_announce_early,
+                        amount,
+                    )
+            }
+
+            timed -> {
+                stringResource(Res.string.practice_last_key_on_time, name) to
+                    stringResource(Res.string.practice_announce_correct)
+            }
+
+            else -> {
+                stringResource(Res.string.practice_last_key_correct, name) to
+                    stringResource(Res.string.practice_announce_correct)
+            }
         }
     Text(
         text,

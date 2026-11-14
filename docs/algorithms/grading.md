@@ -26,6 +26,17 @@ events must end with `PassageComplete`: only completed runs are graded and store
 Events are kept with their relative timestamps so later analysis (a timing ribbon, hesitations) can use them
 without a new recording.
 
-## Why no timing yet
-Wait mode has no tempo: the music waits for the learner, so there is nothing to be early or late against. Timing,
-note length and hesitation need rhythm in the passage and come with later analysis.
+## Timed accuracy
+A tempo run is graded from the played notes, not from matcher events: `Grader.timedAttempt` runs the performance
+analyser against the rung's tempo, with tick 0 at time 0 (the take is rebased to the written time of tick 0).
+
+accuracy = score notes without a finding / (score notes + extra notes + mistouches)
+
+Every finding on a score note (wrong, missed, octave, incomplete chord, early, late, hesitation, too short or long)
+spoils that note. An extra or brushed key is not a fault of any score note, so it only enlarges the denominator
+instead of also spoiling the note it sits next to. The bands use the same thresholds as wait mode. The attempt's wrong
+notes count wrong, octave, extra and mistouch findings; incomplete chords count chord findings; it keeps no match
+events, but stores its tempo and the played notes. Wait mode also stores its played notes, rebased to the first
+NoteOn, with no tempo.
+
+Wait mode itself has no tempo, so it still grades by pitch alone; the Results tiles for timing come later.

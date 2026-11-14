@@ -10,6 +10,7 @@ import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
+import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.testing.AttemptRepositoryPortContractTest
@@ -49,6 +50,8 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
             accuracy = 1.0,
             band = Band.CLEAN,
             events = events,
+            tempoBpm = null,
+            playedNotes = emptyList(),
         )
 
     @Test
@@ -64,6 +67,26 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
                 )
             repository.save(stored)
             assertEquals(stored, repository.get("a-1"))
+        }
+
+    @Test
+    fun cleanTemposThrowsStorageUnavailableExceptionWhenTheDriverFails() =
+        runTest {
+            failingDriver.failing = true
+            assertFailsWith<StorageUnavailableException> { failingRepository.cleanTempos("c-d-e") }
+        }
+
+    @Test
+    fun deletingAnAttemptDeletesItsNotes() =
+        runTest {
+            repository.save(
+                attempt(listOf(PassageComplete(0, 0))).copy(
+                    playedNotes = listOf(PlayedNote(MidiNote(60), 64, 0, 10, 20)),
+                ),
+            )
+            assertEquals(1, driver.count("attempt_note"))
+            driver.exec("DELETE FROM attempt WHERE id = 'a-1'")
+            assertEquals(0, driver.count("attempt_note"))
         }
 
     @Test

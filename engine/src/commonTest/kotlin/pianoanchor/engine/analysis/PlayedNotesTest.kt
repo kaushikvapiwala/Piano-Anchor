@@ -44,6 +44,25 @@ class PlayedNotesTest {
     }
 
     @Test
+    fun keysStillDownEndAtALaterEndTime() {
+        val played = PlayedNotes.from(listOf(on(100, c4), pedal(150, 127), on(200, e4), off(300, e4)), endNanos = 500)
+        assertEquals(listOf(PlayedNote(c4, 64, 100, 500, 500), PlayedNote(e4, 64, 200, 300, 500)), played)
+    }
+
+    @Test
+    fun anEarlierEndTimeKeepsTheLastEventsTime() {
+        assertEquals(
+            listOf(PlayedNote(c4, 64, 100, 300, 300)),
+            PlayedNotes.from(listOf(on(100, c4), on(300, e4)), 200).take(1),
+        )
+    }
+
+    @Test
+    fun anEndTimeAloneEndsNothing() {
+        assertEquals(emptyList(), PlayedNotes.from(emptyList(), endNanos = 500))
+    }
+
+    @Test
     fun noteOnVelocityZeroEndsTheNote() {
         // On the wire a NoteOn with velocity 0 is a NoteOff: the parser turns it into one.
         val events =

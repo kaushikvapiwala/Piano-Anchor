@@ -135,6 +135,8 @@ private fun PracticeRoute(
     PracticeScreen(
         state,
         onBack = { leave(onBack) },
+        onSelectRung = viewModel::selectRung,
+        onToggleClick = viewModel::toggleClick,
         onRetrySave = viewModel::retrySave,
         onDiscard = viewModel::discardRun,
     )

@@ -1,5 +1,6 @@
 package pianoanchor.testing
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +39,9 @@ class FakeMetronome(
     /** The pattern clicking now, or null when stopped. */
     val running: StateFlow<Pattern?> = current.asStateFlow()
 
+    /** When set, [start] suspends until it completes, like a real adapter queuing audio. */
+    var startGate: CompletableDeferred<Unit>? = null
+
     override suspend fun start(
         firstBeatNanos: Long,
         beatIntervalNanos: Long,
@@ -45,6 +49,7 @@ class FakeMetronome(
     ) {
         require(beatIntervalNanos > 0) { "beatIntervalNanos must be positive, was $beatIntervalNanos" }
         require(beatsPerBar >= 1) { "beatsPerBar must be at least 1, was $beatsPerBar" }
+        startGate?.await()
         val now = clock.nowNanos()
         endSegment(now)
         val pattern = Pattern(firstBeatNanos, beatIntervalNanos, beatsPerBar)

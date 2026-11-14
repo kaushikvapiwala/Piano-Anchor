@@ -246,4 +246,24 @@ public object Tunables {
      * Source: starting value; checked by ear on device.
      */
     public const val METRONOME_CHUNK_MS: Long = 10
+
+    /**
+     * How many times per beat a tempo run moves the practice cursor and checks the clock (4 = every quarter beat).
+     *
+     * Why: fine enough that the cursor never looks late against a click, coarse enough to stay a few redraws per second
+     * (the screen has no animation, so screenshots stay still).
+     *
+     * Source: starting value from the M1.4c spec; revisit after the device check.
+     */
+    public const val TEMPO_CURSOR_SUBDIVISIONS: Int = 4
+
+    /**
+     * How long, in milliseconds, after the key that starts a tempo run the first count-in click sounds.
+     *
+     * Why: the metronome queues audio a little ahead, so a click right at the key press could be skipped; this leaves
+     * room without making the learner wait long.
+     *
+     * Source: starting value from the M1.4c spec; the metronome port documents a few tens of milliseconds of lead.
+     */
+    public const val TEMPO_COUNT_IN_LEAD_MS: Long = 200
 }

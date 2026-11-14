@@ -12,11 +12,13 @@ import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
+import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.platform.storage.db.AttemptQueries
 import pianoanchor.platform.storage.db.Attempt_event
+import pianoanchor.platform.storage.db.Attempt_note
 import pianoanchor.platform.storage.db.PianoAnchorDatabase
 import kotlin.time.Instant
 import pianoanchor.platform.storage.db.Attempt as AttemptRow
@@ -30,9 +32,9 @@ private const val NOTE_SEPARATOR = ","
 
 /**
  * [AttemptRepositoryPort] in the on-device SQLite database. [driver] comes from `createPianoAnchorDatabaseDriver`
- * (schema created, foreign keys on); every query runs on [dispatcher] (`Dispatchers.IO` in the app). An attempt and
- * its events are written in one transaction. [Attempt.startedAt] is stored as epoch milliseconds, so anything finer
- * is dropped.
+ * (schema created, foreign keys on); every query runs on [dispatcher] (`Dispatchers.IO` in the app). An attempt, its
+ * events and its played notes are written in one transaction. [Attempt.startedAt] is stored as epoch milliseconds, so
+ * anything finer is dropped.
  */
 public class SqlAttemptRepositoryAdapter(
     driver: SqlDriver,
@@ -58,8 +60,20 @@ public class SqlAttemptRepositoryAdapter(
                         incomplete_chords = attempt.incompleteChords.toLong(),
                         accuracy = attempt.accuracy,
                         band = attempt.band.name,
+                        tempo_bpm = attempt.tempoBpm?.toLong(),
                     )
                     attempt.events.forEachIndexed { seq, event -> queries.insertMatchEvent(attempt.id, seq, event) }
+                    attempt.playedNotes.forEachIndexed { seq, note ->
+                        queries.insertNote(
+                            attempt.id,
+                            seq.toLong(),
+                            note.pitch.number.toLong(),
+                            note.velocity.toLong(),
+                            note.downNanos,
+                            note.upNanos,
+                            note.soundingEndNanos,
+                        )
+                    }
                 }
             }
         }
@@ -97,6 +111,16 @@ public class SqlAttemptRepositoryAdapter(
             }
         }
 
+    override suspend fun cleanTempos(passageId: String): Set<Int> =
+        withContext(dispatcher) {
+            storage("cleanTempos") {
+                queries
+                    .selectCleanTempos(passageId)
+                    .executeAsList()
+                    .mapTo(LinkedHashSet()) { it.toInt() }
+            }
+        }
+
     private fun withEvents(row: AttemptRow) =
         Attempt(
             id = row.id,
@@ -110,6 +134,8 @@ public class SqlAttemptRepositoryAdapter(
             accuracy = row.accuracy,
             band = Band.valueOf(row.band),
             events = queries.selectEvents(row.id).executeAsList().map(::toMatchEvent),
+            tempoBpm = row.tempo_bpm?.toInt(),
+            playedNotes = queries.selectNotes(row.id).executeAsList().map(::toPlayedNote),
         )
 }
 
@@ -158,6 +184,15 @@ private fun toMatchEvent(row: Attempt_event): MatchEvent {
         else -> error("attempt ${row.attempt_id} event ${row.seq}: unknown kind ${row.kind}")
     }
 }
+
+private fun toPlayedNote(row: Attempt_note) =
+    PlayedNote(
+        pitch = MidiNote(row.pitch.toInt()),
+        velocity = row.velocity.toInt(),
+        downNanos = row.down_nanos,
+        upNanos = row.up_nanos,
+        soundingEndNanos = row.sounding_end_nanos,
+    )
 
 private fun notes(missing: String): Set<MidiNote> =
     if (missing.isEmpty()) emptySet() else missing.split(NOTE_SEPARATOR).map { MidiNote(it.toInt()) }.toSet()

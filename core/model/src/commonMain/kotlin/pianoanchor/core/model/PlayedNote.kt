@@ -23,4 +23,8 @@ public data class PlayedNote(
             "${pitch.name}: sounding end ($soundingEndNanos) must not come before key up ($upNanos)"
         }
     }
+
+    /** This note with all three times moved by [nanos] (negative: earlier), e.g. to rebase a take. */
+    public fun shiftedBy(nanos: Long): PlayedNote =
+        copy(downNanos = downNanos + nanos, upNanos = upNanos + nanos, soundingEndNanos = soundingEndNanos + nanos)
 }
