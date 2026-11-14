@@ -42,29 +42,33 @@ public class SqlAttemptRepositoryAdapter(
 
     override suspend fun save(attempt: Attempt): Unit =
         withContext(dispatcher) {
-            queries.transaction {
-                require(queries.selectById(attempt.id).executeAsOneOrNull() == null) {
-                    "attempt ${attempt.id} is already stored"
+            storage("save") {
+                queries.transaction {
+                    require(queries.selectById(attempt.id).executeAsOneOrNull() == null) {
+                        "attempt ${attempt.id} is already stored"
+                    }
+                    queries.insertAttempt(
+                        id = attempt.id,
+                        passage_id = attempt.passageId,
+                        device_id = attempt.deviceId,
+                        started_at_ms = attempt.startedAt.toEpochMilliseconds(),
+                        duration_nanos = attempt.durationNanos,
+                        step_count = attempt.stepCount.toLong(),
+                        wrong_notes = attempt.wrongNotes.toLong(),
+                        incomplete_chords = attempt.incompleteChords.toLong(),
+                        accuracy = attempt.accuracy,
+                        band = attempt.band.name,
+                    )
+                    attempt.events.forEachIndexed { seq, event -> queries.insertMatchEvent(attempt.id, seq, event) }
                 }
-                queries.insertAttempt(
-                    id = attempt.id,
-                    passage_id = attempt.passageId,
-                    device_id = attempt.deviceId,
-                    started_at_ms = attempt.startedAt.toEpochMilliseconds(),
-                    duration_nanos = attempt.durationNanos,
-                    step_count = attempt.stepCount.toLong(),
-                    wrong_notes = attempt.wrongNotes.toLong(),
-                    incomplete_chords = attempt.incompleteChords.toLong(),
-                    accuracy = attempt.accuracy,
-                    band = attempt.band.name,
-                )
-                attempt.events.forEachIndexed { seq, event -> queries.insertMatchEvent(attempt.id, seq, event) }
             }
         }
 
     override suspend fun get(id: String): Attempt? =
         withContext(dispatcher) {
-            queries.transactionWithResult { queries.selectById(id).executeAsOneOrNull()?.let(::withEvents) }
+            storage("get") {
+                queries.transactionWithResult { queries.selectById(id).executeAsOneOrNull()?.let(::withEvents) }
+            }
         }
 
     override fun recent(
@@ -80,7 +84,7 @@ public class SqlAttemptRepositoryAdapter(
                 withContext(dispatcher) {
                     queries.transactionWithResult { query.executeAsList().map(::withEvents) }
                 }
-            }
+            }.storage("recent")
     }
 
     override suspend fun countStartedBefore(
@@ -88,7 +92,9 @@ public class SqlAttemptRepositoryAdapter(
         before: Instant,
     ): Int =
         withContext(dispatcher) {
-            queries.countStartedBefore(passageId, before.toEpochMilliseconds()).executeAsOne().toInt()
+            storage("countStartedBefore") {
+                queries.countStartedBefore(passageId, before.toEpochMilliseconds()).executeAsOne().toInt()
+            }
         }
 
     private fun withEvents(row: AttemptRow) =

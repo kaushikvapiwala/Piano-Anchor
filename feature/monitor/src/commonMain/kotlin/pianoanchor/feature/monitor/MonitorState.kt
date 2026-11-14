@@ -51,6 +51,9 @@ public enum class MonitorError {
 
     /** The recording reached `Tunables.MONITOR_RECORDING_MAX_MS` and stopped. */
     RECORDING_LIMIT,
+
+    /** Storing the piano failed: it is shown but forgotten when the app closes. */
+    STORAGE,
 }
 
 /**

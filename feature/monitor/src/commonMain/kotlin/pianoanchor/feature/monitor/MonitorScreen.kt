@@ -47,6 +47,7 @@ import pianoanchor.feature.monitor.resources.monitor_error_bluetooth_off
 import pianoanchor.feature.monitor.resources.monitor_error_bluetooth_permission
 import pianoanchor.feature.monitor.resources.monitor_error_device_unavailable
 import pianoanchor.feature.monitor.resources.monitor_error_recording_limit
+import pianoanchor.feature.monitor.resources.monitor_error_storage
 import pianoanchor.feature.monitor.resources.monitor_export
 import pianoanchor.feature.monitor.resources.monitor_instrument_model
 import pianoanchor.feature.monitor.resources.monitor_log
@@ -269,6 +270,10 @@ private fun ErrorCard(
 
             MonitorError.RECORDING_LIMIT -> {
                 Res.string.monitor_error_recording_limit to null
+            }
+
+            MonitorError.STORAGE -> {
+                Res.string.monitor_error_storage to null
             }
         }
     val buttonColors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer)

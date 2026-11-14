@@ -37,8 +37,9 @@ private const val SYSEX_FRAME_BYTES = 2
 /**
  * The note monitor: shows live messages from the selected piano, reopens it after a drop and records a session as a
  * JSONL fixture (`fixtures/SCHEMA.md`). On every connect it asks the piano who it is (MIDI Identity Request,
- * `docs/protocols/midi-identity.md`) and stores it in [instruments]. [clock] times messages; [wallClock] gives the
- * recording start time and when a piano was seen.
+ * `docs/protocols/midi-identity.md`) and stores it in [instruments]; if storing fails it still shows the piano, with
+ * [MonitorError.STORAGE], and MIDI keeps flowing. [clock] times messages; [wallClock] gives the recording start time
+ * and when a piano was seen.
  */
 public class MonitorViewModel(
     private val input: MidiInputPort,
@@ -217,8 +218,13 @@ public class MonitorViewModel(
                         mutableState.update { it.copy(connection = Connection.CONNECTED) }
                         identifying =
                             this@coroutineScope.launch {
-                                val stored = identifier.identify(device)
-                                mutableState.update { it.copy(instrument = stored) }
+                                val identified = identifier.identify(device)
+                                mutableState.update {
+                                    it.copy(
+                                        instrument = identified.instrument,
+                                        error = if (identified.saved) it.error else MonitorError.STORAGE,
+                                    )
+                                }
                             }
                     }.collect(::onEvent)
             } finally {

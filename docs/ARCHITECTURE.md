@@ -53,6 +53,18 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
 ## Ports
 - A port is a top-level interface in `core/ports`, named `*Port`, documenting its contract in KDoc.
 - Ports describe what the domain needs (time, MIDI input/output, storage), not how a platform does it.
+- Failures cross a port as domain exceptions from `core/model`, never platform types: MIDI as
+  `MidiDeviceUnavailableException`, Bluetooth as `BluetoothUnavailableException`, storage as
+  `StorageUnavailableException` (disk full, corrupt or locked database).
+
+## Storage error model
+- The repository ports throw `StorageUnavailableException` when the store can't be read or written (`recent`'s flow
+  fails with it). Programming errors keep their own types (a duplicate attempt id is `IllegalArgumentException`).
+- `:platform:storage` translates the driver's exceptions (`android.database.SQLException`, `java.sql.SQLException`,
+  via `Throwable.isStorageFailure()`) in one helper per call and passes everything else through unchanged.
+- Screens recover rather than crash: the monitor shows a piano it couldn't save and keeps MIDI flowing
+  (`MonitorError.STORAGE`), practice keeps a graded run it couldn't save and offers Retry or Discard, and results
+  show "Couldn't load this run." with Retry. Nothing retries automatically.
 
 ## Adapters
 - An adapter implements a port outside the domain and is named `*Adapter` (class or object).

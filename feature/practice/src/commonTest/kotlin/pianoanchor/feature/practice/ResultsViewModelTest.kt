@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.content.Passages
 import pianoanchor.testing.FakeAttemptRepository
@@ -140,5 +141,48 @@ class ResultsViewModelTest {
             answer.complete(null)
             runCurrent()
             assertEquals(ResultsState.NotFound, vm.state.value)
+        }
+
+    @Test
+    fun aFailingGetGivesUnavailable() =
+        runTest(dispatcher) {
+            attempts.save(attempt("a-1", 100))
+            attempts.failing = true
+
+            val vm = ResultsViewModel("a-1", attempts).also { runCurrent() }
+
+            assertEquals(ResultsState.Unavailable, vm.state.value)
+        }
+
+    @Test
+    fun aFailingCountGivesUnavailable() =
+        runTest(dispatcher) {
+            attempts.save(attempt("a-1", 100))
+            val countFails =
+                object : AttemptRepositoryPort by attempts {
+                    override suspend fun countStartedBefore(
+                        passageId: String,
+                        before: Instant,
+                    ): Int = throw StorageUnavailableException("countStartedBefore failed")
+                }
+
+            val vm = ResultsViewModel("a-1", countFails).also { runCurrent() }
+
+            assertEquals(ResultsState.Unavailable, vm.state.value)
+        }
+
+    @Test
+    fun retryAfterRecoveryGivesReady() =
+        runTest(dispatcher) {
+            attempts.save(attempt("a-1", 100))
+            attempts.failing = true
+            val vm = ResultsViewModel("a-1", attempts).also { runCurrent() }
+
+            attempts.failing = false
+            vm.retry()
+            assertEquals(ResultsState.Loading, vm.state.value)
+            runCurrent()
+
+            assertEquals(1, (vm.state.value as ResultsState.Ready).runNumber)
         }
 }

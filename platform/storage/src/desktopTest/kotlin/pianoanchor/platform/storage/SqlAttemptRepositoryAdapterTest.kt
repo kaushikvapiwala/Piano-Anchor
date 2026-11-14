@@ -2,6 +2,7 @@ package pianoanchor.platform.storage
 
 import app.cash.sqldelight.db.SqlDriver
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
@@ -9,13 +10,16 @@ import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
+import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.testing.AttemptRepositoryPortContractTest
+import java.sql.SQLException
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.time.Instant
 
@@ -23,6 +27,8 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
     private val drivers = InMemoryDrivers()
     private val driver: SqlDriver = drivers.open()
     private val repository = SqlAttemptRepositoryAdapter(driver, Dispatchers.Unconfined)
+    private val failingDriver = FailingDriver(drivers.open())
+    private val failingRepository = SqlAttemptRepositoryAdapter(failingDriver, Dispatchers.Unconfined)
 
     override fun createSubject(): AttemptRepositoryPort =
         SqlAttemptRepositoryAdapter(drivers.open(), Dispatchers.Unconfined)
@@ -90,5 +96,56 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
                     "VALUES ('a-1', 0, 'mystery', 0, 0)",
             )
             assertFailsWith<IllegalStateException> { repository.get("a-1") }
+        }
+
+    @Test
+    fun saveThrowsStorageUnavailableExceptionWhenTheDriverFails() =
+        runTest {
+            failingDriver.failing = true
+            val e = assertFailsWith<StorageUnavailableException> { failingRepository.save(attempt(emptyList())) }
+            assertIs<SQLException>(e.cause)
+        }
+
+    @Test
+    fun getThrowsStorageUnavailableExceptionWhenTheDriverFails() =
+        runTest {
+            failingRepository.save(attempt(emptyList()))
+            failingDriver.failing = true
+            assertFailsWith<StorageUnavailableException> { failingRepository.get("a-1") }
+        }
+
+    @Test
+    fun countStartedBeforeThrowsStorageUnavailableExceptionWhenTheDriverFails() =
+        runTest {
+            failingDriver.failing = true
+            assertFailsWith<StorageUnavailableException> {
+                failingRepository.countStartedBefore("c-d-e", Instant.fromEpochMilliseconds(2_000))
+            }
+        }
+
+    @Test
+    fun recentFailsWithStorageUnavailableExceptionWhenTheDriverFails() =
+        runTest {
+            failingDriver.failing = true
+            val e = assertFailsWith<StorageUnavailableException> { failingRepository.recent("c-d-e", 1).first() }
+            assertIs<SQLException>(e.cause)
+        }
+
+    @Test
+    fun aDuplicateSaveStillThrowsIllegalArgumentException() =
+        runTest {
+            failingRepository.save(attempt(emptyList()))
+            assertFailsWith<IllegalArgumentException> { failingRepository.save(attempt(emptyList())) }
+        }
+
+    @Test
+    fun aNonStorageExceptionPassesThroughUnchanged() =
+        runTest {
+            repository.save(attempt(emptyList()))
+            driver.exec(
+                "INSERT INTO attempt_event(attempt_id, seq, kind, t_nanos, step_index) " +
+                    "VALUES ('a-1', 0, 'mystery', 0, 0)",
+            )
+            assertFailsWith<IllegalStateException> { repository.recent("c-d-e", 1).first() }
         }
 }

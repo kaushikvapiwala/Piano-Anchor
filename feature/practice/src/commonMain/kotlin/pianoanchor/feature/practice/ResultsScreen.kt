@@ -33,6 +33,7 @@ import pianoanchor.core.model.Band
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_back_to_pianos
 import pianoanchor.feature.practice.resources.practice_list_join
+import pianoanchor.feature.practice.resources.practice_retry
 import pianoanchor.feature.practice.resources.results_caption
 import pianoanchor.feature.practice.resources.results_headline_clean
 import pianoanchor.feature.practice.resources.results_headline_good
@@ -45,6 +46,7 @@ import pianoanchor.feature.practice.resources.results_pitch_label
 import pianoanchor.feature.practice.resources.results_pitch_value
 import pianoanchor.feature.practice.resources.results_pitch_wrong_notes
 import pianoanchor.feature.practice.resources.results_try_again
+import pianoanchor.feature.practice.resources.results_unavailable
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
@@ -54,13 +56,14 @@ private const val TILE_COLUMNS = 4
 /**
  * The results screen (Living Studio mock, `docs/ui/living-studio.md`): the run's caption and headline, the Pitch
  * tile and "Try again". Stateless: see [ResultsViewModel]. [onBack] leaves for the pianos; [onTryAgain] practises
- * the passage again.
+ * the passage again; [onRetry] reads the run again after [ResultsState.Unavailable].
  */
 @Composable
 public fun ResultsScreen(
     state: ResultsState,
     onBack: () -> Unit,
     onTryAgain: () -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
@@ -79,9 +82,17 @@ public fun ResultsScreen(
 
                 ResultsState.NotFound -> {
                     ErrorCard(
-                        message = stringResource(Res.string.results_not_found),
-                        action = stringResource(Res.string.practice_back_to_pianos),
-                        onAction = onBack,
+                        stringResource(Res.string.results_not_found),
+                        CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                ResultsState.Unavailable -> {
+                    ErrorCard(
+                        stringResource(Res.string.results_unavailable),
+                        CardAction(stringResource(Res.string.practice_retry), onRetry),
+                        CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }

@@ -24,6 +24,7 @@
     <string name="monitor_error_bluetooth_off">Bluetooth is off.</string>
     <string name="monitor_error_device_unavailable">That piano is not available. Check that it is on and connected.</string>
     <string name="monitor_error_recording_limit">Recording stopped: it reached the time limit.</string>
+    <string name="monitor_error_storage">Couldn't save this piano. It will be forgotten when the app closes.</string>
     <string name="monitor_action_open_settings">Open settings</string>
     <string name="monitor_action_enable_bluetooth">Turn on Bluetooth</string>
     <string name="monitor_action_dismiss">Dismiss</string>

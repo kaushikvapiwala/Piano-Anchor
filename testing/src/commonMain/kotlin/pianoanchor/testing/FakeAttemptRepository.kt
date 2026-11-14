@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import kotlin.time.Instant
 
@@ -12,14 +13,21 @@ import kotlin.time.Instant
 class FakeAttemptRepository : AttemptRepositoryPort {
     private val attempts = MutableStateFlow(emptyMap<String, Attempt>())
 
+    /** While true, every call throws [StorageUnavailableException] (`recent`'s flow fails on collection). */
+    var failing: Boolean = false
+
     override suspend fun save(attempt: Attempt) {
+        failIfFailing("save")
         attempts.update { all ->
             require(attempt.id !in all) { "attempt ${attempt.id} is already stored" }
             all + (attempt.id to attempt)
         }
     }
 
-    override suspend fun get(id: String): Attempt? = attempts.value[id]
+    override suspend fun get(id: String): Attempt? {
+        failIfFailing("get")
+        return attempts.value[id]
+    }
 
     override fun recent(
         passageId: String,
@@ -27,6 +35,7 @@ class FakeAttemptRepository : AttemptRepositoryPort {
     ): Flow<List<Attempt>> {
         require(limit > 0) { "limit ($limit) must be positive" }
         return attempts.map { all ->
+            failIfFailing("recent")
             all.values
                 .filter { it.passageId == passageId }
                 .sortedByDescending { it.startedAt }
@@ -37,5 +46,12 @@ class FakeAttemptRepository : AttemptRepositoryPort {
     override suspend fun countStartedBefore(
         passageId: String,
         before: Instant,
-    ): Int = attempts.value.values.count { it.passageId == passageId && it.startedAt < before }
+    ): Int {
+        failIfFailing("countStartedBefore")
+        return attempts.value.values.count { it.passageId == passageId && it.startedAt < before }
+    }
+
+    private fun failIfFailing(operation: String) {
+        if (failing) throw StorageUnavailableException("$operation failed")
+    }
 }
