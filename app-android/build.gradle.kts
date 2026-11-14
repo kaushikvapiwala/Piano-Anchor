@@ -3,7 +3,8 @@ plugins {
 }
 
 // Emulator end-to-end test (docs/adr/0021-emulator-end-to-end-tests.md): `./gradlew :app-android:atdPixelDebugAndroidTest`
-// runs src/androidTest on a Gradle Managed Device (needs KVM). Not part of fastCheck, check or ciBuild; e2e.yml runs it.
+// runs src/androidTest on a Gradle Managed Device (needs KVM), against the virtual piano in src/debug. Not part of
+// fastCheck, check or ciBuild; e2e.yml runs it.
 android {
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

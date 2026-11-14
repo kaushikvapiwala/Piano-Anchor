@@ -10,6 +10,7 @@ on:
     paths:
       - .github/workflows/e2e.yml
       - app-android/src/androidTest/**
+      - app-android/src/debug/**
       - app-android/build.gradle.kts
   schedule:
     - cron: "17 3 * * *"

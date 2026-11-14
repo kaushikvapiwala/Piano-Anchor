@@ -1,6 +1,8 @@
 package pianoanchor.app
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.media.midi.MidiDevice
 import android.media.midi.MidiDeviceInfo
 import android.media.midi.MidiDeviceStatus
@@ -76,9 +78,10 @@ class WalkingSkeletonEndToEndTest {
 
     @Before
     fun openPiano() {
+        setVirtualPianoEnabled(true)
         val manager = InstrumentationRegistry.getInstrumentation().context.getSystemService(MidiManager::class.java)
         checkNotNull(manager) { "No MIDI service" }
-        // The MIDI service registers the test APK's device shortly after the install.
+        // The MIDI service registers the device shortly after the service is enabled.
         compose.waitUntil(UI_TIMEOUT_MS) { findTestPiano(manager) != null }
         piano = TestPiano(manager, checkNotNull(findTestPiano(manager)))
     }
@@ -86,6 +89,7 @@ class WalkingSkeletonEndToEndTest {
     @After
     fun closePiano() {
         if (::piano.isInitialized) piano.close()
+        setVirtualPianoEnabled(false)
     }
 
     @Test
@@ -157,6 +161,21 @@ class WalkingSkeletonEndToEndTest {
         resource: StringResource,
         vararg args: Any,
     ): String = runBlocking { getString(resource, *args) }
+}
+
+/**
+ * Enables or disables the debug app's [VirtualPianoService], which the manifest ships disabled so that a debug
+ * install lists no test piano. The test runs as the app, so it may change its own component.
+ */
+private fun setVirtualPianoEnabled(enabled: Boolean) {
+    val app = InstrumentationRegistry.getInstrumentation().targetContext
+    val state =
+        if (enabled) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+    app.packageManager.setComponentEnabledSetting(
+        ComponentName(app, VirtualPianoService::class.java),
+        state,
+        PackageManager.DONT_KILL_APP,
+    )
 }
 
 /**
