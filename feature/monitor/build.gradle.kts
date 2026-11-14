@@ -34,6 +34,8 @@ kotlin {
 
 compose.resources {
     packageOfResClass = "pianoanchor.feature.monitor.resources"
+    // Public so the emulator end-to-end test (app-android androidTest) finds nodes by these strings.
+    publicResClass = true
 }
 
 tasks.named("fastCheck") { dependsOn("verifyRoborazziAndroidHostTest") }

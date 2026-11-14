@@ -41,16 +41,14 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 
 1. **Hardware check** (owner): install the debug app (the `app-android-debug-<sha>` artifact of the latest CI run
    on main, or `./gradlew :app-android:assembleDebug`), connect a piano over BLE, play keys, survive a disconnect
-   and export a C-D-E fixture into `fixtures/` (first hardware check of the 1.4a `MidiManager` glue, the 1.4b
-   scan/connect glue and the 1.4m Android wiring); note whether the piano answers the 1.5 Identity Request
-   (the monitor shows "model …") and that the piano is still known after an app restart (1.8 storage). If a piano
+   and export a C-D-E fixture into `fixtures/` (the 1.4b BLE scan/connect glue and the 1.4a USB transport on real
+   hardware; the emulator end-to-end test, `.github/workflows/e2e.yml`, covers the 1.4a `MidiManager` glue and the
+   1.4m Android wiring over a virtual MIDI device); note whether the piano answers the 1.5 Identity Request (the monitor shows "model …") and
+   that the piano is still known after an app restart (1.8 storage). If a piano
    known to answer shows none, the request may race the input port's open: `MidiInputPort` would then need an
    "opened" signal. Also open Practice from the monitor, play C-D-E, and check the monitor shows the piano connected
    again afterwards (1.9: the monitor closes the input for practice and reopens it on return). End to end (closes
    Phase 1): play C-D-E, see Results (1.10) with "run N", Try again, and the run count survives an app restart.
-2. **Emulator end-to-end test and CI job** (spec #57): the C-D-E loop on a Gradle Managed Device (ATD image, KVM on
-   `ubuntu-latest`), fed by a test-only virtual MIDI piano (`MidiDeviceService`); runs on pushes to main and nightly,
-   not on every PR.
 3. **Keep a known identity on a missed reply** (spec #56): a null identity in `upsert` keeps the stored one
    (contract change, `COALESCE` in `Instrument.sq`).
 4. **M1.1 Rhythm in passages** (spec #59): step onsets and note lengths in ticks (960 per quarter), time signature
@@ -86,7 +84,7 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
     start screen.
 22. **M3.5 Onboarding** (spec #80) [12, 16, 19, 20, 21]: connect, echo C-E-G, calibrate, choose a start unit.
 23. **M3.6 Update check** (spec #81) [20, 21]: the opt-out daily check, the app's only network call.
-24. **M3.7 Release pipeline** (spec #82) [2]: tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
+24. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
     exit check.
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
