@@ -37,7 +37,7 @@ Every finding names one score note (`ScoreNoteRef`: step index and pitch) and th
 | `OCTAVE` | the score note an octave too high or low | the score note |
 | `EARLY` / `LATE` | the note starts outside the timing tolerance | the score note |
 | `HESITATION` | a pause before a step much longer than the music asks for | lowest pitch of the delayed step |
-| `TOO_SHORT` / `TOO_LONG` | key up well before or well after the written length | the score note |
+| `TOO_SHORT` / `TOO_LONG` | stopped sounding well before or well after the written length | the score note |
 
 The bands are chosen so the kinds don't overlap. A neighbour one or two semitones away is a mistouch, three to
 eleven is a wrong note, and exactly twelve is an octave. A dropped single note is a missed note, while a dropped
@@ -124,11 +124,12 @@ pause doesn't shift everything after it. Before the first paired step it runs fr
 from the first played note at the first step. Between equal-cost paths the first one found is kept, which is
 deterministic.
 
-The work grows with steps × notes², which is fine for passages of a few dozen notes.
+The programme tries steps × notes² runs, each paired in time that grows with its length, and runs twice (see the
+pre-pass). That is fine for passages of a few dozen notes; long pieces would need a bound on run length.
 
 **Mistouch pre-pass.** A first alignment finds the brushed keys: a played note within `MISTOUCH_WINDOW_MS` of a
-louder exact match one or two semitones away, unless it is itself an exact match of that step (a chord with a
-second in it). It becomes `MISTOUCH` at the louder note's score note (the nearest in time when several qualify) and
+louder exact match one or two semitones away. Not when the note is itself an exact match on time for its own step,
+measured from the louder note at the reference tempo: a chord with a second in it, or a fast run. It becomes `MISTOUCH` at the louder note's score note (the nearest in time when several qualify) and
 is dropped before the final alignment. A key brushed between two chord notes, each one or two semitones away, could
 belong to either; the analyser picks the one nearest in time.
 
@@ -146,13 +147,17 @@ In score order, step by step:
    matched (one finding per missing note).
 3. **Hesitation** (every reference; `Untimed` and `Fitted` take the expected gap from the fitted tempo). A step whose
    earliest matched onset comes at least `HESITATION_GAP_RATIO` × the expected gap and at least `HESITATION_MIN_MS`
-   after the previous step's is `HESITATION`, at its lowest matched pitch, instead of late. The time map is pinned
+   after the last matched step's is `HESITATION`, at its lowest matched pitch, instead of late. A missed step in
+   between counts in the expected gap. The time map is pinned
    again at that step, so later notes are measured from it.
 4. **Early and late** (`Target`, `Fitted`). An onset more than max(`TIMING_TOLERANCE_MS`,
-   `TIMING_TOLERANCE_BEAT_FRACTION` × beat) from the expected one is `EARLY` or `LATE`.
+   `TIMING_TOLERANCE_BEAT_FRACTION` × beat) from the expected one is `EARLY` or `LATE`. `timingToleranceNanos`
+   computes the band; the error injector uses it too.
 5. **Length** (`Target`, `Fitted`). Sounding length (key down to sounding end) under `NOTE_SHORT_RATIO` × written is
    `TOO_SHORT`, over `NOTE_LONG_RATIO` × written `TOO_LONG`. A note that stops sounding within the timing tolerance
-   of the next step's onset is never `TOO_SHORT`: legato players lift just before the next note.
+   of the next step's onset is never `TOO_SHORT`, unless it is written to sound past that step: legato players lift
+   just before the next note, which matters for short notes at fast tempos. The pedal counts, so a note held by the
+   pedal well past its length is `TOO_LONG`.
 6. **Extras.** An unmatched played note is `EXTRA_NOTE` at the lowest pitch of the step nearest in time. A matched
    step is at its earliest matched onset; an unmatched one is placed from the nearest matched step before it (else
    after it) at the reference tempo.

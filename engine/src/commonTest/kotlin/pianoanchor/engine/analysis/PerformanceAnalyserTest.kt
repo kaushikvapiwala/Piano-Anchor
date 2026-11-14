@@ -93,6 +93,30 @@ class PerformanceAnalyserTest {
             tempoBpm = 60,
         )
 
+    /** Equal steps of a quarter / [divisor] each, written at [bpm]. */
+    private fun evenSteps(
+        divisor: Int,
+        bpm: Int,
+        vararg pitches: MidiNote,
+    ) = Passage(
+        id = "test:even",
+        title = "Even steps",
+        steps =
+            pitches.mapIndexed { i, pitch ->
+                Step(
+                    i * TICKS_PER_QUARTER / divisor,
+                    setOf(
+                        ScoreNote(
+                            pitch,
+                            TICKS_PER_QUARTER / divisor,
+                        ),
+                    ),
+                )
+            },
+        timeSignature = TimeSignature(4, 4),
+        tempoBpm = bpm,
+    )
+
     @Test
     fun exactTakeHasNoFindings() {
         val analysis = analyse(cleanCde())
@@ -186,6 +210,22 @@ class PerformanceAnalyserTest {
     }
 
     @Test
+    fun softerSecondInAChordIsNotAMistouch() {
+        val passage = passageOf(setOf(c4, d4), setOf(e4))
+        val take = listOf(note(c4, 0, velocity = 80), note(d4, 10, velocity = 40), note(e4, 1000))
+        assertEquals(emptyList(), kinds(take, passage))
+    }
+
+    @Test
+    fun fastRunOnTimeIsNotAMistouch() {
+        // Thirty-second notes at 300 BPM are 25 ms apart: each softer neighbour is the next step, on time.
+        val run = evenSteps(8, 300, c4, d4, e4)
+        val take =
+            listOf(note(c4, 0, 20, velocity = 80), note(d4, 25, 20, velocity = 40), note(e4, 50, 20, velocity = 60))
+        assertEquals(emptyList(), kinds(take, run, Target(300)))
+    }
+
+    @Test
     fun louderNeighbourIsNotMistouch() {
         val take = cleanCde() + note(cSharp4, 20, lengthMs = 50, velocity = 100)
         assertEquals(listOf(EXTRA_NOTE to at(0, c4)), kinds(take))
@@ -227,6 +267,13 @@ class PerformanceAnalyserTest {
     }
 
     @Test
+    fun hesitationAfterAMissedStepIsMeasuredFromTheLastPlayedStep() {
+        val passage = passageOf(setOf(c4), setOf(d4), setOf(e4), setOf(f4))
+        val take = listOf(note(c4, 0), note(e4, 4000), note(f4, 5000))
+        assertEquals(listOf(MISSED_NOTE to at(1, d4), HESITATION to at(2, e4)), kinds(take, passage))
+    }
+
+    @Test
     fun hesitationPointsAtTheLowestPlayedNoteOfAChord() {
         val passage = passageOf(setOf(d4), setOf(c4, e4, g4))
         val take = listOf(note(d4, 0), note(e4, 3000), note(g4, 3000))
@@ -237,25 +284,7 @@ class PerformanceAnalyserTest {
     fun shortPauseAtAFastTempoIsNotAHesitation() {
         // At 240 BPM an eighth is 125 ms: a 300 ms gap is over twice that but under the 400 ms
         // floor, so D is late (and E after it), not a hesitation.
-        val eighths =
-            Passage(
-                id = "test:eighths",
-                title = "Eighths",
-                steps =
-                    listOf(c4, d4, e4).mapIndexed { i, pitch ->
-                        Step(
-                            i * TICKS_PER_QUARTER / 2,
-                            setOf(
-                                ScoreNote(
-                                    pitch,
-                                    TICKS_PER_QUARTER / 2,
-                                ),
-                            ),
-                        )
-                    },
-                timeSignature = TimeSignature(4, 4),
-                tempoBpm = 240,
-            )
+        val eighths = evenSteps(2, 240, c4, d4, e4)
         val take = listOf(note(c4, 0, lengthMs = 100), note(d4, 300, lengthMs = 100), note(e4, 375, lengthMs = 100))
         assertEquals(listOf(LATE to at(1, d4), LATE to at(2, e4)), kinds(take, eighths, Target(240)))
     }
@@ -332,12 +361,20 @@ class PerformanceAnalyserTest {
 
     @Test
     fun legatoReleaseBeforeTheNextOnsetIsNotTooShort() {
-        // A half note under a melody that moves on after one beat: lifting at the next onset is legato.
+        // Sixteenths at 250 BPM are written 60 ms long: a lift 40 ms before the next note (inside the 60 ms tolerance)
+        // is legato, though the note sounded only a third of its length.
+        val sixteenths = evenSteps(4, 250, c4, d4)
+        val take = listOf(note(c4, 0, lengthMs = 20), note(d4, 60, lengthMs = 50))
+        assertEquals(emptyList(), kinds(take, sixteenths, Target(250)))
+    }
+
+    @Test
+    fun noteWrittenPastTheNextStepIsTooShortWhenLiftedThere() {
+        // A half note under a melody that moves on after one beat: lifting it at the next onset clips it.
         val passage = passage(Triple(0, 2, c4), Triple(1, 1, d4))
-        assertEquals(emptyList(), kinds(listOf(note(c4, 0, lengthMs = 950), note(d4, 1000)), passage))
         assertEquals(
             listOf(TOO_SHORT to at(0, c4)),
-            kinds(listOf(note(c4, 0, lengthMs = 800), note(d4, 1000)), passage),
+            kinds(listOf(note(c4, 0, lengthMs = 950), note(d4, 1000)), passage),
         )
     }
 

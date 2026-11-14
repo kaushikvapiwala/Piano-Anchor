@@ -21,6 +21,17 @@ private val MISTOUCH_SEMITONES = 1..2
 /** Nanoseconds per tick at [bpm] quarter notes per minute. */
 private fun nanosPerTick(bpm: Number): Double = NANOS_PER_MINUTE / bpm.toDouble() / TICKS_PER_QUARTER
 
+/**
+ * The early/late band at a beat (quarter note) of [beatNanos], in nanoseconds: max([Tunables.TIMING_TOLERANCE_MS],
+ * [Tunables.TIMING_TOLERANCE_BEAT_FRACTION] × beat). An onset further than this from where the tempo puts it is
+ * early or late.
+ */
+public fun timingToleranceNanos(beatNanos: Double): Double =
+    max(
+        (Tunables.TIMING_TOLERANCE_MS * NANOS_PER_MILLI).toDouble(),
+        Tunables.TIMING_TOLERANCE_BEAT_FRACTION * beatNanos,
+    )
+
 /** What early and late are measured against (`docs/algorithms/performance-analysis.md`). */
 public sealed interface TempoReference {
     /**
@@ -79,7 +90,8 @@ public object PerformanceAnalyser {
         val played = notes.sortedWith(PLAYED_NOTE_ORDER)
         val target = tempo as? TempoReference.Target
         val alignmentNanosPerTick = nanosPerTick(target?.bpm ?: passage.tempoBpm)
-        val mistouches = mistouches(played, align(passage, played, alignmentNanosPerTick, target?.startNanos))
+        val first = align(passage, played, alignmentNanosPerTick, target?.startNanos)
+        val mistouches = mistouches(passage, played, first, alignmentNanosPerTick)
         val kept = played.filterNot { note -> mistouches.any { it.second === note } }
         val alignment = align(passage, kept, alignmentNanosPerTick, target?.startNanos)
         return Classification(passage, tempo, alignment, alignmentNanosPerTick).analysis(mistouches)
@@ -88,20 +100,27 @@ public object PerformanceAnalyser {
     /**
      * Mistouches (score note, brushed key) against a first alignment, in [played] order: a played note within
      * [Tunables.MISTOUCH_WINDOW_MS] of a louder exact match 1–2 semitones away points at that match's score note (the
-     * nearest in time when several qualify), unless it is itself an exact match of the same step (a chord with a
-     * second in it).
+     * nearest in time when several qualify). Not when the note is itself an exact match on time for its own step,
+     * measured from the louder note at [nanosPerTick]: a chord with a second in it, or a fast run.
      */
     private fun mistouches(
+        passage: Passage,
         played: List<PlayedNote>,
         alignment: Alignment,
+        nanosPerTick: Double,
     ): List<Pair<ScoreNoteRef, PlayedNote>> {
+        val ticksOf = { ref: ScoreNoteRef -> passage.steps[ref.stepIndex].onsetTicks }
         val exact = alignment.matched.filter { (ref, note) -> note.pitch == ref.pitch }
-        val exactStepOf = exact.entries.associate { (ref, note) -> note to ref.stepIndex }
+        val exactTicksOf = exact.entries.associate { (ref, note) -> note to ticksOf(ref) }
         val window = Tunables.MISTOUCH_WINDOW_MS * NANOS_PER_MILLI
+        val tolerance = timingToleranceNanos(nanosPerTick * TICKS_PER_QUARTER)
         return played.mapNotNull { touch ->
+            val ownTicks = exactTicksOf[touch]
             exact.entries
                 .filter { (ref, louder) ->
-                    exactStepOf[touch] != ref.stepIndex &&
+                    val expected = ownTicks?.let { louder.downNanos + (it - ticksOf(ref)) * nanosPerTick }
+                    val onTimeMatch = expected != null && abs(touch.downNanos - expected) <= tolerance
+                    !onTimeMatch &&
                         louder.velocity > touch.velocity &&
                         abs(louder.pitch.number - touch.pitch.number) in MISTOUCH_SEMITONES &&
                         abs(louder.downNanos - touch.downNanos) <= window
@@ -157,6 +176,12 @@ private class Classification(
             TempoReference.Untimed -> null
         }
 
+    /** The last step with a matched note so far, and its earliest matched onset. */
+    private var lastMatched: Pair<Int, Long>? = null
+
+    /** Steps with a matched note and their earliest matched onsets, in score order. */
+    private val matchedOnsets = stepOnsets.withIndex().mapNotNull { (s, onset) -> onset?.let { s to it } }
+
     /** Findings with the time they sort by within a score note: the played onset, or first for a missing note. */
     private val findings = ArrayList<Pair<Finding, Long>>()
     private val matches = ArrayList<NoteMatch>()
@@ -175,10 +200,12 @@ private class Classification(
     private fun classifyStep(s: Int) {
         val onset = stepOnsets[s]
         val previousOnset = stepOnsets.getOrNull(s - 1)
-        if (onset != null && previousOnset != null) checkHesitation(s, onset, onset - previousOnset)
+        val previous = lastMatched
+        if (onset != null && previous != null) checkHesitation(s, onset, previous)
         if (onset != null && clock == null && tempo is TempoReference.Target) {
             clock = Clock(steps[s].onsetTicks, onset.toDouble(), nanosPerTick(tempo.bpm))
         }
+        if (onset != null) lastMatched = s to onset
         val clock = clock
         refsByStep[s].forEach { ref ->
             val note = alignment.matched[ref]
@@ -214,13 +241,16 @@ private class Classification(
         findings += Finding(kind, ref, note) to note.downNanos
     }
 
+    /** A hesitation at step [s] (matched from [onset]) after the [previous] matched step (index, onset). */
     private fun checkHesitation(
         s: Int,
         onset: Long,
-        gap: Long,
+        previous: Pair<Int, Long>,
     ) {
         val nanosPerTick = hesitationNanosPerTick ?: return
-        val expectedGap = (steps[s].onsetTicks - steps[s - 1].onsetTicks) * nanosPerTick
+        val (previousStep, previousOnset) = previous
+        val gap = onset - previousOnset
+        val expectedGap = (steps[s].onsetTicks - steps[previousStep].onsetTicks) * nanosPerTick
         val minGap = Tunables.HESITATION_MIN_MS * NANOS_PER_MILLI
         if (gap >= Tunables.HESITATION_GAP_RATIO * expectedGap && gap >= minGap) {
             val ref = refsByStep[s].first { it in alignment.matched }
@@ -234,24 +264,35 @@ private class Classification(
         note: PlayedNote,
         clock: Clock,
     ) {
-        val deviation = note.downNanos - clock.expectedNanos(steps[ref.stepIndex].onsetTicks)
-        val beatNanos = clock.nanosPerTick * TICKS_PER_QUARTER
-        val tolerance =
-            max(
-                (Tunables.TIMING_TOLERANCE_MS * NANOS_PER_MILLI).toDouble(),
-                Tunables.TIMING_TOLERANCE_BEAT_FRACTION * beatNanos,
-            )
+        val step = steps[ref.stepIndex]
+        val deviation = note.downNanos - clock.expectedNanos(step.onsetTicks)
+        val tolerance = timingToleranceNanos(clock.nanosPerTick * TICKS_PER_QUARTER)
         if (abs(deviation) > tolerance) {
             report(if (deviation < 0) ErrorKind.EARLY else ErrorKind.LATE, ref, note)
         }
-        val written = steps[ref.stepIndex].notes.first { it.pitch == ref.pitch }.lengthTicks * clock.nanosPerTick
+        val writtenTicks = step.notes.first { it.pitch == ref.pitch }.lengthTicks
+        val written = writtenTicks * clock.nanosPerTick
         val sounding = note.soundingEndNanos - note.downNanos
-        val nextOnset = stepOnsets.getOrNull(ref.stepIndex + 1)
-        val legato = nextOnset != null && nextOnset - note.soundingEndNanos <= tolerance
-        if (sounding < Tunables.NOTE_SHORT_RATIO * written && !legato) {
+        if (sounding < Tunables.NOTE_SHORT_RATIO * written &&
+            !isLegatoLift(ref.stepIndex, step.onsetTicks + writtenTicks, note, tolerance)
+        ) {
             report(ErrorKind.TOO_SHORT, ref, note)
         }
         if (sounding > Tunables.NOTE_LONG_RATIO * written) report(ErrorKind.TOO_LONG, ref, note)
+    }
+
+    /**
+     * True when [note] of step [s], written to end by [writtenEndTicks], stopped sounding within [tolerance] of the
+     * next step's onset and isn't written to sound past it: legato players lift just before the next note.
+     */
+    private fun isLegatoLift(
+        s: Int,
+        writtenEndTicks: Int,
+        note: PlayedNote,
+        tolerance: Double,
+    ): Boolean {
+        val nextOnset = stepOnsets.getOrNull(s + 1) ?: return false
+        return writtenEndTicks <= steps[s + 1].onsetTicks && nextOnset - note.soundingEndNanos <= tolerance
     }
 
     /**
@@ -260,10 +301,9 @@ private class Classification(
      * only for extras, which share a run with a matched step, so some step is matched.
      */
     private fun nearestStep(note: PlayedNote): Int {
-        val matched = stepOnsets.withIndex().mapNotNull { (s, onset) -> onset?.let { s to it } }
         val distances =
             steps.indices.map { s ->
-                val (from, onset) = matched.lastOrNull { it.first <= s } ?: matched[0]
+                val (from, onset) = matchedOnsets.lastOrNull { it.first <= s } ?: matchedOnsets[0]
                 abs(note.downNanos - (onset + (steps[s].onsetTicks - steps[from].onsetTicks) * alignmentNanosPerTick))
             }
         return distances.indexOf(distances.min())
