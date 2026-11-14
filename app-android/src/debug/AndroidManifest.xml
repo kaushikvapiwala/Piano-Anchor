@@ -2,9 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <!-- The virtual piano of the emulator end-to-end test: a MIDI device the app finds through MidiManager like a
-             USB piano (docs/adr/0021-emulator-end-to-end-tests.md). Only the system's MIDI service may bind it. -->
+             USB piano (docs/adr/0021-emulator-end-to-end-tests.md). It lives in the debug app, not the test APK: a
+             service in the test APK runs in the test package's own process, which lacks the Kotlin stdlib that AGP
+             leaves out of the test APK. Disabled until the test enables it, so a debug install on a real device lists
+             no test piano. Only the system's MIDI service may bind it. -->
         <service
             android:name="pianoanchor.app.VirtualPianoService"
+            android:enabled="false"
             android:exported="true"
             android:permission="android.permission.BIND_MIDI_DEVICE_SERVICE">
             <intent-filter>

@@ -4,7 +4,7 @@ import android.media.midi.MidiDeviceService
 import android.media.midi.MidiReceiver
 import java.io.ByteArrayOutputStream
 
-/** The name the virtual piano lists under; must match `res/xml/virtual_piano.xml`. */
+/** The name the virtual piano lists under; must match `src/debug/res/xml/virtual_piano.xml`. */
 internal const val TEST_PIANO_NAME = "Piano Anchor Test Piano"
 
 /** The identity the virtual piano replies with: family, model and the 4 version bytes. */
@@ -36,8 +36,9 @@ private const val SUB_ID_1_INDEX = 3
 private const val SUB_ID_2_INDEX = 4
 
 /**
- * A piano for the emulator end-to-end test, outside the app's process: the app lists and opens it through
- * `MidiManager` like a USB piano, so the real `AndroidMidiAdapter` is under test. Input port 0 (the app's) answers an
+ * A piano for the emulator end-to-end test (`WalkingSkeletonEndToEndTest`), in debug builds only and disabled until
+ * the test enables it: the app lists and opens it through `MidiManager` like a USB piano, so the real
+ * `AndroidMidiAdapter` is under test. Input port 0 (the app's) answers an
  * Identity Request with the test identity and ignores anything else; input port 1 (the test's control port) is
  * forwarded unchanged to the output port. Each input port takes one sender, so the app and the test get one each.
  */

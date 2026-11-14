@@ -83,7 +83,8 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
   tests (`runComposeUiTest`) in the same source set (`docs/adr/0020-compose-ui-tests.md`).
 - The top of the pyramid is one emulator end-to-end test, `WalkingSkeletonEndToEndTest` in
   `app-android/src/androidTest/`: the real app on a Gradle Managed Device, fed by a virtual MIDI piano
-  (`VirtualPianoService`, a `MidiDeviceService`) and driven only through its UI. It runs in `.github/workflows/e2e.yml`
+  (`VirtualPianoService`, a `MidiDeviceService` in `app-android/src/debug/`, disabled until the test enables it) and
+  driven only through its UI. It runs in `.github/workflows/e2e.yml`
   on main, nightly and on PRs that change it, never in `fastCheck` (`docs/adr/0021-emulator-end-to-end-tests.md`).
 - Pure modules need 100% line and branch coverage; `@ExcludeFromCoverage("reason")` marks the rare exception.
 - Platform adapters split into **logic** and **glue**. The logic talks to the platform through a thin internal
