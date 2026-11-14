@@ -9,9 +9,10 @@ import pianoanchor.core.model.StorageUnavailableException
  */
 public interface InstrumentRepositoryPort {
     /**
-     * Stores [instrument]. When its device id is already stored, replaces name, identity and lastSeen and keeps the
-     * earlier of the stored and the given firstSeen. Throws [StorageUnavailableException] when the store can't be
-     * read or written.
+     * Stores [instrument]. When its device id is already stored, replaces name and lastSeen, replaces the identity
+     * only when the given one is non-null (a null identity keeps the stored one, so a lost Identity Reply doesn't erase
+     * it), and keeps the earlier of the stored and the given firstSeen. Throws [StorageUnavailableException] when the
+     * store can't be read or written.
      */
     public suspend fun upsert(instrument: Instrument)
 

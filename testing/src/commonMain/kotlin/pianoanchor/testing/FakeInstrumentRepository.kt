@@ -18,9 +18,13 @@ class FakeInstrumentRepository : InstrumentRepositoryPort {
         instruments.update { all ->
             val stored = all[instrument.deviceId]
             val merged =
-                when (stored) {
-                    null -> instrument
-                    else -> instrument.copy(firstSeen = minOf(stored.firstSeen, instrument.firstSeen))
+                if (stored == null) {
+                    instrument
+                } else {
+                    instrument.copy(
+                        identity = instrument.identity ?: stored.identity,
+                        firstSeen = minOf(stored.firstSeen, instrument.firstSeen),
+                    )
                 }
             all + (instrument.deviceId to merged)
         }

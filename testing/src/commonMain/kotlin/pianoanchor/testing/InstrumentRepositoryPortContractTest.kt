@@ -37,11 +37,43 @@ abstract class InstrumentRepositoryPortContractTest {
         runTest {
             val repository = createSubject()
             repository.upsert(piano)
-            repository.upsert(Instrument("usb-1", "Renamed", null, firstSeen = later, lastSeen = later))
+            repository.upsert(Instrument("usb-1", "Renamed", identity, firstSeen = later, lastSeen = later))
             assertEquals(
-                Instrument("usb-1", "Renamed", null, firstSeen = first, lastSeen = later),
+                Instrument("usb-1", "Renamed", identity, firstSeen = first, lastSeen = later),
                 repository.get("usb-1"),
             )
+        }
+
+    @Test
+    fun upsertWithANullIdentityKeepsTheStoredIdentity() =
+        runTest {
+            val repository = createSubject()
+            repository.upsert(piano)
+            repository.upsert(Instrument("usb-1", "Renamed", null, firstSeen = later, lastSeen = later))
+            assertEquals(
+                Instrument("usb-1", "Renamed", identity, firstSeen = first, lastSeen = later),
+                repository.get("usb-1"),
+            )
+        }
+
+    @Test
+    fun upsertWithANewIdentityReplacesTheStoredOne() =
+        runTest {
+            val repository = createSubject()
+            val updated =
+                InstrumentIdentity(listOf(0x00, 0x20, 0x33), family = 3, model = 4, version = listOf(2, 0, 0, 0))
+            repository.upsert(piano)
+            repository.upsert(piano.copy(identity = updated, lastSeen = later))
+            assertEquals(piano.copy(identity = updated, lastSeen = later), repository.get("usb-1"))
+        }
+
+    @Test
+    fun upsertWithANullIdentityOnANewDeviceStoresNoIdentity() =
+        runTest {
+            val repository = createSubject()
+            val silent = Instrument("ble-2", "Silent", null, firstSeen = first, lastSeen = first)
+            repository.upsert(silent)
+            assertEquals(silent, repository.get("ble-2"))
         }
 
     @Test
