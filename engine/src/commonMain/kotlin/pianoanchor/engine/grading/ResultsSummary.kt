@@ -47,7 +47,9 @@ public data class HesitationSummary(
 
 /**
  * What the Results tiles show (`docs/algorithms/grading.md`): [correctPitches] of [scoreNotes], and the [timing] and
- * [length] of a timed run (null for wait mode), and the [hesitation] (null when the attempt has no played notes).
+ * [length] of a timed run (null for wait mode, or when no note had its exact pitch), and the [hesitation] (null when
+ * the attempt has no played notes). [wrongNotes], [missedNotes] and [incompleteChords] explain what is not correct: a
+ * timed run counts score notes and chord steps, wait mode takes the attempt's counts.
  */
 public data class ResultsSummary(
     val correctPitches: Int,
@@ -55,6 +57,9 @@ public data class ResultsSummary(
     val timing: TimingSummary?,
     val length: LengthSummary?,
     val hesitation: HesitationSummary?,
+    val wrongNotes: Int = 0,
+    val missedNotes: Int = 0,
+    val incompleteChords: Int = 0,
 ) {
     public companion object {
         /**
@@ -70,27 +75,48 @@ public data class ResultsSummary(
             val hesitation = analysis?.let(::hesitation)
             val tempoBpm = attempt.tempoBpm
             if (analysis == null || tempoBpm == null) {
-                return ResultsSummary(attempt.stepCount, attempt.stepCount, null, null, hesitation)
+                return ResultsSummary(
+                    correctPitches = attempt.stepCount,
+                    scoreNotes = attempt.stepCount,
+                    timing = null,
+                    length = null,
+                    hesitation = hesitation,
+                    wrongNotes = attempt.wrongNotes,
+                    incompleteChords = attempt.incompleteChords,
+                )
             }
             val scoreNotes = passage.steps.sumOf { it.notes.size }
             val spoiled = analysis.findings.filter { it.kind in PITCH_KINDS }.mapTo(HashSet()) { it.at }
+            val exact = exactMatches(analysis)
             return ResultsSummary(
                 correctPitches = scoreNotes - spoiled.size,
                 scoreNotes = scoreNotes,
-                timing = timing(analysis),
-                length = length(passage, tempoBpm, analysis),
+                timing = if (exact.isEmpty()) null else timing(analysis, exact),
+                length = if (exact.isEmpty()) null else length(passage, tempoBpm, analysis, exact),
                 hesitation = hesitation,
+                wrongNotes = refs(analysis, ErrorKind.WRONG_NOTE, ErrorKind.OCTAVE).size,
+                missedNotes = refs(analysis, ErrorKind.MISSED_NOTE).size,
+                incompleteChords = refs(analysis, ErrorKind.INCOMPLETE_CHORD).mapTo(HashSet()) { it.stepIndex }.size,
             )
         }
+
+        /** The distinct score notes with a finding of one of [kinds]. */
+        private fun refs(
+            analysis: PerformanceAnalysis,
+            vararg kinds: ErrorKind,
+        ): Set<ScoreNoteRef> = analysis.findings.filter { it.kind in kinds }.mapTo(HashSet()) { it.at }
 
         /** The matches whose played key is the score note's pitch, each with its played note. */
         private fun exactMatches(analysis: PerformanceAnalysis): List<Pair<NoteMatch, PlayedNote>> =
             analysis.matches.mapNotNull { m -> m.played?.takeIf { it.pitch == m.at.pitch }?.let { m to it } }
 
-        private fun timing(analysis: PerformanceAnalysis): TimingSummary {
+        private fun timing(
+            analysis: PerformanceAnalysis,
+            exact: List<Pair<NoteMatch, PlayedNote>>,
+        ): TimingSummary {
             // An untimed analysis has no deviations: nothing to average.
             val deviations =
-                exactMatches(analysis)
+                exact
                     .mapNotNull { (m, _) -> m.onsetDeviationNanos?.let { m.at to abs(it) } }
                     .toMap()
             val absolute = deviations.values
@@ -107,12 +133,12 @@ public data class ResultsSummary(
             passage: Passage,
             tempoBpm: Int,
             analysis: PerformanceAnalysis,
+            exact: List<Pair<NoteMatch, PlayedNote>>,
         ): LengthSummary {
-            val exact = exactMatches(analysis)
             val faults = analysis.findings.filter { it.kind in LENGTH_KINDS }
             val right = exact.size - faults.map { it.at }.toSet().size
             val held = exact.associate { (m, played) -> m.at to (played.upNanos - played.downNanos).toDouble() }
-            val percent = if (exact.isEmpty()) 0 else (right * PERCENT.toDouble() / exact.size).roundToInt()
+            val percent = (right * PERCENT.toDouble() / exact.size).roundToInt()
             return LengthSummary(percent, faults.maxByOrNull { badness(passage, tempoBpm, it, held.getValue(it.at)) })
         }
 
@@ -123,12 +149,7 @@ public data class ResultsSummary(
             finding: Finding,
             held: Double,
         ): Double {
-            val ticks =
-                passage.steps[finding.at.stepIndex]
-                    .notes
-                    .first { it.pitch == finding.at.pitch }
-                    .lengthTicks
-            val written = ticks * NANOS_PER_MINUTE / tempoBpm / TICKS_PER_QUARTER
+            val written = lengthTicks(passage, finding.at) * NANOS_PER_MINUTE / tempoBpm / TICKS_PER_QUARTER
             return if (finding.kind == ErrorKind.TOO_SHORT) written / held else held / written
         }
 
@@ -138,7 +159,7 @@ public data class ResultsSummary(
             val longest = pauses.mapNotNull { f -> gaps[f.at]?.let { f.at to it } }.maxByOrNull { it.second }
             return HesitationSummary(
                 count = pauses.size,
-                longestMs = longest?.let { (it.second / NANOS_PER_MILLI).toInt() },
+                longestMs = longest?.let { (it.second.toDouble() / NANOS_PER_MILLI).roundToInt() },
                 longestAt = longest?.first,
             )
         }

@@ -42,9 +42,6 @@ import pianoanchor.feature.practice.resources.results_unavailable
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
-/** Columns of the mock's tile grid: Pitch, Timing, Note length, Hesitation. */
-private const val TILE_COLUMNS = 4
-
 /**
  * The results screen (Living Studio mock, `docs/ui/living-studio.md`): the run's caption and headline, the Pitch
  * tile and "Try again". Stateless: see [ResultsViewModel]. [onBack] leaves for the pianos; [onTryAgain] practises
@@ -142,23 +139,12 @@ private fun Ready(
     onTryAgain: () -> Unit,
 ) {
     Row(modifier = Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        val tiles =
-            listOf<(@Composable (Modifier) -> Unit)?>(
-                { PitchTile(state, it) },
-                state.timing?.let { timing -> { TimingTileView(timing, it) } },
-                state.length?.let { length -> { LengthTileView(length, it) } },
-                state.hesitation?.let { hesitation -> { HesitationTileView(hesitation, it) } },
-            )
-        check(tiles.size == TILE_COLUMNS)
-        tiles.forEach { tile ->
-            if (tile ==
-                null
-            ) {
-                Spacer(Modifier.weight(1f))
-            } else {
-                tile(Modifier.weight(1f).fillMaxHeight())
-            }
-        }
+        val tile = Modifier.weight(1f).fillMaxHeight()
+        val blank = Modifier.weight(1f)
+        PitchTile(state, tile)
+        if (state.timing != null) TimingTileView(state.timing, tile) else Spacer(blank)
+        if (state.length != null) LengthTileView(state.length, tile) else Spacer(blank)
+        if (state.hesitation != null) HesitationTileView(state.hesitation, tile) else Spacer(blank)
     }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         Button(onClick = onTryAgain, modifier = Modifier.height(44.dp), shape = RoundedCornerShape(22.dp)) {

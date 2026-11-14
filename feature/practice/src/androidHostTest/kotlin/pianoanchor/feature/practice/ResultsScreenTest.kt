@@ -13,6 +13,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import pianoanchor.core.model.Band
+import pianoanchor.engine.grading.NoteValue
 import pianoanchor.ui.shell.PianoAnchorTheme
 import kotlin.test.assertEquals
 
@@ -115,6 +116,10 @@ class ResultsScreenTest {
             check(
                 base.copy(length = LengthTile(50, LengthWorst(false, 1, NoteValue.QUARTER))),
                 "Note length: 50 percent of notes held right, quarter note held short",
+            )
+            check(
+                base.copy(wrongNotes = 1, missedNotes = 2, incompleteChords = 1, correctSteps = 0),
+                "Pitch: 0 of 3 correct, 1 wrong note, 2 notes missed, 1 chord incomplete",
             )
             check(base.copy(hesitation = HesitationTile(0, null)), "Hesitation: no pauses")
             check(base.copy(hesitation = HesitationTile(2, null)), "Hesitation: 2 pauses")

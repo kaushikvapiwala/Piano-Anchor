@@ -12,16 +12,11 @@ import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiNote
-import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PlayedNote
-import pianoanchor.core.model.ScoreNote
-import pianoanchor.core.model.ScoreNoteRef
-import pianoanchor.core.model.Step
 import pianoanchor.core.model.StorageUnavailableException
-import pianoanchor.core.model.TICKS_PER_QUARTER
-import pianoanchor.core.model.TimeSignature
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.grading.NoteValue
 import pianoanchor.testing.FakeAttemptRepository
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -193,29 +188,32 @@ class ResultsViewModelTest {
         }
 
     @Test
-    fun notesAreNumberedInScoreOrderAndNamedByValue() {
-        val ticks = TICKS_PER_QUARTER
-        val passage =
-            Passage(
-                id = "test:p",
-                title = "p",
-                steps =
-                    listOf(
-                        Step(0, setOf(ScoreNote(MidiNote(64), ticks), ScoreNote(MidiNote(60), 4 * ticks))),
-                        Step(4 * ticks, setOf(ScoreNote(MidiNote(62), ticks / 2))),
-                    ),
-                timeSignature = TimeSignature(4, 4),
-                tempoBpm = 80,
-            )
+    fun timedAttemptWithNoPlayedNotesShowsEveryNoteMissed() =
+        runTest(dispatcher) {
+            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 80))
 
-        assertEquals(1, noteNumber(passage, ScoreNoteRef(0, MidiNote(60))))
-        assertEquals(2, noteNumber(passage, ScoreNoteRef(0, MidiNote(64))))
-        assertEquals(3, noteNumber(passage, ScoreNoteRef(1, MidiNote(62))))
-        assertEquals(NoteValue.WHOLE, noteValue(passage, ScoreNoteRef(0, MidiNote(60))))
-        assertEquals(NoteValue.QUARTER, noteValue(passage, ScoreNoteRef(0, MidiNote(64))))
-        assertEquals(NoteValue.HALF, noteValue(Passages.CDE, ScoreNoteRef(2, MidiNote(64))))
-        assertNull(noteValue(passage, ScoreNoteRef(1, MidiNote(62))))
-    }
+            val state = vm.state.value as ResultsState.Ready
+            assertEquals(0, state.correctSteps)
+            assertEquals(3, state.stepCount)
+            assertEquals(3, state.missedNotes)
+            assertEquals(0, state.wrongNotes)
+            assertNull(state.timing)
+            assertNull(state.length)
+            assertEquals(HesitationTile(0, null), state.hesitation)
+        }
+
+    @Test
+    fun timedPitchSlipsComeFromTheAnalysis() =
+        runTest(dispatcher) {
+            // D4 played as G4 (wrong note) and E4 left out (missed).
+            val notes = listOf(played(C4, 0, 600), played(67, 750, 600))
+            val vm = results("a-1", attempt("a-1", 100, wrongNotes = 5, tempoBpm = 80, playedNotes = notes))
+
+            val state = vm.state.value as ResultsState.Ready
+            assertEquals(1, state.wrongNotes)
+            assertEquals(1, state.missedNotes)
+            assertEquals(1, state.correctSteps)
+        }
 
     @Test
     fun theRunNumberCountsOlderAttemptsOfTheSamePassage() =

@@ -97,7 +97,9 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
   A wait-mode run shows Pitch and Hesitation, a timed run all four; a missing tile leaves its column blank, not a
   placeholder (a run stored before played notes were kept shows Pitch only).
   - Pitch: "3 / 3" in the correct blue and "every note right" or the slips that aren't zero ("1 wrong note",
-    "2 wrong notes, 1 chord incomplete"). Timed runs count score notes without a pitch finding.
+    "2 wrong notes, 1 note missed, 1 chord incomplete"). Timed runs count score notes without a pitch finding, and the
+    detail counts the same findings (wrong, missed, incomplete chords), so it never says "every note right" next to a
+    value below full.
   - Timing: "±31 ms" (mean deviation), in the timing orange when any note was early or late, else blue; detail "in
     time", "late at note 6" or "early at note 3" (notes numbered from 1 in score order).
   - Note length: "86%" of notes held right; detail "every note held right", "half note held short" or "note 4 held
@@ -105,6 +107,7 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
   - Hesitation: "no pauses", "1 pause", "2 pauses"; detail the longest pause, "1.4 s before D4".
   - TalkBack reads each tile as one sentence: "Pitch: 3 of 3 correct, every note right", "Timing: within 31
     milliseconds on average, late at note 6".
+  A timed run with no note at its exact pitch has no Timing or Note length tile (nothing to measure).
   Spots and "Next, and why" come when their data exists.
 - **Try again**: 44 dp plum pill bottom right; it practises the passage again on the same piano. Back goes to the
   pianos.

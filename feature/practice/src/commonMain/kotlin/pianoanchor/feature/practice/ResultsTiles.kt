@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.PluralStringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import pianoanchor.engine.grading.NoteValue
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_list_join
 import pianoanchor.feature.practice.resources.results_hesitation_description
@@ -38,6 +39,7 @@ import pianoanchor.feature.practice.resources.results_pitch_description
 import pianoanchor.feature.practice.resources.results_pitch_every_note_right
 import pianoanchor.feature.practice.resources.results_pitch_incomplete_chords
 import pianoanchor.feature.practice.resources.results_pitch_label
+import pianoanchor.feature.practice.resources.results_pitch_missed_notes
 import pianoanchor.feature.practice.resources.results_pitch_value
 import pianoanchor.feature.practice.resources.results_pitch_wrong_notes
 import pianoanchor.feature.practice.resources.results_timing_description
@@ -229,6 +231,7 @@ private fun pitchDetail(state: ResultsState.Ready): String {
     val slips =
         listOfNotNull(
             slip(Res.plurals.results_pitch_wrong_notes, state.wrongNotes),
+            slip(Res.plurals.results_pitch_missed_notes, state.missedNotes),
             slip(Res.plurals.results_pitch_incomplete_chords, state.incompleteChords),
         )
     return if (slips.isEmpty()) {

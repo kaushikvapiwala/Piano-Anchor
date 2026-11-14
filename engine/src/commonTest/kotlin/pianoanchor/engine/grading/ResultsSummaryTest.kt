@@ -6,9 +6,14 @@ import pianoanchor.core.model.ErrorKind
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PlayedNote
+import pianoanchor.core.model.ScoreNote
 import pianoanchor.core.model.ScoreNoteRef
+import pianoanchor.core.model.Step
+import pianoanchor.core.model.TICKS_PER_QUARTER
+import pianoanchor.core.model.TimeSignature
 import pianoanchor.engine.analysis.PerformanceAnalyser
 import pianoanchor.engine.analysis.TempoReference
+import pianoanchor.engine.content.Passages
 import pianoanchor.testing.TEST_TEMPO_BPM
 import pianoanchor.testing.passageOf
 import kotlin.test.Test
@@ -133,12 +138,67 @@ class ResultsSummaryTest {
     }
 
     @Test
-    fun aTakeWithNoMatchesHasZeroDeviationAndLength() {
+    fun aTakeWithNoExactMatchesHasNoTimingOrLength() {
         val summary = summarise(emptyList())
 
-        assertEquals(0, summary.timing?.meanAbsDeviationMs)
-        assertEquals(0, summary.length?.heldRightPercent)
+        assertNull(summary.timing)
+        assertNull(summary.length)
         assertEquals(0, summary.correctPitches)
+        assertEquals(3, summary.missedNotes)
+    }
+
+    @Test
+    fun theLongestPauseIsRoundedToTheNearestMillisecond() {
+        val late = PlayedNote(e4, 70, 3_500_600_000, 3_600_000_000, 3_600_000_000)
+        val summary = summarise(listOf(note(c4, 0), note(d4, 1000), late))
+
+        assertEquals(2501, summary.hesitation?.longestMs)
+    }
+
+    @Test
+    fun timedPitchSlipsAreCountedFromTheAnalysis() {
+        val chords = passageOf(setOf(c4, e4), setOf(d4), setOf(e4), setOf(c4))
+        // Step 0 lacks its e4 (incomplete chord), d4 is played as g4 (wrong), e4 as e5 (octave), c4 is missed.
+        val summary = summarise(listOf(note(c4, 0), note(g4, 1000), note(MidiNote(76), 2000)), chords)
+
+        assertEquals(1, summary.incompleteChords)
+        assertEquals(2, summary.wrongNotes)
+        assertEquals(1, summary.missedNotes)
+    }
+
+    @Test
+    fun waitModeSlipsComeFromTheAttempt() {
+        val wait = attempt(emptyList(), tempoBpm = null).copy(wrongNotes = 2, incompleteChords = 1)
+        val summary = ResultsSummary.of(cde, wait, analysis = null)
+
+        assertEquals(2, summary.wrongNotes)
+        assertEquals(1, summary.incompleteChords)
+        assertEquals(0, summary.missedNotes)
+    }
+
+    @Test
+    fun notesAreNumberedInScoreOrderAndNamedByValue() {
+        val ticks = TICKS_PER_QUARTER
+        val passage =
+            Passage(
+                id = "test:p",
+                title = "p",
+                steps =
+                    listOf(
+                        Step(0, setOf(ScoreNote(e4, ticks), ScoreNote(c4, 4 * ticks))),
+                        Step(4 * ticks, setOf(ScoreNote(d4, ticks / 2))),
+                    ),
+                timeSignature = TimeSignature(4, 4),
+                tempoBpm = 80,
+            )
+
+        assertEquals(1, noteNumber(passage, ref(0, c4)))
+        assertEquals(2, noteNumber(passage, ref(0, e4)))
+        assertEquals(3, noteNumber(passage, ref(1, d4)))
+        assertEquals(NoteValue.WHOLE, noteValue(passage, ref(0, c4)))
+        assertEquals(NoteValue.QUARTER, noteValue(passage, ref(0, e4)))
+        assertEquals(NoteValue.HALF, noteValue(Passages.CDE, ref(2, e4)))
+        assertNull(noteValue(passage, ref(1, d4)))
     }
 
     @Test

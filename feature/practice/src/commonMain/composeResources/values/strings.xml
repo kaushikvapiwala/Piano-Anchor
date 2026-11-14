@@ -51,6 +51,10 @@
         <item quantity="one">%1$s wrong note</item>
         <item quantity="other">%1$s wrong notes</item>
     </plurals>
+    <plurals name="results_pitch_missed_notes">
+        <item quantity="one">%1$s note missed</item>
+        <item quantity="other">%1$s notes missed</item>
+    </plurals>
     <plurals name="results_pitch_incomplete_chords">
         <item quantity="one">%1$s chord incomplete</item>
         <item quantity="other">%1$s chords incomplete</item>

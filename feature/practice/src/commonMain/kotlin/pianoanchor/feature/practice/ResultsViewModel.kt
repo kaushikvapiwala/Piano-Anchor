@@ -10,9 +10,7 @@ import kotlinx.coroutines.launch
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.ErrorKind
 import pianoanchor.core.model.Passage
-import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.StorageUnavailableException
-import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.analysis.PerformanceAnalyser
 import pianoanchor.engine.analysis.PerformanceAnalysis
@@ -22,6 +20,8 @@ import pianoanchor.engine.grading.HesitationSummary
 import pianoanchor.engine.grading.LengthSummary
 import pianoanchor.engine.grading.ResultsSummary
 import pianoanchor.engine.grading.TimingSummary
+import pianoanchor.engine.grading.noteNumber
+import pianoanchor.engine.grading.noteValue
 
 /**
  * The results of the run saved as [attemptId] in [attempts]: [ResultsState.Loading] until it is read, then
@@ -70,8 +70,9 @@ public class ResultsViewModel(
             // Wait mode moves on only when a step is right, so a finished run has every step correct.
             correctSteps = summary?.correctPitches ?: attempt.stepCount,
             stepCount = summary?.scoreNotes ?: attempt.stepCount,
-            wrongNotes = attempt.wrongNotes,
-            incompleteChords = attempt.incompleteChords,
+            wrongNotes = summary?.wrongNotes ?: attempt.wrongNotes,
+            incompleteChords = summary?.incompleteChords ?: attempt.incompleteChords,
+            missedNotes = summary?.missedNotes ?: 0,
             tempoBpm = attempt.tempoBpm,
             timing = summary?.timing?.let { timingTile(passage, it) },
             length = summary?.length?.let { lengthTile(passage, it) },
@@ -79,12 +80,12 @@ public class ResultsViewModel(
         )
     }
 
-    /** The analysis of a run with played notes (timed against its tempo, or untimed); null for older runs. */
+    /** The analysis of a timed run, or of a wait-mode run with played notes; null for older wait-mode runs. */
     private fun analyse(
         passage: Passage,
         attempt: Attempt,
     ): PerformanceAnalysis? {
-        if (attempt.playedNotes.isEmpty()) return null
+        if (attempt.tempoBpm == null && attempt.playedNotes.isEmpty()) return null
         val tempo = attempt.tempoBpm?.let { TempoReference.Target(it, startNanos = 0) } ?: TempoReference.Untimed
         return PerformanceAnalyser.analyse(passage, attempt.playedNotes, tempo)
     }
@@ -119,30 +120,3 @@ public class ResultsViewModel(
 }
 
 private const val MILLIS_PER_TENTH = 100
-private const val QUARTERS_IN_WHOLE = 4
-private const val QUARTERS_IN_HALF = 2
-
-/** The 1-based place of [ref] among the passage's score notes, in score order (step, then pitch). */
-internal fun noteNumber(
-    passage: Passage,
-    ref: ScoreNoteRef,
-): Int =
-    passage.steps.take(ref.stepIndex).sumOf { it.notes.size } +
-        passage.steps[ref.stepIndex].notes.count { it.pitch.number < ref.pitch.number } + 1
-
-/** The written value of [ref]'s note when it is a whole, half or quarter note. */
-internal fun noteValue(
-    passage: Passage,
-    ref: ScoreNoteRef,
-): NoteValue? =
-    when (
-        passage.steps[ref.stepIndex]
-            .notes
-            .first { it.pitch == ref.pitch }
-            .lengthTicks
-    ) {
-        QUARTERS_IN_WHOLE * TICKS_PER_QUARTER -> NoteValue.WHOLE
-        QUARTERS_IN_HALF * TICKS_PER_QUARTER -> NoteValue.HALF
-        TICKS_PER_QUARTER -> NoteValue.QUARTER
-        else -> null
-    }

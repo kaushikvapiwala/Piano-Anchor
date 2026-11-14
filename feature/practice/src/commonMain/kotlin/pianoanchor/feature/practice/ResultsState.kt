@@ -1,6 +1,7 @@
 package pianoanchor.feature.practice
 
 import pianoanchor.core.model.Band
+import pianoanchor.engine.grading.NoteValue
 
 /** What the results screen shows for one finished run. */
 public sealed interface ResultsState {
@@ -15,9 +16,10 @@ public sealed interface ResultsState {
 
     /**
      * The run of [passageTitle], its [runNumber] among that passage's runs (oldest = 1), its [band], and its pitch:
-     * [correctSteps] of [stepCount] (steps in wait mode, score notes in a timed run), with [wrongNotes] wrong notes and
-     * [incompleteChords] chords incomplete. A timed run has a [tempoBpm] and a [timing] and [length] tile; [hesitation]
-     * is null for a run stored before played notes were kept.
+     * [correctSteps] of [stepCount] (steps in wait mode, score notes in a timed run), with [wrongNotes] wrong notes,
+     * [missedNotes] missed notes and [incompleteChords] chords incomplete. A timed run has a [tempoBpm] and, when a
+     * note had its exact pitch, a [timing] and [length] tile; [hesitation] is null for a run stored before played
+     * notes were kept.
      */
     public data class Ready(
         val passageTitle: String,
@@ -27,6 +29,7 @@ public sealed interface ResultsState {
         val stepCount: Int,
         val wrongNotes: Int,
         val incompleteChords: Int,
+        val missedNotes: Int = 0,
         val tempoBpm: Int? = null,
         val timing: TimingTile? = null,
         val length: LengthTile? = null,
@@ -61,9 +64,6 @@ public data class LengthWorst(
     val noteNumber: Int,
     val value: NoteValue?,
 )
-
-/** The written note values the Note length tile names. */
-public enum class NoteValue { WHOLE, HALF, QUARTER }
 
 /** The Hesitation tile: how many pauses, and the [longest]. */
 public data class HesitationTile(
