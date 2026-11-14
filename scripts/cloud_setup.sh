@@ -7,6 +7,8 @@ set -euo pipefail
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Use the repo's git hooks (pre-commit fastCheck, sign-off check), as `./gradlew installGitHooks` does for clones.
+git -C "$ROOT" config core.hooksPath .githooks || echo "cloud_setup: could not set core.hooksPath; run ./gradlew installGitHooks"
 SDK="$HOME/android-sdk"
 BASE="${ANDROID_REPO_BASE:-https://dl.google.com/android/repository}"
 # Pinned fallback, used only when repository2-1.xml cannot be parsed.

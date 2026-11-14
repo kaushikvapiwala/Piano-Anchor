@@ -287,12 +287,23 @@ class PrePushHookTest(TempRepo):
         gradlew.write_text("#!/bin/sh\necho \"$@\" >> runs.log\n")
         gradlew.chmod(0o755)
 
-    def push(self, *lines: str) -> int:
+    def push(self, *lines: str, **env: str) -> int:
         stdin = "".join(line + "\n" for line in lines)
+        base = {k: v for k, v in os.environ.items() if k != "CLAUDE_CODE_REMOTE"}
+        base.update(env)
         result = subprocess.run(
-            [str(ROOT / ".githooks" / "pre-push"), "origin", "url"], cwd=self.repo, input=stdin, text=True, capture_output=True
+            [str(ROOT / ".githooks" / "pre-push"), "origin", "url"],
+            cwd=self.repo,
+            input=stdin,
+            text=True,
+            capture_output=True,
+            env=base,
         )
         return result.returncode
+
+    def test_skips_the_build_in_a_cloud_session(self) -> None:
+        self.assertEqual(self.push(f"refs/heads/x {self.SHA} refs/heads/x {self.ZERO}", CLAUDE_CODE_REMOTE="true"), 0)
+        self.assertEqual(self.builds(), [])
 
     def builds(self) -> list[str]:
         log = self.repo / "runs.log"
@@ -323,6 +334,10 @@ class CloudSetupTest(TempRepo):
         hooks = json.loads((ROOT / ".claude" / "settings.json").read_text())["hooks"]
         commands = [h["command"] for entry in hooks["SessionStart"] for h in entry["hooks"]]
         self.assertTrue(any("scripts/cloud_setup.sh" in c for c in commands))
+
+    def test_points_git_at_the_repo_hooks_in_the_cloud(self) -> None:
+        # The cloud path installs the Android SDK, too heavy for a unit test; guard the line that matters.
+        self.assertIn('git -C "$ROOT" config core.hooksPath .githooks', Path(self.script).read_text())
 
     def test_does_nothing_outside_the_cloud(self) -> None:
         before = (ROOT / "local.properties").read_bytes() if (ROOT / "local.properties").exists() else None
