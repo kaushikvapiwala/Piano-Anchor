@@ -2,6 +2,7 @@
 """Generate engine/src/commonTest/kotlin/pianoanchor/engine/scheduler/Fsrs6Vectors.kt with py-fsrs.
 
 Run by hand only (never in CI):  pip install fsrs==6.3.3 && python3 scripts/fsrs_vectors.py
+then ./gradlew spotlessApply (the committed file is ktlint-formatted).
 The committed output is the golden data for FsrsVectorsTest. py-fsrs is MIT licensed (see NOTICE).
 """
 
