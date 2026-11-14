@@ -52,6 +52,22 @@ class ResultsScreenScreenshotTest {
         capture("keep_practising", clean.copy(band = Band.KEEP_PRACTISING, wrongNotes = 2, incompleteChords = 1))
 
     @Test
+    fun timedRunWithAllFourTiles() =
+        capture(
+            "timed",
+            clean.copy(
+                tempoBpm = 72,
+                timing = TimingTile(31, TimingWorst(late = true, noteNumber = 6)),
+                length = LengthTile(86, LengthWorst(tooLong = false, noteNumber = 3, value = NoteValue.HALF)),
+                hesitation = HesitationTile(0, null),
+            ),
+        )
+
+    @Test
+    fun waitRunWithAHesitation() =
+        capture("wait_hesitation", clean.copy(hesitation = HesitationTile(1, Pause(14, "D4"))))
+
+    @Test
     fun notFound() = capture("not_found", ResultsState.NotFound)
 
     @Test

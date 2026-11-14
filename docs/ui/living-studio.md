@@ -91,11 +91,21 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
 - **Header**: back (44 dp), the caption "C-D-E · run 3 · wait mode" (Inter 11 sp, secondary) and the headline, a
   heading (Space Grotesk 700, 22 sp) chosen by band: "Every note right." (clean), "Mostly right. A few slips to
   tidy." (good), "Let's go slower and try again." (keep practising). The run number counts the passage's older runs.
-- **Tiles**: the mock's 4-column grid; Phase 1 fills only the first, **Pitch** (white, dark `#2A2730`, radius 16,
-  padding 10/12, 1 dp shadow): "PITCH", "3 / 3" in the correct blue (Space Grotesk 700, 22 sp) and "every note
-  right" or the slips that aren't zero ("1 wrong note", "2 wrong notes, 1 chord incomplete"). TalkBack reads it as
-  one sentence: "Pitch: 3 of 3 correct, every note right". Timing, note length and hesitation tiles, spots and
-  "Next, and why" come when their data exists; empty columns are blank, not placeholders.
+- **Caption**: "C-D-E · run 3 · ♩ = 72" for a timed run, "… · wait mode" otherwise.
+- **Tiles**: the mock's 4-column grid, filled left to right: **Pitch**, **Timing**, **Note length**, **Hesitation**
+  (white, dark `#2A2730`, radius 16, padding 10/12, 1 dp shadow; label, value in Space Grotesk 700 22 sp, detail line).
+  A wait-mode run shows Pitch and Hesitation, a timed run all four; a missing tile leaves its column blank, not a
+  placeholder (a run stored before played notes were kept shows Pitch only).
+  - Pitch: "3 / 3" in the correct blue and "every note right" or the slips that aren't zero ("1 wrong note",
+    "2 wrong notes, 1 chord incomplete"). Timed runs count score notes without a pitch finding.
+  - Timing: "±31 ms" (mean deviation), in the timing orange when any note was early or late, else blue; detail "in
+    time", "late at note 6" or "early at note 3" (notes numbered from 1 in score order).
+  - Note length: "86%" of notes held right; detail "every note held right", "half note held short" or "note 4 held
+    long" (a note value is named only for whole, half and quarter notes).
+  - Hesitation: "no pauses", "1 pause", "2 pauses"; detail the longest pause, "1.4 s before D4".
+  - TalkBack reads each tile as one sentence: "Pitch: 3 of 3 correct, every note right", "Timing: within 31
+    milliseconds on average, late at note 6".
+  Spots and "Next, and why" come when their data exists.
 - **Try again**: 44 dp plum pill bottom right; it practises the passage again on the same piano. Back goes to the
   pianos.
 - **Not found**: the error card "Couldn't find this run" with "Back to pianos".
