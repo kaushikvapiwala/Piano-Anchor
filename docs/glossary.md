@@ -15,6 +15,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Chord window | The `CHORD_CLUSTER_MS` span from a step's first pressed note in which its other notes must follow; the matcher reports an incomplete chord when it runs out. |
 | Cold check | The first attempt of a learned item on a later day, without warm-up or hints; it measures retention. |
 | Contract test | Abstract test in `testing/` that every implementation of a port must pass. |
+| Difficulty | FSRS: how hard an item is for this learner, 1 (easy) to 10 (hard); part of `MemoryState` (`docs/algorithms/scheduler.md`). |
 | Error kind | What the performance analyser can report about a score note (`ErrorKind`): wrong note, missed note, extra note, incomplete chord, mistouch, octave, early, late, hesitation, too short, too long (`docs/algorithms/performance-analysis.md`). |
 | FakePiano | In-memory test double in `testing/` that implements both MIDI ports for one wired device, MIDI discovery for the devices it advertises, and decodes incoming bytes with the real parser. |
 | Finding | One error the analyser found (`Finding` in `:core:model`): its error kind, the score note it concerns (`ScoreNoteRef`: step and pitch) and the played note involved, if any. |
@@ -41,10 +42,13 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Played note | One key as played (`PlayedNote` in `:core:model`): pitch, onset velocity, key down, key up and when it stopped sounding, paired from MIDI events by `PlayedNotes.from`. |
 | Port | Interface through which the domain uses the outside world. Named `*Port`, lives in `core/ports`. |
 | Practice screen | The wait-mode screen (`:feature:practice`): the passage on a treble staff with a cursor on the waiting note, and a live key strip. A completed run is graded and saved; a run that ends early is discarded. |
+| Rating | How a review went for the memory model: `AGAIN`, `HARD`, `GOOD` or `EASY` (`Rating` in `:core:model`). |
 | Reconnect backoff | How the adapter reopens a dropped BLE MIDI device: waits that double from `BLE_RECONNECT_INITIAL_MS` up to `BLE_RECONNECT_MAX_MS`, giving up after `BLE_RECONNECT_GIVE_UP_MS`. |
 | Results screen | The screen after a completed run (`:feature:practice`): "run N" of the passage, a headline from the band, the Pitch tile (correct steps of all, wrong notes, incomplete chords) and Try again. |
+| Retrievability | FSRS: the chance of recalling an item now, 1 right after a review and falling with the days since; `Fsrs.retrievability`. |
 | Running status | MIDI shorthand: after one channel status byte, further data-byte groups reuse that status without repeating it. |
 | Skill node | One learnable skill (e.g. "bass clef F", "C to G chord change") in the learner's skill graph. |
+| Stability | FSRS: the days after which recall has fallen to 90%; grows with each successful review. Part of `MemoryState`. |
 | Stable device id | The `MidiDevice.id` an adapter derives from what the platform reports (e.g. `usb:<manufacturer>/<product>/<serial>`, `ble:<address>`), so the same instrument keeps its id across reconnects when the platform reports enough to tell it apart. |
 | Step | One moment in a passage: the keys to press together (one note, or a chord) at its onset, each with a written length in ticks (`ScoreNote`). Wait mode reads only its pitches. |
 | Sustain pedal | The right (damper) pedal, sent as control change 64; values 64–127 hold every released note sounding until it drops below 64. |

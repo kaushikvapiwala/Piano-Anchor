@@ -320,4 +320,23 @@ public object Tunables {
      * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
      */
     public const val CALIBRATION_MAX_OFFSET_MS: Long = 400
+
+    /**
+     * Recall probability the scheduler aims for when it picks the next review: an item is due when its
+     * retrievability falls to this.
+     *
+     * Why: the standard FSRS balance between review workload and how much is remembered.
+     *
+     * Source: owner-agreed in the M2 grill; the FSRS default (py-fsrs `desired_retention` 0.9).
+     */
+    public const val DESIRED_RETENTION: Double = 0.90
+
+    /**
+     * Longest interval the scheduler hands out, in days (100 years).
+     *
+     * Why: no practical cap, so a very stable item is never forced back early; it only bounds the arithmetic.
+     *
+     * Source: py-fsrs default `maximum_interval` (36500), the reference the vectors come from.
+     */
+    public const val MAX_INTERVAL_DAYS: Int = 36_500
 }
