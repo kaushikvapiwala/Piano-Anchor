@@ -2,6 +2,7 @@ package pianoanchor.feature.practice
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,21 +23,28 @@ public class ResultsViewModel(
     private val mutableState = MutableStateFlow<ResultsState>(ResultsState.Loading)
     public val state: StateFlow<ResultsState> = mutableState.asStateFlow()
 
+    private var loading: Job? = null
+
     init {
         retry()
     }
 
-    /** Reads the run again ([ResultsState.Loading] meanwhile), e.g. after [ResultsState.Unavailable]. */
+    /**
+     * Reads the run again ([ResultsState.Loading] meanwhile), e.g. after [ResultsState.Unavailable]; a read still
+     * running is cancelled, so only the newest one sets the state.
+     */
     public fun retry() {
+        loading?.cancel()
         mutableState.value = ResultsState.Loading
-        viewModelScope.launch {
-            mutableState.value =
-                try {
-                    load()
-                } catch (_: StorageUnavailableException) {
-                    ResultsState.Unavailable
-                }
-        }
+        loading =
+            viewModelScope.launch {
+                mutableState.value =
+                    try {
+                        load()
+                    } catch (_: StorageUnavailableException) {
+                        ResultsState.Unavailable
+                    }
+            }
     }
 
     private suspend fun load(): ResultsState {

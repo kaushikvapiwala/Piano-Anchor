@@ -185,4 +185,25 @@ class ResultsViewModelTest {
 
             assertEquals(1, (vm.state.value as ResultsState.Ready).runNumber)
         }
+
+    @Test
+    fun aRetryCancelsTheReadStillRunning() =
+        runTest(dispatcher) {
+            attempts.save(attempt("a-1", 100))
+            val firstRead = CompletableDeferred<Attempt?>()
+            var reads = 0
+            val firstHangs =
+                object : AttemptRepositoryPort by attempts {
+                    override suspend fun get(id: String): Attempt? =
+                        if (++reads == 1) firstRead.await() else attempts.get(id)
+                }
+            val vm = ResultsViewModel("a-1", firstHangs).also { runCurrent() }
+
+            vm.retry()
+            runCurrent()
+            firstRead.complete(null) // too late: the first read was cancelled
+            runCurrent()
+
+            assertEquals(1, (vm.state.value as ResultsState.Ready).runNumber)
+        }
 }
