@@ -48,14 +48,14 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
    "opened" signal. Also open Practice from the monitor, play C-D-E, and check the monitor shows the piano connected
    again afterwards (1.9: the monitor closes the input for practice and reopens it on return). End to end (closes
    Phase 1): play C-D-E, see Results (1.10) with "run N", Try again, and the run count survives an app restart.
-2. **Emulator end-to-end CI job** [first device test]: when the first instrumented end-to-end test lands (ADR 0007),
-   run it on Gradle Managed Devices (ATD image, KVM on `ubuntu-latest`) on pushes to main and nightly, not on every
-   PR. Settle first how tests feed MIDI without a piano (an in-app `MidiDeviceService` fake).
-3. **Storage failure model** (decision): with SQLite behind the repository ports, `upsert`/`save` can fail (disk
+2. **Emulator end-to-end test and CI job** (spec #57): the C-D-E loop on a Gradle Managed Device (ATD image, KVM on
+   `ubuntu-latest`), fed by a test-only virtual MIDI piano (`MidiDeviceService`); runs on pushes to main and nightly,
+   not on every PR.
+3. **Storage failure model** (spec #55): with SQLite behind the repository ports, `upsert`/`save` can fail (disk
    full, corrupt file), and the monitor's identify step doesn't catch it, so one failure ends MIDI collection. Decide
    the ports' error model (e.g. a domain `StorageUnavailableException`) and how the monitor, practice and results
    screens react (a failing read on Results crashes today).
-4. **Keep a known identity on a missed reply** (decision): `InstrumentRepositoryPort.upsert` replaces the identity, so
+4. **Keep a known identity on a missed reply** (spec #56): `InstrumentRepositoryPort.upsert` replaces the identity, so
    a reconnect whose Identity Reply is lost erases a stored model. Decide whether a null identity keeps the stored one
    (contract change, then `COALESCE` in `Instrument.sq`).
 
