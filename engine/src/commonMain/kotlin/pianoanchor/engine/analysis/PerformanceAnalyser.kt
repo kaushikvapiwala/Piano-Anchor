@@ -272,17 +272,17 @@ private class Classification(
         }
         val writtenTicks = step.notes.first { it.pitch == ref.pitch }.lengthTicks
         val written = writtenTicks * clock.nanosPerTick
-        val sounding = note.soundingEndNanos - note.downNanos
-        if (sounding < Tunables.NOTE_SHORT_RATIO * written &&
+        val held = note.upNanos - note.downNanos
+        if (held < Tunables.NOTE_SHORT_RATIO * written &&
             !isLegatoLift(ref.stepIndex, step.onsetTicks + writtenTicks, note, tolerance)
         ) {
             report(ErrorKind.TOO_SHORT, ref, note)
         }
-        if (sounding > Tunables.NOTE_LONG_RATIO * written) report(ErrorKind.TOO_LONG, ref, note)
+        if (held > Tunables.NOTE_LONG_RATIO * written) report(ErrorKind.TOO_LONG, ref, note)
     }
 
     /**
-     * True when [note] of step [s], written to end by [writtenEndTicks], stopped sounding within [tolerance] of the
+     * True when [note] of step [s], written to end by [writtenEndTicks], came up within [tolerance] of the
      * next step's onset and isn't written to sound past it: legato players lift just before the next note.
      */
     private fun isLegatoLift(
@@ -292,7 +292,7 @@ private class Classification(
         tolerance: Double,
     ): Boolean {
         val nextOnset = stepOnsets.getOrNull(s + 1) ?: return false
-        return writtenEndTicks <= steps[s + 1].onsetTicks && nextOnset - note.soundingEndNanos <= tolerance
+        return writtenEndTicks <= steps[s + 1].onsetTicks && nextOnset - note.upNanos <= tolerance
     }
 
     /**

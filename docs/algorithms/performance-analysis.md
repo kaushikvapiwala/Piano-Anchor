@@ -24,8 +24,8 @@ key down, key up and the time the note stopped sounding.
 - Events are read in timestamp order. Notes come in onset order, with equal onsets ordered by pitch
   (`PLAYED_NOTE_ORDER`). Other events are ignored.
 
-Key up is what the hand did; the sounding end is what the ear heard. Note-length errors judge the sounding end, so
-a note held by the pedal is as long as it sounded.
+Key up is what the hand did; the sounding end is what the ear heard. Note-length errors judge key up and ignore the
+pedal; the sounding end is kept for later use.
 
 ## Error kinds
 Every finding names one score note (`ScoreNoteRef`: step index and pitch) and the played note involved. Only
@@ -41,7 +41,7 @@ Every finding names one score note (`ScoreNoteRef`: step index and pitch) and th
 | `OCTAVE` | the score note an octave too high or low | the score note |
 | `EARLY` / `LATE` | the note starts outside the timing tolerance | the score note |
 | `HESITATION` | a pause before a step much longer than the music asks for | lowest pitch of the delayed step |
-| `TOO_SHORT` / `TOO_LONG` | stopped sounding well before or well after the written length | the score note |
+| `TOO_SHORT` / `TOO_LONG` | key held well shorter or well longer than the written length (the pedal is ignored) | the score note |
 
 The bands are chosen so the kinds don't overlap. A neighbour one or two semitones away is a mistouch, three to
 eleven is a wrong note, and exactly twelve is an octave. A dropped single note is a missed note, while a dropped
@@ -161,11 +161,11 @@ In score order, step by step:
 4. **Early and late** (`Target`, `Fitted`). An onset more than max(`TIMING_TOLERANCE_MS`,
    `TIMING_TOLERANCE_BEAT_FRACTION` × beat) from the expected one is `EARLY` or `LATE`. `timingToleranceNanos`
    computes the band; the error injector uses it too.
-5. **Length** (`Target`, `Fitted`). Sounding length (key down to sounding end) under `NOTE_SHORT_RATIO` × written is
-   `TOO_SHORT`, over `NOTE_LONG_RATIO` × written `TOO_LONG`. A note that stops sounding within the timing tolerance
+5. **Length** (`Target`, `Fitted`). Held length (key down to key up) under `NOTE_SHORT_RATIO` × written is
+   `TOO_SHORT`, over `NOTE_LONG_RATIO` × written `TOO_LONG`. A key that comes up within the timing tolerance
    of the next step's onset is never `TOO_SHORT`, unless it is written to sound past that step: legato players lift
-   just before the next note, which matters for short notes at fast tempos. The pedal counts, so a note held by the
-   pedal well past its length is `TOO_LONG`.
+   just before the next note, which matters for short notes at fast tempos. The pedal plays no part: a note held by the
+   pedal past its length is judged on when the key came up.
 6. **Extras.** An unmatched played note is `EXTRA_NOTE` at the lowest pitch of the step nearest in time. A matched
    step is at its earliest matched onset; an unmatched one is placed from the nearest matched step before it (else
    after it) at the reference tempo.
