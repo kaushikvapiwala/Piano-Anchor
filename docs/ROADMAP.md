@@ -51,20 +51,25 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 2. **Emulator end-to-end test and CI job** (spec #57): the C-D-E loop on a Gradle Managed Device (ATD image, KVM on
    `ubuntu-latest`), fed by a test-only virtual MIDI piano (`MidiDeviceService`); runs on pushes to main and nightly,
    not on every PR.
-3. **Storage failure model** (spec #55): with SQLite behind the repository ports, `upsert`/`save` can fail (disk
-   full, corrupt file), and the monitor's identify step doesn't catch it, so one failure ends MIDI collection. Decide
-   the ports' error model (e.g. a domain `StorageUnavailableException`) and how the monitor, practice and results
-   screens react (a failing read on Results crashes today).
-4. **Keep a known identity on a missed reply** (spec #56): `InstrumentRepositoryPort.upsert` replaces the identity, so
-   a reconnect whose Identity Reply is lost erases a stored model. Decide whether a null identity keeps the stored one
-   (contract change, then `COALESCE` in `Instrument.sq`).
+3. **Storage failure model** (spec #55): a domain `StorageUnavailableException` from the repository ports; the
+   monitor keeps MIDI flowing with a notice, Practice offers Retry/Discard for an unsaved run, Results offers Retry.
+4. **Keep a known identity on a missed reply** (spec #56): a null identity in `upsert` keeps the stored one
+   (contract change, `COALESCE` in `Instrument.sq`).
+5. **M1.1 Rhythm in passages** (spec #59): step onsets and note lengths in ticks (960 per quarter), time signature
+   and written tempo; wait mode ignores them.
+6. **M1.2 Played notes and the analyser harness** (spec #60) [5]: events to played notes with the sustain pedal, seeded
+   clean takes, labelled error injection and the classification score.
+7. **M1.3 Offline performance analyser** (spec #61) [6]: alignment, tempo fit and every M1 error kind; lands the M1
+   exit test (≥ 95 % overall, ≥ 90 % per kind, ≤ 5 % false alarms).
+8. **M1 grill** (owner): tempo-mode practice (metronome, real-time matcher, tempo-ladder rungs, Timing tile; M1.4)
+   and per-piano latency calibration (M1.5) need a `grill` session before they can be specced.
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |
 |---|---|---|
-| M1 | MIDI input, real-time matcher, offline analyser | Recorded fixtures with injected errors classified ≥ 95% correctly |
+| M1 | MIDI input, real-time matcher, offline analyser (🔄 specced: #59–#61) | Recorded fixtures with injected errors classified ≥ 95% correctly |
 | M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) | Matches reference test vectors; simulated learner behaves sensibly |
 | M3 | First playable coach (units 0–2), daily plan, first APK release | Used daily for 2 weeks |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit | All tracks share the daily plan |
