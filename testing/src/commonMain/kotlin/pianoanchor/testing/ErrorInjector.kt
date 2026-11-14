@@ -93,25 +93,25 @@ class ErrorInjector(
         private val take: LabelledTake,
     ) {
         private val steps = take.passage.steps
-        private val refs = steps.withIndex().flatMap { (i, step) -> step.notes.map { i to it } }
+        private val notesOf =
+            steps
+                .withIndex()
+                .flatMap { (i, step) ->
+                    step.notes.map { ScoreNoteRef(i, it.pitch) to it }
+                }.toMap()
+        private val refs = notesOf.keys.toList()
         private val scorePitches = steps.flatMap { it.pitches }.map { it.number }.toSet()
 
         /** The played note of each score note: same pitch, onset nearest the written onset. */
         private val playedOf =
-            refs.associate { (i, note) ->
-                val written = take.writtenOnsetNanos(i)
-                ScoreNoteRef(i, note.pitch) to
-                    take.notes.filter { it.pitch == note.pitch }.minBy { abs(it.downNanos - written) }
+            refs.associateWith { ref ->
+                val written = take.writtenOnsetNanos(ref.stepIndex)
+                take.notes.filter { it.pitch == ref.pitch }.minBy { abs(it.downNanos - written) }
             }
 
-        private fun singleNoteRefs() = refs.filter { (i, _) -> steps[i].notes.size == 1 }
+        private fun singleNoteRefs() = refs.filter { steps[it.stepIndex].notes.size == 1 }
 
         private fun ScoreNoteRef.played() = playedOf.getValue(this)
-
-        private fun ref(
-            i: Int,
-            pitch: MidiNote,
-        ) = ScoreNoteRef(i, pitch)
 
         private fun replace(
             ref: ScoreNoteRef,
@@ -126,29 +126,21 @@ class ErrorInjector(
             .filter { it in MidiNote.RANGE && MidiNote(it) !in steps[ref.stepIndex].pitches }
             .map(::MidiNote)
 
+        private fun dropped(ref: ScoreNoteRef) = Change(ref, listOf(ref.played()), emptyList(), null)
+
         fun wrongNotes() =
-            singleNoteRefs().flatMap { (i, note) ->
-                val r = ref(i, note.pitch)
+            singleNoteRefs().flatMap { r ->
                 shiftedPitches(r, WRONG_NOTE_SEMITONES).map { replace(r, r.played().copy(pitch = it)) }
             }
 
         fun octaves() =
-            refs.flatMap { (i, note) ->
-                val r = ref(i, note.pitch)
+            refs.flatMap { r ->
                 shiftedPitches(r, OCTAVE_SEMITONES..OCTAVE_SEMITONES).map { replace(r, r.played().copy(pitch = it)) }
             }
 
-        fun missedNotes() =
-            singleNoteRefs().map { (i, note) ->
-                ref(i, note.pitch).let {
-                    Change(it, listOf(it.played()), emptyList(), null)
-                }
-            }
+        fun missedNotes() = singleNoteRefs().map(::dropped)
 
-        fun incompleteChords() =
-            refs.filter { (i, _) -> steps[i].notes.size > 1 }.map { (i, note) ->
-                ref(i, note.pitch).let { Change(it, listOf(it.played()), emptyList(), null) }
-            }
+        fun incompleteChords() = refs.filter { steps[it.stepIndex].notes.size > 1 }.map(::dropped)
 
         fun extraNotes(): List<Change> {
             val low = max(MidiNote.RANGE.first, scorePitches.min() - EXTRA_PITCH_REACH)
@@ -162,24 +154,17 @@ class ErrorInjector(
                         take.notes.all { abs(it.downNanos - down) >= MIN_EXTRA_GAP_NANOS }
                 if (!clear) return@flatMap emptyList()
                 val velocity = random.nextInt(CLEAN_VELOCITY_RANGE)
-                val r = ref(i, steps[i].pitches.minBy { it.number })
+                val r = lowestOf(i)
                 pitches.map {
-                    val extra =
-                        PlayedNote(
-                            MidiNote(it),
-                            velocity,
-                            down,
-                            down + EXTRA_LENGTH_NANOS,
-                            down + EXTRA_LENGTH_NANOS,
-                        )
+                    val up = down + EXTRA_LENGTH_NANOS
+                    val extra = PlayedNote(MidiNote(it), velocity, down, up, up)
                     Change(r, emptyList(), listOf(extra), extra)
                 }
             }
         }
 
         fun mistouches() =
-            refs.flatMap { (i, note) ->
-                val r = ref(i, note.pitch)
+            refs.flatMap { r ->
                 val correct = r.played()
                 val down = correct.downNanos + random.nextLong(MISTOUCH_MIN_OFFSET_NANOS, MISTOUCH_MAX_OFFSET_NANOS + 1)
                 val up = down + random.nextLong(MISTOUCH_MIN_LENGTH_NANOS, MISTOUCH_MAX_LENGTH_NANOS + 1)
@@ -193,16 +178,9 @@ class ErrorInjector(
         fun timingShifts(sign: Int): List<Change> {
             val tolerance = max(TIMING_TOLERANCE_MIN_NANOS, take.beatNanos * TIMING_TOLERANCE_BEAT_FRACTION)
             val shift = sign * (tolerance * random.nextDouble(TIMING_SHIFT_TOLERANCES)).roundToLong()
-            return refs.mapNotNull { (i, note) ->
-                val r = ref(i, note.pitch)
-                val old = r.played()
-                val new =
-                    old.copy(
-                        downNanos = old.downNanos + shift,
-                        upNanos = old.upNanos + shift,
-                        soundingEndNanos =
-                            old.soundingEndNanos + shift,
-                    )
+            return refs.mapNotNull { r ->
+                val i = r.stepIndex
+                val new = r.played().shiftedBy(shift)
                 val afterPrevious = i == 0 || stepDowns(i - 1).all { it < new.downNanos }
                 val beforeNext = i == steps.lastIndex || stepDowns(i + 1).all { it > new.downNanos }
                 if (afterPrevious && beforeNext) replace(r, new) else null
@@ -215,30 +193,23 @@ class ErrorInjector(
                 val delay =
                     max((gap * random.nextDouble(HESITATION_GAP_FACTOR)).roundToLong(), HESITATION_MIN_DELAY_NANOS)
                 val later = playedOf.filterKeys { it.stepIndex >= k }
-                val shifted =
-                    later.mapValues { (_, n) ->
-                        n.copy(
-                            downNanos = n.downNanos + delay,
-                            upNanos =
-                                n.upNanos + delay,
-                            soundingEndNanos = n.soundingEndNanos + delay,
-                        )
-                    }
-                val r = ref(k, steps[k].pitches.minBy { it.number })
+                val shifted = later.mapValues { (_, n) -> n.shiftedBy(delay) }
+                val r = lowestOf(k)
                 Change(r, later.values.toList(), shifted.values.toList(), shifted.getValue(r))
             }
 
         fun lengths(fraction: ClosedFloatingPointRange<Double>): List<Change> {
             val factor = random.nextDouble(fraction)
-            return refs.map { (i, note) ->
-                val r = ref(i, note.pitch)
+            return refs.map { r ->
                 val old = r.played()
-                val up = old.downNanos + (take.writtenLengthNanos(note) * factor).roundToLong()
+                val up = old.downNanos + (take.writtenLengthNanos(notesOf.getValue(r)) * factor).roundToLong()
                 replace(r, old.copy(upNanos = up, soundingEndNanos = up))
             }
         }
 
-        private fun stepDowns(i: Int) = steps[i].notes.map { ref(i, it.pitch).played().downNanos }
+        private fun lowestOf(i: Int) = ScoreNoteRef(i, steps[i].pitches.minBy { it.number })
+
+        private fun stepDowns(i: Int) = steps[i].notes.map { ScoreNoteRef(i, it.pitch).played().downNanos }
 
         /** No added note overlaps a remaining note of the same pitch: a key can't go down twice at once. */
         fun fits(change: Change): Boolean {
@@ -252,3 +223,6 @@ class ErrorInjector(
         }
     }
 }
+
+private fun PlayedNote.shiftedBy(nanos: Long) =
+    copy(downNanos = downNanos + nanos, upNanos = upNanos + nanos, soundingEndNanos = soundingEndNanos + nanos)

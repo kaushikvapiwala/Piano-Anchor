@@ -83,6 +83,8 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 20. **Unstable ids and kept identities** (follow-up of #56; needs-owner): a `sys:<id>` fallback id can name another
     piano after a reconnect, which then keeps the earlier piano's stored identity. Decide whether to keep identities
     only for stable `usb:`/`ble:` ids.
+21. **All Notes Off in played notes** (follow-up of #60): `PlayedNotes.from` ignores CC123/CC120, so a key whose
+    NoteOff was lost stays down until the last event; end every down key there (mechanical).
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
 

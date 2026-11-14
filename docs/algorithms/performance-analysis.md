@@ -17,14 +17,15 @@ key down, key up and the time the note stopped sounding.
 - Striking a pitch that is still down, or still sounding under the pedal, ends the earlier note there. A piano
   can't sound a string twice at once.
 - A key still down, or a note still held, when the events run out ends at the last event's time.
-- Notes come in onset order, with equal onsets ordered by pitch. Other events are ignored.
+- Events are read in timestamp order. Notes come in onset order, with equal onsets ordered by pitch
+  (`PLAYED_NOTE_ORDER`). Other events are ignored.
 
 Key up is what the hand did; the sounding end is what the ear heard. Note-length errors judge key up, and only
 with the pedal up.
 
 ## Error kinds
-Every finding names one score note (`ScoreNoteRef`: step index and pitch) and, where there is one, the played
-note involved.
+Every finding names one score note (`ScoreNoteRef`: step index and pitch) and the played note involved. Only
+`MISSED_NOTE` and `INCOMPLETE_CHORD` have no played note, and `Finding` enforces that.
 
 | Kind | Meaning | Points at |
 |---|---|---|
@@ -50,7 +51,8 @@ join as extra cases once the hardware check records them. All of this lives in `
 
 - Takes start at `TAKE_START_NANOS`.
 - Each step's onset gets Gaussian jitter with σ = 15 ms (Box–Muller over a seeded `Random`), and chord notes
-  spread over a further 10 ms.
+  spread over a further 10 ms. Jitter and spread are each capped at a quarter of the gap to the nearest step, so
+  even very fast steps keep their order.
 - Velocities are 60–90 and lengths are 80–95 % of written. There is no pedal.
 - A key comes up 5 ms before its pitch is struck again.
 

@@ -1,5 +1,8 @@
 package pianoanchor.core.model
 
+/** The order of played notes in a take: by key down, then by pitch. */
+public val PLAYED_NOTE_ORDER: Comparator<PlayedNote> = compareBy<PlayedNote> { it.downNanos }.thenBy { it.pitch.number }
+
 /**
  * A key as played: [pitch], onset [velocity] (1..127), key down and key up, and when it stopped sounding (key up,
  * or later if the sustain pedal held it). Times are monotonic nanoseconds with

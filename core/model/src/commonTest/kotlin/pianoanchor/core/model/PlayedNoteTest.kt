@@ -22,6 +22,15 @@ class PlayedNoteTest {
     }
 
     @Test
+    fun orderIsByKeyDownThenPitch() {
+        val e4 = MidiNote(64)
+        val late = PlayedNote(c4, 64, 20, 30, 30)
+        val highFirst = PlayedNote(e4, 64, 10, 30, 30)
+        val lowFirst = PlayedNote(c4, 64, 10, 30, 30)
+        assertEquals(listOf(lowFirst, highFirst, late), listOf(late, highFirst, lowFirst).sortedWith(PLAYED_NOTE_ORDER))
+    }
+
+    @Test
     fun rejectsVelocityOutsideOneTo127() {
         assertFailsWith<IllegalArgumentException> { PlayedNote(c4, 0, 0, 1, 1) }
         assertFailsWith<IllegalArgumentException> { PlayedNote(c4, 128, 0, 1, 1) }

@@ -105,6 +105,12 @@ class PlayedNotesTest {
     }
 
     @Test
+    fun eventsOutOfTimestampOrderArePairedInTimeOrder() {
+        val played = notes(off(200, c4), on(300, e4), on(100, c4), off(400, e4))
+        assertEquals(listOf(PlayedNote(c4, 64, 100, 200, 200), PlayedNote(e4, 64, 300, 400, 400)), played)
+    }
+
+    @Test
     fun noEventsGiveNoNotes() {
         assertEquals(emptyList(), notes())
     }

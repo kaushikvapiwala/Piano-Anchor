@@ -5,6 +5,7 @@ import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
+import pianoanchor.core.model.PLAYED_NOTE_ORDER
 import pianoanchor.core.model.PlayedNote
 
 /** The sustain (damper) pedal's controller number (MIDI 1.0 specification, control change 64). */
@@ -19,12 +20,14 @@ public object PlayedNotes {
      * Pairs NoteOn/NoteOff per pitch on every channel (the parser already turns NoteOn velocity 0 into NoteOff).
      * CC64 >= 64 holds sounding notes until the pedal drops below 64. Striking a pitch that is still down or still
      * sounding ends the earlier note there. A note still down or held at the end of [events] ends at the last
-     * event's time. Notes come in onset order (ties by pitch); other events are ignored.
+     * event's time. Events are taken in timestamp order (a stable sort keeps equal times in list order). Notes come
+     * in [PLAYED_NOTE_ORDER]; other events are ignored.
      */
     public fun from(events: List<MidiEvent>): List<PlayedNote> {
+        val ordered = events.sortedBy { it.timestampNanos }
         val extraction = Extraction()
-        events.forEach(extraction::apply)
-        return extraction.finish(events.lastOrNull()?.timestampNanos)
+        ordered.forEach(extraction::apply)
+        return extraction.finish(ordered.lastOrNull()?.timestampNanos)
     }
 }
 
@@ -54,7 +57,7 @@ private class Extraction {
             down.keys.toList().forEach { release(it, end) }
             pedal(false, end)
         }
-        return done.sortedWith(compareBy({ it.downNanos }, { it.pitch.number }))
+        return done.sortedWith(PLAYED_NOTE_ORDER)
     }
 
     private fun strike(

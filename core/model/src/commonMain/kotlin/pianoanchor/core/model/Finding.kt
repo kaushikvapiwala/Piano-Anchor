@@ -55,4 +55,11 @@ public data class Finding(
     val kind: ErrorKind,
     val at: ScoreNoteRef,
     val played: PlayedNote?,
-)
+) {
+    init {
+        val dropsANote = kind == ErrorKind.MISSED_NOTE || kind == ErrorKind.INCOMPLETE_CHORD
+        require(dropsANote == (played == null)) {
+            "a $kind finding must ${if (dropsANote) "not " else ""}have a played note"
+        }
+    }
+}

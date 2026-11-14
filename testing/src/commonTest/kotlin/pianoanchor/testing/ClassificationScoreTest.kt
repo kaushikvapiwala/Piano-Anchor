@@ -18,7 +18,11 @@ class ClassificationScoreTest {
         kind: ErrorKind,
         step: Int,
         pitch: MidiNote,
-    ) = Finding(kind, ScoreNoteRef(step, pitch), played = null)
+    ) = Finding(
+        kind,
+        ScoreNoteRef(step, pitch),
+        played = if (kind == ErrorKind.MISSED_NOTE || kind == ErrorKind.INCOMPLETE_CHORD) null else clean.notes.first(),
+    )
 
     private fun labelled(vararg labels: Finding) = clean.copy(labels = labels.toList())
 

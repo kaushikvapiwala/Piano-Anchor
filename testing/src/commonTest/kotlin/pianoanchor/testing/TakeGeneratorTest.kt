@@ -1,7 +1,11 @@
 package pianoanchor.testing
 
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PlayedNote
+import pianoanchor.core.model.ScoreNote
+import pianoanchor.core.model.Step
+import pianoanchor.core.model.TimeSignature
 import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.test.Test
@@ -75,6 +79,38 @@ class TakeGeneratorTest {
                     "seed $seed: $a then $b",
                 )
             }
+        }
+    }
+
+    @Test
+    fun stepsCloserThanTheJitterKeepTheirOrder() {
+        // Steps 25 ms apart (24 ticks at 60 BPM), well inside the jitter's spread, the middle one a chord.
+        val pitches = listOf(setOf(c4), setOf(e4, g4), setOf(b4), setOf(MidiNote(72)))
+        val fast =
+            Passage(
+                id = "test:fast",
+                title = "Fast",
+                steps =
+                    pitches.mapIndexed {
+                        i,
+                        step,
+                        ->
+                        Step(i * 24, step.mapTo(LinkedHashSet()) { ScoreNote(it, 24) })
+                    },
+                timeSignature = TimeSignature(4, 4),
+                tempoBpm = 60,
+            )
+        seeds.forEach { seed ->
+            val take = TakeGenerator(seed).clean(fast, 60)
+            val stepOf = pitches.withIndex().flatMap { (i, step) -> step.map { it to i } }.toMap()
+            assertEquals(
+                take.notes
+                    .map {
+                        stepOf.getValue(it.pitch)
+                    }.sorted(),
+                take.notes.map { stepOf.getValue(it.pitch) },
+                "seed $seed",
+            )
         }
     }
 
