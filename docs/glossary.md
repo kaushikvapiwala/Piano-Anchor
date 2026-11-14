@@ -27,9 +27,11 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | MIDI event | A typed message from the piano (`NoteOn`, `NoteOff`, `ControlChange`, `SysEx`) with a monotonic timestamp, produced by the MIDI parser from raw bytes. |
 | Mistouch | An extra note one or two semitones from a correct note, played at the same moment (brushed key). |
 | MIDI discovery | Finding and connecting MIDI devices that the platform does not list until connected, such as BLE MIDI pianos: `MidiDiscoveryPort.scan`, `connect` and `disconnect`. |
+| Note match | One score note as the performance analyser aligned it (`NoteMatch`): the played note paired with it (none when missed), how far its onset was from the expected one and the gap from the previous step. |
 | Note monitor | The first screen (`:feature:monitor`): pick a piano, watch its live notes, record a session and export it as a fixture. |
 | Onset | When a step starts, in ticks from the start of the passage (`Step.onsetTicks`); onsets strictly increase. |
 | Passage | A piece of music to practise (`Passage` in `:core:model`): a stable id, a title, its steps, a time signature and a written tempo. |
+| Performance analyser | `PerformanceAnalyser` in `:engine`: aligns a take's played notes to the passage, fits its tempo and reports findings of every error kind (`docs/algorithms/performance-analysis.md`). |
 | Played note | One key as played (`PlayedNote` in `:core:model`): pitch, onset velocity, key down, key up and when it stopped sounding, paired from MIDI events by `PlayedNotes.from`. |
 | Port | Interface through which the domain uses the outside world. Named `*Port`, lives in `core/ports`. |
 | Practice screen | The wait-mode screen (`:feature:practice`): the passage on a treble staff with a cursor on the waiting note, and a live key strip. A completed run is graded and saved; a run that ends early is discarded. |
@@ -42,6 +44,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Sustain pedal | The right (damper) pedal, sent as control change 64; values 64–127 hold every released note sounding until it drops below 64. |
 | SysEx | System Exclusive: a variable-length, vendor-specific MIDI message framed by 0xF0 and 0xF7. |
 | Tempo ladder | The practice screen's tempo rungs: Wait, then 60/70/85/100 % of the written tempo. Only Wait exists until timing is graded; the other rungs are shown disabled. |
+| Tempo reference | What the performance analyser times a take against (`TempoReference`): a target tempo (optionally with when beat 1 fell), the tempo fitted to the take, or none (wait mode). |
 | Tick | The unit of musical time in a passage: `TICKS_PER_QUARTER` (960) ticks per quarter note, so onsets and note lengths are whole numbers. |
 | Time signature | Beats per bar (1–32) and the note value of a beat (1, 2, 4, 8 or 16), e.g. 3/4 (`TimeSignature`). |
 | Tunable | A threshold or prior in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt`, documented with why and source. |

@@ -5,17 +5,13 @@ import pianoanchor.core.model.Finding
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.ScoreNoteRef
+import pianoanchor.engine.analysis.timingToleranceNanos
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 import kotlin.random.Random
 import kotlin.random.nextInt
-
-// Owner-agreed starting thresholds (spec #60). Private copies until M1.3 adds them to Tunables.
-private const val TIMING_TOLERANCE_MIN_NANOS = 60_000_000.0
-private const val TIMING_TOLERANCE_BEAT_FRACTION = 0.125
-private const val MISTOUCH_WINDOW_NANOS = 40_000_000L
 
 // Injection bands: each safely past the threshold it tests.
 private val WRONG_NOTE_SEMITONES = 3..11
@@ -176,7 +172,7 @@ class ErrorInjector(
             }
 
         fun timingShifts(sign: Int): List<Change> {
-            val tolerance = max(TIMING_TOLERANCE_MIN_NANOS, take.beatNanos * TIMING_TOLERANCE_BEAT_FRACTION)
+            val tolerance = timingToleranceNanos(take.beatNanos)
             val shift = sign * (tolerance * random.nextDouble(TIMING_SHIFT_TOLERANCES)).roundToLong()
             return refs.mapNotNull { r ->
                 val i = r.stepIndex
