@@ -129,6 +129,58 @@ class PracticeViewModelCalibrationTest {
     }
 
     @Test
+    fun startingOnARungKeepsItAndIsReadyToPlayWhenCalibrated() =
+        runPractice {
+            calibration.setLatencyOffsetNanos(piano.device.id, 38 * ms)
+            val vm =
+                PracticeViewModel(
+                    piano.device,
+                    Passages.CDE,
+                    piano,
+                    attempts,
+                    calibration,
+                    metronome,
+                    clock,
+                    wallClock,
+                    calibrationSkips = skips,
+                    initialRung = TempoRung.P70,
+                ) { "attempt-1" }.also {
+                    opened += it
+                    runCurrent()
+                }
+
+            assertEquals(TempoRung.P70, vm.state.value.rung)
+            assertEquals(RunPhase.READY, vm.state.value.phase)
+            assertFalse(vm.state.value.calibrationOffered)
+            press(c4)
+            assertNotNull(metronome.running.value)
+        }
+
+    @Test
+    fun aPositiveOffsetExtendsTheRunByTheOffset() =
+        runPractice {
+            calibration.setLatencyOffsetNanos(piano.device.id, 200 * ms)
+            val vm = practice()
+            vm.selectRung(TempoRung.P60)
+            runCurrent()
+            press(c4) // the starting key
+            advance(countInMs + 200)
+            hold(c4, heldMs = 900, restMs = beatMs - 900)
+            hold(d4, heldMs = 900, restMs = beatMs - 900)
+            piano.press(e4)
+            runCurrent()
+            advance(3_650) // 6350 ms after tick 0 on the wire: past the judge's end at 6250 ms, within the offset
+            piano.release(e4)
+            runCurrent()
+            assertNull(attempts.get("attempt-1")) // still running
+
+            advance(300)
+
+            val attempt = assertNotNull(attempts.get("attempt-1"))
+            assertEquals(6_350 * ms, attempt.playedNotes.last().upNanos)
+        }
+
+    @Test
     fun uncalibratedTimedRungShowsTheCalibrateCard() =
         runPractice {
             val vm = practice()

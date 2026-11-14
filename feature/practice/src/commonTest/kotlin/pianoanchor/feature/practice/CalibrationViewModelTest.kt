@@ -121,6 +121,27 @@ class CalibrationViewModelTest {
         }
 
     @Test
+    fun theTapCounterCountsEachAnsweredClickOnce() =
+        runTest(dispatcher) {
+            val vm = calibration()
+            val clicks = LatencyCalibration.clickTimes(clock.nowNanos() + Tunables.TEMPO_COUNT_IN_LEAD_MS * ms)
+            vm.start()
+            runCurrent()
+            val first = Tunables.CALIBRATION_WARMUP_CLICKS
+
+            advanceTo(clicks[first] + 38 * ms)
+            tap()
+            advanceTo(clicks[first] + 90 * ms)
+            tap() // a second tap on the same click
+            assertEquals(1, vm.state.value.countedTaps)
+
+            advanceTo(clicks[first] + beat / 2 + 20 * ms) // nearer the next click: that one's tap
+            tap()
+            assertEquals(2, vm.state.value.countedTaps)
+            vm.close()
+        }
+
+    @Test
     fun acceptedResultIsSaved() =
         runTest(dispatcher) {
             val vm = calibration()

@@ -32,6 +32,7 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorActions
 import pianoanchor.feature.monitor.MonitorScreen
 import pianoanchor.feature.monitor.MonitorViewModel
@@ -60,14 +61,16 @@ class MainActivity : ComponentActivity() {
 private sealed interface Destination {
     data object Monitor : Destination
 
+    /** Practising [device], starting on [rung] (the one picked before a calibration). */
     data class Practice(
         val device: MidiDevice,
+        val rung: TempoRung = TempoRung.WAIT,
     ) : Destination
 
-    /** Calibrating [device]'s latency; [fromPractice] says where it returns to (else the monitor). */
+    /** Calibrating [device]'s latency; [practiceRung] is the rung to return to in Practice, null for the monitor. */
     data class Calibrate(
         val device: MidiDevice,
-        val fromPractice: Boolean,
+        val practiceRung: TempoRung?,
     ) : Destination
 
     data class Results(
@@ -84,22 +87,24 @@ private fun AppNavigation() {
         Destination.Monitor -> {
             MonitorRoute(
                 onPractice = { destination = Destination.Practice(it) },
-                onCalibrate = { destination = Destination.Calibrate(it, fromPractice = false) },
+                onCalibrate = { destination = Destination.Calibrate(it, practiceRung = null) },
             )
         }
 
         is Destination.Practice -> {
             PracticeRoute(
                 current.device,
+                current.rung,
                 onBack = back,
                 onFinished = { destination = Destination.Results(current.device, it) },
-                onCalibrate = { destination = Destination.Calibrate(current.device, fromPractice = true) },
+                onCalibrate = { destination = Destination.Calibrate(current.device, practiceRung = it) },
             )
         }
 
         is Destination.Calibrate -> {
             val leave = {
-                destination = if (current.fromPractice) Destination.Practice(current.device) else Destination.Monitor
+                destination =
+                    current.practiceRung?.let { Destination.Practice(current.device, it) } ?: Destination.Monitor
             }
             CalibrationRoute(current.device, onLeave = leave)
         }
@@ -139,13 +144,14 @@ private fun rememberRouteViewModelStoreOwner(): ViewModelStoreOwner {
 @Composable
 private fun PracticeRoute(
     device: MidiDevice,
+    rung: TempoRung,
     onBack: () -> Unit,
     onFinished: (attemptId: String) -> Unit,
-    onCalibrate: () -> Unit,
+    onCalibrate: (TempoRung) -> Unit,
 ) {
     LandscapeEffect()
     val viewModel: PracticeViewModel =
-        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device) }
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device, rung) }
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
     // Leave only once the run has closed the piano, so the monitor can reopen it (one reader per input).
@@ -159,7 +165,7 @@ private fun PracticeRoute(
         onToggleClick = viewModel::toggleClick,
         onRetrySave = viewModel::retrySave,
         onDiscard = viewModel::discardRun,
-        onCalibrate = { leave(onCalibrate) },
+        onCalibrate = { leave { onCalibrate(state.rung) } },
         onSkipCalibration = viewModel::skipCalibration,
     )
 }

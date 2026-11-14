@@ -62,6 +62,8 @@ import kotlin.time.Instant
  * A timed run reads the piano's latency offset from [calibration] when it starts and subtracts it from played times
  * (`docs/algorithms/latency-calibration.md`). A piano without one gets [PracticeState.calibrationOffered] instead of a
  * run, until [skipCalibration] (remembered in [calibrationSkips] for the app session) or a calibration elsewhere.
+ * The ViewModel starts on [initialRung] (wait mode by default),
+ * so returning from a calibration lands on the rung the learner had picked.
  */
 @Suppress("TooManyFunctions")
 public class PracticeViewModel(
@@ -75,6 +77,7 @@ public class PracticeViewModel(
     private val clock: Clock,
     private val clickSetting: ClickSetting = ClickSetting(),
     private val calibrationSkips: CalibrationSkips = CalibrationSkips(),
+    initialRung: TempoRung = TempoRung.WAIT,
     private val newId: () -> String,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PracticeState.start(passage).copy(clickOn = clickSetting.on.value))
@@ -91,7 +94,7 @@ public class PracticeViewModel(
 
     init {
         viewModelScope.launch { refreshDoneRungs() }
-        selectRung(TempoRung.WAIT)
+        selectRung(initialRung)
     }
 
     /** Discards the run and starts over on the same rung, reopening the piano once the old run has closed it. */
@@ -397,7 +400,7 @@ public class PracticeViewModel(
             startNanos = firstBeatNanos + beatsPerBar * beatNanos
             val timing = TempoJudge(passage, bpm, startNanos, latencyOffsetNanos ?: 0)
             judge = timing
-            endNanos = timing.endNanos
+            endNanos = timing.endNanos + (latencyOffsetNanos ?: 0).coerceAtLeast(0)
             mutableState.update { it.copy(keysDown = it.keysDown + starter.note) }
             val click = ClickPattern(firstBeatNanos, beatNanos, beatsPerBar)
             pattern = click
@@ -443,7 +446,7 @@ public class PracticeViewModel(
             while (true) {
                 val now = time.nowNanos()
                 publish(now, judge)
-                if (now >= judge.endNanos) return
+                if (now >= endNanos) return
                 val next = firstBeatNanos + ((now - firstBeatNanos).floorDiv(subdivision) + 1) * subdivision
                 delay((next - now).nanoseconds)
             }

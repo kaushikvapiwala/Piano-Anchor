@@ -13,6 +13,7 @@ import pianoanchor.core.model.WrongNote
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.analysis.PerformanceAnalyser
 import pianoanchor.engine.analysis.TempoReference
+import pianoanchor.engine.calibration.LatencyCalibration
 import kotlin.time.Instant
 
 /** Findings of keys the score doesn't ask for: they enlarge a timed accuracy's denominator. */
@@ -103,7 +104,7 @@ public object Grader {
         notes: List<PlayedNote>,
         latencyOffsetNanos: Long? = null,
     ): Attempt {
-        val corrected = notes.map { it.shiftedBy(-(latencyOffsetNanos ?: 0)) }
+        val corrected = LatencyCalibration.corrected(notes, latencyOffsetNanos)
         val findings =
             PerformanceAnalyser
                 .analyse(

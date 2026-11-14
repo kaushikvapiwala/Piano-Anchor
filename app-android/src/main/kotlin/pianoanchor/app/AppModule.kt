@@ -14,6 +14,7 @@ import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.practice.CalibrationSkips
 import pianoanchor.feature.practice.CalibrationViewModel
@@ -47,8 +48,8 @@ val appModule =
         single<AttemptRepositoryPort> { SqlAttemptRepositoryAdapter(get(), Dispatchers.IO) }
         single<CalibrationRepositoryPort> { SqlCalibrationRepositoryAdapter(get(), Dispatchers.IO) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get()) }
-        viewModel { (device: MidiDevice) ->
-            PracticeViewModel(device, Passages.CDE, get(), get(), get(), get(), get(), get(), get(), get()) {
+        viewModel { (device: MidiDevice, rung: TempoRung) ->
+            PracticeViewModel(device, Passages.CDE, get(), get(), get(), get(), get(), get(), get(), get(), rung) {
                 Uuid.random().toString()
             }
         }

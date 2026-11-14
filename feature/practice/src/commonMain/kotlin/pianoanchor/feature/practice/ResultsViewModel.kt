@@ -15,6 +15,7 @@ import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.analysis.PerformanceAnalyser
 import pianoanchor.engine.analysis.PerformanceAnalysis
 import pianoanchor.engine.analysis.TempoReference
+import pianoanchor.engine.calibration.LatencyCalibration
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.grading.HesitationSummary
 import pianoanchor.engine.grading.LengthSummary
@@ -87,8 +88,8 @@ public class ResultsViewModel(
     ): PerformanceAnalysis? {
         if (attempt.tempoBpm == null && attempt.playedNotes.isEmpty()) return null
         val tempo = attempt.tempoBpm?.let { TempoReference.Target(it, startNanos = 0) } ?: TempoReference.Untimed
-        val offset = attempt.latencyOffsetNanos ?: 0
-        return PerformanceAnalyser.analyse(passage, attempt.playedNotes.map { it.shiftedBy(-offset) }, tempo)
+        val notes = LatencyCalibration.corrected(attempt.playedNotes, attempt.latencyOffsetNanos)
+        return PerformanceAnalyser.analyse(passage, notes, tempo)
     }
 
     private fun timingTile(

@@ -102,7 +102,7 @@ public fun PracticeScreen(
             }
             if (state.calibrationOffered) {
                 MessageCard(
-                    stringResource(Res.string.practice_calibrate_offer),
+                    stringResource(Res.string.practice_calibrate_offer, CalibrationState.DURATION_SECONDS.toString()),
                     CardAction(stringResource(Res.string.practice_calibrate), onCalibrate),
                     CardAction(stringResource(Res.string.practice_calibrate_skip), onSkipCalibration),
                     modifier = CARD_MODIFIER,
@@ -117,7 +117,11 @@ public fun PracticeScreen(
                 timed = state.rung != TempoRung.WAIT,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp).fillMaxWidth().height(196.dp),
             )
-            if (state.rung != TempoRung.WAIT) RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
+            if (state.rung != TempoRung.WAIT &&
+                !state.calibrationOffered
+            ) {
+                RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
+            }
             KeyStrip(state, modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth())
         }
     }

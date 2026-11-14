@@ -91,11 +91,11 @@
     <string name="results_try_again">Try again</string>
     <string name="results_not_found">Couldn't find this run</string>
     <string name="results_unavailable">Couldn't load this run.</string>
-    <string name="practice_calibrate_offer">Calibrate timing · about 15 s</string>
+    <string name="practice_calibrate_offer">Calibrate timing · about %1$s s</string>
     <string name="practice_calibrate">Calibrate</string>
     <string name="practice_calibrate_skip">Skip</string>
     <string name="calibration_title">Calibrate timing</string>
-    <string name="calibration_intro">Play any key on each click. 16 clicks, about 11 seconds.</string>
+    <string name="calibration_intro">Play any key on each click. %1$s clicks, about %2$s seconds.</string>
     <string name="calibration_start">Start</string>
     <string name="calibration_get_ready">Get ready</string>
     <string name="calibration_play_now">Play a key on each click</string>
@@ -105,7 +105,7 @@
     <string name="calibration_accepted_before">Your piano answers %1$s ms before the click. Saved.</string>
     <string name="calibration_uneven">Taps were uneven</string>
     <string name="calibration_too_few">Too few taps</string>
-    <string name="calibration_out_of_range">That's more than 0.4 s: check the connection</string>
+    <string name="calibration_out_of_range">That's more than %1$s s: check the connection</string>
     <string name="calibration_save_failed">Couldn't save the result.</string>
     <string name="calibration_done">Done</string>
     <string name="calibration_try_again">Try again</string>

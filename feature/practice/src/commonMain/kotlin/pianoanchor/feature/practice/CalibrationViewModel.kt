@@ -29,8 +29,6 @@ import pianoanchor.engine.calibration.LatencyCalibration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 
-private const val HALF = 2
-
 /**
  * Calibrates the latency of the piano [device] (`docs/algorithms/latency-calibration.md`): [start] plays the
  * calibration pattern on [metronome] (clock [time]) while the learner taps a key on each click, then judges the taps
@@ -94,19 +92,14 @@ public class CalibrationViewModel(
     ): Boolean =
         coroutineScope {
             val ended = CompletableDeferred<Boolean>()
-            val halfBeat = (clicks[1] - clicks[0]) / HALF
-            val firstCounted = clicks[Tunables.CALIBRATION_WARMUP_CLICKS] - halfBeat
+            val halfBeat = LatencyCalibration.halfBeatNanos(clicks)
             launch {
                 try {
                     input.events(device).collect { event ->
                         if (event !is NoteOn) return@collect
                         taps += event
-                        val counted = taps.count { it.timestampNanos >= firstCounted }
-                        mutableState.update {
-                            it.copy(
-                                countedTaps = counted.coerceAtMost(CalibrationState.COUNTED_CLICKS),
-                            )
-                        }
+                        val counted = LatencyCalibration.countedOffsets(clicks, taps).size
+                        mutableState.update { it.copy(countedTaps = counted) }
                     }
                 } catch (_: MidiDeviceUnavailableException) {
                     // Not listed (or gone) when the run opened it: same as a drop.

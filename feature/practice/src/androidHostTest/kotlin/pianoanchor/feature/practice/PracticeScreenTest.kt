@@ -167,10 +167,11 @@ class PracticeScreenTest {
                     )
                 }
             }
-            onNodeWithText("Calibrate timing · about 15 s").assertDoesNotExist()
+            onNodeWithText("Calibrate timing · about 11 s").assertDoesNotExist()
 
             state.value = timed.copy(calibrationOffered = true)
-            onNodeWithText("Calibrate timing · about 15 s").assertExists()
+            onNodeWithText("Calibrate timing · about 11 s").assertExists()
+            onNodeWithText("Play any key to count in").assertDoesNotExist() // nothing reads the piano meanwhile
             onNodeWithText("Calibrate").performClick()
             onNodeWithText("Skip").performClick()
 

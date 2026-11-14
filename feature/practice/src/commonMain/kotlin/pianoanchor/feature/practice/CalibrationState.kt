@@ -3,6 +3,8 @@ package pianoanchor.feature.practice
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.calibration.CalibrationResult
 
+private const val SECONDS_PER_MINUTE = 60
+
 /**
  * What the calibration screen shows. [phase] is where the run is; [click] is how many clicks have sounded (0 before
  * the first) and [pulse] is true for half a beat after each; [countedTaps] are the taps answering the clicks that
@@ -24,6 +26,10 @@ public data class CalibrationState(
     public companion object {
         /** The clicks whose taps count: all but the warm-up. */
         public const val COUNTED_CLICKS: Int = Tunables.CALIBRATION_CLICKS - Tunables.CALIBRATION_WARMUP_CLICKS
+
+        /** How long the clicks play in whole seconds, rounded up: what the screen and the card say. */
+        public const val DURATION_SECONDS: Int =
+            (Tunables.CALIBRATION_CLICKS * SECONDS_PER_MINUTE + Tunables.CALIBRATION_BPM - 1) / Tunables.CALIBRATION_BPM
     }
 }
 

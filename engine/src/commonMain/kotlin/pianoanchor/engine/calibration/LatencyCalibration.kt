@@ -1,6 +1,7 @@
 package pianoanchor.engine.calibration
 
 import pianoanchor.core.model.NoteOn
+import pianoanchor.core.model.PlayedNote
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.matcher.beatNanos
 import kotlin.math.abs
@@ -51,18 +52,7 @@ public object LatencyCalibration {
         clicks: List<Long>,
         taps: List<NoteOn>,
     ): CalibrationResult {
-        require(clicks.size >= 2) { "need at least two clicks, got ${clicks.size}" }
-        val halfBeat = (clicks[1] - clicks[0]) / HALF
-        val offsets =
-            taps
-                .mapNotNull { tap ->
-                    val index = clicks.indices.minBy { abs(tap.timestampNanos - clicks[it]) }
-                    val offset = tap.timestampNanos - clicks[index]
-                    if (abs(offset) <= halfBeat) index to offset else null
-                }.groupBy({ it.first }, { it.second })
-                .filterKeys { it >= Tunables.CALIBRATION_WARMUP_CLICKS }
-                .values
-                .map { offsetsOfClick -> offsetsOfClick.minBy { abs(it) } }
+        val offsets = countedOffsets(clicks, taps).values.toList()
         if (offsets.size < Tunables.CALIBRATION_MIN_TAPS) return CalibrationResult.TooFewTaps(offsets.size)
         val offset = median(offsets)
         val spread = median(offsets.map { abs(it - offset) })
@@ -72,6 +62,41 @@ public object LatencyCalibration {
             else -> CalibrationResult.Accepted(offset, spread)
         }
     }
+
+    /** Half the spacing of [clicks] (which must have at least two): how far a tap may be from the click it answers. */
+    public fun halfBeatNanos(clicks: List<Long>): Long {
+        require(clicks.size >= 2) { "need at least two clicks, got ${clicks.size}" }
+        return (clicks[1] - clicks[0]) / HALF
+    }
+
+    /**
+     * The offset (tap minus click) of the tap answering each counted click, by click index: the pairing [evaluate]
+     * uses (nearest click within half a beat, the tap nearest the click when several pair with one, warm-up clicks
+     * dropped). Its size is the number of counted clicks that have a tap.
+     */
+    public fun countedOffsets(
+        clicks: List<Long>,
+        taps: List<NoteOn>,
+    ): Map<Int, Long> {
+        val halfBeat = halfBeatNanos(clicks)
+        return taps
+            .mapNotNull { tap ->
+                val index = clicks.indices.minBy { abs(tap.timestampNanos - clicks[it]) }
+                val offset = tap.timestampNanos - clicks[index]
+                if (abs(offset) <= halfBeat) index to offset else null
+            }.filter { (index, _) -> index >= Tunables.CALIBRATION_WARMUP_CLICKS }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, offsets) -> offsets.minBy { abs(it) } }
+    }
+
+    /**
+     * [notes] as the piano would have played them with no latency: every time moved earlier by [offsetNanos] (null,
+     * an uncalibrated piano, leaves them alone). Timed analysis and grading take their input through this.
+     */
+    public fun corrected(
+        notes: List<PlayedNote>,
+        offsetNanos: Long?,
+    ): List<PlayedNote> = if (offsetNanos == null) notes else notes.map { it.shiftedBy(-offsetNanos) }
 
     private fun median(values: List<Long>): Long {
         val sorted = values.sorted()

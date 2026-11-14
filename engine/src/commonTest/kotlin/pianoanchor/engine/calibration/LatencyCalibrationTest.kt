@@ -2,6 +2,7 @@ package pianoanchor.engine.calibration
 
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.NoteOn
+import pianoanchor.core.model.PlayedNote
 import pianoanchor.engine.Tunables
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -97,7 +98,27 @@ class LatencyCalibrationTest {
     }
 
     @Test
+    fun countedOffsetsHaveOneEntryPerAnsweredCountedClick() {
+        val counted = clicks.drop(warmup)
+        val taps =
+            listOf(tap(clicks[0] + 10 * ms)) + // warm-up
+                listOf(tap(counted[0] + 150 * ms), tap(counted[0] + 38 * ms)) + // double tap on one click
+                tap(counted[1] + 20 * ms) +
+                tap(clicks.last() + 20_000 * ms) // after the last click
+        assertEquals(mapOf(warmup to 38 * ms, warmup + 1 to 20 * ms), LatencyCalibration.countedOffsets(clicks, taps))
+        assertEquals(clicks[1] - clicks[0], 2 * LatencyCalibration.halfBeatNanos(clicks))
+    }
+
+    @Test
+    fun correctedMovesNotesEarlierByThePositiveOffsetAndLeavesUncalibratedOnesAlone() {
+        val note = PlayedNote(MidiNote(60), 64, downNanos = 500 * ms, upNanos = 600 * ms, soundingEndNanos = 600 * ms)
+        assertEquals(listOf(note), LatencyCalibration.corrected(listOf(note), null))
+        assertEquals(listOf(note.shiftedBy(-40 * ms)), LatencyCalibration.corrected(listOf(note), 40 * ms))
+    }
+
+    @Test
     fun fewerThanTwoClicksAreRejected() {
         assertFailsWith<IllegalArgumentException> { LatencyCalibration.evaluate(listOf(first), emptyList()) }
+        assertFailsWith<IllegalArgumentException> { LatencyCalibration.halfBeatNanos(listOf(first)) }
     }
 }

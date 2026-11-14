@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.calibration.CalibrationResult
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.calibration_accepted_after
@@ -57,6 +58,10 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private const val NANOS_PER_MILLI = 1_000_000.0
+private const val MILLIS_PER_SECOND = 1_000.0
+
+/** The largest offset a calibration stores, in seconds, as the "more than 0.4 s" line says it. */
+private val MAX_OFFSET_SECONDS = Tunables.CALIBRATION_MAX_OFFSET_MS / MILLIS_PER_SECOND
 
 /**
  * The calibration screen (Living Studio, `docs/ui/living-studio.md`): the title and instruction, then Start, the pulse
@@ -87,7 +92,11 @@ public fun CalibrationScreen(
                         modifier = Modifier.semantics { heading() },
                     )
                     Text(
-                        stringResource(Res.string.calibration_intro),
+                        stringResource(
+                            Res.string.calibration_intro,
+                            Tunables.CALIBRATION_CLICKS.toString(),
+                            CalibrationState.DURATION_SECONDS.toString(),
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -203,7 +212,7 @@ private fun resultText(state: CalibrationState): String =
         }
 
         is CalibrationResult.OutOfRange -> {
-            stringResource(Res.string.calibration_out_of_range)
+            stringResource(Res.string.calibration_out_of_range, MAX_OFFSET_SECONDS.toString())
         }
 
         // Only a finished run is shown with a result: DONE always has one.
