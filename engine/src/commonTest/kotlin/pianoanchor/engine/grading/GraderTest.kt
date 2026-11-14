@@ -4,11 +4,10 @@ import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.MidiNote
-import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PassageComplete
-import pianoanchor.core.model.Step
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.WrongNote
+import pianoanchor.testing.passageOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -19,7 +18,7 @@ class GraderTest {
     private val d4 = MidiNote(62)
     private val e4 = MidiNote(64)
     private val g4 = MidiNote(67)
-    private val passage = Passage("c-d-e", "C D E", listOf(Step(setOf(c4)), Step(setOf(d4)), Step(setOf(e4, g4))))
+    private val passage = passageOf(setOf(c4), setOf(d4), setOf(e4, g4), id = "c-d-e", title = "C D E")
     private val wallClock = Instant.fromEpochSeconds(1_000)
 
     @Test
@@ -95,7 +94,7 @@ class GraderTest {
 
     @Test
     fun aRunWithoutErrorsIsClean() {
-        val single = Passage("c", "C", listOf(Step(setOf(c4))))
+        val single = passageOf(setOf(c4), id = "c", title = "C")
         val events = listOf(StepCorrect(7, 0), PassageComplete(7, 0))
 
         val attempt = Grader.attempt("a-1", single, "usb-1", wallClock, startedAtNanos = 7, events = events)

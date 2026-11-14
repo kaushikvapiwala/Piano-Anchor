@@ -117,7 +117,7 @@ class WalkingSkeletonEndToEndTest {
         val opens = piano.appReadOpens
         openPractice()
         compose.waitUntil(UI_TIMEOUT_MS) { piano.appReadOpens > opens }
-        val notes = Passages.CDE.steps.flatMap { it.notes }
+        val notes = Passages.CDE.steps.flatMap { it.pitches }
         playFirst(notes.first())
         notes.drop(1).dropLast(1).forEach { note ->
             piano.play(note)

@@ -13,7 +13,8 @@ fixtures replay exactly as they were played live.
 
 ## Rules
 Only `NoteOn` matters. `NoteOff`, `ControlChange` and `SysEx` change nothing, and channel and velocity are
-ignored (a NoteOn on any channel counts).
+ignored (a NoteOn on any channel counts). Rhythm is ignored too: the matcher reads only each step's pitches, never
+its onset, note lengths, the time signature or the written tempo.
 
 1. The first NoteOn of the attempt, right or wrong, sets `startedAtNanos`.
 2. **Window expiry comes first.** If a chord window is open and this note's onset is more than
