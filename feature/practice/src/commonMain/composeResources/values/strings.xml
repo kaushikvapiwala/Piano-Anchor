@@ -40,6 +40,7 @@
     <string name="practice_retry">Retry</string>
     <string name="practice_discard">Discard</string>
     <string name="results_caption">%1$s · run %2$s · wait mode</string>
+    <string name="results_caption_tempo">%1$s · run %2$s · ♩ = %3$s</string>
     <string name="results_headline_clean">Every note right.</string>
     <string name="results_headline_good">Mostly right. A few slips to tidy.</string>
     <string name="results_headline_keep_practising">Let's go slower and try again.</string>
@@ -50,11 +51,42 @@
         <item quantity="one">%1$s wrong note</item>
         <item quantity="other">%1$s wrong notes</item>
     </plurals>
+    <plurals name="results_pitch_missed_notes">
+        <item quantity="one">%1$s note missed</item>
+        <item quantity="other">%1$s notes missed</item>
+    </plurals>
     <plurals name="results_pitch_incomplete_chords">
         <item quantity="one">%1$s chord incomplete</item>
         <item quantity="other">%1$s chords incomplete</item>
     </plurals>
     <string name="results_pitch_description">Pitch: %1$s of %2$s correct, %3$s</string>
+    <string name="results_timing_label">TIMING</string>
+    <string name="results_timing_value">±%1$s ms</string>
+    <string name="results_timing_in_time">in time</string>
+    <string name="results_timing_early_at">early at note %1$s</string>
+    <string name="results_timing_late_at">late at note %1$s</string>
+    <plurals name="results_timing_description">
+        <item quantity="one">Timing: within %1$s millisecond on average, %2$s</item>
+        <item quantity="other">Timing: within %1$s milliseconds on average, %2$s</item>
+    </plurals>
+    <string name="results_length_label">NOTE LENGTH</string>
+    <string name="results_length_value">%1$s%</string>
+    <string name="results_length_every_note_right">every note held right</string>
+    <string name="results_length_held_short">%1$s held short</string>
+    <string name="results_length_held_long">%1$s held long</string>
+    <string name="results_note_whole">whole note</string>
+    <string name="results_note_half">half note</string>
+    <string name="results_note_quarter">quarter note</string>
+    <string name="results_note_number">note %1$s</string>
+    <string name="results_length_description">Note length: %1$s percent of notes held right, %2$s</string>
+    <string name="results_hesitation_label">HESITATION</string>
+    <string name="results_hesitation_none">no pauses</string>
+    <plurals name="results_hesitation_value">
+        <item quantity="one">%1$s pause</item>
+        <item quantity="other">%1$s pauses</item>
+    </plurals>
+    <string name="results_hesitation_longest">%1$s s before %2$s</string>
+    <string name="results_hesitation_description">Hesitation: %1$s</string>
     <string name="results_try_again">Try again</string>
     <string name="results_not_found">Couldn't find this run</string>
     <string name="results_unavailable">Couldn't load this run.</string>

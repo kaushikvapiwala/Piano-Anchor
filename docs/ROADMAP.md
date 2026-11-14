@@ -41,37 +41,38 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
 
-1. **M1.4d Results tiles** (spec #66) [#65]: Timing, Note length and Hesitation tiles from the analyser; tempo in the
-   caption.
-2. **M1.5 Latency calibration** (spec #67) [#63, #65, #66]: tap along to 16 clicks, a calibration port, offered before a
+1. **M1.5 Latency calibration** (spec #67) [#63, #65, #66]: tap along to 16 clicks, a calibration port, offered before a
    piano's first timed run and from the monitor (schema 2→3).
-3. **M2.1 FSRS-6 memory model** (spec #69): pure-Kotlin FSRS-6 in the engine, checked against committed py-fsrs
+2. **M2.1 FSRS-6 memory model** (spec #69): pure-Kotlin FSRS-6 in the engine, checked against committed py-fsrs
    golden vectors.
-4. **M2.2 Skill graph** (spec #70) [#59]: skills with prerequisites (validated DAG); passages declare their skills.
-5. **M2.3 Learner storage** (spec #71) [#69, #70]: review log plus cached skill state behind a learner repository port;
+3. **M2.2 Skill graph** (spec #70) [#59]: skills with prerequisites (validated DAG); passages declare their skills.
+4. **M2.3 Learner storage** (spec #71) [#69, #70]: review log plus cached skill state behind a learner repository port;
    adds kotlinx-datetime (ADR).
-6. **M2.4 Learner model** (spec #72) [#69, #70, #71]: cold checks rated from the band, learned rule, due list and daily
+5. **M2.4 Learner model** (spec #72) [#69, #70, #71]: cold checks rated from the band, learned rule, due list and daily
    limits; recorded after every saved run.
-7. **M2.5 Learner simulation exit check** (spec #73) [#72]: seeded 90-day simulation (retention, load, prerequisite
+6. **M2.5 Learner simulation exit check** (spec #73) [#72]: seeded 90-day simulation (retention, load, prerequisite
    order, recovery after a skip).
-8. **M3.1 Content format** (spec #76) [#59, #70]: note text, rights records, units; the rights document generated from the
+7. **M3.1 Content format** (spec #76) [#59, #70]: note text, rights records, units; the rights document generated from the
    content.
-9. **M3.2 Units 0–2 content** (spec #77, approved) [#76].
-10. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
-11. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
+8. **M3.2 Units 0–2 content** (spec #77, approved) [#76].
+9. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
+10. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
     start screen.
-12. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
-13. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
-14. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
+11. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
+12. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
+13. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
     exit check.
-15. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
+14. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
     identity of a `sys:<id>` fallback id; stable `usb:`/`ble:` ids keep theirs.
-16. **All Notes Off on the practice keyboard** (follow-up of #101): the practice screen's keys-down and wrong-key
+15. **All Notes Off on the practice keyboard** (follow-up of #101): the practice screen's keys-down and wrong-key
     highlights still ignore control changes 120 and 123–127, so a key whose NoteOff was lost stays lit; clear them
     as `PlayedNotes` does (mechanical).
-17. **Wait-mode last note length** (follow-up of #65): a wait-mode run stops reading at the NoteOn that completes the
+16. **Wait-mode last note length** (follow-up of #65): a wait-mode run stops reading at the NoteOn that completes the
     passage, so its stored played notes end the last note at its own key-down (zero length); keep reading until those
     keys come up or a short timeout passes, before the analyser grades wait-mode takes (mechanical).
+17. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
+    main dispatcher when Results opens; move it to a background dispatcher (injected for tests) before passages grow
+    long (mechanical).
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never

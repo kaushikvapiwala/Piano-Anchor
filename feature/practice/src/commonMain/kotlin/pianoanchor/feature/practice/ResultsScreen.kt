@@ -3,8 +3,10 @@ package pianoanchor.feature.practice
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,40 +20,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.jetbrains.compose.resources.PluralStringResource
 import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.Band
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_back_to_pianos
-import pianoanchor.feature.practice.resources.practice_list_join
 import pianoanchor.feature.practice.resources.practice_retry
 import pianoanchor.feature.practice.resources.results_caption
+import pianoanchor.feature.practice.resources.results_caption_tempo
 import pianoanchor.feature.practice.resources.results_headline_clean
 import pianoanchor.feature.practice.resources.results_headline_good
 import pianoanchor.feature.practice.resources.results_headline_keep_practising
 import pianoanchor.feature.practice.resources.results_not_found
-import pianoanchor.feature.practice.resources.results_pitch_description
-import pianoanchor.feature.practice.resources.results_pitch_every_note_right
-import pianoanchor.feature.practice.resources.results_pitch_incomplete_chords
-import pianoanchor.feature.practice.resources.results_pitch_label
-import pianoanchor.feature.practice.resources.results_pitch_value
-import pianoanchor.feature.practice.resources.results_pitch_wrong_notes
 import pianoanchor.feature.practice.resources.results_try_again
 import pianoanchor.feature.practice.resources.results_unavailable
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
-
-/** Columns of the mock's tile grid; Phase 1 fills only the first (Pitch). */
-private const val TILE_COLUMNS = 4
 
 /**
  * The results screen (Living Studio mock, `docs/ui/living-studio.md`): the run's caption and headline, the Pitch
@@ -109,7 +98,7 @@ public fun ResultsScreen(
 private fun Header(state: ResultsState.Ready) {
     Column {
         Text(
-            stringResource(Res.string.results_caption, state.passageTitle, state.runNumber.toString()),
+            caption(state),
             style = MaterialTheme.typography.bodySmall,
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -124,6 +113,19 @@ private fun Header(state: ResultsState.Ready) {
     }
 }
 
+@Composable
+private fun caption(state: ResultsState.Ready): String =
+    if (state.tempoBpm == null) {
+        stringResource(Res.string.results_caption, state.passageTitle, state.runNumber.toString())
+    } else {
+        stringResource(
+            Res.string.results_caption_tempo,
+            state.passageTitle,
+            state.runNumber.toString(),
+            state.tempoBpm.toString(),
+        )
+    }
+
 private fun headline(band: Band): StringResource =
     when (band) {
         Band.CLEAN -> Res.string.results_headline_clean
@@ -136,9 +138,13 @@ private fun Ready(
     state: ResultsState.Ready,
     onTryAgain: () -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        PitchTile(state, Modifier.weight(1f))
-        repeat(TILE_COLUMNS - 1) { Spacer(Modifier.weight(1f)) }
+    Row(modifier = Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        val tile = Modifier.weight(1f).fillMaxHeight()
+        val blank = Modifier.weight(1f)
+        PitchTile(state, tile)
+        if (state.timing != null) TimingTileView(state.timing, tile) else Spacer(blank)
+        if (state.length != null) LengthTileView(state.length, tile) else Spacer(blank)
+        if (state.hesitation != null) HesitationTileView(state.hesitation, tile) else Spacer(blank)
     }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         Button(onClick = onTryAgain, modifier = Modifier.height(44.dp), shape = RoundedCornerShape(22.dp)) {
@@ -146,74 +152,3 @@ private fun Ready(
         }
     }
 }
-
-/** "PITCH", "3 / 3" and what went wrong; TalkBack reads it as one sentence. */
-@Composable
-private fun PitchTile(
-    state: ResultsState.Ready,
-    modifier: Modifier = Modifier,
-) {
-    val detail = pitchDetail(state)
-    val description =
-        stringResource(
-            Res.string.results_pitch_description,
-            state.correctSteps.toString(),
-            state.stepCount.toString(),
-            detail,
-        )
-    Surface(
-        modifier = modifier.clearAndSetSemantics { contentDescription = description },
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.pianoAnchorColors.tile,
-        shadowElevation = 1.dp,
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
-            Text(
-                stringResource(Res.string.results_pitch_label),
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                stringResource(
-                    Res.string.results_pitch_value,
-                    state.correctSteps.toString(),
-                    state.stepCount.toString(),
-                ),
-                fontFamily = displayFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                color = MaterialTheme.pianoAnchorColors.correct,
-            )
-            Text(
-                detail,
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-/** "every note right", or the slips that are not zero: "1 wrong note", "2 wrong notes, 1 chord incomplete". */
-@Composable
-private fun pitchDetail(state: ResultsState.Ready): String {
-    val slips =
-        listOfNotNull(
-            slip(Res.plurals.results_pitch_wrong_notes, state.wrongNotes),
-            slip(Res.plurals.results_pitch_incomplete_chords, state.incompleteChords),
-        )
-    return if (slips.isEmpty()) {
-        stringResource(Res.string.results_pitch_every_note_right)
-    } else {
-        slips.joinToString(stringResource(Res.string.practice_list_join))
-    }
-}
-
-/** "[count] …" from [plural], or null when [count] is zero. */
-@Composable
-private fun slip(
-    plural: PluralStringResource,
-    count: Int,
-): String? = if (count > 0) pluralStringResource(plural, count, count.toString()) else null
