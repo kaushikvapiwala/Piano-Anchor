@@ -33,3 +33,15 @@ class TestPassagesTest {
         assertEquals("Test passage", passage.title)
     }
 }
+
+class SkillGraphOfTest {
+    @Test
+    fun skillGraphOfBuildsSkillsFromIdAndPrerequisites() {
+        val graph = skillGraphOf("b" to setOf("a"), "a" to emptySet())
+        assertEquals(listOf("a", "b"), graph.skills.map { it.id })
+        assertEquals(setOf("a"), graph.byId("b")?.prerequisites)
+    }
+
+    @Test
+    fun passageOfHasADefaultSkill() = assertEquals(setOf(TEST_SKILL_ID), passageOf(setOf(MidiNote(60))).skills)
+}
