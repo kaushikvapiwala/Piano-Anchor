@@ -13,16 +13,18 @@ CREATE TABLE instrument (
         AND (mfr_id IS NULL) = (version IS NULL))
 );
 
--- Replaces everything but first_seen_ms, which keeps the earlier of the stored and the given value.
+-- Replaces name and last_seen_ms; first_seen_ms keeps the earlier of the stored and the given value. The identity
+-- columns are replaced only by a given identity: all-null ones (a missed Identity Reply) keep the stored identity.
+-- The given four are all null or all set, so the coalesce keeps the table's all-or-none CHECK.
 upsert:
 INSERT INTO instrument(device_id, name, mfr_id, family, model, version, first_seen_ms, last_seen_ms)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(device_id) DO UPDATE SET
     name = excluded.name,
-    mfr_id = excluded.mfr_id,
-    family = excluded.family,
-    model = excluded.model,
-    version = excluded.version,
+    mfr_id = coalesce(excluded.mfr_id, instrument.mfr_id),
+    family = coalesce(excluded.family, instrument.family),
+    model = coalesce(excluded.model, instrument.model),
+    version = coalesce(excluded.version, instrument.version),
     first_seen_ms = min(instrument.first_seen_ms, excluded.first_seen_ms),
     last_seen_ms = excluded.last_seen_ms;
 

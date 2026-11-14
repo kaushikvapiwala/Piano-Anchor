@@ -35,6 +35,10 @@ payload[0] = `7E`, payload[2] = `06`, payload[3] = `02`; anything else is some o
 ## Fallback
 Many Bluetooth pianos never answer. No output device, a send that fails because the device is gone, or no reply
 before the timeout all store the instrument **without an identity**. None of these is an error for the learner.
+A piano already stored with an identity keeps it: storing without one updates the name and last-seen time only, so a
+reply lost on one reconnect doesn't erase the model. A reply with a different identity (after a firmware update, say)
+replaces the stored one. This relies on stable device ids: a `sys:<id>` fallback id (`docs/protocols/android-midi.md`)
+can name another piano after a reconnect, which would then show the earlier piano's model.
 A piano that drops before the reply or the timeout is asked again when it reconnects.
 
 Out of scope for now: retries, a manufacturer-name table, feature gating by model, and recognising the same piano

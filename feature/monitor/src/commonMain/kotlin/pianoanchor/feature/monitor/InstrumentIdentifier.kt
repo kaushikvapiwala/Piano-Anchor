@@ -34,9 +34,9 @@ internal class InstrumentIdentifier(
 
     /**
      * Sends the Identity Request to [device]'s output, waits up to `Tunables.IDENTITY_REPLY_TIMEOUT_MS` for the reply,
-     * then stores the instrument (without an identity when there is no output, sending fails or no reply came) and
-     * returns the stored record. When the store fails ([StorageUnavailableException]) it returns the instrument as
-     * seen now, not saved.
+     * then stores the instrument and returns the stored record. With no output, a failed send or no reply it stores
+     * no new identity, so the record keeps any identity stored before. When the store fails
+     * ([StorageUnavailableException]) it returns the instrument as seen now, not saved.
      */
     suspend fun identify(device: MidiDevice): Identified {
         val awaited = CompletableDeferred<InstrumentIdentity>().also { reply = it } // armed before sending

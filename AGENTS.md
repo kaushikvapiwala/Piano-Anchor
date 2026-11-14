@@ -10,6 +10,7 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 - Claude Code cloud sessions: the `SessionStart` hook runs `scripts/cloud_setup.sh` (Android SDK into `~/android-sdk`; installs the git hooks, whose pre-push skips `ciBuild` there because CI runs it; no-op unless `CLAUDE_CODE_REMOTE=true`; also a Gradle init script that mirrors Maven Central because it answers 429 there), so `fastCheck` works there; Gradle fetches JDK 25 itself
 - `./gradlew generateDocs` — regenerate `docs/generated/` from the code. Generated docs are regenerated, never hand-edited (`GeneratedDocsTest` fails when they are stale)
 - `./gradlew spotlessApply` — auto-format (ktlint official style). Never hand-format.
+  Neither ktlint 1.8 nor plain `detekt` flags unused imports: remove them yourself when you move code.
 - `./gradlew ciBuild` — everything CI's build job runs (`fastCheck` and `check` in every module, both apps); `./gradlew :app-android:assembleDebug`, `./gradlew :app-desktop:run`
 - One module: `./gradlew :engine:desktopTest`, `./gradlew :architecture-tests:test`
 - `./gradlew :app-android:atdPixelDebugAndroidTest` — the emulator end-to-end test (needs KVM; CI runs it in `.github/workflows/e2e.yml`, not `fastCheck`)
