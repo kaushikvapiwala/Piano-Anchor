@@ -61,15 +61,23 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
    clean takes, labelled error injection and the classification score.
 7. **M1.3 Offline performance analyser** (spec #61) [6]: alignment, tempo fit and every M1 error kind; lands the M1
    exit test (≥ 95 % overall, ≥ 90 % per kind, ≤ 5 % false alarms).
-8. **M1 grill** (owner): tempo-mode practice (metronome, real-time matcher, tempo-ladder rungs, Timing tile; M1.4)
-   and per-piano latency calibration (M1.5) need a `grill` session before they can be specced.
+8. **M1.4a Metronome port and Android click adapter** (spec #63): `MetronomePort`, synthesised clicks on a
+   low-latency `AudioTrack` in a new `platform/android-audio` module.
+9. **M1.4b Staff rhythm** (spec #64) [5]: time signature, bar lines, hollow half and whole notes, proportional
+   spacing.
+10. **M1.4c Tempo-mode runs** (spec #65) [7, 8, 9]: tempo rungs, one-bar count-in, clock-driven cursor, live judge,
+    metronome, attempts store tempo and played notes (schema 1→2).
+11. **M1.4d Results tiles** (spec #66) [10]: Timing, Note length and Hesitation tiles from the analyser; tempo in the
+    caption.
+12. **M1.5 Latency calibration** (spec #67) [8, 10, 11]: tap along to 16 clicks, a calibration port, offered before a
+    piano's first timed run and from the monitor (schema 2→3).
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |
 |---|---|---|
-| M1 | MIDI input, real-time matcher, offline analyser (🔄 specced: #59–#61) | Recorded fixtures with injected errors classified ≥ 95% correctly |
+| M1 | MIDI input, real-time matcher, offline analyser (🔄 specced: #59–#61, #63–#67) | Recorded fixtures with injected errors classified ≥ 95% correctly |
 | M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) | Matches reference test vectors; simulated learner behaves sensibly |
 | M3 | First playable coach (units 0–2), daily plan, first APK release | Used daily for 2 weeks |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit | All tracks share the daily plan |
