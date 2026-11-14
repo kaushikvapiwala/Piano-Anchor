@@ -138,9 +138,13 @@ is dropped before the final alignment. A key brushed between two chord notes, ea
 belong to either; the analyser picks the one nearest in time.
 
 ### 2. Tempo fit
-A least-squares line of onset nanos against onset ticks, over exact-pitch matches. `fittedTempoBpm` comes from its
-slope. It is null with fewer than two exact matches at distinct onsets, or when the line doesn't rise. A long pause
-pulls the fitted line too, so `Fitted` and `Untimed` hesitation checks are less sharp than `Target` ones.
+A line of onset nanos against onset ticks, over exact-pitch matches. Matches are grouped by tick, keeping the
+earliest onset of each (a chord's first note). The slope (nanos per tick) is the median of the gap tempos between
+consecutive distinct ticks, the mean of the two middle values for an even count; the intercept is the median of
+each onset's offset from that slope. `fittedTempoBpm` comes from the slope. It is null with fewer than two distinct
+ticks, or when the slope isn't positive. A single long pause is one outlying gap, so with three or more gaps it
+leaves the line alone and `Fitted` and `Untimed` hesitation checks stay as sharp as `Target` ones. Known limit:
+with only two gaps the median is their mean, so a pause in one of them still moves the line.
 
 ### 3. Classification
 In score order, step by step:

@@ -346,6 +346,13 @@ class PerformanceAnalyserTest {
     }
 
     @Test
+    fun aLongPauseInAFittedTakeIsAHesitationAndLaterNotesAreOnTime() {
+        val passage = passageOf(setOf(c4), setOf(d4), setOf(e4), setOf(f4), setOf(g4))
+        val paused = listOf(note(c4, 0), note(d4, 1000), note(e4, 2000), note(f4, 3000), note(g4, 7000))
+        assertEquals(listOf(HESITATION to at(4, g4)), kinds(paused, passage, Fitted))
+    }
+
+    @Test
     fun fittedWithoutATempoJudgesPitchOnly() {
         val take = listOf(note(c4, 0, lengthMs = 50), note(MidiNote(74), 1000))
         assertEquals(listOf(OCTAVE to at(1, d4), MISSED_NOTE to at(2, e4)), kinds(take, tempo = Fitted))
