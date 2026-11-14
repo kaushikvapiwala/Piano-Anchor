@@ -78,6 +78,16 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
     limits; recorded after every saved run.
 16. **M2.5 Learner simulation exit check** (spec #73) [15]: seeded 90-day simulation (retention, load, prerequisite
     order, recovery after a skip).
+18. **M3.1 Content format** (spec #76) [5, 14]: note text, rights records, units; the rights document generated from the
+    content.
+19. **M3.2 Units 0–2 content** (spec #77, needs-owner: owner reviews the skill and piece list) [18].
+20. **M3.3 Settings** (spec #78) [3, 10]: settings port on SQLite and a Settings screen.
+21. **M3.4 Today and session composer** (spec #79) [16, 19, 20]: cold open, lesson and song cards; Today becomes the
+    start screen.
+22. **M3.5 Onboarding** (spec #80) [12, 16, 19, 20, 21]: connect, echo C-E-G, calibrate, choose a start unit.
+23. **M3.6 Update check** (spec #81) [20, 21]: the opt-out daily check, the app's only network call.
+24. **M3.7 Release pipeline** (spec #82) [2]: tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
+    exit check.
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
 
@@ -86,7 +96,7 @@ Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay t
 |---|---|---|
 | M1 | MIDI input, real-time matcher, offline analyser (🔄 specced: #59–#61, #63–#67) | Recorded fixtures with injected errors classified ≥ 95% correctly |
 | M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) (specced: #69–#73) | Matches reference test vectors; simulated learner behaves sensibly |
-| M3 | First playable coach (units 0–2), daily plan, first APK release | Used daily for 2 weeks |
+| M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82) | Used daily for 2 weeks |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting | Unaided pass required before "learned" |
 | M6 | Curriculum units 3–8, sight-reading staircase, placement | Placement reproducible |
