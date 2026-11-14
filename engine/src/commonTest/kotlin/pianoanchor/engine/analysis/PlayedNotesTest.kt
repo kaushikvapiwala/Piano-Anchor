@@ -32,6 +32,10 @@ class PlayedNotesTest {
         value: Int,
     ) = ControlChange(t, 0, 64, value)
 
+    private fun allNotesOff(t: Long) = ControlChange(t, 3, 123, 0)
+
+    private fun allSoundOff(t: Long) = ControlChange(t, 3, 120, 0)
+
     private fun notes(vararg events: MidiEvent) = PlayedNotes.from(events.toList())
 
     @Test
@@ -83,6 +87,44 @@ class PlayedNotesTest {
     fun unfinishedNoteEndsAtTheLastEvent() {
         val played = notes(on(100, c4), on(150, e4), off(250, e4))
         assertEquals(listOf(PlayedNote(c4, 64, 100, 250, 250), PlayedNote(e4, 64, 150, 250, 250)), played)
+    }
+
+    @Test
+    fun allNotesOffEndsEveryDownKey() {
+        val played = notes(on(100, c4), on(110, e4), allNotesOff(300), on(400, g4), off(500, g4))
+        val expected =
+            listOf(
+                PlayedNote(c4, 64, 100, 300, 300),
+                PlayedNote(e4, 64, 110, 300, 300),
+                PlayedNote(g4, 64, 400, 500, 500),
+            )
+        assertEquals(expected, played)
+    }
+
+    @Test
+    fun modeChangesActAsAllNotesOff() {
+        (124..127).forEach { controller ->
+            val played = notes(on(100, c4), ControlChange(300, 0, controller, 0), off(400, c4))
+            assertEquals(listOf(PlayedNote(c4, 64, 100, 300, 300)), played, "CC$controller")
+        }
+    }
+
+    @Test
+    fun allNotesOffUnderPedalKeepsNotesSounding() {
+        val played = notes(pedal(50, 127), on(100, c4), allNotesOff(300), pedal(600, 0))
+        assertEquals(listOf(PlayedNote(c4, 64, 100, 300, 600)), played)
+    }
+
+    @Test
+    fun allSoundOffEndsDownAndHeldNotes() {
+        val played = notes(pedal(50, 127), on(100, c4), off(200, c4), on(250, e4), allSoundOff(300), pedal(600, 0))
+        assertEquals(listOf(PlayedNote(c4, 64, 100, 200, 300), PlayedNote(e4, 64, 250, 300, 300)), played)
+    }
+
+    @Test
+    fun allSoundOffKeepsPedalState() {
+        val played = notes(pedal(50, 127), allSoundOff(100), on(200, c4), off(300, c4), pedal(500, 0))
+        assertEquals(listOf(PlayedNote(c4, 64, 200, 300, 500)), played)
     }
 
     @Test

@@ -11,6 +11,15 @@ import pianoanchor.core.model.PlayedNote
 /** The sustain (damper) pedal's controller number (MIDI 1.0 specification, control change 64). */
 private const val SUSTAIN_CONTROLLER = 64
 
+/** All Sound Off (MIDI 1.0 channel mode message, control change 120): every sounding note stops at once. */
+private const val ALL_SOUND_OFF_CONTROLLER = 120
+
+/**
+ * All Notes Off and the mode changes that imply it (MIDI 1.0 channel mode messages: control change 123, and Omni
+ * Off/On and Mono/Poly On at 124–127): every key comes up, the pedal still holds.
+ */
+private val ALL_NOTES_OFF_CONTROLLERS = (123..127).toSet()
+
 /** Sustain pedal values at or above this are "down" (MIDI 1.0: 0–63 off, 64–127 on). */
 private const val SUSTAIN_DOWN_MIN = 64
 
@@ -19,9 +28,11 @@ public object PlayedNotes {
     /**
      * Pairs NoteOn/NoteOff per pitch on every channel (the parser already turns NoteOn velocity 0 into NoteOff).
      * CC64 >= 64 holds sounding notes until the pedal drops below 64. Striking a pitch that is still down or still
-     * sounding ends the earlier note there. A note still down or held at the end of [events] ends at the last
-     * event's time. Events are taken in timestamp order (a stable sort keeps equal times in list order). Notes come
-     * in [PLAYED_NOTE_ORDER]; other events are ignored.
+     * sounding ends the earlier note there. CC123 (All Notes Off, also implied by CC124–127) brings every down key
+     * up, as NoteOffs would; CC120 (All Sound Off) also ends every note the pedal holds, leaving the pedal as it was.
+     * A note still down or held at the end of [events] ends at the last event's time. Events are taken in timestamp
+     * order (a stable sort keeps equal times in list order). Notes come in [PLAYED_NOTE_ORDER]; other events are
+     * ignored.
      */
     public fun from(events: List<MidiEvent>): List<PlayedNote> {
         val ordered = events.sortedBy { it.timestampNanos }
@@ -47,18 +58,40 @@ private class Extraction {
         when (event) {
             is NoteOn -> strike(event.note, event.velocity, t)
             is NoteOff -> release(event.note, t)
-            is ControlChange -> if (event.controller == SUSTAIN_CONTROLLER) pedal(event.value >= SUSTAIN_DOWN_MIN, t)
+            is ControlChange -> control(event, t)
             else -> Unit
         }
     }
 
     fun finish(lastNanos: Long?): List<PlayedNote> {
         lastNanos?.let { end ->
-            down.keys.toList().forEach { release(it, end) }
+            releaseAll(end)
             pedal(false, end)
         }
         return done.sortedWith(PLAYED_NOTE_ORDER)
     }
+
+    private fun control(
+        event: ControlChange,
+        t: Long,
+    ) {
+        when (event.controller) {
+            SUSTAIN_CONTROLLER -> {
+                pedal(event.value >= SUSTAIN_DOWN_MIN, t)
+            }
+
+            in ALL_NOTES_OFF_CONTROLLERS -> {
+                releaseAll(t)
+            }
+
+            ALL_SOUND_OFF_CONTROLLER -> {
+                releaseAll(t)
+                silenceHeld(t)
+            }
+        }
+    }
+
+    private fun releaseAll(t: Long) = down.keys.toList().forEach { release(it, t) }
 
     private fun strike(
         pitch: MidiNote,
@@ -84,9 +117,11 @@ private class Extraction {
         t: Long,
     ) {
         pedalDown = isDown
-        if (!isDown) {
-            held.values.forEach { done += it.copy(soundingEndNanos = t) }
-            held.clear()
-        }
+        if (!isDown) silenceHeld(t)
+    }
+
+    private fun silenceHeld(t: Long) {
+        held.values.forEach { done += it.copy(soundingEndNanos = t) }
+        held.clear()
     }
 }
