@@ -8,7 +8,7 @@ support, curriculum ideas and bug reports are all welcome.
 1. Install the Android SDK (Android Studio is easiest). Gradle downloads the right JDK (25) by itself.
 2. Clone the repo and run `./gradlew fastCheck`. It should pass before you change anything.
    Then run `./gradlew installGitHooks` once: commits are auto-formatted and checked, pushes run the CI build (branch deletions skip it).
-   Claude Code cloud sessions install the Android SDK themselves: a `SessionStart` hook runs `scripts/cloud_setup.sh`, which does nothing elsewhere.
+   Claude Code cloud sessions install the Android SDK and the git hooks themselves: a `SessionStart` hook runs `scripts/cloud_setup.sh`, which does nothing elsewhere. There, pre-push skips the CI build (CI runs it on the PR).
 3. Run the apps: `./gradlew :app-android:assembleDebug` or `./gradlew :app-desktop:run`.
 
 ## How we work

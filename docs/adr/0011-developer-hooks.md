@@ -13,7 +13,8 @@ must install, and our hooks only call Gradle tasks that already exist.
 - Git hooks are plain POSIX shell scripts in `.githooks/`, enabled once per clone with
   `./gradlew installGitHooks` (sets `core.hooksPath`). pre-commit: Spotless on staged Kotlin, then
   `fastCheck` (which includes the gitlink guard); commit-msg: DCO sign-off; pre-push: `ciBuild`, the same
-  task CI's build job runs.
+  task CI's build job runs. Claude Code cloud sessions get the hooks from `scripts/cloud_setup.sh`; there
+  pre-push skips `ciBuild` (minutes in a container, and CI runs it on every PR).
 - Claude Code hooks live in `.claude/settings.json` with Python scripts in `.claude/hooks/`: deny edits
   outside the repo, in `.git/` or in generated docs (docs/generated, planned); ask the user before edits to
   hook or settings files; format each edited Kotlin file (Spotless IDE hook); block stopping while
