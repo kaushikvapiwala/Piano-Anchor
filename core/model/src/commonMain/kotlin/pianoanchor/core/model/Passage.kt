@@ -6,7 +6,7 @@ package pianoanchor.core.model
  */
 public const val TICKS_PER_QUARTER: Int = 960
 
-/** The slowest written tempo a passage may state: below it a beat lasts over 3 s and stops feeling like a pulse. */
+/** The slowest written tempo a passage may state: below it a quarter lasts over 3 s and stops feeling like a pulse. */
 public const val MIN_TEMPO_BPM: Int = 20
 
 /** The fastest written tempo a passage may state: above it a quarter lasts under 200 ms, past any beginner piece. */
