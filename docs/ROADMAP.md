@@ -71,6 +71,15 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
     caption.
 12. **M1.5 Latency calibration** (spec #67) [8, 10, 11]: tap along to 16 clicks, a calibration port, offered before a
     piano's first timed run and from the monitor (schema 2→3).
+13. **M2.1 FSRS-6 memory model** (spec #69): pure-Kotlin FSRS-6 in the engine, checked against committed py-fsrs
+    golden vectors.
+14. **M2.2 Skill graph** (spec #70) [5]: skills with prerequisites (validated DAG); passages declare their skills.
+15. **M2.3 Learner storage** (spec #71) [13, 14]: review log plus cached skill state behind a learner repository port;
+    adds kotlinx-datetime (ADR).
+16. **M2.4 Learner model** (spec #72) [13, 14, 15]: cold checks rated from the band, learned rule, due list and daily
+    limits; recorded after every saved run.
+17. **M2.5 Learner simulation exit check** (spec #73) [16]: seeded 90-day simulation (retention, load, prerequisite
+    order, recovery after a skip).
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`.
 
@@ -78,7 +87,7 @@ Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay t
 | Milestone | Scope | Exit check |
 |---|---|---|
 | M1 | MIDI input, real-time matcher, offline analyser (🔄 specced: #59–#61, #63–#67) | Recorded fixtures with injected errors classified ≥ 95% correctly |
-| M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) | Matches reference test vectors; simulated learner behaves sensibly |
+| M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) (specced: #69–#73) | Matches reference test vectors; simulated learner behaves sensibly |
 | M3 | First playable coach (units 0–2), daily plan, first APK release | Used daily for 2 weeks |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting | Unaided pass required before "learned" |
