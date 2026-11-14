@@ -62,7 +62,7 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 7. **M1.3 Offline performance analyser** (spec #61) [6]: alignment, tempo fit and every M1 error kind; lands the M1
    exit test (≥ 95 % overall, ≥ 90 % per kind, ≤ 5 % false alarms).
 8. **M1.4a Metronome port and Android click adapter** (spec #63): `MetronomePort`, synthesised clicks on a
-   low-latency `AudioTrack` in a new `platform/android-audio` module.
+   low-latency `AudioTrack` in a new android-audio platform module.
 9. **M1.4b Staff rhythm** (spec #64) [5]: time signature, bar lines, hollow half and whole notes, proportional
    spacing.
 10. **M1.4c Tempo-mode runs** (spec #65) [7, 8, 9]: tempo rungs, one-bar count-in, clock-driven cursor, live judge,
