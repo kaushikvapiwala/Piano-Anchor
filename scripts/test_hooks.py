@@ -467,6 +467,21 @@ class NextUpOrderTest(unittest.TestCase):
         self.assertEqual(check_docs.check_next_up((ROOT / "docs" / "ROADMAP.md").read_text(encoding="utf-8")), [])
 
 
+class PluginRepositoriesTest(unittest.TestCase):
+    """Every build resolves plugins from Maven Central before the Plugin Portal: the portal redirects Maven Central
+    artifacts to repo.maven.apache.org, which bypasses the cloud mirror in scripts/cloud_setup.sh and fails on 429."""
+
+    def test_every_settings_file_lists_maven_central_before_the_plugin_portal(self) -> None:
+        for settings in sorted(ROOT.glob("**/settings.gradle.kts")):
+            if "build" in settings.relative_to(ROOT).parts[:-1]:
+                continue
+            text = settings.read_text(encoding="utf-8")
+            block = text[text.find("pluginManagement") :] if "pluginManagement" in text else ""
+            with self.subTest(settings=str(settings.relative_to(ROOT))):
+                self.assertIn("mavenCentral()", block, "no pluginManagement repositories with mavenCentral()")
+                self.assertLess(block.index("mavenCentral()"), block.index("gradlePluginPortal()"))
+
+
 class FailureSummaryTest(unittest.TestCase):
     def test_keeps_only_what_went_wrong_sections(self) -> None:
         output = "noise\n* What went wrong:\nTask :a failed\n\n* Try:\n> help\n* What went wrong:\nTask :b failed\n"
