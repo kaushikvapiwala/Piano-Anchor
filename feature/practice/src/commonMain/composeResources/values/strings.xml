@@ -19,6 +19,9 @@
     <string name="practice_announce_wrong">Wrong, %1$s</string>
     <string name="practice_disconnected">Piano disconnected</string>
     <string name="practice_back_to_pianos">Back to pianos</string>
+    <string name="practice_save_failed">Couldn't save this run.</string>
+    <string name="practice_retry">Retry</string>
+    <string name="practice_discard">Discard</string>
     <string name="results_caption">%1$s · run %2$s · wait mode</string>
     <string name="results_headline_clean">Every note right.</string>
     <string name="results_headline_good">Mostly right. A few slips to tidy.</string>
@@ -37,4 +40,5 @@
     <string name="results_pitch_description">Pitch: %1$s of %2$s correct, %3$s</string>
     <string name="results_try_again">Try again</string>
     <string name="results_not_found">Couldn't find this run</string>
+    <string name="results_unavailable">Couldn't load this run.</string>
 </resources>

@@ -38,12 +38,17 @@ internal fun BackButton(onBack: () -> Unit) {
     }
 }
 
-/** The living-studio error card: [message] and one [action] button that calls [onAction]. */
+/** A button on an [ErrorCard]: its [label] and what it does. */
+internal class CardAction(
+    val label: String,
+    val onClick: () -> Unit,
+)
+
+/** The living-studio error card: [message] and a text button per action, in order. */
 @Composable
 internal fun ErrorCard(
     message: String,
-    action: String,
-    onAction: () -> Unit,
+    vararg actions: CardAction,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -52,11 +57,13 @@ internal fun ErrorCard(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, end = 8.dp)) {
             Text(message, modifier = Modifier.weight(1f))
-            TextButton(
-                onClick = onAction,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer),
-            ) {
-                Text(action)
+            actions.forEach { action ->
+                TextButton(
+                    onClick = action.onClick,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer),
+                ) {
+                    Text(action.label)
+                }
             }
         }
     }

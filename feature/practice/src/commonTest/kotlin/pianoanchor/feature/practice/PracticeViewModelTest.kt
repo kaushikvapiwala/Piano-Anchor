@@ -1,5 +1,6 @@
 package pianoanchor.feature.practice
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -9,12 +10,15 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.StepCorrect
+import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.WrongNote
+import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Passages
 import pianoanchor.testing.FakeAttemptRepository
@@ -25,8 +29,10 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -51,9 +57,18 @@ class PracticeViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun TestScope.practice(device: MidiDevice = piano.device): PracticeViewModel =
-        PracticeViewModel(device, Passages.CDE, piano, attempts, wallClock) { "attempt-${++ids}" }
+    private fun TestScope.practice(
+        device: MidiDevice = piano.device,
+        repository: AttemptRepositoryPort = attempts,
+    ): PracticeViewModel =
+        PracticeViewModel(device, Passages.CDE, piano, repository, wallClock) { "attempt-${++ids}" }
             .also { runCurrent() }
+
+    private fun TestScope.playCde() {
+        tap(c4)
+        tap(d4)
+        tap(e4)
+    }
 
     /** Presses and releases [note] [gapMs] after the previous note, then lets the ViewModel react. */
     private fun TestScope.tap(
@@ -298,5 +313,136 @@ class PracticeViewModelTest {
 
             assertEquals(PracticeConnection.CONNECTED, vm.state.value.connection)
             assertEquals(1, vm.state.value.currentStep)
+        }
+
+    // Storage failure: the graded attempt is kept for Retry or Discard
+
+    @Test
+    fun failedSaveShowsSaveFailedAndNoFinishedAttemptId() =
+        runTest(dispatcher) {
+            attempts.failing = true
+            val vm = practice()
+
+            playCde()
+
+            assertTrue(vm.state.value.saveFailed)
+            assertNull(vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun retrySaveAfterRecoverySavesTheSameAttemptIdAndSetsFinishedAttemptId() =
+        runTest(dispatcher) {
+            attempts.failing = true
+            val vm = practice()
+            playCde()
+
+            attempts.failing = false
+            vm.retrySave()
+            runCurrent()
+
+            assertFalse(vm.state.value.saveFailed)
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+            assertEquals(Band.CLEAN, assertNotNull(attempts.get("attempt-1")).band)
+        }
+
+    @Test
+    fun retrySaveThatFindsTheIdStoredCountsAsSaved() =
+        runTest(dispatcher) {
+            // The first save commits but reports a failure (e.g. the disk filled while confirming it).
+            val commitsThenFails =
+                object : AttemptRepositoryPort by attempts {
+                    var calls = 0
+
+                    override suspend fun save(attempt: Attempt) {
+                        attempts.save(attempt)
+                        if (++calls == 1) throw StorageUnavailableException("save failed")
+                    }
+                }
+            val vm = practice(repository = commitsThenFails)
+            playCde()
+            assertTrue(vm.state.value.saveFailed)
+
+            vm.retrySave()
+            runCurrent()
+
+            assertFalse(vm.state.value.saveFailed)
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun retrySaveThatFailsAgainStaysFailed() =
+        runTest(dispatcher) {
+            attempts.failing = true
+            val vm = practice()
+            playCde()
+
+            vm.retrySave()
+            runCurrent()
+
+            assertTrue(vm.state.value.saveFailed)
+            assertNull(vm.state.value.finishedAttemptId)
+
+            attempts.failing = false // the attempt is still kept for a later retry
+            vm.retrySave()
+            runCurrent()
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun aTapWhileARetryRunsIsIgnored() =
+        runTest(dispatcher) {
+            val answer = CompletableDeferred<Unit>()
+            var saves = 0
+            val slowRetry =
+                object : AttemptRepositoryPort by attempts {
+                    override suspend fun save(attempt: Attempt) {
+                        if (++saves == 1) throw StorageUnavailableException("save failed")
+                        answer.await()
+                        attempts.save(attempt)
+                    }
+                }
+            val vm = practice(repository = slowRetry)
+            playCde()
+
+            vm.retrySave()
+            runCurrent()
+            vm.retrySave()
+            runCurrent()
+            answer.complete(Unit)
+            runCurrent()
+
+            assertEquals(2, saves)
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun retrySaveWithNothingUnsavedDoesNothing() =
+        runTest(dispatcher) {
+            val vm = practice()
+
+            vm.retrySave()
+            runCurrent()
+
+            assertEquals(PracticeState.start(Passages.CDE), vm.state.value)
+        }
+
+    @Test
+    fun discardRunStartsAFreshRun() =
+        runTest(dispatcher) {
+            attempts.failing = true
+            val vm = practice()
+            playCde()
+
+            vm.discardRun()
+            runCurrent()
+            assertEquals(PracticeState.start(Passages.CDE), vm.state.value)
+            vm.retrySave() // the discarded attempt is gone
+            runCurrent()
+            assertFalse(vm.state.value.saveFailed)
+
+            attempts.failing = false
+            playCde()
+            assertEquals("attempt-2", vm.state.value.finishedAttemptId)
+            assertNull(attempts.get("attempt-1"))
         }
 }

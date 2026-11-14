@@ -9,7 +9,8 @@ import pianoanchor.core.model.Passage
  * [wrongKeys] those of them that were wrong when pressed. [flash] is
  * the last pressed key for `Tunables.KEY_FLASH_MS`; [lastKey] is the same key until the next one is pressed (the
  * key strip's "last key" text). [finishedAttemptId] is set once the completed attempt is saved: the screen then
- * goes to Results.
+ * goes to Results. [saveFailed] is true while a completed attempt could not be saved (the screen offers Retry and
+ * Discard).
  */
 public data class PracticeState(
     val passageTitle: String,
@@ -21,6 +22,7 @@ public data class PracticeState(
     val lastKey: KeyFlash? = null,
     val connection: PracticeConnection = PracticeConnection.CONNECTED,
     val finishedAttemptId: String? = null,
+    val saveFailed: Boolean = false,
 ) {
     public companion object {
         /** The state before the first note of [passage]: its first step waiting, the rest upcoming. */

@@ -8,6 +8,7 @@ import pianoanchor.core.model.InstrumentIdentity
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
+import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.SysEx
 import pianoanchor.core.ports.InstrumentRepositoryPort
 import pianoanchor.core.ports.MidiOutputPort
@@ -34,9 +35,10 @@ internal class InstrumentIdentifier(
     /**
      * Sends the Identity Request to [device]'s output, waits up to `Tunables.IDENTITY_REPLY_TIMEOUT_MS` for the reply,
      * then stores the instrument (without an identity when there is no output, sending fails or no reply came) and
-     * returns the stored record.
+     * returns the stored record. When the store fails ([StorageUnavailableException]) it returns the instrument as
+     * seen now, not saved.
      */
-    suspend fun identify(device: MidiDevice): Instrument? {
+    suspend fun identify(device: MidiDevice): Identified {
         val awaited = CompletableDeferred<InstrumentIdentity>().also { reply = it } // armed before sending
         val identity =
             output.outputDevices.first().firstOrNull { it.id == device.id }?.let { target ->
@@ -48,7 +50,18 @@ internal class InstrumentIdentifier(
                 }
             }
         val now = wallClock.now()
-        instruments.upsert(Instrument(device.id, device.name, identity, firstSeen = now, lastSeen = now))
-        return instruments.get(device.id)
+        val seen = Instrument(device.id, device.name, identity, firstSeen = now, lastSeen = now)
+        return try {
+            instruments.upsert(seen)
+            Identified(instruments.get(device.id) ?: seen, saved = true)
+        } catch (_: StorageUnavailableException) {
+            Identified(seen, saved = false)
+        }
     }
 }
+
+/** What [InstrumentIdentifier.identify] found: the [instrument] and whether it was [saved] to the store. */
+internal data class Identified(
+    val instrument: Instrument,
+    val saved: Boolean,
+)

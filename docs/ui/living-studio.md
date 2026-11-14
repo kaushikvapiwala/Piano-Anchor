@@ -28,6 +28,8 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
   each serves every weight.
 - **Errors** sit in an `errorContainer` card at the top of the screen, with the action that fixes them (open
   settings, turn on Bluetooth, back to pianos) and Dismiss where it applies; buttons use the card's content colour.
+  A piano the monitor couldn't store shows as usual under the card "Couldn't save this piano. It will be forgotten
+  when the app closes." (Dismiss only; the next connect tries again).
 - **Live MIDI** (note names, times) in the monitor log is set in a monospace font so columns line up.
 - **Text** comes from Compose resources (`composeResources/values/strings.xml`), never hard-coded. Every control
   has a label TalkBack can read; rows that act on a device name the device in their content description.
@@ -52,6 +54,8 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
 - **Accessibility**: the staff reads as "Treble staff. Notes C4, D4, E4. Waiting for D4."; each key is named; the
   verdict is a polite live region announcing "Correct" or "Wrong, F4".
 - **Disconnected**: the error card "Piano disconnected" with "Back to pianos"; the run is discarded.
+- **Save failed**: the error card "Couldn't save this run." with "Retry" (saves the same run again) and "Discard"
+  (drops it and starts a fresh run on the same piano).
 
 ## Results screen
 
@@ -69,3 +73,5 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
 - **Try again**: 44 dp plum pill bottom right; it practises the passage again on the same piano. Back goes to the
   pianos.
 - **Not found**: the error card "Couldn't find this run" with "Back to pianos".
+- **Unavailable** (the store can't be read): the error card "Couldn't load this run." with "Retry" and "Back to
+  pianos".

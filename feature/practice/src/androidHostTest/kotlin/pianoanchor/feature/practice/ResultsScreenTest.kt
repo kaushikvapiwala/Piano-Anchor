@@ -35,7 +35,12 @@ class ResultsScreenTest {
             val calls = mutableListOf<String>()
             setContent {
                 PianoAnchorTheme {
-                    ResultsScreen(ready, onBack = { calls += "back" }, onTryAgain = { calls += "try again" })
+                    ResultsScreen(
+                        ready,
+                        onBack = { calls += "back" },
+                        onTryAgain = { calls += "try again" },
+                        onRetry = { calls += "retry" },
+                    )
                 }
             }
 
@@ -48,8 +53,30 @@ class ResultsScreenTest {
     @Test
     fun thePitchTileReadsAsOneSentence() =
         runComposeUiTest {
-            setContent { PianoAnchorTheme { ResultsScreen(ready, onBack = {}, onTryAgain = {}) } }
+            setContent { PianoAnchorTheme { ResultsScreen(ready, onBack = {}, onTryAgain = {}, onRetry = {}) } }
 
             onNodeWithContentDescription("Pitch: 3 of 3 correct, every note right").assertExists()
+        }
+
+    @Test
+    fun unavailableOffersRetryAndBackToPianos() =
+        runComposeUiTest {
+            val calls = mutableListOf<String>()
+            setContent {
+                PianoAnchorTheme {
+                    ResultsScreen(
+                        ResultsState.Unavailable,
+                        onBack = { calls += "back" },
+                        onTryAgain = { calls += "try again" },
+                        onRetry = { calls += "retry" },
+                    )
+                }
+            }
+
+            onNodeWithText("Couldn't load this run.").assertExists()
+            onNodeWithText("Retry").performClick()
+            onNodeWithText("Back to pianos").performClick()
+
+            assertEquals(listOf("retry", "back"), calls)
         }
 }

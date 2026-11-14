@@ -22,21 +22,25 @@ public class SqlInstrumentRepositoryAdapter(
 
     override suspend fun upsert(instrument: Instrument): Unit =
         withContext(dispatcher) {
-            val identity = instrument.identity
-            queries.upsert(
-                device_id = instrument.deviceId,
-                name = instrument.name,
-                mfr_id = identity?.let { it.manufacturerId.toHex() },
-                family = identity?.family?.toLong(),
-                model = identity?.model?.toLong(),
-                version = identity?.let { it.version.toHex() },
-                first_seen_ms = instrument.firstSeen.toEpochMilliseconds(),
-                last_seen_ms = instrument.lastSeen.toEpochMilliseconds(),
-            )
+            storage("upsert") {
+                val identity = instrument.identity
+                queries.upsert(
+                    device_id = instrument.deviceId,
+                    name = instrument.name,
+                    mfr_id = identity?.let { it.manufacturerId.toHex() },
+                    family = identity?.family?.toLong(),
+                    model = identity?.model?.toLong(),
+                    version = identity?.let { it.version.toHex() },
+                    first_seen_ms = instrument.firstSeen.toEpochMilliseconds(),
+                    last_seen_ms = instrument.lastSeen.toEpochMilliseconds(),
+                )
+            }
         }
 
     override suspend fun get(deviceId: String): Instrument? =
-        withContext(dispatcher) { queries.selectByDeviceId(deviceId, ::toInstrument).executeAsOneOrNull() }
+        withContext(dispatcher) {
+            storage("get") { queries.selectByDeviceId(deviceId, ::toInstrument).executeAsOneOrNull() }
+        }
 }
 
 // The table's CHECK makes the identity columns all null or all set, so the non-null assertions cannot fail.

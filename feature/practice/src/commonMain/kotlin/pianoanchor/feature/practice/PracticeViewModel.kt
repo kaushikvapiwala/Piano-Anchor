@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
@@ -19,6 +20,7 @@ import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.MidiInputPort
@@ -33,7 +35,8 @@ import kotlin.time.Instant
  * Wait-mode practice of [passage] on [device]: follows the piano's notes with [WaitModeMatcher], shows progress and
  * the live keys, and when the passage is done grades the run ([Grader]), saves it to [attempts] and sets
  * [PracticeState.finishedAttemptId]. A run that ends early (disconnect, [restart], leaving the screen) is discarded.
- * [clock] gives the attempt's start time (at the first note); [newId] the attempt's id.
+ * When the store is unavailable the graded attempt is kept with [PracticeState.saveFailed] until [retrySave] or
+ * [discardRun]. [clock] gives the attempt's start time (at the first note); [newId] the attempt's id.
  */
 public class PracticeViewModel(
     private val device: MidiDevice,
@@ -49,6 +52,9 @@ public class PracticeViewModel(
     private var run: Job? = null
     private var flashTimer: Job? = null
 
+    /** The graded attempt whose save failed, until it is saved or discarded; null while a retry runs. */
+    private var unsaved: Attempt? = null
+
     init {
         start()
     }
@@ -56,9 +62,33 @@ public class PracticeViewModel(
     /** Discards the run and starts over, reopening the piano once the old run has closed it (one reader per input). */
     public fun restart() {
         flashTimer?.cancel()
+        unsaved = null
         mutableState.value = PracticeState.start(passage)
         start()
     }
+
+    /**
+     * Saves again the attempt whose save failed, under the same id. An id already stored means an earlier save did
+     * commit, so it counts as saved. Ignored while a retry runs or when nothing is unsaved.
+     */
+    public fun retrySave() {
+        val attempt = unsaved ?: return
+        unsaved = null // a tap while this retry runs finds nothing to retry
+        run =
+            viewModelScope.launch {
+                try {
+                    attempts.save(attempt)
+                } catch (_: IllegalArgumentException) {
+                    // Already stored: an earlier save committed after all.
+                } catch (_: StorageUnavailableException) {
+                    return@launch keepUnsaved(attempt)
+                }
+                finish(attempt)
+            }
+    }
+
+    /** Drops the attempt whose save failed and starts a fresh run on the same piano, like Try again. */
+    public fun discardRun(): Unit = restart()
 
     /**
      * Ends the run and returns once the piano is closed, so the next screen can open it (one reader per input).
@@ -104,8 +134,21 @@ public class PracticeViewModel(
                 startedAtNanos = checkNotNull(run.match.startedAtNanos),
                 events = run.events,
             )
-        attempts.save(attempt)
-        mutableState.update { it.copy(finishedAttemptId = attempt.id) }
+        try {
+            attempts.save(attempt)
+        } catch (_: StorageUnavailableException) {
+            return keepUnsaved(attempt)
+        }
+        finish(attempt)
+    }
+
+    private fun keepUnsaved(attempt: Attempt) {
+        unsaved = attempt
+        mutableState.update { it.copy(saveFailed = true) }
+    }
+
+    private fun finish(attempt: Attempt) {
+        mutableState.update { it.copy(saveFailed = false, finishedAttemptId = attempt.id) }
     }
 
     /** One run's progress: the matcher state, its events so far and the wall time of the first note. */

@@ -51,34 +51,32 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 2. **Emulator end-to-end test and CI job** (spec #57): the C-D-E loop on a Gradle Managed Device (ATD image, KVM on
    `ubuntu-latest`), fed by a test-only virtual MIDI piano (`MidiDeviceService`); runs on pushes to main and nightly,
    not on every PR.
-3. **Storage failure model** (spec #55): a domain `StorageUnavailableException` from the repository ports; the
-   monitor keeps MIDI flowing with a notice, Practice offers Retry/Discard for an unsaved run, Results offers Retry.
-4. **Keep a known identity on a missed reply** (spec #56): a null identity in `upsert` keeps the stored one
+3. **Keep a known identity on a missed reply** (spec #56): a null identity in `upsert` keeps the stored one
    (contract change, `COALESCE` in `Instrument.sq`).
-5. **M1.1 Rhythm in passages** (spec #59): step onsets and note lengths in ticks (960 per quarter), time signature
+4. **M1.1 Rhythm in passages** (spec #59): step onsets and note lengths in ticks (960 per quarter), time signature
    and written tempo; wait mode ignores them.
-6. **M1.2 Played notes and the analyser harness** (spec #60) [5]: events to played notes with the sustain pedal, seeded
+5. **M1.2 Played notes and the analyser harness** (spec #60) [4]: events to played notes with the sustain pedal, seeded
    clean takes, labelled error injection and the classification score.
-7. **M1.3 Offline performance analyser** (spec #61) [6]: alignment, tempo fit and every M1 error kind; lands the M1
+6. **M1.3 Offline performance analyser** (spec #61) [5]: alignment, tempo fit and every M1 error kind; lands the M1
    exit test (≥ 95 % overall, ≥ 90 % per kind, ≤ 5 % false alarms).
-8. **M1.4a Metronome port and Android click adapter** (spec #63): `MetronomePort`, synthesised clicks on a
+7. **M1.4a Metronome port and Android click adapter** (spec #63): `MetronomePort`, synthesised clicks on a
    low-latency `AudioTrack` in a new android-audio platform module.
-9. **M1.4b Staff rhythm** (spec #64) [5]: time signature, bar lines, hollow half and whole notes, proportional
+8. **M1.4b Staff rhythm** (spec #64) [4]: time signature, bar lines, hollow half and whole notes, proportional
    spacing.
-10. **M1.4c Tempo-mode runs** (spec #65) [7, 8, 9]: tempo rungs, one-bar count-in, clock-driven cursor, live judge,
+9. **M1.4c Tempo-mode runs** (spec #65) [6, 7, 8]: tempo rungs, one-bar count-in, clock-driven cursor, live judge,
     metronome, attempts store tempo and played notes (schema 1→2).
-11. **M1.4d Results tiles** (spec #66) [10]: Timing, Note length and Hesitation tiles from the analyser; tempo in the
+10. **M1.4d Results tiles** (spec #66) [9]: Timing, Note length and Hesitation tiles from the analyser; tempo in the
     caption.
-12. **M1.5 Latency calibration** (spec #67) [8, 10, 11]: tap along to 16 clicks, a calibration port, offered before a
+11. **M1.5 Latency calibration** (spec #67) [7, 9, 10]: tap along to 16 clicks, a calibration port, offered before a
     piano's first timed run and from the monitor (schema 2→3).
-13. **M2.1 FSRS-6 memory model** (spec #69): pure-Kotlin FSRS-6 in the engine, checked against committed py-fsrs
+12. **M2.1 FSRS-6 memory model** (spec #69): pure-Kotlin FSRS-6 in the engine, checked against committed py-fsrs
     golden vectors.
-14. **M2.2 Skill graph** (spec #70) [5]: skills with prerequisites (validated DAG); passages declare their skills.
-15. **M2.3 Learner storage** (spec #71) [13, 14]: review log plus cached skill state behind a learner repository port;
+13. **M2.2 Skill graph** (spec #70) [4]: skills with prerequisites (validated DAG); passages declare their skills.
+14. **M2.3 Learner storage** (spec #71) [12, 13]: review log plus cached skill state behind a learner repository port;
     adds kotlinx-datetime (ADR).
-16. **M2.4 Learner model** (spec #72) [13, 14, 15]: cold checks rated from the band, learned rule, due list and daily
+15. **M2.4 Learner model** (spec #72) [12, 13, 14]: cold checks rated from the band, learned rule, due list and daily
     limits; recorded after every saved run.
-17. **M2.5 Learner simulation exit check** (spec #73) [16]: seeded 90-day simulation (retention, load, prerequisite
+16. **M2.5 Learner simulation exit check** (spec #73) [15]: seeded 90-day simulation (retention, load, prerequisite
     order, recovery after a skip).
 18. **M3.1 Content format** (spec #76) [5, 14]: note text, rights records, units; the rights document generated from the
     content.

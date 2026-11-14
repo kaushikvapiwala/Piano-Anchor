@@ -33,9 +33,12 @@ import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_back_to_pianos
+import pianoanchor.feature.practice.resources.practice_discard
 import pianoanchor.feature.practice.resources.practice_disconnected
 import pianoanchor.feature.practice.resources.practice_end_run
 import pianoanchor.feature.practice.resources.practice_mode_wait
+import pianoanchor.feature.practice.resources.practice_retry
+import pianoanchor.feature.practice.resources.practice_save_failed
 import pianoanchor.feature.practice.resources.practice_tempo_disabled
 import pianoanchor.feature.practice.resources.practice_tempo_percent
 import pianoanchor.feature.practice.resources.practice_tempo_wait
@@ -47,12 +50,15 @@ private val LATER_TEMPO_RUNGS = listOf(60, 70, 85, 100)
 /**
  * The wait-mode practice screen (Living Studio mock, `docs/ui/living-studio.md`): top bar, the staff with the
  * passage and a cursor on the waiting note, and the live key strip. Stateless: see [PracticeViewModel]. [onBack]
- * leaves the run (the back button, "End run" and the disconnected card's "Back to pianos").
+ * leaves the run (the back button, "End run" and the disconnected card's "Back to pianos"); [onRetrySave] and
+ * [onDiscard] are the save-failed card's Retry and Discard.
  */
 @Composable
 public fun PracticeScreen(
     state: PracticeState,
     onBack: () -> Unit,
+    onRetrySave: () -> Unit,
+    onDiscard: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -61,10 +67,17 @@ public fun PracticeScreen(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             if (state.connection == PracticeConnection.DISCONNECTED) {
                 ErrorCard(
-                    message = stringResource(Res.string.practice_disconnected),
-                    action = stringResource(Res.string.practice_back_to_pianos),
-                    onAction = onBack,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp).fillMaxWidth(),
+                    stringResource(Res.string.practice_disconnected),
+                    CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
+                    modifier = CARD_MODIFIER,
+                )
+            }
+            if (state.saveFailed) {
+                ErrorCard(
+                    stringResource(Res.string.practice_save_failed),
+                    CardAction(stringResource(Res.string.practice_retry), onRetrySave),
+                    CardAction(stringResource(Res.string.practice_discard), onDiscard),
+                    modifier = CARD_MODIFIER,
                 )
             }
             StaffView(
@@ -144,3 +157,5 @@ private fun TempoChip(
 }
 
 private const val DISABLED_ALPHA = 0.6f
+
+private val CARD_MODIFIER = Modifier.padding(horizontal = 20.dp, vertical = 6.dp).fillMaxWidth()

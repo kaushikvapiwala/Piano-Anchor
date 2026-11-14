@@ -36,7 +36,7 @@ class ResultsScreenScreenshotTest {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             captureRoboImage("screenshots/ResultsScreen_${name}_$theme.png") {
-                PianoAnchorTheme(darkTheme = dark) { ResultsScreen(state, onBack = {}, onTryAgain = {}) }
+                PianoAnchorTheme(darkTheme = dark) { ResultsScreen(state, onBack = {}, onTryAgain = {}, onRetry = {}) }
             }
         }
     }
@@ -53,4 +53,7 @@ class ResultsScreenScreenshotTest {
 
     @Test
     fun notFound() = capture("not_found", ResultsState.NotFound)
+
+    @Test
+    fun unavailable() = capture("unavailable", ResultsState.Unavailable)
 }

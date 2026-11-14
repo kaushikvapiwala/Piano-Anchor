@@ -132,7 +132,12 @@ private fun PracticeRoute(
     val leave = { then: () -> Unit -> scope.launch { viewModel.close() }.invokeOnCompletion { then() } }
     BackHandler { leave(onBack) }
     LaunchedEffect(state.finishedAttemptId) { state.finishedAttemptId?.let { id -> leave { onFinished(id) } } }
-    PracticeScreen(state, onBack = { leave(onBack) })
+    PracticeScreen(
+        state,
+        onBack = { leave(onBack) },
+        onRetrySave = viewModel::retrySave,
+        onDiscard = viewModel::discardRun,
+    )
 }
 
 /** The results of the run saved as [attemptId], landscape like practice. "Try again" practises on the same piano. */
@@ -147,7 +152,7 @@ private fun ResultsRoute(
         koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(attemptId) }
     val state by viewModel.state.collectAsState()
     BackHandler(onBack = onBack)
-    ResultsScreen(state, onBack = onBack, onTryAgain = onTryAgain)
+    ResultsScreen(state, onBack = onBack, onTryAgain = onTryAgain, onRetry = viewModel::retry)
 }
 
 /** A ViewModel store scoped to one route: cleared when the route leaves the composition. */

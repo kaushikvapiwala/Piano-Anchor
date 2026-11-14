@@ -103,6 +103,19 @@ class MonitorScreenScreenshotTest {
             "permission_error",
             MonitorState(devices = listOf(usbPiano), error = MonitorError.BLUETOOTH_PERMISSION),
         )
+
+    @Test
+    fun storageError() =
+        capture(
+            "storage_error",
+            MonitorState(
+                devices = listOf(usbPiano),
+                selected = usbPiano,
+                connection = Connection.CONNECTED,
+                error = MonitorError.STORAGE,
+                instrument = Instrument(usbPiano.id, usbPiano.name, identity = null, firstSeen = seen, lastSeen = seen),
+            ),
+        )
 }
 
 /** Android API level the screenshots render with (the newest Robolectric supports). */

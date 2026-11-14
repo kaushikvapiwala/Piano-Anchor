@@ -10,6 +10,9 @@ public sealed interface ResultsState {
     /** No run is stored under the id. */
     public data object NotFound : ResultsState
 
+    /** The store could not be read; the screen offers Retry. */
+    public data object Unavailable : ResultsState
+
     /**
      * The run of [passageTitle], its [runNumber] among that passage's runs (oldest = 1), its [band], and its pitch:
      * [correctSteps] of [stepCount] steps, with [wrongNotes] wrong notes and [incompleteChords] chords incomplete.

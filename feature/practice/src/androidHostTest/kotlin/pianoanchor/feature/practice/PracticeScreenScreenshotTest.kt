@@ -29,7 +29,9 @@ class PracticeScreenScreenshotTest {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             captureRoboImage("screenshots/PracticeScreen_${name}_$theme.png") {
-                PianoAnchorTheme(darkTheme = dark) { PracticeScreen(state, onBack = {}) }
+                PianoAnchorTheme(
+                    darkTheme = dark,
+                ) { PracticeScreen(state, onBack = {}, onRetrySave = {}, onDiscard = {}) }
             }
         }
     }
@@ -55,6 +57,17 @@ class PracticeScreenScreenshotTest {
 
     @Test
     fun disconnected() = capture("disconnected", start.copy(connection = PracticeConnection.DISCONNECTED))
+
+    @Test
+    fun saveFailed() =
+        capture(
+            "save_failed",
+            start.copy(
+                steps = start.steps.map { it.copy(status = StepStatus.DONE) },
+                currentStep = start.steps.lastIndex,
+                saveFailed = true,
+            ),
+        )
 }
 
 /** Android API level the Robolectric tests run with (the newest Robolectric supports). */
