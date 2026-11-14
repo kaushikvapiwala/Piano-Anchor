@@ -9,12 +9,12 @@ import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PassageComplete
-import pianoanchor.core.model.Step
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.SysEx
 import pianoanchor.core.model.WrongNote
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Passages
+import pianoanchor.testing.passageOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -29,7 +29,7 @@ class WaitModeMatcherTest {
     private val d4 = MidiNote(62)
     private val e4 = MidiNote(64)
     private val g4 = MidiNote(67)
-    private val chord = Passage("test:ceg", "C major", listOf(Step(setOf(c4, e4, g4)), Step(setOf(d4))))
+    private val chord = passageOf(setOf(c4, e4, g4), setOf(d4), id = "test:ceg", title = "C major")
     private val window = Tunables.CHORD_CLUSTER_MS * MS
 
     private fun on(

@@ -25,7 +25,8 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Mistouch | An extra note one or two semitones from a correct note, played at the same moment (brushed key). |
 | MIDI discovery | Finding and connecting MIDI devices that the platform does not list until connected, such as BLE MIDI pianos: `MidiDiscoveryPort.scan`, `connect` and `disconnect`. |
 | Note monitor | The first screen (`:feature:monitor`): pick a piano, watch its live notes, record a session and export it as a fixture. |
-| Passage | A piece of music to practise (`Passage` in `:core:model`): a stable id, a title and its steps. |
+| Onset | When a step starts, in ticks from the start of the passage (`Step.onsetTicks`); onsets strictly increase. |
+| Passage | A piece of music to practise (`Passage` in `:core:model`): a stable id, a title, its steps, a time signature and a written tempo. |
 | Port | Interface through which the domain uses the outside world. Named `*Port`, lives in `core/ports`. |
 | Practice screen | The wait-mode screen (`:feature:practice`): the passage on a treble staff with a cursor on the waiting note, and a live key strip. A completed run is graded and saved; a run that ends early is discarded. |
 | Reconnect backoff | How the adapter reopens a dropped BLE MIDI device: waits that double from `BLE_RECONNECT_INITIAL_MS` up to `BLE_RECONNECT_MAX_MS`, giving up after `BLE_RECONNECT_GIVE_UP_MS`. |
@@ -33,9 +34,12 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Running status | MIDI shorthand: after one channel status byte, further data-byte groups reuse that status without repeating it. |
 | Skill node | One learnable skill (e.g. "bass clef F", "C to G chord change") in the learner's skill graph. |
 | Stable device id | The `MidiDevice.id` an adapter derives from what the platform reports (e.g. `usb:<manufacturer>/<product>/<serial>`, `ble:<address>`), so the same instrument keeps its id across reconnects when the platform reports enough to tell it apart. |
-| Step | One moment in a passage: the set of keys to press together (one note, or a chord). |
+| Step | One moment in a passage: the keys to press together (one note, or a chord) at its onset, each with a written length in ticks (`ScoreNote`). Wait mode reads only its pitches. |
 | SysEx | System Exclusive: a variable-length, vendor-specific MIDI message framed by 0xF0 and 0xF7. |
 | Tempo ladder | The practice screen's tempo rungs: Wait, then 60/70/85/100 % of the written tempo. Only Wait exists until timing is graded; the other rungs are shown disabled. |
+| Tick | The unit of musical time in a passage: `TICKS_PER_QUARTER` (960) ticks per quarter note, so onsets and note lengths are whole numbers. |
+| Time signature | Beats per bar (1–32) and the note value of a beat (1, 2, 4, 8 or 16), e.g. 3/4 (`TimeSignature`). |
 | Tunable | A threshold or prior in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt`, documented with why and source. |
 | Wait mode | Practice mode where the music waits until the learner plays the right note(s). |
+| Written tempo | The tempo a passage states, in quarter notes per minute (`Passage.tempoBpm`, 20–300); tempo rungs are percentages of it. |
 | Wrong note | `WrongNote`: a key pressed that isn't in the current step; progress is unchanged. |

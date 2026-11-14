@@ -31,7 +31,7 @@ public data class PracticeState(
                 passageTitle = passage.title,
                 steps =
                     passage.steps.mapIndexed { i, step ->
-                        StepView(step.notes, if (i == 0) StepStatus.WAITING else StepStatus.UPCOMING)
+                        StepView(step.pitches, if (i == 0) StepStatus.WAITING else StepStatus.UPCOMING)
                     },
             )
     }

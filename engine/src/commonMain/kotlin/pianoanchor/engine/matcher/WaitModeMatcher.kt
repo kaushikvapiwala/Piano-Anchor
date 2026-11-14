@@ -35,7 +35,7 @@ public object WaitModeMatcher {
         val t = event.timestampNanos
         val events = ArrayList<MatchEvent>()
         var next = if (state.startedAtNanos == null) state.copy(startedAtNanos = t) else state
-        val stepNotes = next.passage.steps[next.stepIndex].notes
+        val stepNotes = next.passage.steps[next.stepIndex].pitches
         val windowStart = next.windowStartNanos
         if (windowStart != null && t - windowStart > CHORD_WINDOW_NANOS) {
             events += ChordIncomplete(t, next.stepIndex, stepNotes - next.pressed)
