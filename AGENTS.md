@@ -12,6 +12,7 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 - `./gradlew spotlessApply` — auto-format (ktlint official style). Never hand-format.
 - `./gradlew ciBuild` — everything CI's build job runs (`fastCheck` and `check` in every module, both apps); `./gradlew :app-android:assembleDebug`, `./gradlew :app-desktop:run`
 - One module: `./gradlew :engine:desktopTest`, `./gradlew :architecture-tests:test`
+- `./gradlew :app-android:atdPixelDebugAndroidTest` — the emulator end-to-end test (needs KVM; CI runs it in `.github/workflows/e2e.yml`, not `fastCheck`)
 
 ## Before writing code (in order; stop at the first "yes")
 1. Does this need to exist at all? Can the requirement be met by changing or deleting code?

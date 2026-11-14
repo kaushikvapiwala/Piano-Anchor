@@ -80,12 +80,18 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
   the module's `screenshots/` and verified by `fastCheck`; `recordRoborazziAndroidHostTest` rewrites them after an
   intended change (`docs/adr/0018-screenshot-tests.md`). Controls and TalkBack labels are checked by Compose UI
   tests (`runComposeUiTest`) in the same source set (`docs/adr/0020-compose-ui-tests.md`).
+- The top of the pyramid is one emulator end-to-end test, `WalkingSkeletonEndToEndTest` in
+  `app-android/src/androidTest/`: the real app on a Gradle Managed Device, fed by a virtual MIDI piano
+  (`VirtualPianoService`, a `MidiDeviceService`) and driven only through its UI. It runs in `.github/workflows/e2e.yml`
+  on main, nightly and on PRs that change it, never in `fastCheck` (`docs/adr/0021-emulator-end-to-end-tests.md`).
 - Pure modules need 100% line and branch coverage; `@ExcludeFromCoverage("reason")` marks the rare exception.
 - Platform adapters split into **logic** and **glue**. The logic talks to the platform through a thin internal
   seam (e.g. `MidiSystem` in `:platform:android-midi`) and lives in `commonMain`, so it runs and is measured on the
   JVM against a fake seam (`FakeMidiSystem`), contract tests included. The glue implements the seam over the real
   platform API in `androidMain`, does no decisions of its own and is `@ExcludeFromCoverage`; it is verified on a
-  device (manual owner test until device tests exist). See `docs/adr/0014-platform-adapter-modules.md`.
+  device: by the emulator end-to-end test over a virtual MIDI device, by the owner's hardware check for the USB and
+  Bluetooth LE specifics.
+  See `docs/adr/0014-platform-adapter-modules.md`.
 - An adapter that works in the background (e.g. reopening a dropped Bluetooth LE device) takes a `CoroutineScope`
   in its internal constructor; the Android factory gives it an app-lived scope and tests pass `backgroundScope`, so
   timing runs in virtual time (`docs/adr/0015-adapter-background-scope.md`).

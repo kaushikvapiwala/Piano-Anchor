@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- VirtualPianoService: input port 0 is the app's (answers the Identity Request), input port 1 the test's control
+     port (forwarded unchanged), output port 0 carries both to the app. -->
+<devices>
+    <device manufacturer="Piano Anchor" name="Piano Anchor Test Piano" product="Test Piano">
+        <input-port name="app" />
+        <input-port name="test control" />
+        <output-port name="notes" />
+    </device>
+</devices>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- The virtual piano of the emulator end-to-end test: a MIDI device the app finds through MidiManager like a
+             USB piano (docs/adr/0021-emulator-end-to-end-tests.md). Only the system's MIDI service may bind it. -->
+        <service
+            android:name="pianoanchor.app.VirtualPianoService"
+            android:exported="true"
+            android:permission="android.permission.BIND_MIDI_DEVICE_SERVICE">
+            <intent-filter>
+                <action android:name="android.media.midi.MidiDeviceService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.media.midi.MidiDeviceService"
+                android:resource="@xml/virtual_piano" />
+        </service>
+    </application>
+</manifest>
