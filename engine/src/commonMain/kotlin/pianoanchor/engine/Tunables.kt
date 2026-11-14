@@ -210,4 +210,40 @@ public object Tunables {
      * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
      */
     public const val NOTE_LONG_RATIO: Double = 1.5
+
+    /**
+     * Length of one metronome click, in milliseconds: a sine burst that decays to near silence.
+     *
+     * Why: short enough to mark an instant, long enough to hear on phone speakers.
+     *
+     * Source: starting value; checked by ear on device.
+     */
+    public const val METRONOME_CLICK_MS: Long = 15
+
+    /**
+     * Pitch of the accented click on the first beat of each bar, in hertz.
+     *
+     * Why: higher than the other beats, so the bar can be heard.
+     *
+     * Source: starting value; checked by ear on device.
+     */
+    public const val METRONOME_ACCENT_HZ: Int = 1_500
+
+    /**
+     * Pitch of the click on every beat but the first of a bar, in hertz.
+     *
+     * Why: clear on small speakers.
+     *
+     * Source: starting value; checked by ear on device.
+     */
+    public const val METRONOME_BEAT_HZ: Int = 1_000
+
+    /**
+     * Length of each block of audio the metronome writes, in milliseconds.
+     *
+     * Why: a new pattern takes effect from the next block, so small blocks keep `start` and `stop` responsive.
+     *
+     * Source: starting value; checked by ear on device.
+     */
+    public const val METRONOME_CHUNK_MS: Long = 10
 }

@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":feature:practice"))
     implementation(project(":engine"))
     implementation(project(":platform:android-midi"))
+    implementation(project(":platform:android-audio"))
     implementation(project(":platform:storage"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
