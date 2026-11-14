@@ -1,4 +1,5 @@
--- Completed attempts (AttemptRepositoryPort). band is the Band enum's name; tempo_bpm is null for wait mode.
+-- Completed attempts (AttemptRepositoryPort). band is the Band enum's name; tempo_bpm is null for wait mode;
+-- latency_offset_nanos is the piano's offset the run was judged with, null when played uncalibrated.
 CREATE TABLE attempt (
     id TEXT NOT NULL PRIMARY KEY,
     passage_id TEXT NOT NULL,
@@ -10,7 +11,8 @@ CREATE TABLE attempt (
     incomplete_chords INTEGER NOT NULL,
     accuracy REAL NOT NULL,
     band TEXT NOT NULL,
-    tempo_bpm INTEGER
+    tempo_bpm INTEGER,
+    latency_offset_nanos INTEGER
 );
 
 CREATE INDEX attempt_passage_started ON attempt(passage_id, started_at_ms DESC);
@@ -45,9 +47,9 @@ CREATE TABLE attempt_note (
 insertAttempt:
 INSERT INTO attempt(
     id, passage_id, device_id, started_at_ms, duration_nanos, step_count, wrong_notes, incomplete_chords, accuracy, band,
-    tempo_bpm
+    tempo_bpm, latency_offset_nanos
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 insertNote:
 INSERT INTO attempt_note(attempt_id, seq, pitch, velocity, down_nanos, up_nanos, sounding_end_nanos)

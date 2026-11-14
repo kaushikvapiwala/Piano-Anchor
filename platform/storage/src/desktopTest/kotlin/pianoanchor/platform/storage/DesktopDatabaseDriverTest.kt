@@ -74,4 +74,31 @@ class DesktopDatabaseDriverTest {
                 assertEquals(emptySet(), repository.cleanTempos("builtin:cde"))
             }
         }
+
+    @Test
+    fun migration2To3AddsTheCalibrationTableAndANullOffsetToOldAttempts() =
+        runTest {
+            file.parentFile.mkdirs()
+            // The committed version-2 schema file, with a timed attempt written the way version 2 did.
+            File("src/commonMain/sqldelight/databases/2.db").copyTo(file)
+            JdbcSqliteDriver("jdbc:sqlite:${file.path}").use { old ->
+                old.exec("PRAGMA user_version = 2")
+                old.exec(
+                    "INSERT INTO attempt VALUES " +
+                        "('old-2', 'builtin:cde', 'usb-1', 1234, 5000, 3, 0, 0, 1.0, 'CLEAN', 80)",
+                )
+            }
+
+            createPianoAnchorDatabaseDriver(file).use { driver ->
+                val attempts = SqlAttemptRepositoryAdapter(driver, Dispatchers.Unconfined)
+                val old = assertNotNull(attempts.get("old-2"))
+                assertEquals(80, old.tempoBpm)
+                assertNull(old.latencyOffsetNanos)
+
+                val calibration = SqlCalibrationRepositoryAdapter(driver, Dispatchers.Unconfined)
+                assertNull(calibration.latencyOffsetNanos("usb-1"))
+                calibration.setLatencyOffsetNanos("usb-1", 38_000_000)
+                assertEquals(38_000_000L, calibration.latencyOffsetNanos("usb-1"))
+            }
+        }
 }

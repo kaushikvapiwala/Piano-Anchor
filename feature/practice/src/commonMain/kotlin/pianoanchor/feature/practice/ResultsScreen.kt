@@ -70,7 +70,7 @@ public fun ResultsScreen(
                 }
 
                 ResultsState.NotFound -> {
-                    ErrorCard(
+                    MessageCard(
                         stringResource(Res.string.results_not_found),
                         CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
                         modifier = Modifier.fillMaxWidth(),
@@ -78,7 +78,7 @@ public fun ResultsScreen(
                 }
 
                 ResultsState.Unavailable -> {
-                    ErrorCard(
+                    MessageCard(
                         stringResource(Res.string.results_unavailable),
                         CardAction(stringResource(Res.string.practice_retry), onRetry),
                         CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),

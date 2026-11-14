@@ -31,6 +31,7 @@ import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
+import pianoanchor.core.ports.CalibrationRepositoryPort
 import pianoanchor.core.ports.ClockPort
 import pianoanchor.core.ports.MetronomePort
 import pianoanchor.core.ports.MidiInputPort
@@ -57,16 +58,26 @@ import kotlin.time.Instant
  * the graded attempt is kept with [PracticeState.saveFailed] until [retrySave] or [discardRun]. [clock] gives the
  * attempt's start time (at the first note); [newId] the attempt's id; [clickSetting] keeps the metronome mute for
  * the app session.
+ *
+ * A timed run reads the piano's latency offset from [calibration] when it starts and subtracts it from played times
+ * (`docs/algorithms/latency-calibration.md`). A piano without one gets [PracticeState.calibrationOffered] instead of a
+ * run, until [skipCalibration] (remembered in [calibrationSkips] for the app session) or a calibration elsewhere.
+ * The ViewModel starts on [initialRung] (wait mode by default),
+ * so returning from a calibration lands on the rung the learner had picked.
  */
+@Suppress("TooManyFunctions")
 public class PracticeViewModel(
     private val device: MidiDevice,
     private val passage: Passage,
     private val input: MidiInputPort,
     private val attempts: AttemptRepositoryPort,
+    private val calibration: CalibrationRepositoryPort,
     private val metronome: MetronomePort,
     private val time: ClockPort,
     private val clock: Clock,
     private val clickSetting: ClickSetting = ClickSetting(),
+    private val calibrationSkips: CalibrationSkips = CalibrationSkips(),
+    initialRung: TempoRung = TempoRung.WAIT,
     private val newId: () -> String,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PracticeState.start(passage).copy(clickOn = clickSetting.on.value))
@@ -83,7 +94,7 @@ public class PracticeViewModel(
 
     init {
         viewModelScope.launch { refreshDoneRungs() }
-        selectRung(TempoRung.WAIT)
+        selectRung(initialRung)
     }
 
     /** Discards the run and starts over on the same rung, reopening the piano once the old run has closed it. */
@@ -108,6 +119,15 @@ public class PracticeViewModel(
                 val bpm = rung.bpm(passage)
                 if (bpm == null) WaitRun().play() else playTimed(bpm)
             }
+    }
+
+    /**
+     * Plays the timed rung uncalibrated (offset 0) after the calibration card, which stays away for this piano until
+     * the app restarts.
+     */
+    public fun skipCalibration() {
+        calibrationSkips.skip(device.id)
+        restart()
     }
 
     /**
@@ -160,7 +180,23 @@ public class PracticeViewModel(
     }
 
     private suspend fun playTimed(bpm: Int) {
-        val timed = TimedRun(bpm)
+        val stored =
+            try {
+                calibration.latencyOffsetNanos(device.id)
+            } catch (_: StorageUnavailableException) {
+                return runTimed(bpm, offsetNanos = null) // can't tell: play uncalibrated rather than block the run
+            }
+        if (stored == null && !calibrationSkips.isSkipped(device.id)) {
+            return mutableState.update { it.copy(calibrationOffered = true) }
+        }
+        runTimed(bpm, stored)
+    }
+
+    private suspend fun runTimed(
+        bpm: Int,
+        offsetNanos: Long?,
+    ) {
+        val timed = TimedRun(bpm, offsetNanos)
         val finished =
             try {
                 timed.play()
@@ -178,6 +214,7 @@ public class PracticeViewModel(
                 startedAt = checkNotNull(timed.startedAt),
                 bpm = bpm,
                 notes = timed.notes(),
+                latencyOffsetNanos = offsetNanos,
             ),
         )
     }
@@ -300,6 +337,7 @@ public class PracticeViewModel(
      */
     private inner class TimedRun(
         private val bpm: Int,
+        private val latencyOffsetNanos: Long?,
     ) {
         var startedAt: Instant? = null
         private var judge: TempoJudge? = null
@@ -360,9 +398,9 @@ public class PracticeViewModel(
             startedAt = clock.now()
             firstBeatNanos = time.nowNanos() + Tunables.TEMPO_COUNT_IN_LEAD_MS.milliseconds.inWholeNanoseconds
             startNanos = firstBeatNanos + beatsPerBar * beatNanos
-            val timing = TempoJudge(passage, bpm, startNanos)
+            val timing = TempoJudge(passage, bpm, startNanos, latencyOffsetNanos ?: 0)
             judge = timing
-            endNanos = timing.endNanos
+            endNanos = timing.endNanos + (latencyOffsetNanos ?: 0).coerceAtLeast(0)
             mutableState.update { it.copy(keysDown = it.keysDown + starter.note) }
             val click = ClickPattern(firstBeatNanos, beatNanos, beatsPerBar)
             pattern = click
@@ -408,7 +446,7 @@ public class PracticeViewModel(
             while (true) {
                 val now = time.nowNanos()
                 publish(now, judge)
-                if (now >= judge.endNanos) return
+                if (now >= endNanos) return
                 val next = firstBeatNanos + ((now - firstBeatNanos).floorDiv(subdivision) + 1) * subdivision
                 delay((next - now).nanoseconds)
             }

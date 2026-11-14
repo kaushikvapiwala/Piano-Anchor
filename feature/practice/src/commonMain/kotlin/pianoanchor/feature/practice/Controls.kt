@@ -12,6 +12,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -38,21 +39,26 @@ internal fun BackButton(onBack: () -> Unit) {
     }
 }
 
-/** A button on an [ErrorCard]: its [label] and what it does. */
+/** A button on an [MessageCard]: its [label] and what it does. */
 internal class CardAction(
     val label: String,
     val onClick: () -> Unit,
 )
 
-/** The living-studio error card: [message] and a text button per action, in order. */
+/**
+ * The living-studio card: [message] and a text button per action, in order. Red ([containerColor] and [contentColor])
+ * for an error, another colour pair for a notice.
+ */
 @Composable
-internal fun ErrorCard(
+internal fun MessageCard(
     message: String,
     vararg actions: CardAction,
     modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.errorContainer,
+    contentColor: Color = MaterialTheme.colorScheme.onErrorContainer,
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        colors = CardDefaults.cardColors(containerColor = containerColor, contentColor = contentColor),
         modifier = modifier,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, end = 8.dp)) {
@@ -60,7 +66,7 @@ internal fun ErrorCard(
             actions.forEach { action ->
                 TextButton(
                     onClick = action.onClick,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer),
+                    colors = ButtonDefaults.textButtonColors(contentColor = contentColor),
                 ) {
                     Text(action.label)
                 }

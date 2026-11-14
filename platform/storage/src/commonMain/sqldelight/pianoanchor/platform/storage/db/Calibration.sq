@@ -1,0 +1,14 @@
+-- Each piano's latency offset (CalibrationRepositoryPort), in nanoseconds: positive means its notes arrive late.
+CREATE TABLE calibration (
+    device_id TEXT NOT NULL PRIMARY KEY,
+    latency_offset_nanos INTEGER NOT NULL
+);
+
+-- Replaces an earlier offset of the same device.
+setOffset:
+INSERT INTO calibration(device_id, latency_offset_nanos)
+VALUES (?, ?)
+ON CONFLICT(device_id) DO UPDATE SET latency_offset_nanos = excluded.latency_offset_nanos;
+
+selectOffset:
+SELECT latency_offset_nanos FROM calibration WHERE device_id = ?;

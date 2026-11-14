@@ -32,9 +32,12 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorActions
 import pianoanchor.feature.monitor.MonitorScreen
 import pianoanchor.feature.monitor.MonitorViewModel
+import pianoanchor.feature.practice.CalibrationScreen
+import pianoanchor.feature.practice.CalibrationViewModel
 import pianoanchor.feature.practice.PracticeScreen
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsScreen
@@ -54,12 +57,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Where the app is: the monitor, practising on a piano, or the results of a finished run on it. */
+/** Where the app is: the monitor, practising or calibrating a piano, or the results of a finished run on it. */
 private sealed interface Destination {
     data object Monitor : Destination
 
+    /** Practising [device], starting on [rung] (the one picked before a calibration). */
     data class Practice(
         val device: MidiDevice,
+        val rung: TempoRung = TempoRung.WAIT,
+    ) : Destination
+
+    /** Calibrating [device]'s latency; [practiceRung] is the rung to return to in Practice, null for the monitor. */
+    data class Calibrate(
+        val device: MidiDevice,
+        val practiceRung: TempoRung?,
     ) : Destination
 
     data class Results(
@@ -74,15 +85,28 @@ private fun AppNavigation() {
     val back = { destination = Destination.Monitor }
     when (val current = destination) {
         Destination.Monitor -> {
-            MonitorRoute(onPractice = { destination = Destination.Practice(it) })
+            MonitorRoute(
+                onPractice = { destination = Destination.Practice(it) },
+                onCalibrate = { destination = Destination.Calibrate(it, practiceRung = null) },
+            )
         }
 
         is Destination.Practice -> {
             PracticeRoute(
                 current.device,
+                current.rung,
                 onBack = back,
                 onFinished = { destination = Destination.Results(current.device, it) },
+                onCalibrate = { destination = Destination.Calibrate(current.device, practiceRung = it) },
             )
+        }
+
+        is Destination.Calibrate -> {
+            val leave = {
+                destination =
+                    current.practiceRung?.let { Destination.Practice(current.device, it) } ?: Destination.Monitor
+            }
+            CalibrationRoute(current.device, onLeave = leave)
         }
 
         is Destination.Results -> {
@@ -120,12 +144,14 @@ private fun rememberRouteViewModelStoreOwner(): ViewModelStoreOwner {
 @Composable
 private fun PracticeRoute(
     device: MidiDevice,
+    rung: TempoRung,
     onBack: () -> Unit,
     onFinished: (attemptId: String) -> Unit,
+    onCalibrate: (TempoRung) -> Unit,
 ) {
     LandscapeEffect()
     val viewModel: PracticeViewModel =
-        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device) }
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device, rung) }
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
     // Leave only once the run has closed the piano, so the monitor can reopen it (one reader per input).
@@ -139,7 +165,28 @@ private fun PracticeRoute(
         onToggleClick = viewModel::toggleClick,
         onRetrySave = viewModel::retrySave,
         onDiscard = viewModel::discardRun,
+        onCalibrate = { leave { onCalibrate(state.rung) } },
+        onSkipCalibration = viewModel::skipCalibration,
     )
+}
+
+/**
+ * The calibration screen, landscape like practice. Leaving (Done, Cancel, back) closes the piano first, so the screen
+ * it returns to can reopen it (one reader per input).
+ */
+@Composable
+private fun CalibrationRoute(
+    device: MidiDevice,
+    onLeave: () -> Unit,
+) {
+    LandscapeEffect()
+    val viewModel: CalibrationViewModel =
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device) }
+    val state by viewModel.state.collectAsState()
+    val scope = rememberCoroutineScope()
+    val leave = { scope.launch { viewModel.close() }.invokeOnCompletion { onLeave() } }
+    BackHandler { leave() }
+    CalibrationScreen(state, onStart = viewModel::start, onDone = { leave() }, onCancel = { leave() })
 }
 
 /** The results of the run saved as [attemptId], landscape like practice. "Try again" practises on the same piano. */
@@ -166,6 +213,7 @@ private class RouteViewModelStoreOwner : ViewModelStoreOwner {
 @Composable
 private fun MonitorRoute(
     onPractice: (MidiDevice) -> Unit,
+    onCalibrate: (MidiDevice) -> Unit,
     viewModel: MonitorViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -219,6 +267,13 @@ private fun MonitorRoute(
                     scope.launch {
                         viewModel.setDeviceOpen(false)
                         onPractice(device)
+                    }
+                },
+                onCalibrate = { device ->
+                    // Same hand-over: the calibration screen opens the piano once the monitor has closed it.
+                    scope.launch {
+                        viewModel.setDeviceOpen(false)
+                        onCalibrate(device)
                     }
                 },
             ),

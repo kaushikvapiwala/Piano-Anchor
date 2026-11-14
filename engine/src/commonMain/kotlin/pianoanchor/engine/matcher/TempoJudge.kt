@@ -68,12 +68,14 @@ public sealed interface LiveVerdict {
 
 /**
  * Live, approximate per-note judge for a timed run; the analyser gives the verdict afterwards
- * (`docs/algorithms/tempo-judge.md`). Tick 0 of [passage] sounds at [startNanos], tempo [bpm].
+ * (`docs/algorithms/tempo-judge.md`). Tick 0 of [passage] sounds at [startNanos], tempo [bpm]. [latencyOffsetNanos] is
+ * the piano's latency offset (`docs/algorithms/latency-calibration.md`): it is subtracted from every played time.
  */
 public class TempoJudge(
     private val passage: Passage,
     bpm: Int,
     startNanos: Long,
+    private val latencyOffsetNanos: Long = 0,
 ) {
     private val nanosPerTick = beatNanos(bpm).toDouble() / TICKS_PER_QUARTER
     private val tolerance = timingToleranceNanos(beatNanos(bpm).toDouble())
@@ -90,7 +92,7 @@ public class TempoJudge(
      * the step before and after it (the first and last step use their one neighbour; a lone step one beat).
      */
     public fun onNoteOn(event: NoteOn): LiveVerdict {
-        val t = event.timestampNanos
+        val t = event.timestampNanos - latencyOffsetNanos
         val match =
             passage.steps.indices
                 .filter { s ->

@@ -92,4 +92,15 @@ class TempoJudgeTest {
         // The last note starts at 2 s and lasts one beat (1 s); the run ends one beat later.
         assertEquals(start + 4_000 * ms, judge.endNanos)
     }
+
+    @Test
+    fun theLatencyOffsetIsSubtractedFromPlayedTimes() {
+        val calibrated = TempoJudge(passage, bpm = 60, startNanos = start, latencyOffsetNanos = 200 * ms)
+        // 200 ms late on the wire is on time; without the offset it is 200 ms late, past the 125 ms band.
+        assertEquals(LiveVerdict.Correct(ScoreNoteRef(0, c4)), calibrated.onNoteOn(on(c4, 200)))
+        assertEquals(LiveVerdict.TimingOff(ScoreNoteRef(0, c4), 200), judge.onNoteOn(on(c4, 200)))
+        // A negative offset moves the other way.
+        val early = TempoJudge(passage, bpm = 60, startNanos = start, latencyOffsetNanos = -300 * ms)
+        assertEquals(LiveVerdict.TimingOff(ScoreNoteRef(0, c4), 400), early.onNoteOn(on(c4, 100)))
+    }
 }

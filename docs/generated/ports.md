@@ -17,6 +17,17 @@ Driven port: the learner's completed attempts, kept across app restarts and keye
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/AttemptRepositoryPortContractTest.kt`
 
+## `CalibrationRepositoryPort`
+
+Driven port: each piano's latency offset, kept across restarts and keyed by MidiDevice.id. Positive means the piano's notes arrive later than the click they answer. Throws [StorageUnavailableException] when the store can't be read or written (#55). Contract: `pianoanchor.testing.CalibrationRepositoryPortContractTest`.
+
+| Function | Description |
+|---|---|
+| `suspend fun latencyOffsetNanos(deviceId: String): Long?` | The stored offset for [deviceId], or null if it was never calibrated. |
+| `suspend fun setLatencyOffsetNanos(deviceId: String, offsetNanos: Long)` | Stores [offsetNanos] for [deviceId], replacing an earlier one. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/CalibrationRepositoryPortContractTest.kt`
+
 ## `ClockPort`
 
 Driven port: a monotonic time source in nanoseconds.

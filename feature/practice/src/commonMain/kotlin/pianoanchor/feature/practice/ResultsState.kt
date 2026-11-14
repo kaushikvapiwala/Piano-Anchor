@@ -37,10 +37,14 @@ public sealed interface ResultsState {
     ) : ResultsState
 }
 
-/** The Timing tile: the mean deviation of the notes in ms, and the [worst] early or late note, null when in time. */
+/**
+ * The Timing tile: the mean deviation of the notes in ms, and the [worst] early or late note, null when in time.
+ * [calibrated] is false when the run was played without a latency offset: the tile then says so.
+ */
 public data class TimingTile(
     val meanMs: Int,
     val worst: TimingWorst?,
+    val calibrated: Boolean = true,
 ) {
     /** Orange when any note was early or late. */
     val offBeat: Boolean get() = worst != null

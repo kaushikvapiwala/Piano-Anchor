@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -621,5 +622,40 @@ class MonitorViewModelTest {
     fun sysExIsLoggedWithItsFullLength() =
         runTest(dispatcher) {
             assertEquals("SysEx 2 bytes", SysEx(0, emptyList()).describe())
+        }
+
+    @Test
+    fun calibrateActionClosesTheInputBeforeNavigating() =
+        runTest(dispatcher) {
+            var open = 0
+            val counting =
+                object : MidiInputPort by piano {
+                    override fun events(device: MidiDevice): Flow<MidiEvent> =
+                        flow {
+                            open++
+                            try {
+                                piano.events(device).collect { emit(it) }
+                            } finally {
+                                open--
+                            }
+                        }
+                }
+            val vm = viewModel(counting).also { runCurrent() }
+            vm.select(piano.device)
+            runCurrent()
+            assertEquals(1, open)
+
+            // What the route does for "Calibrate timing": close the monitor's reader, then navigate.
+            var openWhenNavigating = -1
+            val navigation =
+                launch {
+                    vm.setDeviceOpen(false)
+                    openWhenNavigating = open
+                }
+            runCurrent()
+            navigation.join()
+
+            assertEquals(0, openWhenNavigating)
+            assertEquals(piano.device, vm.state.value.selected)
         }
 }

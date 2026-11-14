@@ -49,6 +49,7 @@ class ResultsViewModelTest {
         band: Band = Band.CLEAN,
         tempoBpm: Int? = null,
         playedNotes: List<PlayedNote> = emptyList(),
+        latencyOffsetNanos: Long? = null,
     ) = Attempt(
         id = id,
         passageId = passageId,
@@ -63,6 +64,7 @@ class ResultsViewModelTest {
         events = emptyList(),
         tempoBpm = tempoBpm,
         playedNotes = playedNotes,
+        latencyOffsetNanos = latencyOffsetNanos,
     )
 
     private fun played(
@@ -109,7 +111,7 @@ class ResultsViewModelTest {
             assertEquals(80, state.tempoBpm)
             assertEquals(3, state.correctSteps)
             assertEquals(3, state.stepCount)
-            assertEquals(TimingTile(67, TimingWorst(late = true, noteNumber = 3)), state.timing)
+            assertEquals(TimingTile(67, TimingWorst(late = true, noteNumber = 3), calibrated = false), state.timing)
             assertEquals(true, state.timing?.offBeat)
             assertEquals(
                 LengthTile(67, LengthWorst(tooLong = false, noteNumber = 3, value = NoteValue.HALF)),
@@ -119,13 +121,35 @@ class ResultsViewModelTest {
         }
 
     @Test
+    fun theStoredLatencyOffsetIsSubtractedBeforeAnalysis() =
+        runTest(dispatcher) {
+            // The same take, every key 200 ms late on the wire: a piano that answers 200 ms late plays in time.
+            val notes = listOf(played(C4, 200, 600), played(D4, 950, 600), played(E4, 1700, 1400))
+            val vm =
+                results(
+                    "a-1",
+                    attempt(
+                        "a-1",
+                        100,
+                        tempoBpm = 80,
+                        playedNotes = notes,
+                        latencyOffsetNanos =
+                            200 * MS,
+                    ),
+                )
+
+            val state = vm.state.value as ResultsState.Ready
+            assertEquals(TimingTile(0, null, calibrated = true), state.timing)
+        }
+
+    @Test
     fun aTimedAttemptInTimeHasNoWorstNote() =
         runTest(dispatcher) {
             val notes = listOf(played(C4, 0, 600), played(D4, 750, 600), played(E4, 1500, 1400))
             val vm = results("a-1", attempt("a-1", 100, tempoBpm = 80, playedNotes = notes))
 
             val state = vm.state.value as ResultsState.Ready
-            assertEquals(TimingTile(0, null), state.timing)
+            assertEquals(TimingTile(0, null, calibrated = false), state.timing)
             assertEquals(false, state.timing?.offBeat)
             assertEquals(LengthTile(100, null), state.length)
         }

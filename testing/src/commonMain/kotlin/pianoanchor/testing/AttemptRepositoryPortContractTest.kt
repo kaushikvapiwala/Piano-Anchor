@@ -19,6 +19,8 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.time.Instant
 
+private const val LATENCY_OFFSET = 38_000_000L
+
 /** Behaviour every [AttemptRepositoryPort] adapter must satisfy. Subclass it once per adapter. */
 abstract class AttemptRepositoryPortContractTest {
     protected abstract fun createSubject(): AttemptRepositoryPort
@@ -39,6 +41,7 @@ abstract class AttemptRepositoryPortContractTest {
         tempoBpm: Int? = null,
         band: Band = Band.KEEP_PRACTISING,
         playedNotes: List<PlayedNote> = emptyList(),
+        latencyOffsetNanos: Long? = null,
     ) = Attempt(
         id = id,
         passageId = passageId,
@@ -53,6 +56,7 @@ abstract class AttemptRepositoryPortContractTest {
         events = events,
         tempoBpm = tempoBpm,
         playedNotes = playedNotes,
+        latencyOffsetNanos = latencyOffsetNanos,
     )
 
     private suspend fun AttemptRepositoryPort.countBefore(
@@ -158,6 +162,19 @@ abstract class AttemptRepositoryPortContractTest {
             assertEquals(timed, repository.get("a-1"))
             assertEquals(wait, repository.get("a-2"))
             assertEquals(listOf(wait, timed), repository.recent("c-d-e", limit = 10).first())
+        }
+
+    @Test
+    fun saveAndGetRoundTripTheLatencyOffset() =
+        runTest {
+            val repository = createSubject()
+            val calibrated =
+                attempt("a-1", startedAtSeconds = 1_000, tempoBpm = 72, latencyOffsetNanos = -LATENCY_OFFSET)
+            val uncalibrated = attempt("a-2", startedAtSeconds = 2_000, tempoBpm = 72)
+            repository.save(calibrated)
+            repository.save(uncalibrated)
+            assertEquals(calibrated, repository.get("a-1"))
+            assertEquals(uncalibrated, repository.get("a-2"))
         }
 
     @Test

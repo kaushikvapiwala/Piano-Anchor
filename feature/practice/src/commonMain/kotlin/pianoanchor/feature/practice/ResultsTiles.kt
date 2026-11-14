@@ -47,6 +47,7 @@ import pianoanchor.feature.practice.resources.results_timing_early_at
 import pianoanchor.feature.practice.resources.results_timing_in_time
 import pianoanchor.feature.practice.resources.results_timing_label
 import pianoanchor.feature.practice.resources.results_timing_late_at
+import pianoanchor.feature.practice.resources.results_timing_not_calibrated
 import pianoanchor.feature.practice.resources.results_timing_value
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
@@ -81,19 +82,24 @@ internal fun PitchTile(
     )
 }
 
-/** "TIMING", "±31 ms" (orange when any note was off the beat) and "in time" or the worst note. */
+/**
+ * "TIMING", "±31 ms" (orange when any note was off the beat) and "in time" or the worst note, followed by "not
+ * calibrated" when the run had no latency offset.
+ */
 @Composable
 internal fun TimingTileView(
     timing: TimingTile,
     modifier: Modifier = Modifier,
 ) {
     val worst = timing.worst
-    val detail =
+    val verdict =
         when {
             worst == null -> stringResource(Res.string.results_timing_in_time)
             worst.late -> stringResource(Res.string.results_timing_late_at, worst.noteNumber.toString())
             else -> stringResource(Res.string.results_timing_early_at, worst.noteNumber.toString())
         }
+    val detail =
+        if (timing.calibrated) verdict else stringResource(Res.string.results_timing_not_calibrated, verdict)
     val colors = MaterialTheme.pianoAnchorColors
     Tile(
         label = stringResource(Res.string.results_timing_label),
