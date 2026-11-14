@@ -144,4 +144,70 @@ public object Tunables {
      * Source: the Living Studio mock (slice 1.9 spec).
      */
     public const val KEY_FLASH_MS: Long = 260
+
+    /**
+     * Floor of the early/late band, in milliseconds: an onset further than max(this, [TIMING_TOLERANCE_BEAT_FRACTION]
+     * of a beat) from where the tempo puts it is `EARLY` or `LATE`.
+     *
+     * Why: at fast tempos a fraction of a beat gets too tight for a beginner's hands; 60 ms stays lenient.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val TIMING_TOLERANCE_MS: Long = 60
+
+    /**
+     * The early/late band as a fraction of a beat (a quarter note); the band is max([TIMING_TOLERANCE_MS], this).
+     *
+     * Why: at slow tempos the band grows with the beat; an eighth of a beat is clearly off, less is expressive.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val TIMING_TOLERANCE_BEAT_FRACTION: Double = 0.125
+
+    /**
+     * A step whose gap from the previous step is at least this many times the expected gap (and at least
+     * [HESITATION_MIN_MS]) is a `HESITATION`, not a late note.
+     *
+     * Why: a gap twice the expected one reads as a stop, not as a rushed or dragged note.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val HESITATION_GAP_RATIO: Double = 2.0
+
+    /**
+     * Shortest gap before a step, in milliseconds, that can be a `HESITATION` (with [HESITATION_GAP_RATIO]).
+     *
+     * Why: at fast tempos a doubled gap is still short, and short gaps aren't stops.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val HESITATION_MIN_MS: Long = 400
+
+    /**
+     * A softer key one or two semitones from a louder correct note, starting within this many milliseconds of it, is a
+     * `MISTOUCH` (a brushed key), not an extra note.
+     *
+     * Why: a brushed neighbour key sounds almost together with the intended one.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val MISTOUCH_WINDOW_MS: Long = 40
+
+    /**
+     * A note sounding for less than this fraction of its written length is `TOO_SHORT`.
+     *
+     * Why: under half the written length is clearly clipped, not a phrasing choice.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val NOTE_SHORT_RATIO: Double = 0.5
+
+    /**
+     * A note sounding for more than this fraction of its written length is `TOO_LONG`.
+     *
+     * Why: over half again the written length is clearly held too long.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val NOTE_LONG_RATIO: Double = 1.5
 }

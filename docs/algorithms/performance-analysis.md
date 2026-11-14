@@ -1,8 +1,8 @@
 # Performance analysis
 
-The offline performance analyser (M1.3) compares a timed run with its passage and reports findings: errors at
-score notes. This note covers what M1.2 built first: played notes, the error kinds, and the test harness that
-measures the analyser (seeded takes, error injection, scoring). The analyser itself is added in M1.3.
+The offline performance analyser (M1.3) compares a take with its passage and reports findings: errors at score
+notes. It works on played notes, aligns them to the score, fits a tempo and classifies every error kind. A seeded
+test harness measures it (generated takes, error injection, scoring).
 
 ## Played notes
 `PlayedNotes.from` (in `:engine`, package `analysis`) turns MIDI events into `PlayedNote`s: pitch, onset velocity,
@@ -20,8 +20,8 @@ key down, key up and the time the note stopped sounding.
 - Events are read in timestamp order. Notes come in onset order, with equal onsets ordered by pitch
   (`PLAYED_NOTE_ORDER`). Other events are ignored.
 
-Key up is what the hand did; the sounding end is what the ear heard. Note-length errors judge key up, and only
-with the pedal up.
+Key up is what the hand did; the sounding end is what the ear heard. Note-length errors judge the sounding end, so
+a note held by the pedal is as long as it sounded.
 
 ## Error kinds
 Every finding names one score note (`ScoreNoteRef`: step index and pitch) and the played note involved. Only
@@ -77,7 +77,7 @@ length limits of 50 % and 150 %. The injected values sit clearly beyond them:
 
 The injector never makes a key go down twice at once: a change that would overlap another note of the same pitch
 is not eligible. It refuses a kind with no eligible note, and a take that already has labels (M1 uses one error
-per take). Its thresholds are private copies until M1.3 moves them into `Tunables`.
+per take). It reads the timing tolerance from `Tunables`, the same entries the analyser uses.
 
 **Scoring.** `ClassificationScore.of` compares the analyser's findings with the labels:
 
@@ -89,3 +89,92 @@ per take). Its thresholds are private copies until M1.3 moves them into `Tunable
 - A rate over nothing throws, so a harness bug can't pass the exit check by accident.
 
 M1's exit check (M1.3) asks for ≥ 95 % overall, ≥ 90 % per kind and ≤ 5 % false alarms.
+
+## The analyser
+`PerformanceAnalyser.analyse(passage, notes, tempo)` (in `:engine`, package `analysis`) returns the findings, one
+`NoteMatch` per score note and the fitted tempo. `tempo` is a `TempoReference`:
+
+- `Target(bpm, startNanos)`: early and late against a set tempo (a tempo-ladder rung). `startNanos` is when tick 0
+  should sound, such as a tempo run's downbeat after the count-in. When it is null, the first matched step is on
+  time by definition.
+- `Fitted`: early and late against the tempo fitted to the take itself.
+- `Untimed`: wait mode. Only pitch kinds and hesitation; no early, late or note length.
+
+### 1. Alignment
+A dynamic programme gives each score step a contiguous run of the played notes, in onset order. Within a run the
+step pairs its notes with the run's notes, so a chord's notes may arrive in any order, and a late chord note still
+belongs to its chord as long as it comes before the next step. Notes left in a run are extras; score notes left
+unpaired are missed. Every played note lands in some step's run.
+
+Costs (private constants in `Alignment.kt`; internal weights, not coach-facing tunables):
+
+| Move | Cost | Why |
+|---|---|---|
+| missed score note | 1.0 | |
+| extra played note | 1.0 | |
+| pair, same pitch | 0 | |
+| pair, ±12 or ±24 semitones | 0.5 | an octave slip is nearly right |
+| pair, any other pitch | 1.0 | a wrong key in the right place is one error, not a miss plus an extra |
+| step onset | 0.5 per beat off, at most 0.5, paid once per step | breaks ties between repeated pitches; capped so a hesitation never turns a played step into misses |
+
+Every pair costs less than a miss plus an extra (2.0), so a step pairs as many notes as its run allows. Within a run,
+pairs are taken cheapest pitch first, then nearest the expected onset, then in score order and onset order. The
+expected onset runs from the last paired step at the reference tempo (the target, else the written tempo), so one
+pause doesn't shift everything after it. Before the first paired step it runs from `startNanos` at tick 0, or else
+from the first played note at the first step. Between equal-cost paths the first one found is kept, which is
+deterministic.
+
+The work grows with steps × notes², which is fine for passages of a few dozen notes.
+
+**Mistouch pre-pass.** A first alignment finds the brushed keys: a played note within `MISTOUCH_WINDOW_MS` of a
+louder exact match one or two semitones away, unless it is itself an exact match of that step (a chord with a
+second in it). It becomes `MISTOUCH` at the louder note's score note (the nearest in time when several qualify) and
+is dropped before the final alignment. A key brushed between two chord notes, each one or two semitones away, could
+belong to either; the analyser picks the one nearest in time.
+
+### 2. Tempo fit
+A least-squares line of onset nanos against onset ticks, over exact-pitch matches. `fittedTempoBpm` comes from its
+slope. It is null with fewer than two exact matches at distinct onsets, or when the line doesn't rise. A long pause
+pulls the fitted line too, so `Fitted` and `Untimed` hesitation checks are less sharp than `Target` ones.
+
+### 3. Classification
+In score order, step by step:
+
+1. **Pitch.** A matched note at ±12/±24 semitones is `OCTAVE`, at any other wrong pitch `WRONG_NOTE`. Only exact
+   pitches are judged for timing and length. A note gets at most one pitch finding.
+2. **Missed.** An unmatched score note is `MISSED_NOTE`, or `INCOMPLETE_CHORD` when another note of its step was
+   matched (one finding per missing note).
+3. **Hesitation** (every reference; `Untimed` and `Fitted` take the expected gap from the fitted tempo). A step whose
+   earliest matched onset comes at least `HESITATION_GAP_RATIO` × the expected gap and at least `HESITATION_MIN_MS`
+   after the previous step's is `HESITATION`, at its lowest matched pitch, instead of late. The time map is pinned
+   again at that step, so later notes are measured from it.
+4. **Early and late** (`Target`, `Fitted`). An onset more than max(`TIMING_TOLERANCE_MS`,
+   `TIMING_TOLERANCE_BEAT_FRACTION` × beat) from the expected one is `EARLY` or `LATE`.
+5. **Length** (`Target`, `Fitted`). Sounding length (key down to sounding end) under `NOTE_SHORT_RATIO` × written is
+   `TOO_SHORT`, over `NOTE_LONG_RATIO` × written `TOO_LONG`. A note that stops sounding within the timing tolerance
+   of the next step's onset is never `TOO_SHORT`: legato players lift just before the next note.
+6. **Extras.** An unmatched played note is `EXTRA_NOTE` at the lowest pitch of the step nearest in time. A matched
+   step is at its earliest matched onset; an unmatched one is placed from the nearest matched step before it (else
+   after it) at the reference tempo.
+
+Findings come in score order (step, then pitch), then by time, missing notes first. `matches` lists every score
+note once: its played note (null when missed), its onset deviation (null when untimed or missed) and the gap from
+the previous step's earliest matched onset (null for the first step or when either is missed).
+
+### Worked example
+C4-D4-E4-F4 in quarter notes, `Target(60)` (beat 1000 ms, tolerance max(60, 125) = 125 ms), no `startNanos`:
+
+| Played | Paired with | Expected | Finding |
+|---|---|---|---|
+| C4 at 0 ms, 900 ms long | C4 | 0 ms (anchor) | none |
+| C#4 at 20 ms, softer | (pre-pass) | | `MISTOUCH` at C4 |
+| D4 at 1200 ms | D4 | 1000 ms | `LATE` (200 ms > 125 ms) |
+| E4 at 4000 ms | E4 | 2000 ms | `HESITATION`: gap 2800 ms ≥ 2 × 1000 ms and ≥ 400 ms; pinned at 4000 ms |
+| F4 at 5000 ms, 300 ms long | F4 | 5000 ms | `TOO_SHORT` (300 ms < 500 ms; last step, so no legato) |
+
+### Exit check
+`PerformanceAnalyserExitTest` runs the harness on three original passages: a stepwise melody, left-hand chords
+under a melody, and a line of mixed note values. It makes 30 clean takes and 30 takes per error kind at each
+passage's written tempo, analysed with `Target` and the take's start time. With the fixed seeds it classifies
+99.7 % overall, every kind ≥ 96 %, with no false alarms on clean takes. Recorded takes from real pianos confirm it
+once the hardware check records them.
