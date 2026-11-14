@@ -5,6 +5,8 @@ Fails when documentation drifts from the code:
 1. A repo path written in backticks in a Markdown file does not exist.
 2. A relative Markdown link points to a missing file.
 3. docs/ARCHITECTURE.md and settings.gradle.kts disagree on the list of Gradle modules.
+4. docs/ROADMAP.md "Next up" is out of order: items not numbered 1, 2, 3…, or an item depending (in brackets) on the
+   spec of the same or a later item, so `/next-task`, which works top-down, would reach it too early.
 
 Only files git knows about (tracked, or new and not ignored) count, so the result is the same on a
 developer machine and on a clean CI checkout. Gitignored names (e.g. `local.properties`) are skipped,
@@ -26,6 +28,10 @@ PATH_TOKEN = re.compile(r"`([^`\s]+)`")
 MD_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 FENCE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
 MODULE = re.compile(r"`(:[\w:-]+)`")
+NEXT_UP = re.compile(r"^## Next up\n(.*?)(?=^## |\Z)", re.MULTILINE | re.DOTALL)
+NEXT_UP_ITEM = re.compile(r"^(\d+)\. (.*)$", re.MULTILINE)
+SPEC = re.compile(r"\(spec #(\d+)")
+DEPENDENCIES = re.compile(r"\[(#\d+(?:, #\d+)*)\]")
 
 
 def git(*args: str, stdin: str = "", ok_codes: tuple[int, ...] = (0,)) -> list[str]:
@@ -88,8 +94,33 @@ def check_modules() -> list[str]:
     ] + [f"docs/ARCHITECTURE.md: module `{m}` is not in settings.gradle.kts" for m in sorted(documented - included)]
 
 
+def check_next_up(roadmap: str) -> list[str]:
+    """Next up items are numbered 1, 2, 3… and depend (first line's brackets) only on specs of earlier items."""
+    section = NEXT_UP.search(roadmap)
+    items = NEXT_UP_ITEM.findall(section.group(1)) if section else []
+    item_of_spec = {int(spec.group(1)): i for i, (_, line) in enumerate(items, 1) if (spec := SPEC.search(line))}
+    errors = []
+    for position, (number, line) in enumerate(items, 1):
+        if int(number) != position:
+            errors.append(f"docs/ROADMAP.md: Next up item {number} should be numbered {position}")
+        spec = SPEC.search(line)
+        dependencies = DEPENDENCIES.search(line)
+        for dependency in dependencies.group(1).split(", ") if dependencies else []:
+            item = item_of_spec.get(int(dependency[1:]))
+            if item is not None and item >= position:
+                errors.append(
+                    f"docs/ROADMAP.md: Next up item {position} (spec #{spec.group(1) if spec else '?'}) depends on "
+                    f"{dependency}, which is item {item}, not an earlier item"
+                )
+    return errors
+
+
 def main() -> int:
-    errors = check_references(git("ls-files", "--cached", "--others", "--exclude-standard")) + check_modules()
+    errors = (
+        check_references(git("ls-files", "--cached", "--others", "--exclude-standard"))
+        + check_modules()
+        + check_next_up((ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8"))
+    )
     for error in errors:
         print(f"docsCheck: {error}", file=sys.stderr)
     if errors:
