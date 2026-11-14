@@ -429,6 +429,44 @@ class DocsCheckTest(TempRepo):
         self.assertEqual(self.problems("`missing.md`\n"), ["DOC.md: backticked path `missing.md` does not exist"])
 
 
+class NextUpOrderTest(unittest.TestCase):
+    ROADMAP = (
+        "# Roadmap\n\n## Next up\nIntro [#1] text.\n\n"
+        "1. **A** (spec #10): first.\n"
+        "2. **B** (spec #11) [#10, #5]: depends on A and on finished #5;\n"
+        "   a continuation line [#12] is not a dependency list.\n"
+        "3. **C** (follow-up of #3; no spec).\n"
+        "4. **D** (spec #12) [#11]: last.\n\n"
+        "## Later\n1. **E** (spec #13) [#99]\n"
+    )
+
+    def test_accepts_dependencies_on_earlier_and_finished_items(self) -> None:
+        self.assertEqual(check_docs.check_next_up(self.ROADMAP), [])
+
+    def test_reports_a_dependency_on_a_later_item(self) -> None:
+        roadmap = self.ROADMAP.replace("1. **A** (spec #10): first.", "1. **A** (spec #10) [#12]: first.")
+        self.assertEqual(
+            check_docs.check_next_up(roadmap),
+            ["docs/ROADMAP.md: Next up item 1 (spec #10) depends on #12, which is item 4, not an earlier item"],
+        )
+
+    def test_reports_a_dependency_on_itself(self) -> None:
+        roadmap = self.ROADMAP.replace("4. **D** (spec #12) [#11]", "4. **D** (spec #12) [#11, #12]")
+        self.assertEqual(
+            check_docs.check_next_up(roadmap),
+            ["docs/ROADMAP.md: Next up item 4 (spec #12) depends on #12, which is item 4, not an earlier item"],
+        )
+
+    def test_reports_items_out_of_sequence(self) -> None:
+        roadmap = self.ROADMAP.replace("3. **C**", "5. **C**")
+        self.assertEqual(
+            check_docs.check_next_up(roadmap), ["docs/ROADMAP.md: Next up item 5 should be numbered 3"]
+        )
+
+    def test_the_real_roadmap_passes(self) -> None:
+        self.assertEqual(check_docs.check_next_up((ROOT / "docs" / "ROADMAP.md").read_text(encoding="utf-8")), [])
+
+
 class FailureSummaryTest(unittest.TestCase):
     def test_keeps_only_what_went_wrong_sections(self) -> None:
         output = "noise\n* What went wrong:\nTask :a failed\n\n* Try:\n> help\n* What went wrong:\nTask :b failed\n"
