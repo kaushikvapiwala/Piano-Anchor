@@ -40,6 +40,7 @@ import pianoanchor.feature.monitor.resources.Res
 import pianoanchor.feature.monitor.resources.monitor_action_dismiss
 import pianoanchor.feature.monitor.resources.monitor_action_enable_bluetooth
 import pianoanchor.feature.monitor.resources.monitor_action_open_settings
+import pianoanchor.feature.monitor.resources.monitor_calibrate
 import pianoanchor.feature.monitor.resources.monitor_connect
 import pianoanchor.feature.monitor.resources.monitor_connect_device
 import pianoanchor.feature.monitor.resources.monitor_devices
@@ -87,12 +88,17 @@ public fun MonitorScreen(
             item { StatusText(state) }
             state.instrument?.let { instrument -> item { InstrumentText(instrument) } }
             item {
-                // Wait-mode practice on the selected piano, while it is connected.
+                // Wait-mode practice and latency calibration of the selected piano, while it is connected.
                 val device = state.selected
-                Button(
-                    onClick = { device?.let(actions.onPractice) },
-                    enabled = device != null && state.connection == Connection.CONNECTED,
-                ) { Text(stringResource(Res.string.monitor_practice)) }
+                val enabled = device != null && state.connection == Connection.CONNECTED
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { device?.let(actions.onPractice) }, enabled = enabled) {
+                        Text(stringResource(Res.string.monitor_practice))
+                    }
+                    Button(onClick = { device?.let(actions.onCalibrate) }, enabled = enabled) {
+                        Text(stringResource(Res.string.monitor_calibrate))
+                    }
+                }
             }
             item { RecordingControls(state, actions) }
             log(state.log)

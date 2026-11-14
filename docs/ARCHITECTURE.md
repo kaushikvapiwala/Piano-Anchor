@@ -18,7 +18,7 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | Module | Role | Notes |
 |---|---|---|
 | `:core:model` | Domain types (e.g. `MidiNote`, `MidiEvent`, `Attempt`) | Pure Kotlin, 100% coverage |
-| `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`, `MidiDiscoveryPort`, `MetronomePort`, `InstrumentRepositoryPort`, `AttemptRepositoryPort`) | Interfaces only, each with KDoc |
+| `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`, `MidiDiscoveryPort`, `MetronomePort`, `InstrumentRepositoryPort`, `AttemptRepositoryPort`, `CalibrationRepositoryPort`) | Interfaces only, each with KDoc |
 | `:engine` | Coaching logic: the `midi` byte-stream parser, the `matcher` (wait mode), `grading`, `analysis` (played notes from MIDI events, the offline performance analyser), built-in `content` passages; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
 | `:testing` | Fakes (e.g. `FakePiano`, `FakeMetronome`), abstract port contract tests and the analyser test harness (`TakeGenerator`, `ErrorInjector`, `ClassificationScore`) | Used by test source sets only |
 | `:platform:android-midi` | Driven adapters over Android's MIDI service: `AndroidMidiAdapter` (both MIDI ports and Bluetooth LE discovery), `AndroidClockAdapter` | Logic in `commonMain`, 100% coverage on the JVM; `androidMain` glue excluded (see Testing) |

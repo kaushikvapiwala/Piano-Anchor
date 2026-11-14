@@ -74,7 +74,7 @@ public class ResultsViewModel(
             incompleteChords = summary?.incompleteChords ?: attempt.incompleteChords,
             missedNotes = summary?.missedNotes ?: 0,
             tempoBpm = attempt.tempoBpm,
-            timing = summary?.timing?.let { timingTile(passage, it) },
+            timing = summary?.timing?.let { timingTile(passage, it, calibrated = attempt.latencyOffsetNanos != null) },
             length = summary?.length?.let { lengthTile(passage, it) },
             hesitation = summary?.hesitation?.let { hesitationTile(it) },
         )
@@ -87,14 +87,17 @@ public class ResultsViewModel(
     ): PerformanceAnalysis? {
         if (attempt.tempoBpm == null && attempt.playedNotes.isEmpty()) return null
         val tempo = attempt.tempoBpm?.let { TempoReference.Target(it, startNanos = 0) } ?: TempoReference.Untimed
-        return PerformanceAnalyser.analyse(passage, attempt.playedNotes, tempo)
+        val offset = attempt.latencyOffsetNanos ?: 0
+        return PerformanceAnalyser.analyse(passage, attempt.playedNotes.map { it.shiftedBy(-offset) }, tempo)
     }
 
     private fun timingTile(
         passage: Passage,
         timing: TimingSummary,
+        calibrated: Boolean,
     ) = TimingTile(
         meanMs = timing.meanAbsDeviationMs,
+        calibrated = calibrated,
         worst = timing.worst?.let { TimingWorst(it.kind == ErrorKind.LATE, noteNumber(passage, it.at)) },
     )
 

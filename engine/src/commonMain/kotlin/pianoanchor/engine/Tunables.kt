@@ -266,4 +266,58 @@ public object Tunables {
      * Source: starting value from the M1.4c spec; the metronome port documents a few tens of milliseconds of lead.
      */
     public const val TEMPO_COUNT_IN_LEAD_MS: Long = 200
+
+    /**
+     * How many metronome clicks the latency calibration plays, warm-up included.
+     *
+     * Why: enough taps for a stable median in about 11 seconds.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val CALIBRATION_CLICKS: Int = 16
+
+    /**
+     * The tempo of the calibration clicks, in beats per minute.
+     *
+     * Why: a comfortable tapping pace with half a beat (333 ms) to pair taps with clicks.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val CALIBRATION_BPM: Int = 90
+
+    /**
+     * How many of the first calibration clicks are warm-up: their taps are ignored.
+     *
+     * Why: people lock onto a beat after a few clicks.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val CALIBRATION_WARMUP_CLICKS: Int = 4
+
+    /**
+     * The fewest paired taps among the counted clicks for a calibration to be judged at all.
+     *
+     * Why: at least two thirds of the 12 counted clicks must have a tap (the spec author's choice).
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val CALIBRATION_MIN_TAPS: Int = 8
+
+    /**
+     * The largest median absolute deviation of the paired taps, in milliseconds, that a calibration accepts.
+     *
+     * Why: above this the taps were not locked to the beat, so their median says little about the piano.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val CALIBRATION_MAX_SPREAD_MS: Long = 30
+
+    /**
+     * The largest latency offset, in milliseconds either way, that a calibration stores.
+     *
+     * Why: beyond this the link or the setup is wrong; better not to store it.
+     *
+     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     */
+    public const val CALIBRATION_MAX_OFFSET_MS: Long = 400
 }

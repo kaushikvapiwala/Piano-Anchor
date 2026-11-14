@@ -72,4 +72,13 @@ class FakeRepositoryFailureTest {
             assertFailsWith<StorageUnavailableException> { instruments.upsert(instrument) }
             assertFailsWith<StorageUnavailableException> { instruments.get("usb-1") }
         }
+
+    @Test
+    fun aFailingCalibrationRepositoryThrowsStorageUnavailableExceptionFromEveryMethod() =
+        runTest {
+            val calibration = FakeCalibrationRepository().apply { failing = true }
+
+            assertFailsWith<StorageUnavailableException> { calibration.latencyOffsetNanos("usb-1") }
+            assertFailsWith<StorageUnavailableException> { calibration.setLatencyOffsetNanos("usb-1", 1) }
+        }
 }

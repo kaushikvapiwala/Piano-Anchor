@@ -61,6 +61,7 @@ public class SqlAttemptRepositoryAdapter(
                         accuracy = attempt.accuracy,
                         band = attempt.band.name,
                         tempo_bpm = attempt.tempoBpm?.toLong(),
+                        latency_offset_nanos = attempt.latencyOffsetNanos,
                     )
                     attempt.events.forEachIndexed { seq, event -> queries.insertMatchEvent(attempt.id, seq, event) }
                     attempt.playedNotes.forEachIndexed { seq, note ->
@@ -136,6 +137,7 @@ public class SqlAttemptRepositoryAdapter(
             events = queries.selectEvents(row.id).executeAsList().map(::toMatchEvent),
             tempoBpm = row.tempo_bpm?.toInt(),
             playedNotes = queries.selectNotes(row.id).executeAsList().map(::toPlayedNote),
+            latencyOffsetNanos = row.latency_offset_nanos,
         )
 }
 

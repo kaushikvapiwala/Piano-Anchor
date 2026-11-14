@@ -19,6 +19,8 @@ import pianoanchor.engine.matcher.TempoRung
  * where a timed run is (always [RunPhase.READY] in wait mode); [beat] is the beat in the bar for the pulse (1-based, 0
  * before the first click and outside a run); [clickOn] is whether the metronome clicks; [liveMarks] are the live
  * judge's verdicts so far. In a timed run [currentStep] is the cursor and only that step is [StepStatus.WAITING].
+ * [calibrationOffered] is true while the screen offers to calibrate the piano's timing before a timed run (the run
+ * waits for Calibrate or Skip).
  */
 public data class PracticeState(
     val passage: Passage,
@@ -37,6 +39,7 @@ public data class PracticeState(
     val beat: Int = 0,
     val clickOn: Boolean = true,
     val liveMarks: Map<ScoreNoteRef, LiveMark> = emptyMap(),
+    val calibrationOffered: Boolean = false,
 ) {
     init {
         require(steps.size == passage.steps.size) {

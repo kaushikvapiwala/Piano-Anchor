@@ -6,6 +6,7 @@ import pianoanchor.core.model.PlayedNote
 import pianoanchor.testing.passageOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class GraderTimedTest {
@@ -118,5 +119,29 @@ class GraderTimedTest {
         val early = PlayedNote(c4, 80, -300 * ms, -200 * ms, -200 * ms)
 
         assertEquals(0, grade(listOf(early)).durationNanos)
+    }
+
+    @Test
+    fun theLatencyOffsetShiftsTheAnalysedTimesAndIsStored() {
+        val late = cleanTake.map { it.shiftedBy(150 * ms) }
+
+        val uncalibrated = grade(late)
+        assertTrue(uncalibrated.accuracy < 1.0)
+        assertEquals(null, uncalibrated.latencyOffsetNanos)
+
+        val calibrated =
+            Grader.timedAttempt(
+                "a-1",
+                passage,
+                "usb-1",
+                startedAt,
+                60,
+                late,
+                latencyOffsetNanos = 150 * ms,
+            )
+        assertEquals(1.0, calibrated.accuracy)
+        assertEquals(Band.CLEAN, calibrated.band)
+        assertEquals(150 * ms, calibrated.latencyOffsetNanos)
+        assertEquals(late, calibrated.playedNotes)
     }
 }

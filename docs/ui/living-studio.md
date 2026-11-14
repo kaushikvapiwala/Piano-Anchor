@@ -83,6 +83,27 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
 - **Key strip text** in a timed run: "E4 · on time", "E4 · late, 92 ms", "E4 · early, 40 ms", "F4 · wrong note".
   TalkBack announces "Correct", "Late, 92 ms", "Early, 40 ms" or "Wrong, F4". The staff reads "… Cursor on D4."
 
+## Calibration screen
+
+Landscape like practice, 915×412 dp, page colour and a card (radius 20) with pill buttons (44 dp high).
+
+- **Header**: back (44 dp, same as Cancel), the title "Calibrate timing" (heading, Space Grotesk 700 22 sp) and the
+  line "Play any key on each click. 16 clicks, about 11 seconds."
+- **Start**: one pill button in the card. It plays the click pattern (no accent).
+- **Running**: a pulse dot (filled for half a beat after each click), "Get ready" while the warm-up clicks play and
+  then "Play a key on each click", and the tap counter "7 / 12" (taps on the counted clicks). TalkBack reads the
+  counter as "7 of 12 taps".
+- **Accepted**: "Your piano answers 38 ms after the click. Saved." ("before" when negative) and Done. The line is a
+  polite live region, so TalkBack reads it when it appears.
+- **Any other result**: one line ("Taps were uneven", "Too few taps", "That's more than 0.4 s: check the connection",
+  or "Couldn't save the result." when the store failed) with Try again and Cancel. A dropped piano shows the
+  "Piano disconnected" card above Start.
+
+The **calibrate card** on the practice screen (secondary container colour, under the top bar) reads "Calibrate timing ·
+about 15 s" with Calibrate and Skip. It shows when a timed rung is selected on a piano with no stored offset; the run
+waits for the choice. Skip plays uncalibrated and hides the card for that piano until the app restarts. The monitor's
+"Calibrate timing" button (next to Practice, enabled while connected) opens the same screen and returns to the monitor.
+
 ## Results screen
 
 Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 12/18 dp, 10 dp gaps
@@ -101,7 +122,8 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
     detail counts the same findings (wrong, missed, incomplete chords), so it never says "every note right" next to a
     value below full.
   - Timing: "±31 ms" (mean deviation), in the timing orange when any note was early or late, else blue; detail "in
-    time", "late at note 6" or "early at note 3" (notes numbered from 1 in score order).
+    time", "late at note 6" or "early at note 3" (notes numbered from 1 in score order). A run played without a latency
+    offset adds " · not calibrated" to the detail.
   - Note length: "86%" of notes held right; detail "every note held right", "half note held short" or "note 4 held
     long" (a note value is named only for whole, half and quarter notes).
   - Hesitation: "no pauses", "1 pause", "2 pauses"; detail the longest pause, "1.4 s before D4".

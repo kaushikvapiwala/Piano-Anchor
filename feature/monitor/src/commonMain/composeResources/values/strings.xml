@@ -29,4 +29,5 @@
     <string name="monitor_action_enable_bluetooth">Turn on Bluetooth</string>
     <string name="monitor_action_dismiss">Dismiss</string>
     <string name="monitor_practice">Practice</string>
+    <string name="monitor_calibrate">Calibrate timing</string>
 </resources>

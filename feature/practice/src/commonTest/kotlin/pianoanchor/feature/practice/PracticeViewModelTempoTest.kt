@@ -24,6 +24,7 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
+import pianoanchor.testing.FakeCalibrationRepository
 import pianoanchor.testing.FakeClock
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
@@ -45,6 +46,10 @@ class PracticeViewModelTempoTest {
     private val clock = FakeClock(5_000_000_000)
     private val piano = FakePiano(clock)
     private val attempts = FakeAttemptRepository()
+    private val calibration = FakeCalibrationRepository()
+
+    // Skipped: these tests play timed rungs without the calibration card (PracticeViewModelCalibrationTest has it).
+    private val skips = CalibrationSkips().apply { skip(piano.device.id) }
     private val metronome = FakeMetronome(clock)
     private val clickSetting = ClickSetting()
     private val openedAt = Instant.parse("2026-11-13T09:00:00Z")
@@ -64,7 +69,18 @@ class PracticeViewModelTempoTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun TestScope.practice(repository: AttemptRepositoryPort = attempts): PracticeViewModel =
-        PracticeViewModel(piano.device, Passages.CDE, piano, repository, metronome, clock, wallClock, clickSetting) {
+        PracticeViewModel(
+            piano.device,
+            Passages.CDE,
+            piano,
+            repository,
+            calibration,
+            metronome,
+            clock,
+            wallClock,
+            clickSetting,
+            skips,
+        ) {
             "attempt-${++ids}"
         }.also {
             opened += it

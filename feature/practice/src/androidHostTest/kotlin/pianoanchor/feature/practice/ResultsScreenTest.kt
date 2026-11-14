@@ -102,6 +102,10 @@ class ResultsScreenTest {
             )
             check(base.copy(timing = TimingTile(0, null)), "Timing: within 0 milliseconds on average, in time")
             check(
+                base.copy(timing = TimingTile(0, null, calibrated = false)),
+                "Timing: within 0 milliseconds on average, in time · not calibrated",
+            )
+            check(
                 base.copy(length = LengthTile(100, null)),
                 "Note length: 100 percent of notes held right, every note held right",
             )

@@ -11,6 +11,7 @@ onset into a time from that. `cursorStep(now)` is the last step whose onset has 
 step. The run ends one beat after the last note's written end (`endNanos`).
 
 ## The rule
+The judge first subtracts the piano's latency offset from the NoteOn time (`docs/algorithms/latency-calibration.md`).
 A NoteOn is matched to the nearest score note that is still unjudged, has the same pitch, and whose written onset is
 within half the gap to its neighbouring steps (the first and last steps use their one neighbour, a lone step one
 beat). Halving the gap makes the windows of neighbouring steps meet without overlapping, so a note can belong to only

@@ -40,6 +40,9 @@ import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_back_to_pianos
 import pianoanchor.feature.practice.resources.practice_beat
+import pianoanchor.feature.practice.resources.practice_calibrate
+import pianoanchor.feature.practice.resources.practice_calibrate_offer
+import pianoanchor.feature.practice.resources.practice_calibrate_skip
 import pianoanchor.feature.practice.resources.practice_click_glyph
 import pianoanchor.feature.practice.resources.practice_click_off
 import pianoanchor.feature.practice.resources.practice_click_on
@@ -63,7 +66,8 @@ import pianoanchor.ui.shell.pianoAnchorColors
  * switch, the staff with the passage and a cursor, in a timed run the count-in and pulse line, and the live key strip.
  * Stateless: see [PracticeViewModel]. [onBack] leaves the run (the back button, "End run" and the disconnected card's
  * "Back to pianos"); [onSelectRung] picks a rung of the tempo ladder (discarding the run); [onToggleClick] mutes or
- * unmutes the metronome; [onRetrySave] and [onDiscard] are the save-failed card's Retry and Discard.
+ * unmutes the metronome; [onRetrySave] and [onDiscard] are the save-failed card's Retry and Discard; [onCalibrate] and
+ * [onSkipCalibration] are the calibrate card's Calibrate and Skip, shown while [PracticeState.calibrationOffered].
  */
 @Composable
 public fun PracticeScreen(
@@ -74,24 +78,36 @@ public fun PracticeScreen(
     onRetrySave: () -> Unit,
     onDiscard: () -> Unit,
     modifier: Modifier = Modifier,
+    onCalibrate: () -> Unit = {},
+    onSkipCalibration: () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.safeDrawingPadding()) {
             TopBar(state, onBack, onSelectRung, onToggleClick)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             if (state.connection == PracticeConnection.DISCONNECTED) {
-                ErrorCard(
+                MessageCard(
                     stringResource(Res.string.practice_disconnected),
                     CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
                     modifier = CARD_MODIFIER,
                 )
             }
             if (state.saveFailed) {
-                ErrorCard(
+                MessageCard(
                     stringResource(Res.string.practice_save_failed),
                     CardAction(stringResource(Res.string.practice_retry), onRetrySave),
                     CardAction(stringResource(Res.string.practice_discard), onDiscard),
                     modifier = CARD_MODIFIER,
+                )
+            }
+            if (state.calibrationOffered) {
+                MessageCard(
+                    stringResource(Res.string.practice_calibrate_offer),
+                    CardAction(stringResource(Res.string.practice_calibrate), onCalibrate),
+                    CardAction(stringResource(Res.string.practice_calibrate_skip), onSkipCalibration),
+                    modifier = CARD_MODIFIER,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
             }
             StaffView(

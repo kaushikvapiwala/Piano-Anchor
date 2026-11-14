@@ -90,7 +90,9 @@ public object Grader {
      * are already rebased so 0 is the written time of tick 0. Accuracy is the score notes without a finding over the
      * score notes plus the `EXTRA_NOTE` and `MISTOUCH` findings (`docs/algorithms/grading.md`); an extra or brushed key
      * adds to the denominator but doesn't spoil the score note it points at. The attempt keeps no match events;
-     * [Attempt.durationNanos] is when the last key came up (0 if before tick 0).
+     * [Attempt.durationNanos] is when the last key came up (0 if before tick 0). [latencyOffsetNanos] (null when
+     * uncalibrated) is subtracted from the notes' times before they are analysed; the attempt stores it and the notes
+     * as played.
      */
     public fun timedAttempt(
         id: String,
@@ -99,8 +101,16 @@ public object Grader {
         startedAt: Instant,
         bpm: Int,
         notes: List<PlayedNote>,
+        latencyOffsetNanos: Long? = null,
     ): Attempt {
-        val findings = PerformanceAnalyser.analyse(passage, notes, TempoReference.Target(bpm, startNanos = 0)).findings
+        val corrected = notes.map { it.shiftedBy(-(latencyOffsetNanos ?: 0)) }
+        val findings =
+            PerformanceAnalyser
+                .analyse(
+                    passage,
+                    corrected,
+                    TempoReference.Target(bpm, startNanos = 0),
+                ).findings
         val stray = findings.filter { it.kind in STRAY_KINDS }
         val spoiled = (findings - stray.toSet()).mapTo(HashSet()) { it.at }
         val scoreNotes = passage.steps.sumOf { it.notes.size }
@@ -119,6 +129,7 @@ public object Grader {
             events = emptyList(),
             tempoBpm = bpm,
             playedNotes = notes,
+            latencyOffsetNanos = latencyOffsetNanos,
         )
     }
 

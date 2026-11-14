@@ -13,6 +13,9 @@ public enum class Band { CLEAN, GOOD, KEEP_PRACTISING }
  * NoteOn, so the first is not negative. [tempoBpm] is the tempo of a timed (tempo-mode) run in
  * [MIN_TEMPO_BPM]..[MAX_TEMPO_BPM], null for wait mode. [playedNotes] are the take's notes, rebased so 0 is the written
  * time of tick 0 for a timed run and the first NoteOn for wait mode (empty for attempts stored before they were kept).
+ * [latencyOffsetNanos] is the piano's latency offset the run was judged with (positive: its notes arrive late), kept so
+ * Results recompute the same verdicts; null when the run was played uncalibrated, and for wait mode. [playedNotes]
+ * stay as played: the offset is subtracted only when they are analysed.
  */
 public data class Attempt(
     val id: String,
@@ -28,6 +31,7 @@ public data class Attempt(
     val events: List<MatchEvent>,
     val tempoBpm: Int?,
     val playedNotes: List<PlayedNote>,
+    val latencyOffsetNanos: Long? = null,
 ) {
     init {
         require(id.isNotBlank()) { "attempt id must not be blank" }
