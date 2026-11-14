@@ -16,6 +16,10 @@ key down, key up and the time the note stopped sounding.
   keeps sounding until the pedal drops below 64. A key that came up before the pedal went down is not caught.
 - Striking a pitch that is still down, or still sounding under the pedal, ends the earlier note there. A piano
   can't sound a string twice at once.
+- **All Notes Off** (control change 123, or the mode changes 124–127 that imply it; any channel) brings every key that is still down up at that time, as a
+  NoteOff would; the pedal still holds them, as MIDI 1.0 requires. **All Sound Off** (control change 120) also stops
+  every note the pedal holds, and leaves the pedal as it was. A piano or interface sends these after a lost NoteOff,
+  so the stuck key no longer lasts until the end of the recording.
 - A key still down, or a note still held, when the events run out ends at the last event's time.
 - Events are read in timestamp order. Notes come in onset order, with equal onsets ordered by pitch
   (`PLAYED_NOTE_ORDER`). Other events are ignored.

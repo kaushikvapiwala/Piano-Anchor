@@ -7,6 +7,8 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Accent | The click on the first beat of each bar, higher than the others (`METRONOME_ACCENT_HZ`), so the bar can be heard. |
 | Accuracy | How cleanly a completed attempt was played by pitch: steps / (steps + wrong notes + incomplete chords), from 0 to 1 (`docs/algorithms/grading.md`). |
 | Adapter | Implementation of a port for a real platform or technology (e.g. Android MIDI). Named `*Adapter`. |
+| All Notes Off | MIDI control change 123 (also implied by 124–127): every key still down comes up; the sustain pedal still holds them. A piano sends it to clear stuck notes. |
+| All Sound Off | MIDI control change 120: every key comes up and every sounding note stops at once, pedal-held ones included. |
 | Attempt | One completed run of a passage, from the first note to `PassageComplete` (`Attempt` in `:core:model`): its counts, accuracy, band and match events, stored by `AttemptRepositoryPort`. Abandoned runs are not saved. |
 | Band | The result of an attempt named for the learner: `CLEAN`, `GOOD` or `KEEP_PRACTISING`, from its accuracy and the `BAND_*_MIN_ACCURACY` tunables. |
 | BLE MIDI | MIDI over Bluetooth Low Energy. A BLE MIDI piano is found by a scan and must be connected from the app (`MidiDiscoveryPort`); pairing in the system settings pairs only Bluetooth audio. |
