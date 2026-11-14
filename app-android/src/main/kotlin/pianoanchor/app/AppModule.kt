@@ -14,6 +14,7 @@ import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.engine.content.Passages
 import pianoanchor.feature.monitor.MonitorViewModel
+import pianoanchor.feature.practice.ClickSetting
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.platform.androidaudio.AndroidMetronomeAdapter
@@ -34,13 +35,16 @@ val appModule =
         single<MidiDiscoveryPort> { get<AndroidMidiAdapter>() }
         single<ClockPort> { AndroidClockAdapter() }
         single<Clock> { Clock.System }
+        single { ClickSetting() }
         single<MetronomePort> { AndroidMetronomeAdapter(androidContext(), get()) }
         single { createPianoAnchorDatabaseDriver(androidContext()) }
         single<InstrumentRepositoryPort> { SqlInstrumentRepositoryAdapter(get(), Dispatchers.IO) }
         single<AttemptRepositoryPort> { SqlAttemptRepositoryAdapter(get(), Dispatchers.IO) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get()) }
         viewModel { (device: MidiDevice) ->
-            PracticeViewModel(device, Passages.CDE, get(), get(), get()) { Uuid.random().toString() }
+            PracticeViewModel(device, Passages.CDE, get(), get(), get(), get(), get(), get()) {
+                Uuid.random().toString()
+            }
         }
         viewModel { (attemptId: String) -> ResultsViewModel(attemptId, get()) }
     }

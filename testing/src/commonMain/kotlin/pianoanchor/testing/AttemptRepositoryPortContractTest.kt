@@ -9,6 +9,7 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
+import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
@@ -35,6 +36,9 @@ abstract class AttemptRepositoryPortContractTest {
         id: String,
         startedAtSeconds: Long,
         passageId: String = "c-d-e",
+        tempoBpm: Int? = null,
+        band: Band = Band.KEEP_PRACTISING,
+        playedNotes: List<PlayedNote> = emptyList(),
     ) = Attempt(
         id = id,
         passageId = passageId,
@@ -45,8 +49,10 @@ abstract class AttemptRepositoryPortContractTest {
         wrongNotes = 1,
         incompleteChords = 1,
         accuracy = 0.5,
-        band = Band.KEEP_PRACTISING,
+        band = band,
         events = events,
+        tempoBpm = tempoBpm,
+        playedNotes = playedNotes,
     )
 
     private suspend fun AttemptRepositoryPort.countBefore(
@@ -135,4 +141,49 @@ abstract class AttemptRepositoryPortContractTest {
         runTest {
             assertFailsWith<IllegalArgumentException> { createSubject().recent("c-d-e", limit = 0).first() }
         }
+
+    @Test
+    fun saveAndGetRoundTripTempoBpmAndPlayedNotes() =
+        runTest {
+            val repository = createSubject()
+            val notes =
+                listOf(
+                    PlayedNote(MidiNote(60), velocity = 64, downNanos = 0, upNanos = 400, soundingEndNanos = 900),
+                    PlayedNote(MidiNote(64), velocity = 90, downNanos = 500, upNanos = 500, soundingEndNanos = 500),
+                )
+            val timed = attempt("a-1", startedAtSeconds = 1_000, tempoBpm = 72, playedNotes = notes)
+            val wait = attempt("a-2", startedAtSeconds = 2_000, playedNotes = notes.take(1))
+            repository.save(timed)
+            repository.save(wait)
+            assertEquals(timed, repository.get("a-1"))
+            assertEquals(wait, repository.get("a-2"))
+            assertEquals(listOf(wait, timed), repository.recent("c-d-e", limit = 10).first())
+        }
+
+    @Test
+    fun cleanTemposListsOnlyCleanTimedTempos() =
+        runTest {
+            val repository = createSubject()
+            listOf(
+                Triple(TEMPO_A, Band.CLEAN, "c-d-e"),
+                Triple(TEMPO_A, Band.CLEAN, "c-d-e"),
+                Triple(TEMPO_B, Band.GOOD, "c-d-e"),
+                Triple(TEMPO_C, Band.KEEP_PRACTISING, "c-d-e"),
+                Triple(null, Band.CLEAN, "c-d-e"),
+                Triple(TEMPO_D, Band.CLEAN, "other"),
+                Triple(TEMPO_E, Band.CLEAN, "c-d-e"),
+            ).forEachIndexed { i, (tempo, band, passageId) ->
+                repository.save(attempt("a-$i", (i + 1) * SECONDS_APART, passageId, tempo, band))
+            }
+            assertEquals(setOf(TEMPO_A, TEMPO_E), repository.cleanTempos("c-d-e"))
+            assertEquals(setOf(TEMPO_D), repository.cleanTempos("other"))
+            assertEquals(emptySet(), repository.cleanTempos("unknown"))
+        }
 }
+
+private const val TEMPO_A = 48
+private const val TEMPO_B = 56
+private const val TEMPO_C = 68
+private const val TEMPO_D = 80
+private const val TEMPO_E = 64
+private const val SECONDS_APART = 1_000L

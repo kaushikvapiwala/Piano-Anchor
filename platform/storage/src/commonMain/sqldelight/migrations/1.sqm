@@ -1,0 +1,13 @@
+-- Schema 1 to 2 (M1.4c): attempts keep their tempo (null = wait mode, and every older attempt) and played notes.
+ALTER TABLE attempt ADD COLUMN tempo_bpm INTEGER;
+
+CREATE TABLE attempt_note (
+    attempt_id TEXT NOT NULL REFERENCES attempt(id) ON DELETE CASCADE,
+    seq INTEGER NOT NULL,
+    pitch INTEGER NOT NULL,
+    velocity INTEGER NOT NULL,
+    down_nanos INTEGER NOT NULL,
+    up_nanos INTEGER NOT NULL,
+    sounding_end_nanos INTEGER NOT NULL,
+    PRIMARY KEY (attempt_id, seq)
+);

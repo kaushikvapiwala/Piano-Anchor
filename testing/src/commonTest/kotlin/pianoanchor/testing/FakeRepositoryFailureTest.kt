@@ -26,6 +26,8 @@ class FakeRepositoryFailureTest {
             accuracy = 1.0,
             band = Band.CLEAN,
             events = emptyList(),
+            tempoBpm = null,
+            playedNotes = emptyList(),
         )
     private val instrument = Instrument("usb-1", "Piano", identity = null, firstSeen = at, lastSeen = at)
 
@@ -37,6 +39,7 @@ class FakeRepositoryFailureTest {
             assertFailsWith<StorageUnavailableException> { attempts.save(attempt) }
             assertFailsWith<StorageUnavailableException> { attempts.get("a-1") }
             assertFailsWith<StorageUnavailableException> { attempts.countStartedBefore("c-d-e", at) }
+            assertFailsWith<StorageUnavailableException> { attempts.cleanTempos("c-d-e") }
         }
 
     @Test

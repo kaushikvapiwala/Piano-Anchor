@@ -219,6 +219,3 @@ class ErrorInjector(
         }
     }
 }
-
-private fun PlayedNote.shiftedBy(nanos: Long) =
-    copy(downNanos = downNanos + nanos, upNanos = upNanos + nanos, soundingEndNanos = soundingEndNanos + nanos)

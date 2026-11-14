@@ -47,7 +47,10 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Step | One moment in a passage: the keys to press together (one note, or a chord) at its onset, each with a written length in ticks (`ScoreNote`). Wait mode reads only its pitches. |
 | Sustain pedal | The right (damper) pedal, sent as control change 64; values 64–127 hold every released note sounding until it drops below 64. |
 | SysEx | System Exclusive: a variable-length, vendor-specific MIDI message framed by 0xF0 and 0xF7. |
-| Tempo ladder | The practice screen's tempo rungs: Wait, then 60/70/85/100 % of the written tempo. Only Wait exists until timing is graded; the other rungs are shown disabled. |
+| Tempo ladder | The practice screen's tempo rungs: Wait, then 60/70/85/100 % of the written tempo (`TempoRung`). Each timed rung starts a tempo run. |
+| Tempo rung | One step of the tempo ladder. A timed rung shows done (blue) once a clean timed attempt exists at its tempo. |
+| Tempo run | Timed practice at a rung: one key starts a count-in, then the cursor moves with the clock, each note is judged live and the take is graded afterwards by the performance analyser. |
+| Count-in | The one bar of clicks (accented first beat) before a tempo run; tick 0 falls on the beat after it. |
 | Tempo reference | What the performance analyser times a take against (`TempoReference`): a target tempo (optionally with when beat 1 fell), the tempo fitted to the take, or none (wait mode). |
 | Tick | The unit of musical time in a passage: `TICKS_PER_QUARTER` (960) ticks per quarter note, so onsets and note lengths are whole numbers. |
 | Time signature | Beats per bar (1–32) and the note value of a beat (1, 2, 4, 8 or 16), e.g. 3/4 (`TimeSignature`). |

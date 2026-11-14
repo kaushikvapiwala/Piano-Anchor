@@ -10,7 +10,9 @@ public enum class Band { CLEAN, GOOD, KEEP_PRACTISING }
  * [passageId] and [deviceId] (the instrument's stable device id), not blank. [startedAt] is the wall clock at the first
  * note and [durationNanos] the time from the first NoteOn to `PassageComplete`. [stepCount] is the passage's step
  * count; [accuracy] is in 0.0–1.0. [events] are the run's match events in order, with timestamps relative to the first
- * NoteOn, so the first is not negative.
+ * NoteOn, so the first is not negative. [tempoBpm] is the tempo of a timed (tempo-mode) run in
+ * [MIN_TEMPO_BPM]..[MAX_TEMPO_BPM], null for wait mode. [playedNotes] are the take's notes, rebased so 0 is the written
+ * time of tick 0 for a timed run and the first NoteOn for wait mode (empty for attempts stored before they were kept).
  */
 public data class Attempt(
     val id: String,
@@ -24,6 +26,8 @@ public data class Attempt(
     val accuracy: Double,
     val band: Band,
     val events: List<MatchEvent>,
+    val tempoBpm: Int?,
+    val playedNotes: List<PlayedNote>,
 ) {
     init {
         require(id.isNotBlank()) { "attempt id must not be blank" }
@@ -34,6 +38,9 @@ public data class Attempt(
         require(wrongNotes >= 0) { "attempt $id: wrong notes ($wrongNotes) must not be negative" }
         require(incompleteChords >= 0) { "attempt $id: incomplete chords ($incompleteChords) must not be negative" }
         require(accuracy in 0.0..1.0) { "attempt $id: accuracy ($accuracy) must be in 0.0..1.0" }
+        require(tempoBpm == null || tempoBpm in MIN_TEMPO_BPM..MAX_TEMPO_BPM) {
+            "attempt $id: tempo ($tempoBpm BPM) must be in $MIN_TEMPO_BPM..$MAX_TEMPO_BPM"
+        }
         require((events.firstOrNull()?.timestampNanos ?: 0) >= 0) {
             "attempt $id: the first event must not be before the first note"
         }

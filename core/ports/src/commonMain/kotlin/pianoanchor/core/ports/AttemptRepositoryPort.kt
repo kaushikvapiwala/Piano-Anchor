@@ -11,8 +11,8 @@ import kotlin.time.Instant
  */
 public interface AttemptRepositoryPort {
     /**
-     * Stores [attempt], events included. Throws [IllegalArgumentException] when its id is already stored.
-     * Throws [StorageUnavailableException] when the store can't be read or written.
+     * Stores [attempt], with its events and played notes. Throws [IllegalArgumentException] when its id is already
+     * stored. Throws [StorageUnavailableException] when the store can't be read or written.
      */
     public suspend fun save(attempt: Attempt)
 
@@ -41,4 +41,10 @@ public interface AttemptRepositoryPort {
         passageId: String,
         before: Instant,
     ): Int
+
+    /**
+     * Tempos (BPM) of [passageId]'s timed attempts whose band is CLEAN; empty when none. Throws
+     * [StorageUnavailableException] when the store can't be read or written.
+     */
+    public suspend fun cleanTempos(passageId: String): Set<Int>
 }

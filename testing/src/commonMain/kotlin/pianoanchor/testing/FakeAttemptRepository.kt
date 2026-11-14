@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.Band
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import kotlin.time.Instant
@@ -49,6 +50,13 @@ class FakeAttemptRepository : AttemptRepositoryPort {
     ): Int {
         failIfFailing("countStartedBefore")
         return attempts.value.values.count { it.passageId == passageId && it.startedAt < before }
+    }
+
+    override suspend fun cleanTempos(passageId: String): Set<Int> {
+        failIfFailing("cleanTempos")
+        return attempts.value.values
+            .filter { it.passageId == passageId && it.band == Band.CLEAN }
+            .mapNotNullTo(LinkedHashSet()) { it.tempoBpm }
     }
 
     private fun failIfFailing(operation: String) {

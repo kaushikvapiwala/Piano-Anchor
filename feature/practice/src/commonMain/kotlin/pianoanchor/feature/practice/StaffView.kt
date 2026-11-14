@@ -35,18 +35,21 @@ import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.TimeSignature
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_chord_join
 import pianoanchor.feature.practice.resources.practice_legend_correct
 import pianoanchor.feature.practice.resources.practice_legend_waiting
 import pianoanchor.feature.practice.resources.practice_list_join
+import pianoanchor.feature.practice.resources.practice_staff_cursor
 import pianoanchor.feature.practice.resources.practice_staff_done
 import pianoanchor.feature.practice.resources.practice_staff_waiting
 import pianoanchor.feature.practice.resources.practice_time_signature
 import pianoanchor.ui.shell.PianoAnchorColors
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
+import kotlin.math.abs
 
 private const val STAFF_LINES = 5
 private val LINE_GAP = 16.dp
@@ -64,6 +67,8 @@ private const val CURSOR_ALPHA = 0.85f
 private val SHARP_GAP = 22.dp
 private const val TREBLE_CLEF = "𝄞"
 private const val SHARP = "♯"
+private const val TAG_SP = 11
+private val TAG_GAP = 20.dp
 
 /** Staff positions of the staff's bottom (E4) and top (F5) lines; ledger lines start one line beyond them. */
 private const val LOWEST_LINE = 0
@@ -84,6 +89,8 @@ internal fun StaffView(
     passage: Passage,
     steps: List<StepView>,
     modifier: Modifier = Modifier,
+    liveMarks: Map<ScoreNoteRef, LiveMark> = emptyMap(),
+    timed: Boolean = false,
 ) {
     val colors = MaterialTheme.pianoAnchorColors
     val primary = MaterialTheme.colorScheme.primary
@@ -100,7 +107,9 @@ internal fun StaffView(
             val style = TextStyle(colors.upcomingNote, 26.sp, FontWeight.Bold, fontFamily = display)
             measurer.measure(time.beats.toString(), style) to measurer.measure(time.beatUnit.toString(), style)
         }
-    val description = staffDescription(steps, time)
+    val description = staffDescription(steps, time, timed)
+    val tags = timingTags(liveMarks)
+    val tagStyle = TextStyle(colors.timing, TAG_SP.sp, FontWeight.SemiBold)
     Box(modifier) {
         Canvas(Modifier.fillMaxSize().semantics { contentDescription = description }) {
             val gap = LINE_GAP.toPx()
@@ -118,10 +127,14 @@ internal fun StaffView(
             barLines(layout, y(HIGHEST_LINE)..y(LOWEST_LINE), colors.staffLine)
             steps.forEachIndexed { i, step ->
                 val x = layout.noteX[i].dp.toPx()
-                val color = step.status.color(colors)
                 step.notes.forEach { note ->
+                    val ref = ScoreNoteRef(i, note)
+                    val mark = liveMarks[ref]
+                    val color = mark.color(step.status, colors)
                     ledgerLines(note.staffPosition, x, ::y, colors.staffLine)
-                    notehead(Offset(x, y(note.staffPosition)), color, hollow = note in layout.hollow[i])
+                    val head = Offset(x, y(note.staffPosition))
+                    notehead(head, color, note in layout.hollow[i] || mark is LiveMark.TimingOff)
+                    tags[ref]?.let { centered(measurer.measure(it, tagStyle), head - Offset(0f, TAG_GAP.toPx())) }
                     if (note.isBlack) {
                         val sharp = measurer.measure(SHARP, sharpStyle.copy(color = color))
                         centered(sharp, Offset(x - SHARP_GAP.toPx(), y(note.staffPosition)))
@@ -140,11 +153,15 @@ internal fun StaffView(
     }
 }
 
-/** TalkBack's text for the staff: "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."). */
+/**
+ * TalkBack's text for the staff: "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."); in a [timed]
+ * run the cursor is read instead: "… Cursor on D4."
+ */
 @Composable
 private fun staffDescription(
     steps: List<StepView>,
     time: TimeSignature,
+    timed: Boolean,
 ): String {
     val timeText = stringResource(Res.string.practice_time_signature, time.beats.toString(), time.beatUnit.toString())
     val names = steps.map { it.notes.chordName() }.joinToString(stringResource(Res.string.practice_list_join))
@@ -152,7 +169,8 @@ private fun staffDescription(
     return if (waiting == null) {
         stringResource(Res.string.practice_staff_done, timeText, names)
     } else {
-        stringResource(Res.string.practice_staff_waiting, timeText, names, waiting.notes.chordName())
+        val text = if (timed) Res.string.practice_staff_cursor else Res.string.practice_staff_waiting
+        stringResource(text, timeText, names, waiting.notes.chordName())
     }
 }
 
@@ -176,13 +194,6 @@ private fun DrawScope.barLines(
 @Composable
 internal fun Set<MidiNote>.chordName(): String =
     sortedBy { it.number }.joinToString(stringResource(Res.string.practice_chord_join)) { it.name }
-
-private fun StepStatus.color(colors: PianoAnchorColors): Color =
-    when (this) {
-        StepStatus.DONE -> colors.correct
-        StepStatus.WAITING -> colors.waiting
-        StepStatus.UPCOMING -> colors.upcomingNote
-    }
 
 /** Draws [text] centred on [center]. */
 private fun DrawScope.centered(

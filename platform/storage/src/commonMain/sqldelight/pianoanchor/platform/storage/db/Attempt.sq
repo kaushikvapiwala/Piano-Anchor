@@ -1,4 +1,4 @@
--- Completed attempts (AttemptRepositoryPort). band is the Band enum's name.
+-- Completed attempts (AttemptRepositoryPort). band is the Band enum's name; tempo_bpm is null for wait mode.
 CREATE TABLE attempt (
     id TEXT NOT NULL PRIMARY KEY,
     passage_id TEXT NOT NULL,
@@ -9,7 +9,8 @@ CREATE TABLE attempt (
     wrong_notes INTEGER NOT NULL,
     incomplete_chords INTEGER NOT NULL,
     accuracy REAL NOT NULL,
-    band TEXT NOT NULL
+    band TEXT NOT NULL,
+    tempo_bpm INTEGER
 );
 
 CREATE INDEX attempt_passage_started ON attempt(passage_id, started_at_ms DESC);
@@ -29,11 +30,34 @@ CREATE TABLE attempt_event (
     CHECK ((kind = 'chord_incomplete') = (missing IS NOT NULL))
 );
 
+-- An attempt's played notes in order (seq from 0), times rebased as the Attempt documents.
+CREATE TABLE attempt_note (
+    attempt_id TEXT NOT NULL REFERENCES attempt(id) ON DELETE CASCADE,
+    seq INTEGER NOT NULL,
+    pitch INTEGER NOT NULL,
+    velocity INTEGER NOT NULL,
+    down_nanos INTEGER NOT NULL,
+    up_nanos INTEGER NOT NULL,
+    sounding_end_nanos INTEGER NOT NULL,
+    PRIMARY KEY (attempt_id, seq)
+);
+
 insertAttempt:
 INSERT INTO attempt(
-    id, passage_id, device_id, started_at_ms, duration_nanos, step_count, wrong_notes, incomplete_chords, accuracy, band
+    id, passage_id, device_id, started_at_ms, duration_nanos, step_count, wrong_notes, incomplete_chords, accuracy, band,
+    tempo_bpm
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+insertNote:
+INSERT INTO attempt_note(attempt_id, seq, pitch, velocity, down_nanos, up_nanos, sounding_end_nanos)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+selectNotes:
+SELECT * FROM attempt_note WHERE attempt_id = ? ORDER BY seq;
+
+selectCleanTempos:
+SELECT DISTINCT tempo_bpm FROM attempt WHERE passage_id = ? AND band = 'CLEAN' AND tempo_bpm IS NOT NULL;
 
 insertEvent:
 INSERT INTO attempt_event(attempt_id, seq, kind, t_nanos, step_index, note, missing)

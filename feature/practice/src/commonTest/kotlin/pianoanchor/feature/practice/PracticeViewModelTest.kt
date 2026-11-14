@@ -15,14 +15,17 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
+import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeClock
+import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
 import pianoanchor.testing.FakeWallClock
 import kotlin.test.AfterTest
@@ -42,6 +45,8 @@ class PracticeViewModelTest {
     private val clock = FakeClock(5_000_000_000)
     private val piano = FakePiano(clock)
     private val attempts = FakeAttemptRepository()
+    private val metronome = FakeMetronome(clock)
+    private val clickSetting = ClickSetting()
     private val openedAt = Instant.parse("2026-11-13T09:00:00Z")
     private val wallClock = FakeWallClock(openedAt)
     private val c4 = MidiNote(60)
@@ -61,8 +66,9 @@ class PracticeViewModelTest {
         device: MidiDevice = piano.device,
         repository: AttemptRepositoryPort = attempts,
     ): PracticeViewModel =
-        PracticeViewModel(device, Passages.CDE, piano, repository, wallClock) { "attempt-${++ids}" }
-            .also { runCurrent() }
+        PracticeViewModel(device, Passages.CDE, piano, repository, metronome, clock, wallClock, clickSetting) {
+            "attempt-${++ids}"
+        }.also { runCurrent() }
 
     private fun TestScope.playCde() {
         tap(c4)
@@ -134,6 +140,20 @@ class PracticeViewModelTest {
                 ),
                 attempt.events,
             )
+            assertNull(attempt.tempoBpm)
+        }
+
+    @Test
+    fun waitModeSavesPlayedNotesWithNullTempo() =
+        runTest(dispatcher) {
+            practice()
+
+            playCde()
+
+            val attempt = assertNotNull(attempts.get("attempt-1"))
+            assertNull(attempt.tempoBpm)
+            assertEquals(listOf(c4, d4, e4), attempt.playedNotes.map { it.pitch })
+            assertEquals(listOf(0L, 300 * ms, 600 * ms), attempt.playedNotes.map { it.downNanos })
         }
 
     @Test
@@ -263,7 +283,8 @@ class PracticeViewModelTest {
             tap(c4)
 
             vm.close()
-            val next = PracticeViewModel(piano.device, Passages.CDE, piano, attempts, wallClock) { "next" }
+            val next =
+                PracticeViewModel(piano.device, Passages.CDE, piano, attempts, metronome, clock, wallClock) { "next" }
             runCurrent()
             tap(c4)
 

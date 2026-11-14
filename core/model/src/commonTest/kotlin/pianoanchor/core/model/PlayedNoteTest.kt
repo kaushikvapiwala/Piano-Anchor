@@ -45,4 +45,11 @@ class PlayedNoteTest {
     fun rejectsSoundingEndBeforeKeyUp() {
         assertFailsWith<IllegalArgumentException> { PlayedNote(c4, 64, 10, 20, 19) }
     }
+
+    @Test
+    fun shiftedByMovesAllThreeTimes() {
+        val note = PlayedNote(MidiNote(60), velocity = 64, downNanos = 10, upNanos = 20, soundingEndNanos = 30)
+
+        assertEquals(PlayedNote(MidiNote(60), 64, -5, 5, 15), note.shiftedBy(-15))
+    }
 }

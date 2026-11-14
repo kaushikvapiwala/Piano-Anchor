@@ -18,6 +18,7 @@ class AttemptTest {
         incompleteChords: Int = 0,
         accuracy: Double = 2.0 / 3,
         events: List<MatchEvent> = this.events,
+        tempoBpm: Int? = null,
     ) = Attempt(
         id,
         passageId,
@@ -30,6 +31,8 @@ class AttemptTest {
         accuracy,
         Band.KEEP_PRACTISING,
         events,
+        tempoBpm,
+        emptyList(),
     )
 
     @Test
@@ -73,5 +76,14 @@ class AttemptTest {
         assertFailsWith<IllegalArgumentException> {
             attempt(events = listOf(StepCorrect(5, 0), PassageComplete(4, 1)))
         }
+    }
+
+    @Test
+    fun acceptsNoTempoOrATempoInRangeAndRejectsOthers() {
+        assertEquals(null, attempt().tempoBpm)
+        assertEquals(MIN_TEMPO_BPM, attempt(tempoBpm = MIN_TEMPO_BPM).tempoBpm)
+        assertEquals(MAX_TEMPO_BPM, attempt(tempoBpm = MAX_TEMPO_BPM).tempoBpm)
+        assertFailsWith<IllegalArgumentException> { attempt(tempoBpm = MIN_TEMPO_BPM - 1) }
+        assertFailsWith<IllegalArgumentException> { attempt(tempoBpm = MAX_TEMPO_BPM + 1) }
     }
 }
