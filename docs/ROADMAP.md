@@ -67,7 +67,7 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
     order, recovery after a skip).
 10. **M3.1 Content format** (spec #76) [#59, #70]: note text, rights records, units; the rights document generated from the
     content.
-11. **M3.2 Units 0–2 content** (spec #77, needs-owner: owner reviews the skill and piece list) [#76].
+11. **M3.2 Units 0–2 content** (spec #77, approved) [#76].
 12. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
 13. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
     start screen.
@@ -75,14 +75,14 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 15. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
 16. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
     exit check.
-17. **Unstable ids and kept identities** (follow-up of #56; needs-owner): a `sys:<id>` fallback id can name another
-    piano after a reconnect, which then keeps the earlier piano's stored identity. Decide whether to keep identities
-    only for stable `usb:`/`ble:` ids.
+17. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
+    identity of a `sys:<id>` fallback id; stable `usb:`/`ble:` ids keep theirs.
 18. **All Notes Off in played notes** (follow-up of #60): `PlayedNotes.from` ignores CC123/CC120, so a key whose
     NoteOff was lost stays down until the last event; end every down key there (mechanical).
-19. **Robust fitted tempo** (follow-up of #61; needs-owner): a long pause pulls the analyser's least-squares tempo, so
-    `Fitted` and `Untimed` hesitation checks can miss a pause and `Fitted` can report early/late notes around it.
-    Decide between fitting each stretch between hesitations and a median inter-onset tempo.
+19. **Robust fitted tempo** (spec #96) [#61]: fit the analyser tempo from the median gap, so one long pause no longer
+    hides a hesitation or makes the notes around it early or late.
+20. **Note length at key up** (spec #97) [#61]: judge `TOO_SHORT`/`TOO_LONG` on key up, so pedalling isn't reported
+    as held too long.
 
 Item 1 doesn't block the slices; once it lands its C-D-E fixture, add a replay test of it to `MatchWaitModeFlowTest`
 and run the performance analyser on it (the M1 exit check on a real recording).
