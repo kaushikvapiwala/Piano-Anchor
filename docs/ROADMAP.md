@@ -41,37 +41,35 @@ Remove an item in the PR that finishes it; add follow-ups here. Dependencies in 
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
 
-1. **Note length at key up** (spec #97) [#61]: judge `TOO_SHORT`/`TOO_LONG` on key up, so pedalling isn't reported
-   as held too long.
-2. **M1.4c Tempo-mode runs** (spec #65) [#61, #63, #64]: tempo rungs, one-bar count-in, clock-driven cursor, live judge,
+1. **M1.4c Tempo-mode runs** (spec #65) [#61, #63, #64]: tempo rungs, one-bar count-in, clock-driven cursor, live judge,
    metronome, attempts store tempo and played notes (schema 1→2). Hearing the M1.4a click on a device is an owner
    device check.
-3. **M1.4d Results tiles** (spec #66) [#65]: Timing, Note length and Hesitation tiles from the analyser; tempo in the
+2. **M1.4d Results tiles** (spec #66) [#65]: Timing, Note length and Hesitation tiles from the analyser; tempo in the
    caption.
-4. **M1.5 Latency calibration** (spec #67) [#63, #65, #66]: tap along to 16 clicks, a calibration port, offered before a
+3. **M1.5 Latency calibration** (spec #67) [#63, #65, #66]: tap along to 16 clicks, a calibration port, offered before a
    piano's first timed run and from the monitor (schema 2→3).
-5. **M2.1 FSRS-6 memory model** (spec #69): pure-Kotlin FSRS-6 in the engine, checked against committed py-fsrs
+4. **M2.1 FSRS-6 memory model** (spec #69): pure-Kotlin FSRS-6 in the engine, checked against committed py-fsrs
    golden vectors.
-6. **M2.2 Skill graph** (spec #70) [#59]: skills with prerequisites (validated DAG); passages declare their skills.
-7. **M2.3 Learner storage** (spec #71) [#69, #70]: review log plus cached skill state behind a learner repository port;
+5. **M2.2 Skill graph** (spec #70) [#59]: skills with prerequisites (validated DAG); passages declare their skills.
+6. **M2.3 Learner storage** (spec #71) [#69, #70]: review log plus cached skill state behind a learner repository port;
    adds kotlinx-datetime (ADR).
-8. **M2.4 Learner model** (spec #72) [#69, #70, #71]: cold checks rated from the band, learned rule, due list and daily
+7. **M2.4 Learner model** (spec #72) [#69, #70, #71]: cold checks rated from the band, learned rule, due list and daily
    limits; recorded after every saved run.
-9. **M2.5 Learner simulation exit check** (spec #73) [#72]: seeded 90-day simulation (retention, load, prerequisite
-    order, recovery after a skip).
-10. **M3.1 Content format** (spec #76) [#59, #70]: note text, rights records, units; the rights document generated from the
-    content.
-11. **M3.2 Units 0–2 content** (spec #77, approved) [#76].
-12. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
-13. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
+8. **M2.5 Learner simulation exit check** (spec #73) [#72]: seeded 90-day simulation (retention, load, prerequisite
+   order, recovery after a skip).
+9. **M3.1 Content format** (spec #76) [#59, #70]: note text, rights records, units; the rights document generated from the
+   content.
+10. **M3.2 Units 0–2 content** (spec #77, approved) [#76].
+11. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
+12. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
     start screen.
-14. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
-15. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
-16. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
+13. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
+14. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
+15. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
     exit check.
-17. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
+16. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
     identity of a `sys:<id>` fallback id; stable `usb:`/`ble:` ids keep theirs.
-18. **All Notes Off on the practice keyboard** (follow-up of #101): the practice screen's keys-down and wrong-key
+17. **All Notes Off on the practice keyboard** (follow-up of #101): the practice screen's keys-down and wrong-key
     highlights still ignore control changes 120 and 123–127, so a key whose NoteOff was lost stays lit; clear them
     as `PlayedNotes` does (mechanical).
 

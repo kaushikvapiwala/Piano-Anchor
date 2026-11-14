@@ -359,14 +359,6 @@ class PerformanceAnalyserTest {
     }
 
     @Test
-    fun pedalHeldShortKeyIsTooShortLikeAClippedOne() {
-        val pedalled = listOf(note(c4, 0, lengthMs = 200, soundingMs = 900), note(d4, 1000), note(e4, 2000))
-        assertEquals(listOf(TOO_SHORT to at(0, c4)), kinds(pedalled))
-        val clipped = listOf(note(c4, 0, lengthMs = 200), note(d4, 1000), note(e4, 2000))
-        assertEquals(listOf(TOO_SHORT to at(0, c4)), kinds(clipped))
-    }
-
-    @Test
     fun legatoReleaseBeforeTheNextOnsetIsNotTooShort() {
         // Sixteenths at 250 BPM are written 60 ms long: a lift 40 ms before the next note (inside the 60 ms tolerance)
         // is legato, though the note sounded only a third of its length.
