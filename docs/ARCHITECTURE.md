@@ -19,8 +19,8 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 |---|---|---|
 | `:core:model` | Domain types (e.g. `MidiNote`, `MidiEvent`, `Attempt`) | Pure Kotlin, 100% coverage |
 | `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`, `MidiDiscoveryPort`, `InstrumentRepositoryPort`, `AttemptRepositoryPort`) | Interfaces only, each with KDoc |
-| `:engine` | Coaching logic: the `midi` byte-stream parser, the `matcher` (wait mode), `grading`, built-in `content` passages; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
-| `:testing` | Fakes (e.g. `FakePiano`) and abstract port contract tests | Used by test source sets only |
+| `:engine` | Coaching logic: the `midi` byte-stream parser, the `matcher` (wait mode), `grading`, `analysis` (played notes from MIDI events), built-in `content` passages; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
+| `:testing` | Fakes (e.g. `FakePiano`), abstract port contract tests and the analyser test harness (`TakeGenerator`, `ErrorInjector`, `ClassificationScore`) | Used by test source sets only |
 | `:platform:android-midi` | Driven adapters over Android's MIDI service: `AndroidMidiAdapter` (both MIDI ports and Bluetooth LE discovery), `AndroidClockAdapter` | Logic in `commonMain`, 100% coverage on the JVM; `androidMain` glue excluded (see Testing) |
 | `:platform:storage` | Driven adapters over the on-device SQLite database (SQLDelight, ADR 0019): `SqlInstrumentRepositoryAdapter`, `SqlAttemptRepositoryAdapter`, `createPianoAnchorDatabaseDriver` per platform | Adapters in `commonMain` over `SqlDriver`, tested on the JVM SQLite driver at 100% (generated code excluded); the Android driver factory is excluded |
 | `:ui:shell` | Shared Compose root, `PianoAnchorTheme` (`docs/ui/living-studio.md`) and string resources | Driving adapter |
