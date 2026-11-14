@@ -194,7 +194,7 @@ public object Tunables {
     public const val MISTOUCH_WINDOW_MS: Long = 40
 
     /**
-     * A note sounding for less than this fraction of its written length is `TOO_SHORT`.
+     * A note held (key down to key up) for less than this fraction of its written length is `TOO_SHORT`.
      *
      * Why: under half the written length is clearly clipped, not a phrasing choice.
      *
@@ -203,7 +203,7 @@ public object Tunables {
     public const val NOTE_SHORT_RATIO: Double = 0.5
 
     /**
-     * A note sounding for more than this fraction of its written length is `TOO_LONG`.
+     * A note held (key down to key up) for more than this fraction of its written length is `TOO_LONG`.
      *
      * Why: over half again the written length is clearly held too long.
      *

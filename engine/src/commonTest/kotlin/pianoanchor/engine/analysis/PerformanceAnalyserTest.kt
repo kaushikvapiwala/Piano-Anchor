@@ -359,20 +359,46 @@ class PerformanceAnalyserTest {
     }
 
     @Test
-    fun pedalHeldNoteIsNotTooShort() {
-        val pedalled = listOf(note(c4, 0, lengthMs = 200, soundingMs = 900), note(d4, 1000), note(e4, 2000))
-        assertEquals(emptyList(), kinds(pedalled))
-        val clipped = listOf(note(c4, 0, lengthMs = 200), note(d4, 1000), note(e4, 2000))
-        assertEquals(listOf(TOO_SHORT to at(0, c4)), kinds(clipped))
-    }
-
-    @Test
     fun legatoReleaseBeforeTheNextOnsetIsNotTooShort() {
         // Sixteenths at 250 BPM are written 60 ms long: a lift 40 ms before the next note (inside the 60 ms tolerance)
         // is legato, though the note sounded only a third of its length.
         val sixteenths = evenSteps(4, 250, c4, d4)
         val take = listOf(note(c4, 0, lengthMs = 20), note(d4, 60, lengthMs = 50))
         assertEquals(emptyList(), kinds(take, sixteenths, Target(250)))
+    }
+
+    @Test
+    fun aPedalledNoteReleasedOnTimeIsNotTooLong() {
+        val take = listOf(note(c4, 0, lengthMs = 950, soundingMs = 3000), note(d4, 1000), note(e4, 2000))
+        assertEquals(emptyList(), kinds(take, cde, Target(60)))
+    }
+
+    @Test
+    fun aKeyHeldTooLongIsTooLongWithOrWithoutPedal() {
+        val bare = listOf(note(c4, 0, lengthMs = 2000), note(d4, 1000), note(e4, 2000))
+        val pedalled = listOf(note(c4, 0, lengthMs = 2000, soundingMs = 3000), note(d4, 1000), note(e4, 2000))
+        assertEquals(listOf(TOO_LONG to at(0, c4)), kinds(bare, cde, Target(60)))
+        assertEquals(listOf(TOO_LONG to at(0, c4)), kinds(pedalled, cde, Target(60)))
+    }
+
+    @Test
+    fun aShortKeyUnderThePedalIsStillTooShort() {
+        val take = listOf(note(c4, 0, lengthMs = 300, soundingMs = 1000), note(d4, 1000), note(e4, 2000))
+        assertEquals(listOf(TOO_SHORT to at(0, c4)), kinds(take, cde, Target(60)))
+    }
+
+    @Test
+    fun legatoExemptionUsesKeyUp() {
+        // The legato case, with a pedal holding the first note well past the next onset: key up still decides.
+        val sixteenths = evenSteps(4, 250, c4, d4)
+        val take = listOf(note(c4, 0, lengthMs = 20, soundingMs = 300), note(d4, 60, lengthMs = 50))
+        assertEquals(emptyList(), kinds(take, sixteenths, Target(250)))
+    }
+
+    @Test
+    fun aKeyUpWellBeforeTheNextOnsetIsTooShortEvenIfThePedalHoldsToIt() {
+        val take = listOf(note(c4, 0, lengthMs = 400, soundingMs = 1000), note(d4, 1000), note(e4, 2000))
+        assertEquals(listOf(TOO_SHORT to at(0, c4)), kinds(take, cde, Target(60)))
     }
 
     @Test
