@@ -3,6 +3,7 @@ package pianoanchor.feature.practice
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -32,6 +33,7 @@ import pianoanchor.testing.FakeClock
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
+import pianoanchor.testing.FakeSettingsRepository
 import pianoanchor.testing.FakeWallClock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -57,7 +59,7 @@ class PracticeViewModelTempoTest {
     // Skipped: these tests play timed rungs without the calibration card (PracticeViewModelCalibrationTest has it).
     private val skips = CalibrationSkips().apply { skip(piano.device.id) }
     private val metronome = FakeMetronome(clock)
-    private val clickSetting = ClickSetting()
+    private val settings = FakeSettingsRepository()
     private val openedAt = Instant.parse("2026-11-13T09:00:00Z")
     private val wallClock = FakeWallClock(openedAt)
     private val c4 = MidiNote(60)
@@ -86,7 +88,7 @@ class PracticeViewModelTempoTest {
             wallClock,
             learner,
             TimeZone.UTC,
-            clickSetting,
+            settings,
             skips,
         ) {
             "attempt-${++ids}"
@@ -369,7 +371,7 @@ class PracticeViewModelTempoTest {
             runCurrent()
             assertTrue(vm.state.value.clickOn)
             assertEquals(pattern, metronome.running.value)
-            assertTrue(clickSetting.on.value)
+            assertTrue(settings.settings.first().clickOn)
         }
 
     @Test
@@ -386,7 +388,53 @@ class PracticeViewModelTempoTest {
             runCurrent()
 
             assertNotNull(metronome.running.value)
-            assertTrue(clickSetting.on.value)
+            assertTrue(settings.settings.first().clickOn)
+        }
+
+    @Test
+    fun `click toggle persists`() =
+        runPractice {
+            practice().toggleClick()
+            runCurrent()
+            assertFalse(settings.settings.first().clickOn)
+
+            practice().toggleClick()
+            runCurrent()
+            assertTrue(settings.settings.first().clickOn)
+        }
+
+    @Test
+    fun theStoredClickChoiceSeedsTheScreen() =
+        runPractice {
+            settings.update { it.copy(clickOn = false) }
+
+            val vm = practice()
+
+            assertFalse(vm.state.value.clickOn)
+            startRun(vm)
+            assertNull(metronome.running.value)
+        }
+
+    @Test
+    fun anUnreadableSettingsStoreLeavesTheClickOn() =
+        runPractice {
+            settings.failing = true
+
+            assertTrue(practice().state.value.clickOn)
+        }
+
+    @Test
+    fun aToggleThatCannotBeStoredStillChangesTheClickForThisScreen() =
+        runPractice {
+            val vm = practice()
+            settings.failing = true
+
+            vm.toggleClick()
+            runCurrent()
+
+            assertFalse(vm.state.value.clickOn)
+            settings.failing = false
+            assertTrue(settings.settings.first().clickOn)
         }
 
     @Test

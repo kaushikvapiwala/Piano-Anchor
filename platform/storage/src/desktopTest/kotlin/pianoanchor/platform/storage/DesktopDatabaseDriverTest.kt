@@ -139,4 +139,23 @@ class DesktopDatabaseDriverTest {
                 assertEquals(2, state.recalledColdChecks)
             }
         }
+
+    @Test
+    fun migration5To6AddsAnEmptySettingTable() {
+        file.parentFile.mkdirs()
+        // The committed version-5 schema file, with a skill state written the way version 5 did.
+        File("src/commonMain/sqldelight/databases/5.db").copyTo(file)
+        JdbcSqliteDriver("jdbc:sqlite:${file.path}").use { old ->
+            old.exec("PRAGMA user_version = 5")
+            old.exec(
+                "INSERT INTO skill_state VALUES " +
+                    "('pitch:c4', 3.5, 6.25, '2026-11-01', '2026-11-03', '2026-11-10', 2, 1, 2)",
+            )
+        }
+
+        createPianoAnchorDatabaseDriver(file).use { driver ->
+            assertEquals(0, driver.count("setting"))
+            assertEquals(1, driver.count("skill_state"))
+        }
+    }
 }

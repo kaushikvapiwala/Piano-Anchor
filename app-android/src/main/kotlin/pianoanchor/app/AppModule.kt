@@ -15,6 +15,7 @@ import pianoanchor.core.ports.MetronomePort
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
+import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.learner.LearnerModel
@@ -22,9 +23,9 @@ import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.practice.CalibrationSkips
 import pianoanchor.feature.practice.CalibrationViewModel
-import pianoanchor.feature.practice.ClickSetting
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsViewModel
+import pianoanchor.feature.settings.SettingsViewModel
 import pianoanchor.platform.androidaudio.AndroidMetronomeAdapter
 import pianoanchor.platform.androidmidi.AndroidClockAdapter
 import pianoanchor.platform.androidmidi.AndroidMidiAdapter
@@ -32,6 +33,7 @@ import pianoanchor.platform.storage.SqlAttemptRepositoryAdapter
 import pianoanchor.platform.storage.SqlCalibrationRepositoryAdapter
 import pianoanchor.platform.storage.SqlInstrumentRepositoryAdapter
 import pianoanchor.platform.storage.SqlLearnerRepositoryAdapter
+import pianoanchor.platform.storage.SqlSettingsRepositoryAdapter
 import pianoanchor.platform.storage.createPianoAnchorDatabaseDriver
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
@@ -46,7 +48,6 @@ val appModule =
         single<ClockPort> { AndroidClockAdapter() }
         single<Clock> { Clock.System }
         single<TimeZone> { TimeZone.currentSystemDefault() }
-        single { ClickSetting() }
         single { CalibrationSkips() }
         single<MetronomePort> { AndroidMetronomeAdapter(androidContext(), get()) }
         single { createPianoAnchorDatabaseDriver(androidContext()) }
@@ -54,6 +55,7 @@ val appModule =
         single<AttemptRepositoryPort> { SqlAttemptRepositoryAdapter(get(), Dispatchers.IO) }
         single<CalibrationRepositoryPort> { SqlCalibrationRepositoryAdapter(get(), Dispatchers.IO) }
         single<LearnerRepositoryPort> { SqlLearnerRepositoryAdapter(get(), Dispatchers.IO) }
+        single<SettingsRepositoryPort> { SqlSettingsRepositoryAdapter(get(), Dispatchers.IO) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get()) }
         viewModel { (device: MidiDevice, rung: TempoRung) ->
             PracticeViewModel(
@@ -76,4 +78,5 @@ val appModule =
         }
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
         viewModel { (attemptId: String) -> ResultsViewModel(attemptId, get()) }
+        viewModel { SettingsViewModel(get()) }
     }

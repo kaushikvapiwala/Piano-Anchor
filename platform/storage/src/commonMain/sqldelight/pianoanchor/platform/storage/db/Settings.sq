@@ -1,0 +1,14 @@
+-- The learner's settings (SettingsRepositoryPort) as key-value rows with text values; a missing row means the default.
+-- Keys: daily_budget (DailyBudget name), weekly_goal_days, click_on and update_check_on (true or false).
+CREATE TABLE setting (
+    key TEXT NOT NULL PRIMARY KEY,
+    text_value TEXT NOT NULL
+);
+
+-- Replaces an earlier value of the same key.
+put:
+INSERT INTO setting(key, text_value) VALUES (?, ?)
+ON CONFLICT(key) DO UPDATE SET text_value = excluded.text_value;
+
+selectAll:
+SELECT key, text_value FROM setting;

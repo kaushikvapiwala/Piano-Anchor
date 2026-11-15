@@ -15,6 +15,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Chord window | The `CHORD_CLUSTER_MS` span from a step's first pressed note in which its other notes must follow; the matcher reports an incomplete chord when it runs out. |
 | Cold check | The first saved attempt on a learner day that exercises a skill, in any mode and at any tempo; it becomes the skill's review for that day, rated from its band (`docs/algorithms/learner-model.md`). Later attempts that day change nothing. |
 | Contract test | Abstract test in `testing/` that every implementation of a port must pass. |
+| Daily budget | The minutes of practice the learner wants per day: 15, 20 (default) or 30 (`DailyBudget` in `Settings`). |
 | Difficulty | FSRS: how hard an item is for this learner, 1 (easy) to 10 (hard); part of `MemoryState` (`docs/algorithms/scheduler.md`). |
 | Due | A skill is due on a learner day when its `dueDay` (last review day plus the FSRS interval) is on or before that day; the plan lists due skills lowest retrievability first, at most `MAX_DUE_PER_DAY`. |
 | Error kind | What the performance analyser can report about a score note (`ErrorKind`): wrong note, missed note, extra note, incomplete chord, mistouch, octave, early, late, hesitation, too short, too long (`docs/algorithms/performance-analysis.md`). |
@@ -71,6 +72,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Time signature | Beats per bar (1–32) and the note value of a beat (1, 2, 4, 8 or 16), e.g. 3/4 (`TimeSignature`). |
 | Tunable | A threshold or prior in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt`, documented with why and source. |
 | Unit | One step of the curriculum (`CurriculumUnit` in `:core:model`): a title, the skills it teaches and the passages that teach them; the units are listed in `Curriculum`. |
+| Weekly goal | The days per week the learner aims to practise, 1–7, default 4 (`Settings.weeklyGoalDays`). |
 | Wait mode | Practice mode where the music waits until the learner plays the right note(s). |
 | Written tempo | The tempo a passage states, in quarter notes per minute (`Passage.tempoBpm`, 20–300); tempo rungs are percentages of it. |
 | Wrong note | `WrongNote`: a key pressed that isn't in the current step; progress is unchanged. |

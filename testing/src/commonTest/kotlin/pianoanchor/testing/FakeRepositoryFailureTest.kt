@@ -92,4 +92,13 @@ class FakeRepositoryFailureTest {
             assertFailsWith<StorageUnavailableException> { learner.reviews("pitch:c4") }
             assertFailsWith<StorageUnavailableException> { learner.replaceStates(listOf(skillState())) }
         }
+
+    @Test
+    fun aFailingSettingsRepositoryThrowsStorageUnavailableExceptionFromEveryMethod() =
+        runTest {
+            val settings = FakeSettingsRepository().apply { failing = true }
+
+            assertFailsWith<StorageUnavailableException> { settings.settings.first() }
+            assertFailsWith<StorageUnavailableException> { settings.update { it } }
+        }
 }

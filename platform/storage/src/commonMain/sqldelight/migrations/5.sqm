@@ -1,0 +1,5 @@
+-- Schema 5 to 6 (M3.3): the learner's settings as key-value text rows (SettingsRepositoryPort).
+CREATE TABLE setting (
+    key TEXT NOT NULL PRIMARY KEY,
+    text_value TEXT NOT NULL
+);

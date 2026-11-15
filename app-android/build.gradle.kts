@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":ui:shell"))
     implementation(project(":feature:monitor"))
     implementation(project(":feature:practice"))
+    implementation(project(":feature:settings"))
     implementation(project(":engine"))
     implementation(project(":platform:android-midi"))
     implementation(project(":platform:android-audio"))

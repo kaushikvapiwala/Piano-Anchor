@@ -42,6 +42,9 @@ import pianoanchor.feature.practice.PracticeScreen
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsScreen
 import pianoanchor.feature.practice.ResultsViewModel
+import pianoanchor.feature.settings.SettingsActions
+import pianoanchor.feature.settings.SettingsScreen
+import pianoanchor.feature.settings.SettingsViewModel
 import pianoanchor.ui.shell.PianoAnchorTheme
 import java.io.IOException
 
@@ -57,9 +60,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Where the app is: the monitor, practising or calibrating a piano, or the results of a finished run on it. */
+/** Where the app is: the monitor, practising or calibrating a piano, the results of a finished run, or the settings. */
 private sealed interface Destination {
     data object Monitor : Destination
+
+    /** The settings, opened from the monitor's gear; back returns to the monitor. */
+    data object Settings : Destination
 
     /** Practising [device], starting on [rung] (the one picked before a calibration). */
     data class Practice(
@@ -88,7 +94,12 @@ private fun AppNavigation() {
             MonitorRoute(
                 onPractice = { destination = Destination.Practice(it) },
                 onCalibrate = { destination = Destination.Calibrate(it, practiceRung = null) },
+                onSettings = { destination = Destination.Settings },
             )
+        }
+
+        Destination.Settings -> {
+            SettingsRoute(onBack = back)
         }
 
         is Destination.Practice -> {
@@ -204,6 +215,25 @@ private fun ResultsRoute(
     ResultsScreen(state, onBack = onBack, onTryAgain = onTryAgain, onRetry = viewModel::retry)
 }
 
+/** The settings screen; its ViewModel lives as long as the route. */
+@Composable
+private fun SettingsRoute(onBack: () -> Unit) {
+    val viewModel: SettingsViewModel = koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner())
+    val state by viewModel.state.collectAsState()
+    BackHandler(onBack = onBack)
+    SettingsScreen(
+        state,
+        SettingsActions(
+            onBack = onBack,
+            onDailyBudget = viewModel::setDailyBudget,
+            onWeeklyGoalDays = viewModel::setWeeklyGoalDays,
+            onClickOn = viewModel::setClickOn,
+            onUpdateCheckOn = viewModel::setUpdateCheckOn,
+            onDismissError = viewModel::dismissError,
+        ),
+    )
+}
+
 /** A ViewModel store scoped to one route: cleared when the route leaves the composition. */
 private class RouteViewModelStoreOwner : ViewModelStoreOwner {
     override val viewModelStore = ViewModelStore()
@@ -214,6 +244,7 @@ private class RouteViewModelStoreOwner : ViewModelStoreOwner {
 private fun MonitorRoute(
     onPractice: (MidiDevice) -> Unit,
     onCalibrate: (MidiDevice) -> Unit,
+    onSettings: () -> Unit,
     viewModel: MonitorViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -262,19 +293,11 @@ private fun MonitorRoute(
                 },
                 onEnableBluetooth = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
                 onDismissError = viewModel::dismissError,
-                onPractice = { device ->
-                    // An input has one reader: practice opens the piano once the monitor has closed it.
-                    scope.launch {
-                        viewModel.setDeviceOpen(false)
-                        onPractice(device)
-                    }
-                },
+                onSettings = onSettings,
+                // An input has one reader: the next screen opens the piano once the monitor has closed it.
+                onPractice = { device -> scope.launch { viewModel.setDeviceOpen(false).also { onPractice(device) } } },
                 onCalibrate = { device ->
-                    // Same hand-over: the calibration screen opens the piano once the monitor has closed it.
-                    scope.launch {
-                        viewModel.setDeviceOpen(false)
-                        onCalibrate(device)
-                    }
+                    scope.launch { viewModel.setDeviceOpen(false).also { onCalibrate(device) } }
                 },
             ),
     )

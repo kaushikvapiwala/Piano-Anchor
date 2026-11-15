@@ -108,3 +108,14 @@ Driven port: MIDI messages sent to instruments (e.g. SysEx requests). Contract: 
 | `suspend fun send(device: MidiDevice, bytes: ByteArray)` | Sends [bytes] to [device]: one or more complete MIDI messages, delivered in order. Completeness is the caller's job; adapters only check the first byte and forward the bytes unchanged. Suspends until the platform has accepted the bytes. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/MidiOutputPortContractTest.kt`
+
+## `SettingsRepositoryPort`
+
+Driven port: the learner's [Settings], kept across restarts. Anything never set reads as its default. Throws [StorageUnavailableException] when the store can't be read or written (#55). Contract: `pianoanchor.testing.SettingsRepositoryPortContractTest`.
+
+| Function | Description |
+|---|---|
+| `val settings: Flow<Settings>` | The current settings, emitted on collection and again after every [update]. |
+| `suspend fun update(change: (Settings) -> Settings)` | Replaces the settings with [change] applied to the current ones. Atomic: concurrent updates apply one after the other, each to the result of the one before, so none is lost. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/SettingsRepositoryPortContractTest.kt`
