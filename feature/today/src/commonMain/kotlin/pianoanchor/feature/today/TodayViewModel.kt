@@ -14,17 +14,21 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.Release
+import pianoanchor.core.model.Settings
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.CalibrationRepositoryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
+import pianoanchor.core.ports.UpdateCheckPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.PassageHistory
 import pianoanchor.engine.session.SessionComposer
+import pianoanchor.engine.update.isNewer
 import kotlin.math.roundToInt
 import kotlin.time.Clock
 
@@ -39,6 +43,10 @@ private const val NANOS_PER_MILLI = 1_000_000.0
  * [calibration]). Counts the practice days for the weekly goal and the 16-day exit-check line from local attempts.
  * The day and the greeting follow [clock] in [zone]. A store that can't be read leaves [TodayState.storageFailed]
  * until [refresh].
+ *
+ * Once per learner day, when Today opens with the update check on in [settings], it asks [updateCheck] for the latest
+ * release (the day is recorded first, so it is at most one request a day, whatever the answer). [TodayState.update]
+ * is the latest release seen when it is newer than [installedVersion] and not dismissed; a failed check shows nothing.
  */
 public class TodayViewModel(
     private val learner: LearnerModel,
@@ -48,6 +56,8 @@ public class TodayViewModel(
     private val calibration: CalibrationRepositoryPort,
     private val clock: Clock,
     private val zone: TimeZone,
+    private val updateCheck: UpdateCheckPort,
+    private val installedVersion: String,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(TodayState())
     public val state: StateFlow<TodayState> = mutableState.asStateFlow()
@@ -62,12 +72,26 @@ public class TodayViewModel(
             }
         }
         refresh()
+        viewModelScope.launch { checkForUpdate() }
     }
 
     /** Loads the plan and counts again, e.g. after a run was saved or a failed read. */
     public fun refresh() {
         load?.cancel()
         load = viewModelScope.launch { loadToday() }
+    }
+
+    /** Hides the update banner until a newer version than the one it names is released. */
+    public fun dismissUpdate() {
+        val release = mutableState.value.update ?: return
+        mutableState.update { it.copy(update = null) }
+        viewModelScope.launch {
+            try {
+                settings.update { it.copy(dismissedUpdate = release.version) }
+            } catch (_: StorageUnavailableException) {
+                // The banner stays hidden for this visit; it may come back next time.
+            }
+        }
     }
 
     /** Where tapping [card] leads: Practice on its passage and rung, or Pianos when no piano is connected. */
@@ -120,6 +144,28 @@ public class TodayViewModel(
             mutableState.update { it.copy(session = null, storageFailed = true) }
         }
     }
+
+    private suspend fun checkForUpdate() {
+        try {
+            val day = learnerDay(clock.now(), zone)
+            val stored = settings.settings.first()
+            if (!stored.updateCheckOn) return
+            if (stored.lastUpdateCheck != day) {
+                settings.update { it.copy(lastUpdateCheck = day) }
+                updateCheck.latest()?.let { release -> settings.update { it.copy(latestRelease = release) } }
+            }
+            mutableState.update { it.copy(update = settings.settings.first().bannerRelease()) }
+        } catch (_: StorageUnavailableException) {
+            // The banner is optional: without storage there is nothing to show or remember.
+        }
+    }
+
+    /** The release to announce: seen, newer than the installed version and newer than any dismissed one. */
+    private fun Settings.bannerRelease(): Release? =
+        latestRelease?.takeIf { release ->
+            isNewer(release.version, installedVersion) == true &&
+                dismissedUpdate?.let { isNewer(release.version, it) } != false
+        }
 
     private suspend fun latencyMsOf(device: MidiDevice): Int? =
         try {

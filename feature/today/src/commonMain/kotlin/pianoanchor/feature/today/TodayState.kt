@@ -2,6 +2,7 @@ package pianoanchor.feature.today
 
 import pianoanchor.core.model.DEFAULT_WEEKLY_GOAL_DAYS
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.Release
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.Session
@@ -25,7 +26,8 @@ public data class PianoChip(
 /**
  * What Today shows. [session] is null until the plan has loaded (or when [storageFailed]); [piano] is null while no
  * piano is connected. [daysThisWeek] counts the days with a saved attempt since Monday against [weeklyGoalDays];
- * [practicedDays] counts them over the last [PRACTICE_WINDOW_DAYS] days.
+ * [practicedDays] counts them over the last [PRACTICE_WINDOW_DAYS] days. [update] is a newer release to announce, or
+ * null.
  */
 public data class TodayState(
     val session: Session? = null,
@@ -35,6 +37,7 @@ public data class TodayState(
     val weeklyGoalDays: Int = DEFAULT_WEEKLY_GOAL_DAYS,
     val practicedDays: Int = 0,
     val storageFailed: Boolean = false,
+    val update: Release? = null,
 ) {
     /** The cold-open card, if something is due. */
     val coldOpen: Card.ColdOpen? get() = session?.cards?.filterIsInstance<Card.ColdOpen>()?.firstOrNull()

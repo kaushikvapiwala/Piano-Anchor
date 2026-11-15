@@ -36,7 +36,22 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             repository.update { it.copy(dailyBudget = DailyBudget.MIN_15) }
 
             assertEquals(Settings(DailyBudget.MIN_15, updateCheckOn = false), repository.settings.first())
-            assertEquals(5, driver.count("setting"))
+            assertEquals(8, driver.count("setting"))
+        }
+
+    @Test
+    fun unreadableUpdateCheckStateReadsAsNotSet() =
+        runTest {
+            val driver = drivers.open()
+            driver.exec(
+                "INSERT INTO setting VALUES ('last_update_check', 'yesterday'), ('latest_release', 'v1 a b'), " +
+                    "('dismissed_update', '')",
+            )
+            assertEquals(Settings(), SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first())
+            for (unreadable in listOf("v1", "v1 ", " https://x")) {
+                driver.exec("UPDATE setting SET text_value = '$unreadable' WHERE key = 'latest_release'")
+                assertEquals(Settings(), SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first())
+            }
         }
 
     @Test

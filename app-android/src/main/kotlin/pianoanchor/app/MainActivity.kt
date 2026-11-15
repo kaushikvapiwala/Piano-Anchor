@@ -335,6 +335,7 @@ private fun TodayRoute(
 ) {
     val viewModel: TodayViewModel = koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner())
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
     TodayScreen(
         state,
         TodayActions(
@@ -352,6 +353,8 @@ private fun TodayRoute(
             onPianos = onPianos,
             onSettings = onSettings,
             onRetry = viewModel::refresh,
+            onSeeRelease = { release -> openInBrowser(context, release.pageUrl) },
+            onDismissUpdate = viewModel::dismissUpdate,
         ),
     )
 }

@@ -14,6 +14,15 @@ class SettingsTest {
     }
 
     @Test
+    fun theUpdateCheckStartsWithNothingSeen() {
+        val settings = Settings()
+        assertEquals(null, settings.lastUpdateCheck)
+        assertEquals(null, settings.latestRelease)
+        assertEquals(null, settings.dismissedUpdate)
+        assertEquals(Release("0.2.0", "https://example.org"), Release("0.2.0", "https://example.org"))
+    }
+
+    @Test
     fun budgetsKnowTheirMinutes() {
         assertEquals(listOf(15, 20, 30), DailyBudget.entries.map { it.minutes })
     }
