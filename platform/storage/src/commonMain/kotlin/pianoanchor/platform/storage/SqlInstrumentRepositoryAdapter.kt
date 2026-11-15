@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import pianoanchor.core.model.Instrument
 import pianoanchor.core.model.InstrumentIdentity
+import pianoanchor.core.model.isStableDeviceId
 import pianoanchor.core.ports.InstrumentRepositoryPort
 import pianoanchor.platform.storage.db.PianoAnchorDatabase
 import kotlin.time.Instant
@@ -24,15 +25,24 @@ public class SqlInstrumentRepositoryAdapter(
         withContext(dispatcher) {
             storage("upsert") {
                 val identity = instrument.identity
-                queries.upsert(
-                    device_id = instrument.deviceId,
-                    name = instrument.name,
-                    mfr_id = identity?.let { it.manufacturerId.toHex() },
-                    family = identity?.family?.toLong(),
-                    model = identity?.model?.toLong(),
-                    version = identity?.let { it.version.toHex() },
-                    first_seen_ms = instrument.firstSeen.toEpochMilliseconds(),
-                    last_seen_ms = instrument.lastSeen.toEpochMilliseconds(),
+                val upsert =
+                    if (isStableDeviceId(
+                            instrument.deviceId,
+                        )
+                    ) {
+                        queries::upsert
+                    } else {
+                        queries::upsertReplacingIdentity
+                    }
+                upsert(
+                    instrument.deviceId,
+                    instrument.name,
+                    identity?.let { it.manufacturerId.toHex() },
+                    identity?.family?.toLong(),
+                    identity?.model?.toLong(),
+                    identity?.let { it.version.toHex() },
+                    instrument.firstSeen.toEpochMilliseconds(),
+                    instrument.lastSeen.toEpochMilliseconds(),
                 )
             }
         }

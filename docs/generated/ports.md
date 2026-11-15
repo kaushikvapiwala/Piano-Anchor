@@ -49,7 +49,7 @@ Driven port: the pianos the app has seen, kept across app restarts and keyed by 
 
 | Function | Description |
 |---|---|
-| `suspend fun upsert(instrument: Instrument)` | Stores [instrument]. When its device id is already stored, replaces name and lastSeen, replaces the identity only when the given one is non-null (a null identity keeps the stored one, so a lost Identity Reply doesn't erase it), and keeps the earlier of the stored and the given firstSeen. Throws [StorageUnavailableException] when the store can't be read or written. |
+| `suspend fun upsert(instrument: Instrument)` | Stores [instrument]. When its device id is already stored, replaces name and lastSeen and keeps the earlier of the stored and the given firstSeen. For a stable device id (`isStableDeviceId`) the identity is replaced only when the given one is non-null: a null identity keeps the stored one, so a lost Identity Reply doesn't erase it. For an unstable id (`sys:`, which may later name another piano) the given identity always replaces the stored one, so null clears it. Throws [StorageUnavailableException] when the store can't be read or written. |
 | `suspend fun get(deviceId: String): Instrument?` | The stored instrument with [deviceId], or null if none is stored. Throws [StorageUnavailableException] when the store can't be read or written. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/InstrumentRepositoryPortContractTest.kt`

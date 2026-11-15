@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import pianoanchor.core.model.Instrument
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.isStableDeviceId
 import pianoanchor.core.ports.InstrumentRepositoryPort
 
 /** In-memory [InstrumentRepositoryPort]: safe to call from any thread, forgets everything when the process ends. */
@@ -22,7 +23,8 @@ class FakeInstrumentRepository : InstrumentRepositoryPort {
                     instrument
                 } else {
                     instrument.copy(
-                        identity = instrument.identity ?: stored.identity,
+                        identity =
+                            instrument.identity ?: stored.identity.takeIf { isStableDeviceId(instrument.deviceId) },
                         firstSeen = minOf(stored.firstSeen, instrument.firstSeen),
                     )
                 }

@@ -3,8 +3,9 @@ package pianoanchor.core.model
 import kotlin.time.Instant
 
 /**
- * A piano the app has seen. [deviceId] is its stable device id ([MidiDevice.id]); [name] is the platform's display
- * name; [identity] is null when the piano did not answer the Identity Request. [lastSeen] is never before [firstSeen].
+ * A piano the app has seen. [deviceId] is its [MidiDevice.id], which is not always stable (see [isStableDeviceId]);
+ * [name] is the platform's display name; [identity] is null when the piano did not answer the Identity Request.
+ * [lastSeen] is never before [firstSeen].
  */
 public data class Instrument(
     val deviceId: String,
