@@ -1,0 +1,3 @@
+-- Schema 7 to 8 (M5.2): how the run was played (the RunMode enum's name). Attempts stored before perform mode were
+-- all practice runs.
+ALTER TABLE attempt ADD COLUMN mode TEXT NOT NULL DEFAULT 'PRACTICE';

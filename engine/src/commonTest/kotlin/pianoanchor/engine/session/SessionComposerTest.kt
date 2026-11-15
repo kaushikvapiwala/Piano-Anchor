@@ -3,6 +3,7 @@ package pianoanchor.engine.session
 import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.MemoryState
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
 import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.SkillState
@@ -94,6 +95,21 @@ class SessionComposerTest {
             )
         assertEquals(TempoRung.P85, cold.rung)
         assertEquals(TempoRung.WAIT, assertIs<Card.ColdOpen>(compose(plan).cards.first()).rung)
+    }
+
+    @Test
+    fun coldOpenIsPerformAtATimedRungAndPracticeAtWait() {
+        val plan = DailyPlan(listOf(state(Skills.KB_MIDDLE_C)), emptyList())
+        val march = passage("middle-c-march")
+        val history =
+            mapOf(
+                march.id to played(1, TempoRung.P60.bpm(march)!!),
+                passage("which-c-is-middle").id to played(2),
+            )
+        val timed = assertIs<Card.ColdOpen>(compose(plan, history).cards.first())
+        assertEquals(march, timed.passage)
+        assertEquals(RunMode.PERFORM, timed.mode)
+        assertEquals(RunMode.PRACTICE, assertIs<Card.ColdOpen>(compose(plan).cards.first()).mode)
     }
 
     @Test

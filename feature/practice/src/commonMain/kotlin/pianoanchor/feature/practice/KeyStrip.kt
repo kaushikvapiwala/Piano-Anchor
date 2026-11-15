@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
@@ -58,7 +59,7 @@ private const val KEY_COLOR_MS = 150
 /**
  * The live key strip: the label row with the last key's verdict, then two octaves of keys (`keyStripRange`). Target
  * keys of the waiting step carry an amber band while [PracticeState.hintVisible];
- * held and flashing keys light up correct or wrong.
+ * held and flashing keys light up correct or wrong, or neutral in a perform take.
  */
 @Composable
 internal fun KeyStrip(
@@ -178,12 +179,7 @@ private fun Key(
     val wrong = note in state.wrongKeys || state.flash?.let { it.note == note && !it.correct } == true
     val idle = if (black) colors.blackKey else colors.whiteKey
     val fill by animateColorAsState(
-        targetValue =
-            when {
-                !lit -> idle
-                wrong -> colors.wrongKey
-                else -> colors.correct
-            },
+        targetValue = litColor(lit, wrong, state.showsVerdicts, idle, colors),
         animationSpec = tween(KEY_COLOR_MS),
     )
     val shape = RoundedCornerShape(bottomStart = if (black) 7.dp else 10.dp, bottomEnd = if (black) 7.dp else 10.dp)
@@ -209,3 +205,22 @@ private fun Key(
         }
     }
 }
+
+/**
+ * A key's fill: [idle] unless [lit]. A perform take lights pressed keys in a neutral colour (the instrument responds,
+ * nothing is judged); otherwise a [wrong] key is the wrong colour and the rest correct.
+ */
+@Composable
+private fun litColor(
+    lit: Boolean,
+    wrong: Boolean,
+    verdicts: Boolean,
+    idle: Color,
+    colors: PianoAnchorColors,
+): Color =
+    when {
+        !lit -> idle
+        !verdicts -> MaterialTheme.colorScheme.outline
+        wrong -> colors.wrongKey
+        else -> colors.correct
+    }

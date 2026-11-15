@@ -3,6 +3,7 @@ package pianoanchor.feature.practice
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.engine.matcher.TempoRung
 
@@ -24,7 +25,8 @@ import pianoanchor.engine.matcher.TempoRung
  * waits for Calibrate or Skip).
  *
  * Key hints (`docs/algorithms/guidance.md`): [hintLevel] is the level the run started at and [hintVisible] whether the
- * amber band shows on the waiting step's keys right now.
+ * amber band shows on the waiting step's keys right now. [mode] is practice or perform; a perform take (always on a
+ * timed rung) shows no band, marks, tags or verdict text ([showsVerdicts] is false) and lights pressed keys neutrally.
  */
 public data class PracticeState(
     val passage: Passage,
@@ -46,12 +48,16 @@ public data class PracticeState(
     val calibrationOffered: Boolean = false,
     val hintLevel: HintLevel = HintLevel.FULL,
     val hintVisible: Boolean = true,
+    val mode: RunMode = RunMode.PRACTICE,
 ) {
     init {
         require(steps.size == passage.steps.size) {
             "practice state has ${steps.size} step views for ${passage.steps.size} steps of \"${passage.id}\""
         }
     }
+
+    /** Whether the screen shows live verdicts (colours, timing tags, the last key's text) and the Hint button. */
+    val showsVerdicts: Boolean get() = mode == RunMode.PRACTICE
 
     public companion object {
         /** The state before the first note of [passage]: its first step waiting, the rest upcoming. */

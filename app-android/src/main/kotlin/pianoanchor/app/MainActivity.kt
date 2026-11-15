@@ -36,6 +36,7 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.matcher.TempoRung
@@ -113,6 +114,7 @@ private sealed interface Destination {
         val passageId: String = Passages.CDE.id,
         val rung: TempoRung = TempoRung.WAIT,
         val from: Destination = Monitor,
+        val mode: RunMode = RunMode.PRACTICE,
     ) : Destination
 
     /** The ear screen on [device], running [skills] in order; back returns to Today. */
@@ -180,7 +182,9 @@ private fun AppNavigation() {
                 current,
                 onBack = { destination = current.from },
                 onFinished = { destination = Destination.Results(it, current) },
-                onCalibrate = { destination = Destination.Calibrate(current.device, current.copy(rung = it)) },
+                onCalibrate = { rung, mode ->
+                    destination = Destination.Calibrate(current.device, current.copy(rung = rung, mode = mode))
+                },
             )
         }
 
@@ -248,12 +252,12 @@ private fun PracticeRoute(
     practice: Destination.Practice,
     onBack: () -> Unit,
     onFinished: (attemptId: String) -> Unit,
-    onCalibrate: (TempoRung) -> Unit,
+    onCalibrate: (TempoRung, RunMode) -> Unit,
 ) {
     LandscapeEffect()
     val viewModel: PracticeViewModel =
         koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) {
-            parametersOf(practice.device, practice.passageId, practice.rung)
+            parametersOf(practice.device, practice.passageId, practice.rung to practice.mode)
         }
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
@@ -268,9 +272,10 @@ private fun PracticeRoute(
         onToggleClick = viewModel::toggleClick,
         onRetrySave = viewModel::retrySave,
         onDiscard = viewModel::discardRun,
-        onCalibrate = { leave { onCalibrate(state.rung) } },
+        onCalibrate = { leave { onCalibrate(state.rung, state.mode) } },
         onSkipCalibration = viewModel::skipCalibration,
         onHint = viewModel::showHint,
+        onSelectMode = viewModel::selectMode,
     )
 }
 
@@ -425,7 +430,13 @@ private fun TodayRoute(
                 when (val target = viewModel.target(card)) {
                     is TodayTarget.Practice -> {
                         onPractice(
-                            Destination.Practice(target.device, target.passageId, target.rung, Destination.Today),
+                            Destination.Practice(
+                                target.device,
+                                target.passageId,
+                                target.rung,
+                                Destination.Today,
+                                target.mode,
+                            ),
                         )
                     }
 

@@ -84,6 +84,7 @@ public class ResultsViewModel(
             timing = summary?.timing?.let { timingTile(passage, it, calibrated = attempt.latencyOffsetNanos != null) },
             length = summary?.length?.let { lengthTile(passage, it) },
             hesitation = summary?.hesitation?.let { hesitationTile(it) },
+            mode = attempt.mode,
         )
     }
 

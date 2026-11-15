@@ -3,6 +3,8 @@ package pianoanchor.core.model
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class AttemptTest {
@@ -19,6 +21,8 @@ class AttemptTest {
         accuracy: Double = 2.0 / 3,
         events: List<MatchEvent> = this.events,
         tempoBpm: Int? = null,
+        mode: RunMode = RunMode.PRACTICE,
+        hintShown: Boolean = true,
     ) = Attempt(
         id,
         passageId,
@@ -33,7 +37,17 @@ class AttemptTest {
         events,
         tempoBpm,
         emptyList(),
+        hintShown = hintShown,
+        mode = mode,
     )
+
+    @Test
+    fun unaidedIsAPerformRunWithoutAHint() {
+        assertTrue(attempt(mode = RunMode.PERFORM, hintShown = false).unaided)
+        assertFalse(attempt(mode = RunMode.PERFORM, hintShown = true).unaided)
+        assertFalse(attempt(mode = RunMode.PRACTICE, hintShown = false).unaided)
+        assertFalse(attempt().unaided)
+    }
 
     @Test
     fun keepsAValidAttempt() {

@@ -6,6 +6,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.CalibrationRepositoryPort
@@ -69,7 +70,7 @@ val appModule =
         single<UpdateCheckPort> { GitHubUpdateCheckAdapter(BuildConfig.VERSION_NAME, BuildConfig.UPDATE_REPOSITORY) }
         factory { LearnerModel(Curriculum.graph, get()) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
-        viewModel { (device: MidiDevice, passageId: String, rung: TempoRung) ->
+        viewModel { (device: MidiDevice, passageId: String, start: Pair<TempoRung, RunMode>) ->
             PracticeViewModel(
                 device,
                 requireNotNull(Curriculum.passage(passageId)) { "unknown passage $passageId" },
@@ -83,7 +84,8 @@ val appModule =
                 get(),
                 get(),
                 get(),
-                rung,
+                start.first,
+                start.second,
             ) {
                 Uuid.random().toString()
             }

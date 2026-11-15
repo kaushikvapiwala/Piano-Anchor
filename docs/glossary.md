@@ -27,6 +27,8 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Contribution kit | One `.json` file saved from the note monitor (`docs/contribute-a-piano.md`): the app version, the piano's Identity Reply and a short fixture. Attached to a "Support for my piano" issue. |
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hint level | How much help a run of a passage starts with: Full (amber key band at once), Delayed (after the learner's usual pause) or Off (only on the Hint button). Faded by clean runs, restored by keep-practising runs (`HintFading`, `docs/algorithms/guidance.md`). |
+| Perform run | An attempt played in perform mode: one take at a timed rung with no hints and no live verdicts (`mode` PERFORM). |
+| Unaided run | A perform run with no hint shown (`Attempt.unaided`); always the case for a perform run. |
 | Aided run | An attempt with `hintShown` true: the key band showed at some point (Full level, a Delayed hint that fired, or the Hint button). |
 | Hesitation | A pause before a note that is much longer than the music asks for, without a wrong note. |
 | Identify | An ear item answered by tapping the name of what was heard on screen (higher or lower, step or skip, an interval, a chord quality). Two choices in M4. |

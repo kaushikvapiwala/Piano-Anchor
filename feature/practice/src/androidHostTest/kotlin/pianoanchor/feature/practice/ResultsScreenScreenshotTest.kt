@@ -7,6 +7,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.RunMode
 import pianoanchor.engine.grading.NoteValue
 import pianoanchor.ui.shell.PianoAnchorTheme
 
@@ -58,6 +59,19 @@ class ResultsScreenScreenshotTest {
             "timed",
             clean.copy(
                 tempoBpm = 72,
+                timing = TimingTile(31, TimingWorst(late = true, noteNumber = 6)),
+                length = LengthTile(86, LengthWorst(tooLong = false, noteNumber = 3, value = NoteValue.HALF)),
+                hesitation = HesitationTile(0, null),
+            ),
+        )
+
+    @Test
+    fun performedRun() =
+        capture(
+            "performed",
+            clean.copy(
+                tempoBpm = 72,
+                mode = RunMode.PERFORM,
                 timing = TimingTile(31, TimingWorst(late = true, noteNumber = 6)),
                 length = LengthTile(86, LengthWorst(tooLong = false, noteNumber = 3, value = NoteValue.HALF)),
                 hesitation = HesitationTile(0, null),

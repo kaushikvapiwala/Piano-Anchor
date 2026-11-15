@@ -13,6 +13,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.RunMode
 import pianoanchor.engine.grading.NoteValue
 import pianoanchor.ui.shell.PianoAnchorTheme
 import kotlin.test.assertEquals
@@ -52,6 +53,15 @@ class ResultsScreenTest {
             onNodeWithContentDescription("Back").performClick()
 
             assertEquals(listOf("try again", "back"), calls)
+        }
+
+    @Test
+    fun aPerformRunIsLabelledPerformed() =
+        runComposeUiTest {
+            val performed = ready.copy(tempoBpm = 72, mode = RunMode.PERFORM)
+            setContent { PianoAnchorTheme { ResultsScreen(performed, onBack = {}, onTryAgain = {}, onRetry = {}) } }
+
+            onNodeWithText("C-D-E · run 1 · Performed · ♩ = 72").assertExists()
         }
 
     @Test

@@ -12,6 +12,7 @@ import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.PlayedNote
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.testing.AttemptRepositoryPortContractTest
@@ -58,7 +59,7 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
         )
 
     @Test
-    fun rowsWithoutHintColumnsReadBackAsFullAndShown() =
+    fun rowsWithoutHintOrModeColumnsReadBackAsFullShownAndPractice() =
         runTest {
             // What a row stored before schema 7 looks like: the hint columns take their defaults.
             driver.execute(
@@ -71,6 +72,7 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
             val old = assertNotNull(repository.get("old"))
             assertEquals(HintLevel.FULL, old.hintLevel)
             assertTrue(old.hintShown)
+            assertEquals(RunMode.PRACTICE, old.mode)
         }
 
     @Test

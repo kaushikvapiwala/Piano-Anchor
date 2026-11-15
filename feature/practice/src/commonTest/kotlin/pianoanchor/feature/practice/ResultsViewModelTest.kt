@@ -15,6 +15,7 @@ import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PlayedNote
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.content.Passages
@@ -25,6 +26,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.time.Instant
 
@@ -69,6 +71,7 @@ class ResultsViewModelTest {
         tempoBpm: Int? = null,
         playedNotes: List<PlayedNote> = emptyList(),
         latencyOffsetNanos: Long? = null,
+        mode: RunMode = RunMode.PRACTICE,
     ) = Attempt(
         id = id,
         passageId = passageId,
@@ -84,6 +87,7 @@ class ResultsViewModelTest {
         tempoBpm = tempoBpm,
         playedNotes = playedNotes,
         latencyOffsetNanos = latencyOffsetNanos,
+        mode = mode,
     )
 
     private fun played(
@@ -117,6 +121,14 @@ class ResultsViewModelTest {
                 ),
                 vm.state.value,
             )
+        }
+
+    @Test
+    fun aPerformAttemptIsReadyAsPerformed() =
+        runTest(dispatcher) {
+            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 80, mode = RunMode.PERFORM))
+
+            assertEquals(RunMode.PERFORM, assertIs<ResultsState.Ready>(vm.state.value).mode)
         }
 
     @Test

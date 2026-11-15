@@ -1,6 +1,7 @@
 package pianoanchor.feature.practice
 
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.RunMode
 import pianoanchor.engine.grading.NoteValue
 
 /** What the results screen shows for one finished run. */
@@ -19,7 +20,7 @@ public sealed interface ResultsState {
      * [correctSteps] of [stepCount] (steps in wait mode, score notes in a timed run), with [wrongNotes] wrong notes,
      * [missedNotes] missed notes and [incompleteChords] chords incomplete. A timed run has a [tempoBpm] and, when a
      * note had its exact pitch, a [timing] and [length] tile; [hesitation] is null for a run stored before played
-     * notes were kept.
+     * notes were kept. [mode] is [RunMode.PERFORM] for a perform take: the caption says "Performed".
      */
     public data class Ready(
         val passageTitle: String,
@@ -34,6 +35,7 @@ public sealed interface ResultsState {
         val timing: TimingTile? = null,
         val length: LengthTile? = null,
         val hesitation: HesitationTile? = null,
+        val mode: RunMode = RunMode.PRACTICE,
     ) : ResultsState
 }
 

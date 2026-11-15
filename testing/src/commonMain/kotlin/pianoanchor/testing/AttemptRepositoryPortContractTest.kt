@@ -13,6 +13,7 @@ import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.PlayedNote
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
@@ -47,6 +48,7 @@ abstract class AttemptRepositoryPortContractTest {
         latencyOffsetNanos: Long? = null,
         hintLevel: HintLevel = HintLevel.FULL,
         hintShown: Boolean = true,
+        mode: RunMode = RunMode.PRACTICE,
     ) = Attempt(
         id = id,
         passageId = passageId,
@@ -64,6 +66,7 @@ abstract class AttemptRepositoryPortContractTest {
         latencyOffsetNanos = latencyOffsetNanos,
         hintLevel = hintLevel,
         hintShown = hintShown,
+        mode = mode,
     )
 
     private suspend fun AttemptRepositoryPort.countBefore(
@@ -194,6 +197,18 @@ abstract class AttemptRepositoryPortContractTest {
             repository.save(delayed)
             assertEquals(unaided, repository.get("a-1"))
             assertEquals(delayed, repository.get("a-2"))
+        }
+
+    @Test
+    fun saveAndGetRoundTripTheRunMode() =
+        runTest {
+            val repository = createSubject()
+            val perform = attempt("a-1", startedAtSeconds = 1_000, mode = RunMode.PERFORM, hintShown = false)
+            val practice = attempt("a-2", startedAtSeconds = 2_000)
+            repository.save(perform)
+            repository.save(practice)
+            assertEquals(perform, repository.get("a-1"))
+            assertEquals(practice, repository.get("a-2"))
         }
 
     @Test

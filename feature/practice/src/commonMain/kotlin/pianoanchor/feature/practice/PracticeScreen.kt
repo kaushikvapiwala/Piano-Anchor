@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
+import pianoanchor.core.model.RunMode
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_back_to_pianos
@@ -52,6 +53,10 @@ import pianoanchor.feature.practice.resources.practice_disconnected
 import pianoanchor.feature.practice.resources.practice_end_run
 import pianoanchor.feature.practice.resources.practice_hint
 import pianoanchor.feature.practice.resources.practice_hint_glyph
+import pianoanchor.feature.practice.resources.practice_mode_perform
+import pianoanchor.feature.practice.resources.practice_mode_switch_perform
+import pianoanchor.feature.practice.resources.practice_mode_switch_perform_disabled
+import pianoanchor.feature.practice.resources.practice_mode_switch_practice
 import pianoanchor.feature.practice.resources.practice_mode_tempo
 import pianoanchor.feature.practice.resources.practice_mode_wait
 import pianoanchor.feature.practice.resources.practice_ready_timed
@@ -85,10 +90,11 @@ public fun PracticeScreen(
     onCalibrate: () -> Unit = {},
     onSkipCalibration: () -> Unit = {},
     onHint: () -> Unit = {},
+    onSelectMode: (RunMode) -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.safeDrawingPadding()) {
-            TopBar(state, onBack, onSelectRung, onToggleClick, onHint)
+            TopBar(state, onBack, onSelectRung, onToggleClick, onHint, onSelectMode)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             if (state.connection == PracticeConnection.DISCONNECTED) {
                 MessageCard(
@@ -120,6 +126,7 @@ public fun PracticeScreen(
                 steps = state.steps,
                 liveMarks = state.liveMarks,
                 timed = state.rung != TempoRung.WAIT,
+                legend = state.showsVerdicts,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp).fillMaxWidth().height(196.dp),
             )
             if (state.rung != TempoRung.WAIT &&
@@ -139,6 +146,7 @@ private fun TopBar(
     onSelectRung: (TempoRung) -> Unit,
     onToggleClick: () -> Unit,
     onHint: () -> Unit,
+    onSelectMode: (RunMode) -> Unit,
 ) {
     val bpm = state.rung.bpm(state.passage)
     Row(
@@ -152,6 +160,8 @@ private fun TopBar(
             Text(
                 if (bpm == null) {
                     stringResource(Res.string.practice_mode_wait)
+                } else if (state.mode == RunMode.PERFORM) {
+                    stringResource(Res.string.practice_mode_perform, bpm.toString())
                 } else {
                     stringResource(Res.string.practice_mode_tempo, bpm.toString())
                 },
@@ -167,7 +177,8 @@ private fun TopBar(
                     ?: stringResource(Res.string.practice_tempo_wait)
             TempoChip(label, selected = rung == state.rung, done = rung in state.doneRungs) { onSelectRung(rung) }
         }
-        HintButton(onHint)
+        ModeSwitch(state, onSelectMode)
+        if (state.showsVerdicts) HintButton(onHint)
         ClickButton(state.clickOn, onToggleClick)
         Button(
             onClick = onBack,
@@ -177,6 +188,66 @@ private fun TopBar(
         ) {
             Text(stringResource(Res.string.practice_end_run), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         }
+    }
+}
+
+/**
+ * The two-segment "Practice | Perform" switch. Perform is disabled on the WAIT rung, where its description says
+ * "Pick a tempo to perform".
+ */
+@Composable
+private fun ModeSwitch(
+    state: PracticeState,
+    onSelectMode: (RunMode) -> Unit,
+) {
+    val canPerform = state.rung != TempoRung.WAIT
+    val practice = stringResource(Res.string.practice_mode_switch_practice)
+    val perform = stringResource(Res.string.practice_mode_switch_perform)
+    val performDescription =
+        if (canPerform) perform else stringResource(Res.string.practice_mode_switch_perform_disabled)
+    Row {
+        ModeSegment(practice, practice, RunMode.PRACTICE, state.mode, enabled = true, onSelectMode)
+        ModeSegment(perform, performDescription, RunMode.PERFORM, state.mode, canPerform, onSelectMode)
+    }
+}
+
+/** One segment of the mode switch: plum when it is the [current] mode. */
+@Composable
+private fun ModeSegment(
+    label: String,
+    description: String,
+    mode: RunMode,
+    current: RunMode,
+    enabled: Boolean,
+    onSelectMode: (RunMode) -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val selected = mode == current
+    val shape =
+        if (mode == RunMode.PRACTICE) {
+            RoundedCornerShape(topStart = 15.dp, bottomStart = 15.dp)
+        } else {
+            RoundedCornerShape(topEnd = 15.dp, bottomEnd = 15.dp)
+        }
+    val textColor =
+        when {
+            selected -> colors.onPrimary
+            enabled -> colors.onSurfaceVariant
+            else -> colors.onSurfaceVariant.copy(alpha = DISABLED_ALPHA)
+        }
+    Box(
+        modifier =
+            Modifier
+                .minimumInteractiveComponentSize()
+                .selectable(selected = selected, enabled = enabled, role = Role.RadioButton) { onSelectMode(mode) }
+                .semantics { contentDescription = description }
+                .height(30.dp)
+                .border(1.5.dp, if (selected) colors.primary else colors.outline, shape)
+                .background(if (selected) colors.primary else colors.background, shape)
+                .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = textColor)
     }
 }
 
@@ -321,5 +392,7 @@ private fun RunStatus(
         }
     }
 }
+
+private const val DISABLED_ALPHA = 0.5f
 
 private val CARD_MODIFIER = Modifier.padding(horizontal = 20.dp, vertical = 6.dp).fillMaxWidth()

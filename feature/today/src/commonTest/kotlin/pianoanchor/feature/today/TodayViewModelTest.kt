@@ -20,6 +20,7 @@ import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.MemoryState
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.SkillState
 import pianoanchor.core.ports.SettingsRepositoryPort
@@ -143,7 +144,7 @@ class TodayViewModelTest {
             val session = assertNotNull(vm.state.value.session)
             val cold = assertIs<Card.ColdOpen>(session.cards.first())
             assertEquals(
-                TodayTarget.Practice(piano.device, cold.passage.id, cold.rung),
+                TodayTarget.Practice(piano.device, cold.passage.id, cold.rung, RunMode.PERFORM),
                 vm.target(cold),
             )
             // The march was played least recently, and cleanly at 60%.

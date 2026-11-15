@@ -3,6 +3,7 @@ package pianoanchor.feature.practice
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -14,6 +15,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.TimeSignature
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.matcher.TempoRung
@@ -66,6 +68,47 @@ class PracticeScreenTest {
     ) = setContent {
         PianoAnchorTheme { PracticeScreen(state, {}, onSelectRung, onToggleClick, {}, {}) }
     }
+
+    @Test
+    fun performIsDisabledAtWaitAndSaysWhy() =
+        runComposeUiTest {
+            show(PracticeState.start(Passages.CDE))
+
+            onNodeWithContentDescription("Pick a tempo to perform").assertIsNotEnabled()
+            onNodeWithContentDescription("Practice").assertIsSelected()
+        }
+
+    @Test
+    fun tappingModeSegmentsSelectsTheMode() =
+        runComposeUiTest {
+            val picked = mutableListOf<RunMode>()
+            val timed = PracticeState.start(Passages.CDE).copy(rung = TempoRung.P70)
+            setContent {
+                PianoAnchorTheme { PracticeScreen(timed, {}, {}, {}, {}, {}, onSelectMode = { picked += it }) }
+            }
+
+            onNodeWithContentDescription("Perform").performClick()
+            onNodeWithContentDescription("Practice").performClick()
+
+            assertEquals(listOf(RunMode.PERFORM, RunMode.PRACTICE), picked)
+        }
+
+    @Test
+    fun practiceShowsTheHintButton() =
+        runComposeUiTest {
+            show(PracticeState.start(Passages.CDE).copy(rung = TempoRung.P70))
+
+            onNodeWithContentDescription("Show hint").assertExists()
+        }
+
+    @Test
+    fun performHidesTheHintButton() =
+        runComposeUiTest {
+            show(PracticeState.start(Passages.CDE).copy(rung = TempoRung.P70, mode = RunMode.PERFORM))
+
+            onNodeWithContentDescription("Show hint").assertDoesNotExist()
+            onNodeWithContentDescription("Perform").assertIsSelected()
+        }
 
     @Test
     fun tappingARungSelectsIt() =
