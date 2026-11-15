@@ -281,7 +281,7 @@ public object Tunables {
     /**
      * How many metronome clicks the latency calibration plays, warm-up included.
      *
-     * Why: enough taps for a stable median in about 11 seconds.
+     * Why: enough taps for a stable median in about 16 seconds at the calibration tempo.
      *
      * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
      */
@@ -290,11 +290,12 @@ public object Tunables {
     /**
      * The tempo of the calibration clicks, in beats per minute.
      *
-     * Why: a comfortable tapping pace with half a beat (333 ms) to pair taps with clicks.
+     * Why: half a beat (500 ms) is wider than `CALIBRATION_MAX_OFFSET_MS`, so every accepted lag pairs with its own
+     * click; still a comfortable tapping pace.
      *
-     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     * Source: owner decision 2026-11-15 (was 90 BPM in the M1 grill); calibrated in M7.
      */
-    public const val CALIBRATION_BPM: Int = 90
+    public const val CALIBRATION_BPM: Int = 60
 
     /**
      * How many of the first calibration clicks are warm-up: their taps are ignored.
