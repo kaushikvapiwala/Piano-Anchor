@@ -1,0 +1,3 @@
+-- Schema 10 to 11: index attempts by start time alone, so Today's practice-day counts (selectStartedSince) read only
+-- the attempts since the cutoff instead of scanning every attempt.
+CREATE INDEX attempt_started ON attempt(started_at_ms);

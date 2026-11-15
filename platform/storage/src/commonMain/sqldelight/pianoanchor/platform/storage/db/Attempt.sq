@@ -24,6 +24,9 @@ CREATE TABLE attempt (
 
 CREATE INDEX attempt_passage_started ON attempt(passage_id, started_at_ms DESC);
 
+-- Today's practice days read every attempt since a cutoff across passages (selectStartedSince).
+CREATE INDEX attempt_started ON attempt(started_at_ms);
+
 -- An attempt's match events in order (seq from 0). kind names the MatchEvent subtype; note is set for a wrong note,
 -- missing (comma-separated note numbers) for an incomplete chord.
 CREATE TABLE attempt_event (
