@@ -1,6 +1,8 @@
 package pianoanchor.core.ports
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.StorageUnavailableException
 import kotlin.time.Instant
@@ -47,4 +49,26 @@ public interface AttemptRepositoryPort {
      * [StorageUnavailableException] when the store can't be read or written.
      */
     public suspend fun cleanTempos(passageId: String): Set<Int>
+
+    /**
+     * Whether [passageId] has a wait-mode attempt (no tempo) whose band is CLEAN. Throws [StorageUnavailableException]
+     * when the store can't be read or written.
+     */
+    public suspend fun hasCleanWaitRun(passageId: String): Boolean
+
+    /**
+     * When [passageId] was last played: the latest [Attempt.startedAt] of its attempts, or null for a passage never
+     * played. Adapters that store [Attempt.startedAt] coarser answer at that precision. Throws
+     * [StorageUnavailableException] when the store can't be read or written.
+     */
+    public suspend fun lastPlayed(passageId: String): Instant?
+
+    /**
+     * The calendar days, in [zone], from [from] on (inclusive) on which at least one attempt of any passage started;
+     * empty when none. Throws [StorageUnavailableException] when the store can't be read or written.
+     */
+    public suspend fun practiceDays(
+        from: LocalDate,
+        zone: TimeZone,
+    ): Set<LocalDate>
 }

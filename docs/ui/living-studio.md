@@ -150,3 +150,23 @@ Grouped rows under plum group titles, every target at least 44 dp, every change 
   nothing about you." The whole row toggles and reads as a switch.
 - **Storage failure**: the usual `errorContainer` card "Couldn't save the settings. Try again." with Dismiss; the
   controls show what is stored.
+
+## Today screen
+
+The start screen, portrait. A navigation rail (Today selected, Pianos, Settings gear) on the left; every item has a
+text label. Reading order: the greeting by time of day ("Good morning" from 05:00, afternoon from 12:00, evening from
+18:00) and the line "Middle C is calling." naming the cold-open skill ("Ready when you are." with none); the piano
+chip (name, USB or BLE and the latency offset when calibrated, e.g. "FP-30X · BLE · 18 ms"; "No piano" opens Pianos)
+and the weekly goal dots (one per goal day, plum for each day practised since Monday); the cards; the session bar;
+"Practised 9 of the last 16 days".
+
+- **Cold open** card: dark (`#2A2730`, light text, light button) with "Start cold open", the skill, its minutes and
+  "n more to review". **New lesson**: surface with a border, "Begin" and the "why now" line. **Song**: "♩ = 72 · rung 3
+  of 5" (wait mode reads "Wait mode · rung 1 of 5") and "Continue". Each opens Practice on the card's passage and
+  rung; with no piano connected a card opens Pianos.
+- **Session bar**: Review, Lesson and Song segments with widths proportional to their minutes (a zero segment is
+  left out), decorative; the caption under it, "Today's 20 minutes: review 5, lesson 9, song 6", is what TalkBack reads.
+- **All caught up**: "All caught up. Play a song or come back tomorrow." above the Song card, if any.
+- **Storage error**: an `errorContainer` card with Retry.
+- Nothing animates (the mock's breathing dot is static).
+

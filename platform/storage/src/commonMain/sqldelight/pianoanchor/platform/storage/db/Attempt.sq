@@ -76,3 +76,12 @@ SELECT * FROM attempt WHERE passage_id = ? ORDER BY started_at_ms DESC LIMIT ?;
 
 countStartedBefore:
 SELECT COUNT(*) FROM attempt WHERE passage_id = ? AND started_at_ms < ?;
+
+selectLastStarted:
+SELECT MAX(started_at_ms) FROM attempt WHERE passage_id = ?;
+
+selectStartedSince:
+SELECT started_at_ms FROM attempt WHERE started_at_ms >= ?;
+
+countCleanWaitRuns:
+SELECT COUNT(*) FROM attempt WHERE passage_id = ? AND band = 'CLEAN' AND tempo_bpm IS NULL;

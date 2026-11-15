@@ -17,7 +17,6 @@ import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.content.Curriculum
-import pianoanchor.engine.content.Passages
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorViewModel
@@ -26,6 +25,7 @@ import pianoanchor.feature.practice.CalibrationViewModel
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.feature.settings.SettingsViewModel
+import pianoanchor.feature.today.TodayViewModel
 import pianoanchor.platform.androidaudio.AndroidMetronomeAdapter
 import pianoanchor.platform.androidmidi.AndroidClockAdapter
 import pianoanchor.platform.androidmidi.AndroidMidiAdapter
@@ -57,10 +57,10 @@ val appModule =
         single<LearnerRepositoryPort> { SqlLearnerRepositoryAdapter(get(), Dispatchers.IO) }
         single<SettingsRepositoryPort> { SqlSettingsRepositoryAdapter(get(), Dispatchers.IO) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get()) }
-        viewModel { (device: MidiDevice, rung: TempoRung) ->
+        viewModel { (device: MidiDevice, passageId: String, rung: TempoRung) ->
             PracticeViewModel(
                 device,
-                Passages.CDE,
+                requireNotNull(Curriculum.passage(passageId)) { "unknown passage $passageId" },
                 get(),
                 get(),
                 get(),
@@ -79,4 +79,5 @@ val appModule =
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
         viewModel { (attemptId: String) -> ResultsViewModel(attemptId, get()) }
         viewModel { SettingsViewModel(get()) }
+        viewModel { TodayViewModel(LearnerModel(Curriculum.graph, get()), get(), get(), get(), get(), get(), get()) }
     }

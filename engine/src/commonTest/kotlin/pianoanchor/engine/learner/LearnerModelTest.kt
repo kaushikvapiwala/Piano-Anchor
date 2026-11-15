@@ -183,6 +183,16 @@ class LearnerModelTest {
         }
 
     @Test
+    fun `learnedSkills lists only the learned ones`() =
+        runTest {
+            check("a", 0, Band.CLEAN)
+            check("a", 3, Band.GOOD)
+            check("d", 0, Band.GOOD)
+
+            assertEquals(setOf("a"), model.learnedSkills())
+        }
+
+    @Test
     fun `theSimulationStallCaseIsLearned`() =
         runTest {
             check("a", 0, Band.GOOD)

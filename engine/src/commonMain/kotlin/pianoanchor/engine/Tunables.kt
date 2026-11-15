@@ -406,4 +406,31 @@ public object Tunables {
      * Source: starting value, owner-agreed in the M2 grill; calibrated in M7.
      */
     public const val MAX_DUE_PER_DAY: Int = 12
+
+    /**
+     * The share of the daily budget Today gives to the review (cold open) segment.
+     *
+     * Why: review first and short: memory fades fastest overnight.
+     *
+     * Source: starting value, owner-agreed shape in the M3 grill; calibrated in M7.
+     */
+    public const val SESSION_SHARE_REVIEW: Double = 0.25
+
+    /**
+     * The share of the daily budget Today gives to the new lesson segment.
+     *
+     * Why: new material needs the most focused time.
+     *
+     * Source: starting value, owner-agreed shape in the M3 grill; calibrated in M7.
+     */
+    public const val SESSION_SHARE_LESSON: Double = 0.45
+
+    /**
+     * The share of the daily budget Today gives to the song segment.
+     *
+     * Why: motivation and tempo work.
+     *
+     * Source: starting value, owner-agreed shape in the M3 grill; calibrated in M7.
+     */
+    public const val SESSION_SHARE_SONG: Double = 0.30
 }

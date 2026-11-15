@@ -42,7 +42,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Mistouch | An extra note one or two semitones from a correct note, played at the same moment (brushed key). |
 | MIDI discovery | Finding and connecting MIDI devices that the platform does not list until connected, such as BLE MIDI pianos: `MidiDiscoveryPort.scan`, `connect` and `disconnect`. |
 | Note match | One score note as the performance analyser aligned it (`NoteMatch`): the played note paired with it (none when missed), how far its onset was from the expected one and the gap from the previous step. |
-| Note monitor | The first screen (`:feature:monitor`): pick a piano, watch its live notes, record a session and export it as a fixture. |
+| Note monitor | The Pianos screen (`:feature:monitor`), reached from Today's rail: pick a piano, watch its live notes, record a session and export it as a fixture. |
 | Onset | When a step starts, in ticks from the start of the passage (`Step.onsetTicks`); onsets strictly increase. |
 | Passage | A piece of music to practise (`Passage` in `:core:model`): a stable id, a title, its steps, a time signature and a written tempo. |
 | Performance analyser | `PerformanceAnalyser` in `:engine`: aligns a take's played notes to the passage, fits its tempo and reports findings of every error kind (`docs/algorithms/performance-analysis.md`). |
@@ -76,3 +76,6 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Wait mode | Practice mode where the music waits until the learner plays the right note(s). |
 | Written tempo | The tempo a passage states, in quarter notes per minute (`Passage.tempoBpm`, 20–300); tempo rungs are percentages of it. |
 | Wrong note | `WrongNote`: a key pressed that isn't in the current step; progress is unchanged. |
+| Session | Today's plan as cards plus a bar of Review, Lesson and Song minutes, composed by `SessionComposer` from the daily plan and the daily budget. |
+| Cold open | The first card of a session: the most overdue due skill's passage, played with no hints as a review. |
+| Card | One item of Today: a cold open, a new lesson (with a "why now" line) or a song, each opening Practice on a passage and tempo rung. |

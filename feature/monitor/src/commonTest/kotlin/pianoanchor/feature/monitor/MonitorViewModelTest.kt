@@ -658,4 +658,34 @@ class MonitorViewModelTest {
             assertEquals(0, openWhenNavigating)
             assertEquals(piano.device, vm.state.value.selected)
         }
+
+    @Test
+    fun leavingForTodayClosesTheInputSoPracticeCanOpenItAndComingBackReopensIt() =
+        runTest(dispatcher) {
+            var open = 0
+            val counting =
+                object : MidiInputPort by piano {
+                    override fun events(device: MidiDevice): Flow<MidiEvent> =
+                        flow {
+                            open++
+                            try {
+                                piano.events(device).collect { emit(it) }
+                            } finally {
+                                open--
+                            }
+                        }
+                }
+            val vm = viewModel(counting).also { runCurrent() }
+            vm.select(piano.device)
+            runCurrent()
+
+            // What the route does for back: close the reader, then show Today (whose cards open Practice).
+            vm.setDeviceOpen(false)
+            assertEquals(0, open)
+
+            // Back on Pianos the route reopens the piano it closed.
+            vm.setDeviceOpen(true)
+            runCurrent()
+            assertEquals(1, open)
+        }
 }

@@ -83,6 +83,14 @@ public class LearnerModel(
         return DailyPlan(due, new)
     }
 
+    /** The ids of every learned skill (the plan lists only the due and new ones). */
+    public suspend fun learnedSkills(): Set<String> =
+        repository
+            .states()
+            .values
+            .filter { it.learned }
+            .mapTo(HashSet()) { it.skillId }
+
     /** Rebuilds every cached state by replaying the review log through FSRS. */
     public suspend fun replay() {
         val ids = (graph.skills.map { it.id } + repository.states().keys).distinct()
