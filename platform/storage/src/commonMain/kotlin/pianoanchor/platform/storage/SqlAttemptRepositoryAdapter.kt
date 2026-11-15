@@ -6,6 +6,10 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.ChordIncomplete
@@ -119,6 +123,30 @@ public class SqlAttemptRepositoryAdapter(
                     .selectCleanTempos(passageId)
                     .executeAsList()
                     .mapTo(LinkedHashSet()) { it.toInt() }
+            }
+        }
+
+    override suspend fun lastPlayed(passageId: String): Instant? =
+        withContext(dispatcher) {
+            storage("lastPlayed") {
+                queries
+                    .selectLastStarted(passageId)
+                    .executeAsOne()
+                    .MAX
+                    ?.let(Instant::fromEpochMilliseconds)
+            }
+        }
+
+    override suspend fun practiceDays(
+        from: LocalDate,
+        zone: TimeZone,
+    ): Set<LocalDate> =
+        withContext(dispatcher) {
+            storage("practiceDays") {
+                queries
+                    .selectStartedSince(from.atStartOfDayIn(zone).toEpochMilliseconds())
+                    .executeAsList()
+                    .mapTo(LinkedHashSet()) { Instant.fromEpochMilliseconds(it).toLocalDateTime(zone).date }
             }
         }
 

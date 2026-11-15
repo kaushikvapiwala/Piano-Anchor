@@ -4,6 +4,8 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.ChordIncomplete
@@ -195,6 +197,51 @@ abstract class AttemptRepositoryPortContractTest {
             assertEquals(setOf(TEMPO_A, TEMPO_E), repository.cleanTempos("c-d-e"))
             assertEquals(setOf(TEMPO_D), repository.cleanTempos("other"))
             assertEquals(emptySet(), repository.cleanTempos("unknown"))
+        }
+
+    @Suppress("MagicNumber") // Epoch seconds and calendar dates of the scenario.
+    @Test
+    fun lastPlayedIsTheLatestStartOfThePassage() =
+        runTest {
+            val repository = createSubject()
+            assertNull(repository.lastPlayed("c-d-e"))
+            listOf(
+                attempt("a-1", startedAtSeconds = 2_000),
+                attempt("a-2", startedAtSeconds = 3_000),
+                attempt("a-3", startedAtSeconds = 1_000),
+                attempt("b-1", startedAtSeconds = 9_000, passageId = "other"),
+            ).forEach { repository.save(it) }
+            assertEquals(Instant.fromEpochSeconds(3_000), repository.lastPlayed("c-d-e"))
+            assertEquals(Instant.fromEpochSeconds(9_000), repository.lastPlayed("other"))
+            assertNull(repository.lastPlayed("unknown"))
+        }
+
+    @Suppress("MagicNumber") // Epoch seconds and calendar dates of the scenario.
+    @Test
+    fun practiceDaysListsTheLocalDaysFromTheGivenOneOn() =
+        runTest {
+            val repository = createSubject()
+            val plusTwo = TimeZone.of("Etc/GMT-2")
+            // 2026-11-13 23:30 UTC is already the 14th at UTC+2.
+            listOf(
+                "2026-11-12T10:00:00Z",
+                "2026-11-13T23:30:00Z",
+                "2026-11-13T23:45:00Z",
+                "2026-11-15T08:00:00Z",
+            ).forEachIndexed { i, at ->
+                repository.save(
+                    attempt("a-$i", Instant.parse(at).epochSeconds, passageId = if (i % 2 == 0) "c-d-e" else "other"),
+                )
+            }
+            assertEquals(
+                setOf(LocalDate(2026, 11, 13), LocalDate(2026, 11, 15)),
+                repository.practiceDays(LocalDate(2026, 11, 13), TimeZone.UTC),
+            )
+            assertEquals(
+                setOf(LocalDate(2026, 11, 14), LocalDate(2026, 11, 15)),
+                repository.practiceDays(LocalDate(2026, 11, 13), plusTwo),
+            )
+            assertEquals(emptySet(), repository.practiceDays(LocalDate(2026, 11, 16), TimeZone.UTC))
         }
 }
 

@@ -33,6 +33,7 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.engine.content.Passages
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorActions
 import pianoanchor.feature.monitor.MonitorScreen
@@ -46,6 +47,10 @@ import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.feature.settings.SettingsActions
 import pianoanchor.feature.settings.SettingsScreen
 import pianoanchor.feature.settings.SettingsViewModel
+import pianoanchor.feature.today.TodayActions
+import pianoanchor.feature.today.TodayScreen
+import pianoanchor.feature.today.TodayTarget
+import pianoanchor.feature.today.TodayViewModel
 import pianoanchor.ui.shell.PianoAnchorTheme
 import java.io.IOException
 
@@ -61,41 +66,58 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Where the app is: the monitor, practising or calibrating a piano, the results of a finished run, or the settings. */
+/** Where the app is: Today, the pianos (the note monitor), the settings, practising or calibrating, or the results. */
 private sealed interface Destination {
+    /** The start screen. */
+    data object Today : Destination
+
     data object Monitor : Destination
 
-    /** The settings, opened from the monitor's gear; back returns to the monitor. */
+    /** The settings, opened from Today's rail; back returns to Today. */
     data object Settings : Destination
 
-    /** Practising [device], starting on [rung] (the one picked before a calibration). */
+    /**
+     * Practising [passageId] on [device], starting on [rung] (a card's, or the one picked before a calibration);
+     * back returns to Today when [fromToday], else to the monitor.
+     */
     data class Practice(
         val device: MidiDevice,
+        val passageId: String = Passages.CDE.id,
         val rung: TempoRung = TempoRung.WAIT,
+        val fromToday: Boolean = false,
     ) : Destination
 
-    /** Calibrating [device]'s latency; [practiceRung] is the rung to return to in Practice, null for the monitor. */
+    /** Calibrating [device]'s latency; [practice] is the Practice to return to, null for the monitor. */
     data class Calibrate(
         val device: MidiDevice,
-        val practiceRung: TempoRung?,
+        val practice: Practice?,
     ) : Destination
 
     data class Results(
         val device: MidiDevice,
         val attemptId: String,
+        val passageId: String,
     ) : Destination
 }
 
 @Composable
 private fun AppNavigation() {
-    var destination by remember { mutableStateOf<Destination>(Destination.Monitor) }
-    val back = { destination = Destination.Monitor }
+    var destination by remember { mutableStateOf<Destination>(Destination.Today) }
+    val back = { destination = Destination.Today }
     when (val current = destination) {
+        Destination.Today -> {
+            TodayRoute(
+                onPractice = { destination = it },
+                onPianos = { destination = Destination.Monitor },
+                onSettings = { destination = Destination.Settings },
+            )
+        }
+
         Destination.Monitor -> {
             MonitorRoute(
+                onBack = back,
                 onPractice = { destination = Destination.Practice(it) },
-                onCalibrate = { destination = Destination.Calibrate(it, practiceRung = null) },
-                onSettings = { destination = Destination.Settings },
+                onCalibrate = { destination = Destination.Calibrate(it, practice = null) },
             )
         }
 
@@ -105,27 +127,22 @@ private fun AppNavigation() {
 
         is Destination.Practice -> {
             PracticeRoute(
-                current.device,
-                current.rung,
-                onBack = back,
-                onFinished = { destination = Destination.Results(current.device, it) },
-                onCalibrate = { destination = Destination.Calibrate(current.device, practiceRung = it) },
+                current,
+                onBack = { destination = if (current.fromToday) Destination.Today else Destination.Monitor },
+                onFinished = { destination = Destination.Results(current.device, it, current.passageId) },
+                onCalibrate = { destination = Destination.Calibrate(current.device, current.copy(rung = it)) },
             )
         }
 
         is Destination.Calibrate -> {
-            val leave = {
-                destination =
-                    current.practiceRung?.let { Destination.Practice(current.device, it) } ?: Destination.Monitor
-            }
-            CalibrationRoute(current.device, onLeave = leave)
+            CalibrationRoute(current.device, onLeave = { destination = current.practice ?: Destination.Monitor })
         }
 
         is Destination.Results -> {
             ResultsRoute(
                 current.attemptId,
                 onBack = back,
-                onTryAgain = { destination = Destination.Practice(current.device) },
+                onTryAgain = { destination = Destination.Practice(current.device, current.passageId) },
             )
         }
     }
@@ -155,15 +172,16 @@ private fun rememberRouteViewModelStoreOwner(): ViewModelStoreOwner {
  */
 @Composable
 private fun PracticeRoute(
-    device: MidiDevice,
-    rung: TempoRung,
+    practice: Destination.Practice,
     onBack: () -> Unit,
     onFinished: (attemptId: String) -> Unit,
     onCalibrate: (TempoRung) -> Unit,
 ) {
     LandscapeEffect()
     val viewModel: PracticeViewModel =
-        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device, rung) }
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) {
+            parametersOf(practice.device, practice.passageId, practice.rung)
+        }
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
     // Leave only once the run has closed the piano, so the monitor can reopen it (one reader per input).
@@ -235,6 +253,36 @@ private fun SettingsRoute(onBack: () -> Unit) {
     )
 }
 
+/** Today; its ViewModel lives as long as the route, so coming back from a run loads the plan afresh. */
+@Composable
+private fun TodayRoute(
+    onPractice: (Destination.Practice) -> Unit,
+    onPianos: () -> Unit,
+    onSettings: () -> Unit,
+) {
+    val viewModel: TodayViewModel = koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner())
+    val state by viewModel.state.collectAsState()
+    TodayScreen(
+        state,
+        TodayActions(
+            onStart = { card ->
+                when (val target = viewModel.target(card)) {
+                    is TodayTarget.Practice -> {
+                        onPractice(Destination.Practice(target.device, target.passageId, target.rung, fromToday = true))
+                    }
+
+                    TodayTarget.Pianos -> {
+                        onPianos()
+                    }
+                }
+            },
+            onPianos = onPianos,
+            onSettings = onSettings,
+            onRetry = viewModel::refresh,
+        ),
+    )
+}
+
 /** A ViewModel store scoped to one route: cleared when the route leaves the composition. */
 private class RouteViewModelStoreOwner : ViewModelStoreOwner {
     override val viewModelStore = ViewModelStore()
@@ -243,11 +291,12 @@ private class RouteViewModelStoreOwner : ViewModelStoreOwner {
 /** Platform glue for the note monitor: Bluetooth permission, settings intents and the SAF export. */
 @Composable
 private fun MonitorRoute(
+    onBack: () -> Unit,
     onPractice: (MidiDevice) -> Unit,
     onCalibrate: (MidiDevice) -> Unit,
-    onSettings: () -> Unit,
     viewModel: MonitorViewModel = koinViewModel(),
 ) {
+    BackHandler(onBack = onBack)
     val state by viewModel.state.collectAsState()
     // Coming back from practice: reopen the piano the monitor closed for it.
     LaunchedEffect(viewModel) { viewModel.setDeviceOpen(true) }
@@ -294,7 +343,6 @@ private fun MonitorRoute(
                 },
                 onEnableBluetooth = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
                 onDismissError = viewModel::dismissError,
-                onSettings = onSettings,
                 // An input has one reader: the next screen opens the piano once the monitor has closed it.
                 onPractice = { device -> scope.handOverPiano(viewModel) { onPractice(device) } },
                 onCalibrate = { device -> scope.handOverPiano(viewModel) { onCalibrate(device) } },

@@ -14,6 +14,8 @@ Driven port: the learner's completed attempts, kept across app restarts and keye
 | `fun recent(passageId: String, limit: Int): Flow<List<Attempt>>` | The attempts of [passageId], newest first by [Attempt.startedAt] (ties in any order), at most [limit] of them. Emits the current list on collection and again after every save. Throws [IllegalArgumentException] when [limit] is not positive. The flow fails with [StorageUnavailableException] when the store can't be read. |
 | `suspend fun countStartedBefore(passageId: String, before: Instant): Int` | How many attempts of [passageId] started strictly before [before]; 0 for an unknown passage. Adapters that store [Attempt.startedAt] coarser compare at that precision. Throws [StorageUnavailableException] when the store can't be read or written. |
 | `suspend fun cleanTempos(passageId: String): Set<Int>` | Tempos (BPM) of [passageId]'s timed attempts whose band is CLEAN; empty when none. Throws [StorageUnavailableException] when the store can't be read or written. |
+| `suspend fun lastPlayed(passageId: String): Instant?` | When [passageId] was last played: the latest [Attempt.startedAt] of its attempts, or null for a passage never played. Adapters that store [Attempt.startedAt] coarser answer at that precision. Throws [StorageUnavailableException] when the store can't be read or written. |
+| `suspend fun practiceDays(from: LocalDate, zone: TimeZone): Set<LocalDate>` | The calendar days, in [zone], from [from] on (inclusive) on which at least one attempt of any passage started; empty when none. Throws [StorageUnavailableException] when the store can't be read or written. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/AttemptRepositoryPortContractTest.kt`
 

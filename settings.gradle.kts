@@ -34,6 +34,7 @@ include(
     ":feature:monitor",
     ":feature:practice",
     ":feature:settings",
+    ":feature:today",
     ":app-android",
     ":app-desktop",
     ":architecture-tests",

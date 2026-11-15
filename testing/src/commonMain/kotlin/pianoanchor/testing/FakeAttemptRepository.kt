@@ -4,6 +4,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.StorageUnavailableException
@@ -57,6 +60,23 @@ class FakeAttemptRepository : AttemptRepositoryPort {
         return attempts.value.values
             .filter { it.passageId == passageId && it.band == Band.CLEAN }
             .mapNotNullTo(LinkedHashSet()) { it.tempoBpm }
+    }
+
+    override suspend fun lastPlayed(passageId: String): Instant? {
+        failIfFailing("lastPlayed")
+        return attempts.value.values
+            .filter { it.passageId == passageId }
+            .maxOfOrNull { it.startedAt }
+    }
+
+    override suspend fun practiceDays(
+        from: LocalDate,
+        zone: TimeZone,
+    ): Set<LocalDate> {
+        failIfFailing("practiceDays")
+        return attempts.value.values
+            .map { it.startedAt.toLocalDateTime(zone).date }
+            .filterTo(LinkedHashSet()) { it >= from }
     }
 
     private fun failIfFailing(operation: String) {

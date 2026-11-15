@@ -27,7 +27,8 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | `:ui:shell` | Shared Compose root, `PianoAnchorTheme` (`docs/ui/living-studio.md`) and string resources | Driving adapter |
 | `:feature:monitor` | Note monitor: `MonitorViewModel`, `MonitorScreen`; records JSONL fixtures (`fixtures/SCHEMA.md`) | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
 | `:feature:practice` | Wait-mode practice: `PracticeViewModel` (matcher, grading, saving the attempt), `PracticeScreen` with the Canvas `StaffView` and the live `KeyStrip`; the run's results: `ResultsViewModel` and `ResultsScreen` | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
-| `:feature:settings` | Settings: `SettingsViewModel` over `SettingsRepositoryPort`, `SettingsScreen` (daily budget, weekly goal, click, update check); opened from the monitor's gear | Driving adapter over ports; Roborazzi screenshots in `fastCheck` |
+| `:feature:today` | Today, the start screen: `TodayViewModel` (plan, budget, piano chip, practice days), `TodayScreen` (rail, three cards, session bar); cards are composed by `SessionComposer` in `:engine` | Driving adapter over ports and `:engine`; Roborazzi screenshots in `fastCheck` |
+| `:feature:settings` | Settings: `SettingsViewModel` over `SettingsRepositoryPort`, `SettingsScreen` (daily budget, weekly goal, click, update check); opened from Today's rail | Driving adapter over ports; Roborazzi screenshots in `fastCheck` |
 | `:app-android` | Android app: composition root (Koin module, permission request, file export) and screen navigation (monitor → settings; monitor → practice → results, Try again → practice; one ViewModel store per route) | No business logic |
 | `:app-desktop` | Desktop development harness | No business logic |
 | `:architecture-tests` | Konsist rules enforcing this document | Runs in `fastCheck` |
