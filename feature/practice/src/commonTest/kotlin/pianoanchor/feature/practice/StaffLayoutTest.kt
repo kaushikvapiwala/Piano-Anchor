@@ -6,6 +6,7 @@ import pianoanchor.core.model.ScoreNote
 import pianoanchor.core.model.Step
 import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.core.model.TimeSignature
+import pianoanchor.testing.TEST_RIGHTS
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,7 +24,7 @@ class StaffLayoutTest {
     private fun passage(
         vararg steps: Step,
         time: TimeSignature = TimeSignature(4, 4),
-    ) = Passage("test", "Test", steps.toList(), time, tempoBpm = 100)
+    ) = Passage("test", "Test", steps.toList(), time, tempoBpm = 100, rights = TEST_RIGHTS)
 
     private fun step(
         onset: Int,

@@ -23,6 +23,7 @@ import pianoanchor.core.model.TimeSignature
 import pianoanchor.engine.analysis.TempoReference.Fitted
 import pianoanchor.engine.analysis.TempoReference.Target
 import pianoanchor.engine.analysis.TempoReference.Untimed
+import pianoanchor.testing.TEST_RIGHTS
 import pianoanchor.testing.passageOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -91,6 +92,7 @@ class PerformanceAnalyserTest {
                 },
             timeSignature = TimeSignature(4, 4),
             tempoBpm = 60,
+            rights = TEST_RIGHTS,
         )
 
     /** Equal steps of a quarter / [divisor] each, written at [bpm]. */
@@ -115,6 +117,7 @@ class PerformanceAnalyserTest {
             },
         timeSignature = TimeSignature(4, 4),
         tempoBpm = bpm,
+        rights = TEST_RIGHTS,
     )
 
     @Test

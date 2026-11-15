@@ -1,7 +1,10 @@
 package pianoanchor.testing
 
+import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.Rights
+import pianoanchor.core.model.RightsStatus
 import pianoanchor.core.model.ScoreNote
 import pianoanchor.core.model.Skill
 import pianoanchor.core.model.SkillGraph
@@ -11,6 +14,9 @@ import pianoanchor.core.model.TimeSignature
 
 /** The written tempo of every [passageOf] passage, in quarter notes per minute. */
 const val TEST_TEMPO_BPM = 60
+
+/** The rights record of every test passage. */
+val TEST_RIGHTS = Rights(RightsStatus.ORIGINAL, "test", "test", LocalDate(2026, 1, 1))
 
 /** The skill id every [passageOf] passage exercises unless told otherwise. */
 const val TEST_SKILL_ID = "test-skill"
@@ -34,6 +40,7 @@ fun passageOf(
             },
         timeSignature = TimeSignature(beats = 4, beatUnit = 4),
         tempoBpm = TEST_TEMPO_BPM,
+        rights = TEST_RIGHTS,
         skills = skills,
     )
 

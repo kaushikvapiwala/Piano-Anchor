@@ -11,6 +11,7 @@ import pianoanchor.testing.ClassificationScore
 import pianoanchor.testing.ErrorInjector
 import pianoanchor.testing.LabelledTake
 import pianoanchor.testing.TAKE_START_NANOS
+import pianoanchor.testing.TEST_RIGHTS
 import pianoanchor.testing.TakeGenerator
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -37,6 +38,7 @@ class PerformanceAnalyserExitTest {
             },
         timeSignature = TimeSignature(4, 4),
         tempoBpm = tempoBpm,
+        rights = TEST_RIGHTS,
     )
 
     /** A stepwise melody in quarter notes, ending on a half note. */

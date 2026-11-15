@@ -22,8 +22,6 @@ private const val MIN_GAP_DP = 28f
 /** The most a bar line sits before the note that starts its bar, in dp: clear of its sharp when gaps allow. */
 private const val BAR_CLEARANCE_DP = 30f
 
-private const val QUARTERS_PER_WHOLE = 4
-
 /** Notes this long or longer (a half note) are drawn hollow. */
 private const val HOLLOW_MIN_TICKS = 2 * TICKS_PER_QUARTER
 
@@ -65,7 +63,7 @@ internal fun staffLayout(
         return breakX[i] + widths[i] * (tick - ticks[i]) / (ticks[i + 1] - ticks[i])
     }
     val noteX = steps.map { x(it.onsetTicks) }
-    val barTicks = passage.timeSignature.let { it.beats * QUARTERS_PER_WHOLE * TICKS_PER_QUARTER / it.beatUnit }
+    val barTicks = passage.timeSignature.barTicks
     val barLineX =
         (barTicks until endTicks step barTicks).map { tick ->
             val starting = steps.indexOfFirst { it.onsetTicks == tick }

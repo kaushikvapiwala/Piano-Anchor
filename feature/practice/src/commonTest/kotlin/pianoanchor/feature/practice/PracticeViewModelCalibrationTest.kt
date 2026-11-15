@@ -13,8 +13,8 @@ import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.engine.Tunables
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
-import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
@@ -43,7 +43,7 @@ class PracticeViewModelCalibrationTest {
     private val attempts = FakeAttemptRepository()
     private val calibration = FakeCalibrationRepository()
     private val learnerRepository = FakeLearnerRepository()
-    private val learner = LearnerModel(Skills.GRAPH, learnerRepository)
+    private val learner = LearnerModel(Curriculum.graph, learnerRepository)
     private val skips = CalibrationSkips()
     private val metronome = FakeMetronome(clock)
     private val wallClock = FakeWallClock(Instant.parse("2026-11-13T09:00:00Z"))

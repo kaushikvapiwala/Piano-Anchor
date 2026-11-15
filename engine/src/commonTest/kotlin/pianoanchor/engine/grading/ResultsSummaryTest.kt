@@ -14,6 +14,7 @@ import pianoanchor.core.model.TimeSignature
 import pianoanchor.engine.analysis.PerformanceAnalyser
 import pianoanchor.engine.analysis.TempoReference
 import pianoanchor.engine.content.Passages
+import pianoanchor.testing.TEST_RIGHTS
 import pianoanchor.testing.TEST_TEMPO_BPM
 import pianoanchor.testing.passageOf
 import kotlin.test.Test
@@ -190,6 +191,7 @@ class ResultsSummaryTest {
                     ),
                 timeSignature = TimeSignature(4, 4),
                 tempoBpm = 80,
+                rights = TEST_RIGHTS,
             )
 
         assertEquals(1, noteNumber(passage, ref(0, c4)))

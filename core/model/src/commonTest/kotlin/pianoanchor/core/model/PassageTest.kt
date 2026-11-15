@@ -1,9 +1,12 @@
 package pianoanchor.core.model
 
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+
+private val rights = Rights(RightsStatus.ORIGINAL, "test", "test", LocalDate(2026, 1, 1))
 
 class PassageTest {
     private val c4 = MidiNote(60)
@@ -23,7 +26,7 @@ class PassageTest {
         id: String = "builtin:c",
         timeSignature: TimeSignature = fourFour,
         tempoBpm: Int = 80,
-    ) = Passage(id, "C", steps, timeSignature, tempoBpm)
+    ) = Passage(id, "C", steps, timeSignature, tempoBpm, rights)
 
     @Test
     fun pitchesListsTheStepsPitches() {
@@ -83,6 +86,12 @@ class PassageTest {
     }
 
     @Test
+    fun barTicksIsOneBarOfTheTimeSignature() {
+        assertEquals(4 * TICKS_PER_QUARTER, fourFour.barTicks)
+        assertEquals(3 * TICKS_PER_QUARTER / 2, TimeSignature(3, 8).barTicks)
+    }
+
+    @Test
     fun rejectsTimeSignatureBeatsOutOf1To32() {
         listOf(0, 33).forEach { beats -> assertFailsWith<IllegalArgumentException> { TimeSignature(beats, 4) } }
         listOf(1, 32).forEach { beats -> assertEquals(beats, TimeSignature(beats, 4).beats) }
@@ -111,12 +120,13 @@ class PassageTest {
     @Test
     fun passageKeepsItsFields() {
         val steps = listOf(step(0, c4))
-        val passage = Passage("builtin:c", "C", steps, TimeSignature(3, 4), 90)
+        val passage = Passage("builtin:c", "C", steps, TimeSignature(3, 4), 90, rights)
         assertEquals("builtin:c", passage.id)
         assertEquals("C", passage.title)
         assertEquals(steps, passage.steps)
         assertEquals(TimeSignature(3, 4), passage.timeSignature)
         assertEquals(90, passage.tempoBpm)
+        assertEquals(rights, passage.rights)
     }
 
     @Test

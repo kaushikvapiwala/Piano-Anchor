@@ -16,7 +16,7 @@ import pianoanchor.engine.analysis.PerformanceAnalyser
 import pianoanchor.engine.analysis.PerformanceAnalysis
 import pianoanchor.engine.analysis.TempoReference
 import pianoanchor.engine.calibration.LatencyCalibration
-import pianoanchor.engine.content.Passages
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.grading.HesitationSummary
 import pianoanchor.engine.grading.LengthSummary
 import pianoanchor.engine.grading.ResultsSummary
@@ -62,7 +62,7 @@ public class ResultsViewModel(
 
     private suspend fun load(): ResultsState {
         val attempt = attempts.get(attemptId) ?: return ResultsState.NotFound
-        val passage = Passages.byId(attempt.passageId)
+        val passage = Curriculum.passage(attempt.passageId)
         val summary = passage?.let { ResultsSummary.of(it, attempt, analyse(it, attempt)) }
         return ResultsState.Ready(
             passageTitle = passage?.title ?: attempt.passageId,
