@@ -18,12 +18,15 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Daily budget | The minutes of practice the learner wants per day: 15, 20 (default) or 30 (`DailyBudget` in `Settings`). |
 | Difficulty | FSRS: how hard an item is for this learner, 1 (easy) to 10 (hard); part of `MemoryState` (`docs/algorithms/scheduler.md`). |
 | Due | A skill is due on a learner day when its `dueDay` (last review day plus the FSRS interval) is on or before that day; the plan lists due skills lowest retrievability first, at most `MAX_DUE_PER_DAY`. |
+| Ear item | One thing to hear and answer in the ear-training track: an *echo* or an *identify* item (`EarExercise` in `:core:model`). Four of them make one review of an ear skill (`EAR_ITEMS_PER_REVIEW`). |
+| Echo | An ear item answered by playing back what was heard on the piano; the next notes played are judged by `EarEcho.matches`. One note must be the exact key, melodies may be in any octave. |
 | Error kind | What the performance analyser can report about a score note (`ErrorKind`): wrong note, missed note, extra note, incomplete chord, mistouch, octave, early, late, hesitation, too short, too long (`docs/algorithms/performance-analysis.md`). |
 | FakePiano | In-memory test double in `testing/` that implements both MIDI ports for one wired device, MIDI discovery for the devices it advertises, and decodes incoming bytes with the real parser. |
 | Finding | One error the analyser found (`Finding` in `:core:model`): its error kind, the score note it concerns (`ScoreNoteRef`: step and pitch) and the played note involved, if any. |
 | Fixture | A recorded MIDI session as a JSONL file (`fixtures/SCHEMA.md`): a header, then each message's canonical bytes and its time since the first message. Feeds the matcher and replay tests. |
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hesitation | A pause before a note that is much longer than the music asks for, without a wrong note. |
+| Identify | An ear item answered by tapping the name of what was heard on screen (higher or lower, step or skip, an interval, a chord quality). Two choices in M4. |
 | Incomplete chord | `ChordIncomplete`: the chord window of a step ran out before all its notes were pressed; the step must be played again. |
 | Learned | A skill that has `LEARNED_MIN_RECALLED_COLD_CHECKS` recalled (Hard or Good) cold checks on distinct days, at least `LEARNED_MIN_CLEAN_COLD_CHECKS` of them clean, and stability of at least `LEARNED_MIN_STABILITY_DAYS`. Sticky: it stays learned after a lapse, and it unlocks the skills that depend on it. |
 | Learner day | A calendar date (`kotlinx.datetime.LocalDate`) in the learner's own time zone; a skill gets at most one review per learner day. Stored as ISO `yyyy-mm-dd` text (ADR 0022). |
