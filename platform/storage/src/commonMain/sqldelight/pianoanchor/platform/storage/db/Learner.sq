@@ -17,8 +17,8 @@ CREATE TABLE skill_state (
     last_review_day TEXT NOT NULL,
     due_day TEXT NOT NULL,
     clean_cold_checks INTEGER NOT NULL,
-    recalled_cold_checks INTEGER NOT NULL,
-    learned INTEGER NOT NULL
+    learned INTEGER NOT NULL,
+    recalled_cold_checks INTEGER NOT NULL DEFAULT 0
 );
 
 hasReview:
