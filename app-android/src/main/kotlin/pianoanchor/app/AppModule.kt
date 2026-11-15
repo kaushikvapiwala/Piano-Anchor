@@ -17,7 +17,6 @@ import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.content.Curriculum
-import pianoanchor.engine.content.Passages
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorViewModel
@@ -61,7 +60,7 @@ val appModule =
         viewModel { (device: MidiDevice, passageId: String, rung: TempoRung) ->
             PracticeViewModel(
                 device,
-                Curriculum.passage(passageId) ?: Passages.CDE,
+                requireNotNull(Curriculum.passage(passageId)) { "unknown passage $passageId" },
                 get(),
                 get(),
                 get(),

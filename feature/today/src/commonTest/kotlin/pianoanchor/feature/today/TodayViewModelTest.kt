@@ -93,12 +93,13 @@ class TodayViewModelTest {
         band: Band = Band.GOOD,
         tempoBpm: Int? = null,
         passageId: String = "builtin:middle-c-march",
+        hour: String = "09",
     ) = attempts.save(
         Attempt(
             id = id,
             passageId = passageId,
             deviceId = "usb-1",
-            startedAt = Instant.parse("${date}T09:00:00Z"),
+            startedAt = Instant.parse("${date}T$hour:00:00Z"),
             durationNanos = 1,
             stepCount = 1,
             wrongNotes = 0,
@@ -280,5 +281,56 @@ class TodayViewModelTest {
             runCurrent()
             assertFalse(vm.state.value.storageFailed)
             assertNotNull(vm.state.value.session)
+        }
+
+    @Test
+    fun aRunAfterMidnightCountsInThisWeeksDots() =
+        runTest(dispatcher) {
+            // Monday 02:00: the learner day is still Sunday, but a run at 01:00 on Monday is a Monday practice day.
+            val monday = FakeWallClock(Instant.parse("2026-11-16T02:00:00Z"))
+            playedOn("2026-11-16", id = "early", hour = "01")
+            val vm =
+                TodayViewModel(
+                    LearnerModel(Curriculum.graph, learnerRepository),
+                    settings,
+                    attempts,
+                    piano,
+                    calibration,
+                    monday,
+                    TimeZone.UTC,
+                ).also { runCurrent() }
+
+            assertEquals(1, vm.state.value.daysThisWeek)
+            assertEquals(1, vm.state.value.practicedDays)
+        }
+
+    @Test
+    fun nothingDueOrNewStillOffersTheSongOfALearnedUnit() =
+        runTest(dispatcher) {
+            givenStates(
+                *Curriculum.graph.skills
+                    .map { skillState(it.id, dueDay = LocalDate(2026, 12, 1), learned = true) }
+                    .toTypedArray(),
+            )
+            val vm = viewModel()
+
+            val song = assertIs<Card.Song>(assertNotNull(vm.state.value.session).cards.single())
+            assertEquals(DailyBudget.MIN_20.minutes, song.minutes)
+        }
+
+    @Test
+    fun aCleanWaitRunMovesTheSongToTheNextRung() =
+        runTest(dispatcher) {
+            givenStates(skillState(Skills.RH_TUNES.id, dueDay = LocalDate(2026, 12, 1), learned = true))
+            val first =
+                assertIs<Card.Song>(
+                    assertNotNull(viewModel().state.value.session).cards.filterIsInstance<Card.Song>().single(),
+                )
+            playedOn("2026-11-10", band = Band.CLEAN, passageId = first.passage.id)
+            val vm = viewModel()
+
+            val song = assertNotNull(vm.state.value.session).cards.filterIsInstance<Card.Song>().single()
+            assertEquals(first.passage.id, song.passage.id)
+            assertEquals(TempoRung.P60, song.rung)
         }
 }

@@ -79,21 +79,37 @@ public class TodayViewModel(
     private suspend fun loadToday() {
         try {
             val now = clock.now()
-            val today = learnerDay(now, zone)
-            val plan = learner.plan(today)
+            val local = now.toLocalDateTime(zone)
+            // The plan follows the learner day; practice days are calendar days (as the attempts store them).
+            val plan = learner.plan(learnerDay(now, zone))
+            val today = local.date
             val stored = settings.settings.first()
             val history =
                 Curriculum.units
                     .flatMap { it.passages }
-                    .associate { it.id to PassageHistory(attempts.lastPlayed(it.id), attempts.cleanTempos(it.id)) }
+                    .associate {
+                        it.id to
+                            PassageHistory(
+                                attempts.lastPlayed(it.id),
+                                attempts.cleanTempos(it.id),
+                                attempts.hasCleanWaitRun(it.id),
+                            )
+                    }
             val weekStart = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
             val days = attempts.practiceDays(minOf(weekStart, windowStart), zone)
-            val session = SessionComposer.compose(plan, Curriculum, stored.dailyBudget, history)
+            val session =
+                SessionComposer.compose(
+                    plan,
+                    Curriculum,
+                    stored.dailyBudget,
+                    history,
+                    learner.learnedSkills(),
+                )
             mutableState.update {
                 it.copy(
                     session = session,
-                    greeting = greetingAt(now.toLocalDateTime(zone).hour),
+                    greeting = greetingAt(local.hour),
                     daysThisWeek = days.count { day -> day in weekStart..today },
                     weeklyGoalDays = stored.weeklyGoalDays,
                     practicedDays = days.count { day -> day in windowStart..today },

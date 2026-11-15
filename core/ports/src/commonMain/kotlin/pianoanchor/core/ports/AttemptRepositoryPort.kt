@@ -51,6 +51,12 @@ public interface AttemptRepositoryPort {
     public suspend fun cleanTempos(passageId: String): Set<Int>
 
     /**
+     * Whether [passageId] has a wait-mode attempt (no tempo) whose band is CLEAN. Throws [StorageUnavailableException]
+     * when the store can't be read or written.
+     */
+    public suspend fun hasCleanWaitRun(passageId: String): Boolean
+
+    /**
      * When [passageId] was last played: the latest [Attempt.startedAt] of its attempts, or null for a passage never
      * played. Adapters that store [Attempt.startedAt] coarser answer at that precision. Throws
      * [StorageUnavailableException] when the store can't be read or written.

@@ -62,6 +62,11 @@ class FakeAttemptRepository : AttemptRepositoryPort {
             .mapNotNullTo(LinkedHashSet()) { it.tempoBpm }
     }
 
+    override suspend fun hasCleanWaitRun(passageId: String): Boolean {
+        failIfFailing("hasCleanWaitRun")
+        return attempts.value.values.any { it.passageId == passageId && it.band == Band.CLEAN && it.tempoBpm == null }
+    }
+
     override suspend fun lastPlayed(passageId: String): Instant? {
         failIfFailing("lastPlayed")
         return attempts.value.values

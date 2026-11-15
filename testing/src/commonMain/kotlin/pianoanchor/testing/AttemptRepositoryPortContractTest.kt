@@ -199,6 +199,22 @@ abstract class AttemptRepositoryPortContractTest {
             assertEquals(emptySet(), repository.cleanTempos("unknown"))
         }
 
+    @Test
+    fun hasCleanWaitRunIsTrueOnlyForACleanAttemptWithoutATempo() =
+        runTest {
+            val repository = createSubject()
+            listOf(
+                attempt("a-1", startedAtSeconds = 1_000, band = Band.GOOD),
+                attempt("a-2", startedAtSeconds = 2_000, tempoBpm = TEMPO_A, band = Band.CLEAN),
+                attempt("a-3", startedAtSeconds = 3_000, passageId = "other", band = Band.CLEAN),
+            ).forEach { repository.save(it) }
+            assertEquals(false, repository.hasCleanWaitRun("c-d-e"))
+            assertEquals(true, repository.hasCleanWaitRun("other"))
+            repository.save(attempt("a-4", startedAtSeconds = 4_000, band = Band.CLEAN))
+            assertEquals(true, repository.hasCleanWaitRun("c-d-e"))
+            assertEquals(false, repository.hasCleanWaitRun("unknown"))
+        }
+
     @Suppress("MagicNumber") // Epoch seconds and calendar dates of the scenario.
     @Test
     fun lastPlayedIsTheLatestStartOfThePassage() =

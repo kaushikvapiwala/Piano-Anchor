@@ -126,6 +126,11 @@ public class SqlAttemptRepositoryAdapter(
             }
         }
 
+    override suspend fun hasCleanWaitRun(passageId: String): Boolean =
+        withContext(dispatcher) {
+            storage("hasCleanWaitRun") { queries.countCleanWaitRuns(passageId).executeAsOne() > 0 }
+        }
+
     override suspend fun lastPlayed(passageId: String): Instant? =
         withContext(dispatcher) {
             storage("lastPlayed") {

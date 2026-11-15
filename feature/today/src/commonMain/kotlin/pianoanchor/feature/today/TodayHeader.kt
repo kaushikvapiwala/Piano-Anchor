@@ -82,12 +82,9 @@ private fun PianoChipView(
                 piano.device.name,
                 piano.transport?.let {
                     stringResource(
-                        if (it ==
-                            Transport.USB
-                        ) {
-                            Res.string.today_transport_usb
-                        } else {
-                            Res.string.today_transport_ble
+                        when (it) {
+                            Transport.USB -> Res.string.today_transport_usb
+                            Transport.BLE -> Res.string.today_transport_ble
                         },
                     )
                 },
@@ -120,7 +117,7 @@ private fun WeekDots(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.clearAndSetSemantics { contentDescription = description },
     ) {
-        repeat(goal) { index ->
+        repeat(maxOf(goal, done)) { index ->
             val color =
                 if (index <
                     done

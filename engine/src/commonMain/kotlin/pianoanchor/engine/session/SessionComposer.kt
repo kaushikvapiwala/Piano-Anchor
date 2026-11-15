@@ -11,10 +11,14 @@ import pianoanchor.engine.learner.DailyPlan
 import pianoanchor.engine.matcher.TempoRung
 import kotlin.time.Instant
 
-/** What the learner has played of one passage: when it was last played and the tempos (BPM) of its CLEAN timed runs. */
+/**
+ * What the learner has played of one passage: when it was last played, the tempos (BPM) of its CLEAN timed runs and
+ * whether a wait-mode run was CLEAN ([cleanWait]).
+ */
 public data class PassageHistory(
     val lastPlayed: Instant?,
     val cleanTempos: Set<Int>,
+    val cleanWait: Boolean = false,
 )
 
 /** One card of Today: a [passage] to open Practice on at [rung], for about [minutes]. */
@@ -66,17 +70,20 @@ public data class Session(
 public object SessionComposer {
     /**
      * Composes the session for [plan] over [curriculum], splitting [budget] by the SESSION_SHARE tunables.
-     * [history] is keyed by passage id; a passage missing from it was never played.
+     * [history] is keyed by passage id; a passage missing from it was never played. [learned] are the ids of every
+     * learned skill (the plan lists only due and new ones); the song comes from the latest unit with one.
      */
     public fun compose(
         plan: DailyPlan,
         curriculum: Curriculum,
         budget: DailyBudget,
         history: Map<String, PassageHistory>,
+        learned: Set<String>,
     ): Session {
         val cold = coldOpen(plan, curriculum, history)
         val lesson = lesson(plan, curriculum)
-        val song = song(plan, curriculum, history)
+        val used = listOfNotNull(cold?.passage, lesson?.passage).map { it.id }
+        val song = song(curriculum, history, learned, used)
         val shares =
             listOf(
                 Tunables.SESSION_SHARE_REVIEW.takeIf { cold != null } ?: 0.0,
@@ -142,13 +149,13 @@ public object SessionComposer {
     }
 
     private fun song(
-        plan: DailyPlan,
         curriculum: Curriculum,
         history: Map<String, PassageHistory>,
-    ): Card.Song? {
-        val learned = learnedSkills(plan, curriculum)
-        return curriculum.units.asReversed().firstNotNullOfOrNull { unit ->
-            val open = unit.passages.filter { highestClean(it, history[it.id]) != TempoRung.P100 }
+        learned: Set<String>,
+        used: List<String>,
+    ): Card.Song? =
+        curriculum.units.asReversed().firstNotNullOfOrNull { unit ->
+            val open = unit.passages.filter { it.id !in used && highestClean(it, history[it.id]) != TempoRung.P100 }
             val passage = open.firstOrNull { it.rights.status == RightsStatus.PUBLIC_DOMAIN } ?: open.firstOrNull()
             if (passage == null || unit.skills.none { it in learned }) {
                 null
@@ -157,26 +164,6 @@ public object SessionComposer {
                 Card.Song(passage, if (clean == null) TempoRung.WAIT else TempoRung.entries[clean.ordinal + 1], 0)
             }
         }
-    }
-
-    /**
-     * The skills known to be learned: the due ones flagged learned, and every prerequisite (transitively) of those and
-     * of the new skills (a skill is new only once its prerequisites are learned). The plan lists no other skills.
-     */
-    private fun learnedSkills(
-        plan: DailyPlan,
-        curriculum: Curriculum,
-    ): Set<String> {
-        val learned = HashSet<String>()
-        val pending = ArrayDeque<String>()
-        plan.due.filter { it.learned }.forEach { pending += it.skillId }
-        plan.new.forEach { pending += it.prerequisites }
-        while (pending.isNotEmpty()) {
-            val id = pending.removeFirst()
-            if (learned.add(id)) curriculum.graph.byId(id)?.let { pending += it.prerequisites }
-        }
-        return learned
-    }
 
     private fun passagesOf(curriculum: Curriculum): List<Passage> = curriculum.units.flatMap { it.passages }
 
@@ -186,7 +173,7 @@ public object SessionComposer {
     ): TempoRung? =
         TempoRung.entries.lastOrNull { rung ->
             val bpm = rung.bpm(passage)
-            bpm != null && history != null && bpm in history.cleanTempos
+            history != null && if (bpm == null) history.cleanWait else bpm in history.cleanTempos
         }
 
     /** [total] split in proportion to [shares] in whole numbers (largest remainders first, ties in order). */

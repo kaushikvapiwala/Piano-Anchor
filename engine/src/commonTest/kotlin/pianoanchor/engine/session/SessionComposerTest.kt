@@ -38,7 +38,8 @@ class SessionComposerTest {
         plan: DailyPlan,
         history: Map<String, PassageHistory> = emptyMap(),
         budget: DailyBudget = DailyBudget.MIN_20,
-    ) = SessionComposer.compose(plan, Curriculum, budget, history)
+        learned: Set<String> = plan.due.filter { it.learned }.mapTo(HashSet()) { it.skillId },
+    ) = SessionComposer.compose(plan, Curriculum, budget, history, learned)
 
     private fun played(
         epochSecond: Long?,
@@ -130,16 +131,52 @@ class SessionComposerTest {
         assertEquals(false, song.passage.id == hot.id)
         // A unit with learned skills whose pieces are all clean hands over to the unit before it.
         val unit1Clean = everyUnitClean.filterKeys { id -> Curriculum.units[1].passages.any { it.id == id } }
-        val earlier = compose(plan, unit1Clean).cards.filterIsInstance<Card.Song>().single()
+        val earlier =
+            compose(
+                plan,
+                unit1Clean,
+                learned = setOf(Skills.RH_TUNES.id, Skills.KB_MIDDLE_C.id),
+            ).cards.filterIsInstance<Card.Song>().single()
         assertEquals(true, Curriculum.units[0].passages.any { it.id == earlier.passage.id })
     }
 
     @Test
-    fun songSkipsUnitsWithoutLearnedSkillsAndLearnsPrerequisitesOfNewSkills() {
-        // Nothing due and a new skill: its learned prerequisites reach back to unit 0.
-        val plan = DailyPlan(emptyList(), listOf(Skills.RH_C_POSITION))
-        val song = assertIs<Card.Song>(compose(plan).cards.last())
+    fun songComesFromTheLearnedSkillsEvenWhenNothingIsDueOrNew() {
+        val plan = DailyPlan(emptyList(), emptyList())
+        val learned = setOf(Skills.KB_MIDDLE_C.id)
+        val session = compose(plan, learned = learned)
+        val song = session.cards.single()
+        assertIs<Card.Song>(song)
         assertEquals(true, Curriculum.units[0].passages.any { it.id == song.passage.id })
+        assertEquals(DailyBudget.MIN_20.minutes, session.songMinutes)
+        assertEquals(DailyBudget.MIN_20.minutes, song.minutes)
+    }
+
+    @Test
+    fun songSkipsThePassagesOfTheColdOpenAndTheLesson() {
+        val plan = DailyPlan(listOf(state(Skills.KB_MIDDLE_C, learned = true)), listOf(Skills.KB_FIND_C))
+        val session = compose(plan)
+        val used =
+            session.cards
+                .filter { it !is Card.Song }
+                .map { it.passage.id }
+                .toSet()
+        assertEquals(2, used.size)
+        val song = session.cards.filterIsInstance<Card.Song>().single()
+        assertEquals(false, song.passage.id in used)
+        // With every other unit-0 passage clean, the only open ones are the two in use: no song at all.
+        val others = Curriculum.units[0].passages.filter { it.id !in used }
+        val history = others.associate { it.id to played(1, TempoRung.P100.bpm(it)!!) }
+        assertEquals(0, compose(plan, history).cards.count { it is Card.Song })
+    }
+
+    @Test
+    fun aCleanWaitRunMovesTheSongToTheFirstTimedRung() {
+        val plan = DailyPlan(emptyList(), emptyList())
+        val learned = setOf(Skills.RH_TUNES.id)
+        val first = compose(plan, learned = learned).cards.single()
+        val history = mapOf(first.passage.id to PassageHistory(null, emptySet(), cleanWait = true))
+        assertEquals(TempoRung.P60, compose(plan, history, learned = learned).cards.single().rung)
     }
 
     @Test

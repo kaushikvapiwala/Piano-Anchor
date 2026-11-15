@@ -81,6 +81,7 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
         runTest {
             failingDriver.failing = true
             assertFailsWith<StorageUnavailableException> { failingRepository.lastPlayed("c-d-e") }
+            assertFailsWith<StorageUnavailableException> { failingRepository.hasCleanWaitRun("c-d-e") }
             assertFailsWith<StorageUnavailableException> {
                 failingRepository.practiceDays(kotlinx.datetime.LocalDate(2026, 11, 1), kotlinx.datetime.TimeZone.UTC)
             }

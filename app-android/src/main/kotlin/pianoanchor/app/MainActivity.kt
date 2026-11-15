@@ -93,10 +93,10 @@ private sealed interface Destination {
         val practice: Practice?,
     ) : Destination
 
+    /** The results of the run saved as [attemptId], which [practice] started; "Try again" returns to it. */
     data class Results(
-        val device: MidiDevice,
         val attemptId: String,
-        val passageId: String,
+        val practice: Practice,
     ) : Destination
 }
 
@@ -129,7 +129,7 @@ private fun AppNavigation() {
             PracticeRoute(
                 current,
                 onBack = { destination = if (current.fromToday) Destination.Today else Destination.Monitor },
-                onFinished = { destination = Destination.Results(current.device, it, current.passageId) },
+                onFinished = { destination = Destination.Results(it, current) },
                 onCalibrate = { destination = Destination.Calibrate(current.device, current.copy(rung = it)) },
             )
         }
@@ -142,7 +142,7 @@ private fun AppNavigation() {
             ResultsRoute(
                 current.attemptId,
                 onBack = back,
-                onTryAgain = { destination = Destination.Practice(current.device, current.passageId) },
+                onTryAgain = { destination = current.practice },
             )
         }
     }
@@ -296,12 +296,13 @@ private fun MonitorRoute(
     onCalibrate: (MidiDevice) -> Unit,
     viewModel: MonitorViewModel = koinViewModel(),
 ) {
-    BackHandler(onBack = onBack)
     val state by viewModel.state.collectAsState()
     // Coming back from practice: reopen the piano the monitor closed for it.
     LaunchedEffect(viewModel) { viewModel.setDeviceOpen(true) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // Today's cards open Practice on this piano: close the monitor's reader first (one reader per input).
+    BackHandler { scope.handOverPiano(viewModel, onBack) }
     // Scan whatever the answer: without permission the adapter reports it and the screen offers the settings.
     val askBluetooth =
         rememberLauncherForActivityResult(
