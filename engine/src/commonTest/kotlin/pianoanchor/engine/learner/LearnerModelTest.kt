@@ -134,6 +134,41 @@ class LearnerModelTest {
         }
 
     @Test
+    fun `hard checks alone count as learned once stability reaches the mature bar`() =
+        runTest {
+            // The #73 seed-11 stall: recalled every time, never clean. Review whenever due.
+            var offset = 0
+            check("a", offset, Band.GOOD)
+            while (state("a").memory.stability < Tunables.LEARNED_MATURE_STABILITY_DAYS) {
+                assertFalse(state("a").learned, "not learned at stability ${state("a").memory.stability}")
+                offset += fsrs.intervalDays(state("a").memory)
+                check("a", offset, Band.GOOD)
+            }
+
+            val s = state("a")
+            assertEquals(0, s.cleanColdChecks)
+            assertTrue(s.recalledColdChecks >= Tunables.LEARNED_MIN_RECALLED_COLD_CHECKS)
+            assertTrue(s.learned)
+        }
+
+    @Test
+    fun `one hard check with mature stability is not learned`() =
+        runTest {
+            // Strong learner: a first stability above the mature bar, but only one recall.
+            val weights =
+                FsrsParameters.DEFAULT.w
+                    .toMutableList()
+                    .apply { this[1] = 30.0 }
+            val strong = LearnerModel(graph, repository, Fsrs(FsrsParameters(weights)))
+            strong.record(passage("a"), attempt(Band.GOOD), day(0))
+
+            val s = state("a")
+            assertTrue(s.memory.stability >= Tunables.LEARNED_MATURE_STABILITY_DAYS)
+            assertEquals(1, s.recalledColdChecks)
+            assertFalse(s.learned)
+        }
+
+    @Test
     fun `oneCleanAndOneHardCheckIsLearnedOnceStable`() =
         runTest {
             check("a", 0, Band.CLEAN)
