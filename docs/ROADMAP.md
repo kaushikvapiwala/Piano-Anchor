@@ -74,6 +74,14 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 18. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
     piano's identity reply, a short note fixture and the app version into a file to attach to a GitHub issue; reads
     only, no network.
+19. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
+    Off) with a Hint button; attempts record the hint level and whether a hint was shown.
+20. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
+    open performs by default.
+21. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
+    clean loops; loops are never cold checks.
+22. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
+    recalled check; aided and wait-mode runs rate at most Hard; Gentle/Standard/Strict presets (M5's exit check).
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
@@ -101,7 +109,7 @@ pick these; nothing in "Next up" waits for them.
 | M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) (specced: #69–#73; 🔄 M2.1 FSRS-6 memory model, M2.3 learner storage and M2.4 learner model done) | Matches reference test vectors; simulated learner behaves sensibly |
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format done) | Used daily for 2 weeks |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (specced: #127–#129) | All tracks share the daily plan |
-| M5 | Guidance fading, practice/perform modes, strictness setting | Unaided pass required before "learned" |
+| M5 | Guidance fading, practice/perform modes, strictness setting (specced: #132–#135) | Unaided pass required before "learned" |
 | M6 | Curriculum units 3–8, sight-reading staircase, placement | Placement reproducible |
 | M7 | Heatmaps, recordings, calibration report | Predicted vs observed retention plotted |
 | M8 | Optional Google Drive sync | Round-trip sync between two devices |
