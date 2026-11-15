@@ -141,6 +141,8 @@ public class PracticeViewModel(
      * piano is reopened once the old run has closed it (one reader per input).
      */
     public fun selectRung(rung: TempoRung) {
+        // A spot loop's clean streak counts loops at one rung: a new rung starts it again.
+        mutableState.update { it.copy(spotLoop = it.spotLoop?.copy(cleanLoops = 0, offerFull = false)) }
         start(rung, mutableState.value.mode)
     }
 

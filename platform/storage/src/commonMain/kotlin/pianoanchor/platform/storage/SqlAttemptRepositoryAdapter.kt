@@ -182,7 +182,7 @@ public class SqlAttemptRepositoryAdapter(
             hintLevel = HintLevel.valueOf(row.hint_level),
             hintShown = row.hint_shown != 0L,
             mode = RunMode.valueOf(row.mode),
-            spot = row.spot_first_bar?.let { BarRange(it.toInt(), row.spot_last_bar!!.toInt()) },
+            spot = row.spot_last_bar?.let { last -> row.spot_first_bar?.let { BarRange(it.toInt(), last.toInt()) } },
         )
 }
 

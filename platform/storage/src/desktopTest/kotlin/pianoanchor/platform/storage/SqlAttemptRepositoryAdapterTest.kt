@@ -77,6 +77,22 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
         }
 
     @Test
+    fun aRowWithHalfASpotRangeReadsBackAsAFullRun() =
+        runTest {
+            listOf("'first', 5, NULL", "'last', NULL, 6").forEach { values ->
+                driver.execute(
+                    null,
+                    "INSERT INTO attempt(id, spot_first_bar, spot_last_bar, passage_id, device_id, started_at_ms, " +
+                        "duration_nanos, step_count, wrong_notes, incomplete_chords, accuracy, band) " +
+                        "VALUES ($values, 'c-d-e', 'usb-1', 1, 1, 1, 0, 0, 1.0, 'CLEAN')",
+                    0,
+                )
+            }
+            assertNull(assertNotNull(repository.get("first")).spot)
+            assertNull(assertNotNull(repository.get("last")).spot)
+        }
+
+    @Test
     fun incompleteChordsWithOneOrNoMissingNotesRoundTrip() =
         runTest {
             val stored =

@@ -15,8 +15,8 @@ runs alike: hints are about knowing the notes, not the tempo.
 `HintFading.level` walks the passage's attempts oldest first, starting at Full. A run of consecutive CLEAN attempts as
 long as the fade count moves the level one step down; a run of KEEP_PRACTISING attempts as long as that count moves it
 one step up. Every move resets both counts, and a GOOD attempt breaks either streak without adding to one. The level
-stops at Full and at Off. Attempts carry no spot-loop marker yet, so every stored attempt counts as a full run; the
-spot loops of a later milestone will be skipped here once they can be told apart.
+stops at Full and at Off. Spot-loop attempts (those with a bar range) are skipped: they neither count nor break a
+streak.
 
 ## Delay rule
 `HintDelay.millis` pools the gaps between the `StepCorrect` events of the newest few runs (the events already carry

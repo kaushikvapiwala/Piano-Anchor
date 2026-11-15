@@ -22,6 +22,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -182,15 +183,18 @@ private fun AppNavigation() {
         }
 
         is Destination.Practice -> {
-            PracticeRoute(
-                current,
-                onBack = { destination = current.from },
-                onFinished = { destination = Destination.Results(it, current) },
-                onCalibrate = { rung, mode ->
-                    destination = Destination.Calibrate(current.device, current.copy(rung = rung, mode = mode))
-                },
-                onPlayWhole = { rung -> destination = current.copy(rung = rung, spot = null) },
-            )
+            // Keyed so "Play it" (a Practice of the whole passage after a spot loop) builds a new ViewModel.
+            key(current) {
+                PracticeRoute(
+                    current,
+                    onBack = { destination = current.from },
+                    onFinished = { destination = Destination.Results(it, current) },
+                    onCalibrate = { rung, mode ->
+                        destination = Destination.Calibrate(current.device, current.copy(rung = rung, mode = mode))
+                    },
+                    onPlayWhole = { rung -> destination = current.copy(rung = rung, spot = null) },
+                )
+            }
         }
 
         is Destination.Ear -> {

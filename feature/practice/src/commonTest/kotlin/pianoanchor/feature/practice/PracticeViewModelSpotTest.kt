@@ -233,6 +233,25 @@ class PracticeViewModelSpotTest {
         }
 
     @Test
+    fun `a new rung mid-loop starts the clean streak again`() =
+        runTest(dispatcher) {
+            val vm = loop()
+            playLoop()
+            playLoop()
+            vm.selectRung(TempoRung.WAIT)
+            runCurrent()
+            assertEquals(
+                0,
+                vm.state.value.spotLoop
+                    ?.cleanLoops,
+            )
+            assertFalse(
+                vm.state.value.spotLoop
+                    ?.offerFull == true,
+            )
+        }
+
+    @Test
     fun `keep looping does nothing outside a spot loop`() =
         runTest(dispatcher) {
             val vm = loop(spot = null)

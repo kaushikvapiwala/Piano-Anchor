@@ -71,17 +71,14 @@ public class ResultsViewModel(
     private suspend fun load(): ResultsState {
         val attempt = attempts.get(attemptId) ?: return ResultsState.NotFound
         val passage = Curriculum.passage(attempt.passageId)
-        // Spot loops are practice: a perform take offers none.
         val analysed =
             passage?.let {
                 withContext(analysisDispatcher) {
                     val summary = ResultsSummary.of(it, attempt, analyse(it, attempt))
-                    summary to SpotFinder.worst(it, attempt).takeIf { attempt.mode == RunMode.PRACTICE }
+                    summary to spotOf(it, attempt)
                 }
             }
         val summary = analysed?.first
-        val rung =
-            passage?.let { p -> TempoRung.entries.firstOrNull { it.bpm(p) == attempt.tempoBpm } } ?: TempoRung.WAIT
         return ResultsState.Ready(
             passageTitle = passage?.title ?: attempt.passageId,
             runNumber = attempts.countStartedBefore(attempt.passageId, attempt.startedAt) + 1,
@@ -98,9 +95,21 @@ public class ResultsViewModel(
             hesitation = summary?.hesitation?.let { hesitationTile(it) },
             mode = attempt.mode,
             spot = analysed?.second,
-            rung = rung,
+            rung = passage?.let { rungOf(it, attempt) } ?: TempoRung.WAIT,
         )
     }
+
+    /** The bars to offer as a spot loop: none for a perform take (`docs/algorithms/guidance.md`). */
+    private fun spotOf(
+        passage: Passage,
+        attempt: Attempt,
+    ) = if (attempt.mode == RunMode.PRACTICE) SpotFinder.worst(passage, attempt) else null
+
+    /** The rung whose tempo the run was played at; WAIT when none matches. */
+    private fun rungOf(
+        passage: Passage,
+        attempt: Attempt,
+    ) = TempoRung.entries.firstOrNull { it.bpm(passage) == attempt.tempoBpm } ?: TempoRung.WAIT
 
     /** The analysis of a timed run, or of a wait-mode run with played notes; null for older wait-mode runs. */
     private fun analyse(
