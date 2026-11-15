@@ -100,6 +100,7 @@ public class EarViewModel(
     private var itemsDone = 0
     private var storageFailed = false
     private var speakerOnly = false
+    private var closed = false
 
     init {
         launchWork { if (skills.isEmpty()) summarise() else showItem() }
@@ -114,11 +115,11 @@ public class EarViewModel(
         launchWork { present(run) }
     }
 
-    /** Answers the identify item with [choice]; ignored for an echo item or one that is over. */
+    /** Answers the identify item with [choice]; ignored for an echo item, one that is over or one still sounding. */
     public fun answer(choice: EarChoice) {
         val run = item ?: return
         val exercise = run.exercise as? EarExercise.Identify ?: return
-        if (run.outcome == null) judge(run, choice == exercise.answer)
+        if (run.outcome == null && !state.value.playing) judge(run, choice == exercise.answer)
     }
 
     /** Gives up the item after a first wrong answer: plays it and shows the answer; the item is MISSED. */
@@ -133,9 +134,16 @@ public class EarViewModel(
         if (run.outcome == EarItemOutcome.MISSED) moveOn(run)
     }
 
-    /** Stops the session and returns once the piano is closed and the sound has stopped. */
+    /**
+     * Stops the session and returns once the piano is closed and the sound has stopped. A skill whose last item was
+     * answered is still recorded; later taps start nothing.
+     */
     public suspend fun close() {
-        withContext(NonCancellable) { work?.cancelAndJoin() }
+        closed = true
+        withContext(NonCancellable) {
+            work?.cancelAndJoin()
+            recordFinishedSkill()
+        }
     }
 
     /**
@@ -143,6 +151,7 @@ public class EarViewModel(
      * cancelled, so a quick second tap can't open the piano while an earlier reader is still open.
      */
     private fun launchWork(block: suspend () -> Unit) {
+        if (closed) return
         val previous = work
         work =
             viewModelScope.launch {
@@ -218,23 +227,27 @@ public class EarViewModel(
         }
     }
 
-    /** Rates the set, records it (even when leaving now) and starts the next skill or the summary. */
+    /** Records the set (even when leaving now) and starts the next skill or the summary. */
     private suspend fun finishSkill() {
-        val band = EarGrading.band(outcomes)
-        firstTry += outcomes.count { it == EarItemOutcome.FIRST_TRY }
-        itemsDone += outcomes.size
-        withContext(NonCancellable) {
-            try {
-                learner.recordSkill(skills[skillIndex].id, band, learnerDay(clock.now(), zone), "ear:${newId()}")
-            } catch (_: StorageUnavailableException) {
-                storageFailed = true
-            }
-        }
-        outcomes.clear()
+        withContext(NonCancellable) { recordFinishedSkill() }
         drawn.clear()
         itemIndex = 0
         skillIndex++
         if (skillIndex < skills.size) showItem() else summarise()
+    }
+
+    /** Rates and records the current skill once all its items are answered; does nothing otherwise or a second time. */
+    private suspend fun recordFinishedSkill() {
+        if (outcomes.size < Tunables.EAR_ITEMS_PER_REVIEW) return
+        val band = EarGrading.band(outcomes)
+        firstTry += outcomes.count { it == EarItemOutcome.FIRST_TRY }
+        itemsDone += outcomes.size
+        outcomes.clear()
+        try {
+            learner.recordSkill(skills[skillIndex].id, band, learnerDay(clock.now(), zone), "ear:${newId()}")
+        } catch (_: StorageUnavailableException) {
+            storageFailed = true
+        }
     }
 
     private fun summarise() {

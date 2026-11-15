@@ -102,11 +102,13 @@ class EarViewModelTest {
     private fun EarViewModel.echo() = assertIs<EarExercise.Echo>(state.value.exercise)
 
     private fun TestScope.answerRight(vm: EarViewModel) {
+        finishPlaying()
         vm.answer(vm.identify().answer)
         runCurrent()
     }
 
     private fun TestScope.answerWrong(vm: EarViewModel) {
+        finishPlaying()
         val item = vm.identify()
         vm.answer(item.choices.first { it != item.answer })
         runCurrent()
@@ -334,6 +336,44 @@ class EarViewModelTest {
 
             assertEquals(1, repository.reviews("ear-higher-lower").size)
             assertEquals(emptyList(), repository.reviews("ear-step-skip"))
+        }
+
+    @Test
+    fun `leaving right after the last answer of a set still records it`() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            setOf(vm, true, true, true)
+            finishPlaying()
+            vm.answer(vm.identify().answer) // the set is complete; its recording is queued, not run yet
+            vm.close()
+
+            assertEquals(listOf(Rating.GOOD), ratingOf(EarSkills.HIGHER_LOWER))
+        }
+
+    @Test
+    fun `nothing starts after leaving`() =
+        runTest(dispatcher) {
+            val vm = viewModel(EarSkills.ECHO_NOTE)
+            finishPlaying()
+            vm.close()
+            vm.replay()
+            runCurrent()
+
+            assertEquals(0, input.open)
+            assertEquals(false, vm.state.value.playing)
+        }
+
+    @Test
+    fun `an identify answer before the item has finished sounding is ignored`() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            assertEquals(true, vm.state.value.playing)
+            vm.answer(vm.identify().answer)
+            runCurrent()
+            assertEquals(1, vm.state.value.itemNumber)
+
+            answerRight(vm)
+            assertEquals(2, vm.state.value.itemNumber)
         }
 
     @Test

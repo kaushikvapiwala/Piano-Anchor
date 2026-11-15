@@ -65,13 +65,17 @@ public class LearnerModel(
     /**
      * Records a cold check of [skillId] rated by [band] (an ear set, not a played passage), with the same
      * one-review-per-day rules as [record]. Returns the review, or null when the skill already has one on [day].
+     * Throws [IllegalArgumentException] for a skill that is not in the graph.
      */
     public suspend fun recordSkill(
         skillId: String,
         band: Band,
         day: LocalDate,
         attemptId: String,
-    ): Review? = recordColdCheck(repository.states()[skillId], Review(skillId, day, band.toRating(), attemptId))
+    ): Review? {
+        require(graph.byId(skillId) != null) { "unknown skill to record: $skillId" }
+        return recordColdCheck(repository.states()[skillId], Review(skillId, day, band.toRating(), attemptId))
+    }
 
     /** Stores [review] unless the skill ([before] is its state) has a review that day already: the first one counts. */
     private suspend fun recordColdCheck(

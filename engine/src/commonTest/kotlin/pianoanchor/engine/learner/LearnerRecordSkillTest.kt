@@ -8,6 +8,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.testing.FakeLearnerRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -40,5 +41,12 @@ class LearnerRecordSkillTest {
             val before = repository.states()
             model.replay()
             assertEquals(before, repository.states())
+        }
+
+    @Test
+    fun `a skill that is not in the graph throws and records nothing`() =
+        runTest {
+            assertFailsWith<IllegalArgumentException> { model.recordSkill("ear-old", Band.CLEAN, monday, "ear:1") }
+            assertEquals(emptyMap(), repository.states())
         }
 }

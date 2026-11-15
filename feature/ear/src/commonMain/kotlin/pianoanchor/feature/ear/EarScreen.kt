@@ -184,7 +184,7 @@ private fun Item(
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
             when (exercise) {
-                is EarExercise.Identify -> Choices(exercise, state.answerShown, actions.onAnswer)
+                is EarExercise.Identify -> Choices(exercise, state.answerShown, !state.playing, actions.onAnswer)
                 is EarExercise.Echo -> KeyStrip(exercise, state.answerShown)
             }
             Feedback(state.feedback)
@@ -197,6 +197,7 @@ private fun Item(
 private fun Choices(
     exercise: EarExercise.Identify,
     answerShown: Boolean,
+    enabled: Boolean,
     onAnswer: (EarChoice) -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
@@ -211,11 +212,16 @@ private fun Choices(
                     .semantics { contentDescription = described }
             if (marked) {
                 // The answer is filled and carries a check mark: colour is never the only signal.
-                Button(onClick = { onAnswer(choice) }, modifier = modifier, shape = PillShape) {
+                Button(onClick = { onAnswer(choice) }, modifier = modifier, enabled = enabled, shape = PillShape) {
                     Text(stringResource(Res.string.ear_answer_mark) + " " + name, fontWeight = FontWeight.SemiBold)
                 }
             } else {
-                OutlinedButton(onClick = { onAnswer(choice) }, modifier = modifier, shape = PillShape) {
+                OutlinedButton(
+                    onClick = { onAnswer(choice) },
+                    modifier = modifier,
+                    enabled = enabled,
+                    shape = PillShape,
+                ) {
                     Text(name, fontWeight = FontWeight.SemiBold)
                 }
             }
