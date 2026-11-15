@@ -68,7 +68,7 @@ val appModule =
         single<SettingsRepositoryPort> { SqlSettingsRepositoryAdapter(get(), Dispatchers.IO) }
         single<UpdateCheckPort> { GitHubUpdateCheckAdapter(BuildConfig.VERSION_NAME, BuildConfig.UPDATE_REPOSITORY) }
         factory { LearnerModel(Curriculum.graph, get()) }
-        viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get()) }
+        viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
         viewModel { (device: MidiDevice, passageId: String, rung: TempoRung) ->
             PracticeViewModel(
                 device,

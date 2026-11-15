@@ -7,6 +7,11 @@ body:
       value: |
         Every MIDI keyboard already works for notes, velocity and pedals. Model support adds remote control
         (metronome, tones, split, etc.) through a data profile. Thanks for helping!
+  - type: markdown
+    attributes:
+      value: |
+        Please attach a contribution kit from the app's note monitor (it holds your piano's Identity Reply and a
+        few recorded notes; nothing is sent anywhere). Steps: docs/contribute-a-piano.md
   - type: input
     id: model
     attributes:

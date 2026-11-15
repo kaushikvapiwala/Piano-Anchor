@@ -37,9 +37,12 @@ internal class FixtureRecorder {
         return true
     }
 
-    /** The recording as fixture JSONL, or null when it is empty. */
-    fun jsonl(): String? =
+    /** The recording, or null when it is empty. */
+    fun fixture(): Fixture? =
         messages.takeIf { it.isNotEmpty() }?.let {
-            FixtureCodec.encode(Fixture(Fixture.Header(FixtureCodec.SCHEMA, device, recordedAt), it.toList()))
+            Fixture(Fixture.Header(FixtureCodec.SCHEMA, device, recordedAt), it.toList())
         }
+
+    /** The recording as fixture JSONL, or null when it is empty. */
+    fun jsonl(): String? = fixture()?.let(FixtureCodec::encode)
 }

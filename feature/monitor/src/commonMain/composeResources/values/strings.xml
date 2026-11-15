@@ -16,6 +16,9 @@
     <string name="monitor_record_stop">Stop recording</string>
     <string name="monitor_recorded_count">Messages recorded: %1$s</string>
     <string name="monitor_export">Export fixture</string>
+    <string name="monitor_contribute_title">Contribute this piano</string>
+    <string name="monitor_contribute_help">Connect your piano, record a few notes such as C-D-E, save the kit and attach it to a \"Support for my piano\" issue on GitHub. The file holds the piano\'s name and reply, the notes you played and the app version. Nothing is sent.</string>
+    <string name="monitor_save_kit">Save contribution kit</string>
     <string name="monitor_log">Live notes</string>
     <string name="monitor_log_empty">Play a key to see it here.</string>
     <string name="monitor_log_time">%1$s ms</string>

@@ -54,7 +54,7 @@ class MonitorStorageFailureTest {
     private fun unidentified() = Instrument("fake-piano", "Fake Piano", null, connectedAt, connectedAt)
 
     private fun TestScope.selected(repository: InstrumentRepositoryPort = instruments): MonitorViewModel =
-        MonitorViewModel(piano, piano, piano, repository, clock, wallClock).also {
+        MonitorViewModel(piano, piano, piano, repository, clock, wallClock, APP_VERSION).also {
             runCurrent()
             it.select(piano.device)
             runCurrent()
@@ -133,3 +133,5 @@ class MonitorStorageFailureTest {
             assertNull(vm.state.value.error)
         }
 }
+
+private const val APP_VERSION = "0.1.0"
