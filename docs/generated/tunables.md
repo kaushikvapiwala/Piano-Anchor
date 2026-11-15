@@ -72,3 +72,5 @@ Every engine threshold, from the KDoc in `engine/src/commonMain/kotlin/pianoanch
 | `HINT_DELAY_MIN_MS` | 800 | The shortest Delayed-hint delay, in milliseconds. | never flash the hint for a fluent player. | spec #132; owner, M5 grill. |
 | `HINT_DELAY_MAX_MS` | 3_000 | The longest Delayed-hint delay, in milliseconds. | never leave a beginner stuck without help. | spec #132; owner, M5 grill. |
 | `HINT_DELAY_DEFAULT_MS` | 1_500 | The Delayed-hint delay before the passage has any history, in milliseconds. | a middle value between the clamps for a learner we know nothing about yet. | spec #132; owner, M5 grill. |
+| `SPOT_LOOP_BARS` | 2 | How many consecutive bars a spot loop repeats. | long enough for musical context, short enough to repeat quickly. | owner, M5 grill (spec #134). |
+| `SPOT_LOOP_CLEAN_TARGET` | 2 | How many CLEAN spot loops in a row end a spot loop and offer the full passage again. | two clean loops in a row show the fix holds. | owner, M5 grill (spec #134). |

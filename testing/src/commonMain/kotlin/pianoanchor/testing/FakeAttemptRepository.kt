@@ -58,13 +58,16 @@ class FakeAttemptRepository : AttemptRepositoryPort {
     override suspend fun cleanTempos(passageId: String): Set<Int> {
         failIfFailing("cleanTempos")
         return attempts.value.values
-            .filter { it.passageId == passageId && it.band == Band.CLEAN }
+            .filter { it.passageId == passageId && it.band == Band.CLEAN && it.spot == null }
             .mapNotNullTo(LinkedHashSet()) { it.tempoBpm }
     }
 
     override suspend fun hasCleanWaitRun(passageId: String): Boolean {
         failIfFailing("hasCleanWaitRun")
-        return attempts.value.values.any { it.passageId == passageId && it.band == Band.CLEAN && it.tempoBpm == null }
+        return attempts.value.values.any {
+            it.passageId == passageId && it.band == Band.CLEAN && it.tempoBpm == null &&
+                it.spot == null
+        }
     }
 
     override suspend fun lastPlayed(passageId: String): Instant? {

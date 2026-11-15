@@ -46,13 +46,15 @@ public class LearnerModel(
 ) {
     /**
      * Records [attempt] (of [passage], played on [day]) as a cold check of each of the passage's skills that has no
-     * review on [day] yet. Returns the reviews recorded (empty when none).
+     * review on [day] yet. Returns the reviews recorded (empty when none). A spot-loop attempt ([Attempt.spot]) is not
+     * a cold check: nothing is recorded for it.
      */
     public suspend fun record(
         passage: Passage,
         attempt: Attempt,
         day: LocalDate,
     ): List<Review> {
+        if (attempt.spot != null) return emptyList()
         val states = repository.states()
         val rating = attempt.band.toRating()
         val recorded = ArrayList<Review>()

@@ -1,5 +1,6 @@
 package pianoanchor.feature.practice
 
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
@@ -27,6 +28,8 @@ import pianoanchor.engine.matcher.TempoRung
  * Key hints (`docs/algorithms/guidance.md`): [hintLevel] is the level the run started at and [hintVisible] whether the
  * amber band shows on the waiting step's keys right now. [mode] is practice or perform; a perform take (always on a
  * timed rung) shows no band, marks, tags or verdict text ([showsVerdicts] is false) and lights pressed keys neutrally.
+ * [spotLoop] is set while the screen loops a spot of the passage (`docs/algorithms/guidance.md`): [passage] is then
+ * the slice.
  */
 public data class PracticeState(
     val passage: Passage,
@@ -49,6 +52,7 @@ public data class PracticeState(
     val hintLevel: HintLevel = HintLevel.FULL,
     val hintVisible: Boolean = true,
     val mode: RunMode = RunMode.PRACTICE,
+    val spotLoop: SpotLoopState? = null,
 ) {
     init {
         require(steps.size == passage.steps.size) {
@@ -71,6 +75,26 @@ public data class PracticeState(
             )
     }
 }
+
+/**
+ * A spot loop of [bars]: [cleanLoops] CLEAN loops in a row so far, the [lastLoop] result (null before the first loop
+ * ends) and, once the target is reached, [offerFull] (the card that offers the whole piece). [fullRung] is the rung
+ * the run that started the loop was on: "Play it" plays the full passage there.
+ */
+public data class SpotLoopState(
+    val bars: BarRange,
+    val fullRung: TempoRung,
+    val cleanLoops: Int = 0,
+    val lastLoop: LoopResult? = null,
+    val offerFull: Boolean = false,
+)
+
+/** How a finished spot loop went: [clean], else its [wrongNotes] and [incompleteChords]. */
+public data class LoopResult(
+    val clean: Boolean,
+    val wrongNotes: Int,
+    val incompleteChords: Int,
+)
 
 /** One step of the passage on the staff: its [notes] and where the learner is relative to it. */
 public data class StepView(

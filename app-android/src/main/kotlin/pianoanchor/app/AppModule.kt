@@ -6,7 +6,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import pianoanchor.core.model.MidiDevice
-import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.CalibrationRepositoryPort
@@ -21,8 +20,8 @@ import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.core.ports.TonePort
 import pianoanchor.core.ports.UpdateCheckPort
 import pianoanchor.engine.content.Curriculum
+import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
-import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.ear.EarViewModel
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.onboarding.OnboardingViewModel
@@ -70,10 +69,11 @@ val appModule =
         single<UpdateCheckPort> { GitHubUpdateCheckAdapter(BuildConfig.VERSION_NAME, BuildConfig.UPDATE_REPOSITORY) }
         factory { LearnerModel(Curriculum.graph, get()) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
-        viewModel { (device: MidiDevice, passageId: String, start: Pair<TempoRung, RunMode>) ->
+        viewModel { (device: MidiDevice, passageId: String, start: PracticeStart) ->
+            val passage = requireNotNull(Curriculum.passage(passageId)) { "unknown passage $passageId" }
             PracticeViewModel(
                 device,
-                requireNotNull(Curriculum.passage(passageId)) { "unknown passage $passageId" },
+                start.spot?.let { passage.slice(it) } ?: passage,
                 get(),
                 get(),
                 get(),
@@ -84,8 +84,9 @@ val appModule =
                 get(),
                 get(),
                 get(),
-                start.first,
-                start.second,
+                start.rung,
+                start.mode,
+                start.spot,
             ) {
                 Uuid.random().toString()
             }

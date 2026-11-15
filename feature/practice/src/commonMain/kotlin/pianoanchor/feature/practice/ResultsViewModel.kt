@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.ErrorKind
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.analysis.PerformanceAnalyser
@@ -26,6 +27,8 @@ import pianoanchor.engine.grading.ResultsSummary
 import pianoanchor.engine.grading.TimingSummary
 import pianoanchor.engine.grading.noteNumber
 import pianoanchor.engine.grading.noteValue
+import pianoanchor.engine.guidance.SpotFinder
+import pianoanchor.engine.matcher.TempoRung
 
 /**
  * The results of the run saved as [attemptId] in [attempts]: [ResultsState.Loading] until it is read, then
@@ -68,8 +71,14 @@ public class ResultsViewModel(
     private suspend fun load(): ResultsState {
         val attempt = attempts.get(attemptId) ?: return ResultsState.NotFound
         val passage = Curriculum.passage(attempt.passageId)
-        val summary =
-            passage?.let { withContext(analysisDispatcher) { ResultsSummary.of(it, attempt, analyse(it, attempt)) } }
+        val analysed =
+            passage?.let {
+                withContext(analysisDispatcher) {
+                    val summary = ResultsSummary.of(it, attempt, analyse(it, attempt))
+                    summary to spotOf(it, attempt)
+                }
+            }
+        val summary = analysed?.first
         return ResultsState.Ready(
             passageTitle = passage?.title ?: attempt.passageId,
             runNumber = attempts.countStartedBefore(attempt.passageId, attempt.startedAt) + 1,
@@ -85,8 +94,22 @@ public class ResultsViewModel(
             length = summary?.length?.let { lengthTile(passage, it) },
             hesitation = summary?.hesitation?.let { hesitationTile(it) },
             mode = attempt.mode,
+            spot = analysed?.second,
+            rung = passage?.let { rungOf(it, attempt) } ?: TempoRung.WAIT,
         )
     }
+
+    /** The bars to offer as a spot loop: none for a perform take (`docs/algorithms/guidance.md`). */
+    private fun spotOf(
+        passage: Passage,
+        attempt: Attempt,
+    ) = if (attempt.mode == RunMode.PRACTICE) SpotFinder.worst(passage, attempt) else null
+
+    /** The rung whose tempo the run was played at; WAIT when none matches. */
+    private fun rungOf(
+        passage: Passage,
+        attempt: Attempt,
+    ) = TempoRung.entries.firstOrNull { it.bpm(passage) == attempt.tempoBpm } ?: TempoRung.WAIT
 
     /** The analysis of a timed run, or of a wait-mode run with played notes; null for older wait-mode runs. */
     private fun analyse(

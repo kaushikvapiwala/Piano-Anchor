@@ -6,6 +6,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.RunMode
@@ -119,6 +120,36 @@ class PracticeScreenScreenshotTest {
                         step.copy(status = if (i == 1) StepStatus.WAITING else StepStatus.UPCOMING)
                     },
                 keysDown = setOf(MidiNote(60), f4),
+            ),
+        )
+
+    private val loop = start.copy(spotLoop = SpotLoopState(BarRange(5, 6), fullRung = TempoRung.P85))
+
+    @Test
+    fun spotLoopRunningAfterANotCleanLoop() =
+        capture(
+            "spot_loop",
+            loop.copy(
+                spotLoop =
+                    loop.spotLoop?.copy(
+                        lastLoop = LoopResult(clean = false, wrongNotes = 2, incompleteChords = 0),
+                    ),
+            ),
+        )
+
+    @Test
+    fun spotLoopBarsAreClean() =
+        capture(
+            "spot_loop_clean",
+            loop.copy(
+                steps = start.steps.map { it.copy(status = StepStatus.DONE) },
+                currentStep = start.steps.lastIndex,
+                spotLoop =
+                    loop.spotLoop?.copy(
+                        cleanLoops = 2,
+                        offerFull = true,
+                        lastLoop = LoopResult(clean = true, wrongNotes = 0, incompleteChords = 0),
+                    ),
             ),
         )
 

@@ -12,6 +12,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MatchEvent
@@ -71,6 +72,8 @@ public class SqlAttemptRepositoryAdapter(
                         hint_level = attempt.hintLevel.name,
                         hint_shown = if (attempt.hintShown) 1L else 0L,
                         mode = attempt.mode.name,
+                        spot_first_bar = attempt.spot?.first?.toLong(),
+                        spot_last_bar = attempt.spot?.last?.toLong(),
                     )
                     attempt.events.forEachIndexed { seq, event -> queries.insertMatchEvent(attempt.id, seq, event) }
                     attempt.playedNotes.forEachIndexed { seq, note ->
@@ -179,6 +182,7 @@ public class SqlAttemptRepositoryAdapter(
             hintLevel = HintLevel.valueOf(row.hint_level),
             hintShown = row.hint_shown != 0L,
             mode = RunMode.valueOf(row.mode),
+            spot = row.spot_last_bar?.let { last -> row.spot_first_bar?.let { BarRange(it.toInt(), last.toInt()) } },
         )
 }
 

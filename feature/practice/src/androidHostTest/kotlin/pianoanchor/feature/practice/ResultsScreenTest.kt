@@ -13,6 +13,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.RunMode
 import pianoanchor.engine.grading.NoteValue
 import pianoanchor.ui.shell.PianoAnchorTheme
@@ -53,6 +54,47 @@ class ResultsScreenTest {
             onNodeWithContentDescription("Back").performClick()
 
             assertEquals(listOf("try again", "back"), calls)
+        }
+
+    @Test
+    fun theSpotLoopActionNamesItsBarsAndStartsTheLoop() =
+        runComposeUiTest {
+            val started = mutableListOf<BarRange>()
+            setContent {
+                PianoAnchorTheme {
+                    ResultsScreen(
+                        ready.copy(spot = BarRange(5, 6)),
+                        onBack = {},
+                        onTryAgain = {},
+                        onRetry = {},
+                        onLoopBars = { started += it },
+                    )
+                }
+            }
+
+            onNodeWithText("Loop bars 5–6").performClick()
+
+            assertEquals(listOf(BarRange(5, 6)), started)
+        }
+
+    @Test
+    fun aOneBarSpotReadsLoopBar() =
+        runComposeUiTest {
+            setContent {
+                PianoAnchorTheme {
+                    ResultsScreen(ready.copy(spot = BarRange(3, 3)), onBack = {}, onTryAgain = {}, onRetry = {})
+                }
+            }
+
+            onNodeWithText("Loop bar 3").assertExists()
+        }
+
+    @Test
+    fun aRunWithNoSpotOffersNoLoop() =
+        runComposeUiTest {
+            setContent { PianoAnchorTheme { ResultsScreen(ready, onBack = {}, onTryAgain = {}, onRetry = {}) } }
+
+            onNodeWithText("Loop bar", substring = true).assertDoesNotExist()
         }
 
     @Test

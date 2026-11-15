@@ -13,13 +13,17 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
+import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.grading.NoteValue
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.AfterTest
@@ -72,6 +76,7 @@ class ResultsViewModelTest {
         playedNotes: List<PlayedNote> = emptyList(),
         latencyOffsetNanos: Long? = null,
         mode: RunMode = RunMode.PRACTICE,
+        events: List<MatchEvent> = emptyList(),
     ) = Attempt(
         id = id,
         passageId = passageId,
@@ -83,7 +88,7 @@ class ResultsViewModelTest {
         incompleteChords = 0,
         accuracy = 3.0 / (3 + wrongNotes),
         band = band,
-        events = emptyList(),
+        events = events,
         tempoBpm = tempoBpm,
         playedNotes = playedNotes,
         latencyOffsetNanos = latencyOffsetNanos,
@@ -121,6 +126,53 @@ class ResultsViewModelTest {
                 ),
                 vm.state.value,
             )
+        }
+
+    @Test
+    fun `offers the worst window`() =
+        runTest(dispatcher) {
+            val slip = listOf(WrongNote(0, 1, MidiNote(C4)))
+            val vm = results("a-1", attempt("a-1", 100, wrongNotes = 1, band = Band.GOOD, events = slip))
+
+            val state = assertIs<ResultsState.Ready>(vm.state.value)
+            assertEquals(BarRange(1, 1), state.spot)
+            assertEquals(TempoRung.WAIT, state.rung)
+        }
+
+    @Test
+    fun `offers none for a clean run`() =
+        runTest(dispatcher) {
+            val vm = results("a-1", attempt("a-1", 100))
+
+            assertNull(assertIs<ResultsState.Ready>(vm.state.value).spot)
+        }
+
+    @Test
+    fun `offers a loop of a timed run with the rung it was played on`() =
+        runTest(dispatcher) {
+            val notes = listOf(played(C4, 0, 600), played(D4, 750, 600), played(E4, 1700, 400))
+            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 80, playedNotes = notes))
+
+            val state = assertIs<ResultsState.Ready>(vm.state.value)
+            assertEquals(BarRange(1, 1), state.spot)
+            assertEquals(TempoRung.P100, state.rung)
+        }
+
+    @Test
+    fun `a tempo that is on no rung reads as wait mode`() =
+        runTest(dispatcher) {
+            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 77))
+
+            assertEquals(TempoRung.WAIT, assertIs<ResultsState.Ready>(vm.state.value).rung)
+        }
+
+    @Test
+    fun `a perform take offers no loop`() =
+        runTest(dispatcher) {
+            val notes = listOf(played(C4, 0, 600), played(D4, 750, 600), played(E4, 1700, 400))
+            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 80, playedNotes = notes, mode = RunMode.PERFORM))
+
+            assertNull(assertIs<ResultsState.Ready>(vm.state.value).spot)
         }
 
     @Test

@@ -45,14 +45,14 @@ public interface AttemptRepositoryPort {
     ): Int
 
     /**
-     * Tempos (BPM) of [passageId]'s timed attempts whose band is CLEAN; empty when none. Throws
-     * [StorageUnavailableException] when the store can't be read or written.
+     * Tempos (BPM) of [passageId]'s timed attempts whose band is CLEAN, spot-loop attempts ([Attempt.spot]) excluded;
+     * empty when none. Throws [StorageUnavailableException] when the store can't be read or written.
      */
     public suspend fun cleanTempos(passageId: String): Set<Int>
 
     /**
-     * Whether [passageId] has a wait-mode attempt (no tempo) whose band is CLEAN. Throws [StorageUnavailableException]
-     * when the store can't be read or written.
+     * Whether [passageId] has a wait-mode attempt (no tempo) whose band is CLEAN, spot-loop attempts excluded. Throws
+     * [StorageUnavailableException] when the store can't be read or written.
      */
     public suspend fun hasCleanWaitRun(passageId: String): Boolean
 

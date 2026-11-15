@@ -14,6 +14,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.TimeSignature
@@ -235,5 +236,87 @@ class PracticeScreenTest {
 
             assertEquals(1, calibrate)
             assertEquals(1, skip)
+        }
+
+    private val spot =
+        PracticeState.start(Passages.CDE).copy(spotLoop = SpotLoopState(BarRange(5, 6), fullRung = TempoRung.P85))
+
+    @Test
+    fun aSpotLoopShowsItsProgressAndNoModeSwitch() =
+        runComposeUiTest {
+            show(spot)
+
+            onNodeWithText("Spot loop · bars 5–6 · clean 0 of 2").assertExists()
+            onNodeWithContentDescription("Practice").assertDoesNotExist()
+        }
+
+    @Test
+    fun aOneBarSpotLoopSaysBar() =
+        runComposeUiTest {
+            show(spot.copy(spotLoop = SpotLoopState(BarRange(3, 3), TempoRung.WAIT, cleanLoops = 1)))
+
+            onNodeWithText("Spot loop · bar 3 · clean 1 of 2").assertExists()
+        }
+
+    @Test
+    fun theLastLoopsResultShows() =
+        runComposeUiTest {
+            val clean = LoopResult(clean = true, wrongNotes = 0, incompleteChords = 0)
+            val withSlips = LoopResult(clean = false, wrongNotes = 2, incompleteChords = 1)
+            val timingOnly = LoopResult(clean = false, wrongNotes = 0, incompleteChords = 0)
+            val last = mutableStateOf(clean)
+            setContent {
+                PianoAnchorTheme {
+                    PracticeScreen(
+                        spot.copy(spotLoop = spot.spotLoop?.copy(lastLoop = last.value)),
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                    )
+                }
+            }
+
+            onNodeWithText("Clean").assertExists()
+            last.value = withSlips
+            onNodeWithText("2 wrong notes, 1 chord incomplete").assertExists()
+            last.value = timingOnly
+            onNodeWithText("Not clean").assertExists()
+        }
+
+    @Test
+    fun theCleanCardOffersThePieceOrMoreLoops() =
+        runComposeUiTest {
+            val calls = mutableListOf<String>()
+            val done = spot.copy(spotLoop = spot.spotLoop?.copy(cleanLoops = 2, offerFull = true))
+            setContent {
+                PianoAnchorTheme {
+                    PracticeScreen(
+                        done,
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        onPlayWhole = { calls += "play" },
+                        onKeepLooping = { calls += "keep" },
+                    )
+                }
+            }
+
+            onNodeWithText("Bars 5–6 are clean. Play the whole piece?").assertExists()
+            onNodeWithText("Play it").performClick()
+            onNodeWithText("Keep looping").performClick()
+            assertEquals(listOf("play", "keep"), calls)
+        }
+
+    @Test
+    fun theCleanCardForOneBarSaysBar() =
+        runComposeUiTest {
+            val one = SpotLoopState(BarRange(3, 3), TempoRung.WAIT, offerFull = true)
+            show(spot.copy(spotLoop = one))
+
+            onNodeWithText("Bar 3 is clean. Play the whole piece?").assertExists()
         }
 }

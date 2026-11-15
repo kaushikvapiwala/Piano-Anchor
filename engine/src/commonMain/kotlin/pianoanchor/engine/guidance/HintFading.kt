@@ -10,13 +10,14 @@ public object HintFading {
     /**
      * The level for the next run of a passage, from its previous full runs, newest last. Starting at
      * [HintLevel.FULL], [Tunables.HINT_FADE_RUNS] CLEAN runs in a row move it one level down, as many
-     * KEEP_PRACTISING runs in a row one level up. Each move resets the count and a GOOD run breaks either streak.
+     * KEEP_PRACTISING runs in a row one level up. Each move resets the count and a GOOD run breaks either streak. Spot
+     * loop attempts ([Attempt.spot]) are skipped: they neither count nor break a streak.
      */
     public fun level(history: List<Attempt>): HintLevel {
         var level = HintLevel.FULL
         var cleanRun = 0
         var weakRun = 0
-        for (attempt in history) {
+        for (attempt in history.filter { it.spot == null }) {
             cleanRun = if (attempt.band == Band.CLEAN) cleanRun + 1 else 0
             weakRun = if (attempt.band == Band.KEEP_PRACTISING) weakRun + 1 else 0
             val move =

@@ -39,4 +39,13 @@ class TempoRungTest {
         assertFailsWith<IllegalArgumentException> { beatNanos(MIN_TEMPO_BPM - 1) }
         assertFailsWith<IllegalArgumentException> { beatNanos(MAX_TEMPO_BPM + 1) }
     }
+
+    @Test
+    fun belowIsTheNextSlowerRungAndWaitStaysWait() {
+        assertEquals(TempoRung.P85, TempoRung.P100.below())
+        assertEquals(TempoRung.P70, TempoRung.P85.below())
+        assertEquals(TempoRung.P60, TempoRung.P70.below())
+        assertEquals(TempoRung.WAIT, TempoRung.P60.below())
+        assertEquals(TempoRung.WAIT, TempoRung.WAIT.below())
+    }
 }

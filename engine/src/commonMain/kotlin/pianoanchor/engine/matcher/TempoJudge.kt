@@ -39,6 +39,9 @@ public enum class TempoRung(
     P100(PERCENT),
     ;
 
+    /** The next slower rung; [WAIT] stays [WAIT] (there is nothing below it). */
+    public fun below(): TempoRung = entries[(ordinal - 1).coerceAtLeast(0)]
+
     /**
      * The rung's tempo for [passage]: written tempo x percent / 100 rounded half up and clamped to
      * [MIN_TEMPO_BPM]..[MAX_TEMPO_BPM]; null for [WAIT].
