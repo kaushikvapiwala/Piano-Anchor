@@ -1,5 +1,6 @@
 package pianoanchor.engine.content
 
+import pianoanchor.core.model.RightsStatus
 import pianoanchor.core.model.Track
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -132,6 +133,98 @@ class CurriculumTest {
             assertTrue(it.tempoBpm in 60..92, it.id)
         }
 
+    private val chordPassages get() = Curriculum.units.first { it.id == "unit-3" }.passages
+
+    private fun chordNotes() = chordPassages.flatMap { p -> p.steps.flatMap { it.notes } }
+
+    @Test
+    fun `every chord-unit right-hand note stays within C4-G4`() {
+        val rightHand = chordNotes().filter { it.pitch.number >= C4 }
+        assertTrue(rightHand.isNotEmpty())
+        rightHand.forEach { assertTrue(it.pitch.number in C4..G4, it.pitch.name) }
+    }
+
+    @Test
+    fun `every chord-unit left-hand note stays within F2-G3`() {
+        val leftHand = chordNotes().filter { it.pitch.number < C4 }
+        assertTrue(leftHand.isNotEmpty())
+        leftHand.forEach { assertTrue(it.pitch.number in F2..G3, it.pitch.name) }
+    }
+
+    @Test
+    fun `every chord-unit melody ends with its chords`() =
+        chordPassages.forEach { passage ->
+            val ends =
+                passage.steps
+                    .flatMap { step -> step.notes.map { (it.pitch.number >= C4) to step.onsetTicks + it.lengthTicks } }
+                    .groupBy({ it.first }, { it.second })
+                    .mapValues { (_, hand) -> hand.max() }
+            ends[true]?.let { assertEquals(ends[false], it, passage.id) }
+        }
+
+    @Test
+    fun `every chord-unit passage is written at 60-88 BPM`() =
+        chordPassages.forEach { assertTrue(it.tempoBpm in 60..88, it.id) }
+
+    @Test
+    fun `every songs skill has a passage`() =
+        Curriculum.graph.skills.filter { it.track == Track.SONGS }.forEach { skill ->
+            assertTrue(chordPassages.any { skill.id in it.skills }, skill.id)
+        }
+
+    @Test
+    fun `chord voicings match the table`() {
+        val voicings =
+            setOf(
+                setOf(48, 52, 55), // C: C3 E3 G3
+                setOf(41, 45, 48), // F: F2 A2 C3
+                setOf(45, 48, 53), // F first inversion: A2 C3 F3
+                setOf(43, 47, 50), // G: G2 B2 D3
+                setOf(47, 50, 55), // G first inversion: B2 D3 G3
+                setOf(45, 48, 52), // Am: A2 C3 E3
+            )
+        chordPassages.forEach { passage ->
+            passage.steps.forEach { step ->
+                val left =
+                    step.pitches
+                        .map { it.number }
+                        .filter { it < C4 }
+                        .toSet()
+                assertTrue(left.isEmpty() || left in voicings, "${passage.id} at ${step.onsetTicks}: $left")
+            }
+        }
+        val close = chordPassages.first { it.id == "builtin:close-moves" }
+        assertEquals(
+            setOf(45, 48, 53),
+            close.steps[1]
+                .pitches
+                .map { it.number }
+                .toSet(),
+        )
+    }
+
+    @Test
+    fun `every chord and melody note share a step and keep their own length`() {
+        val hold = chordPassages.first { it.id == "builtin:hold-and-sing" }
+        val first =
+            hold.steps
+                .first()
+                .notes
+                .associate { it.pitch.number to it.lengthTicks }
+        assertEquals(960, first.getValue(C4))
+        assertEquals(hold.timeSignature.barTicks, first.getValue(48))
+        assertEquals(4, first.size)
+    }
+
+    @Test
+    fun `every piece has a rights record`() {
+        val pieces = passages.filter { it.piece }
+        assertTrue(pieces.size >= 10)
+        pieces.forEach { assertTrue(it.rights.origin.isNotBlank() && it.rights.basis.isNotBlank(), it.id) }
+        assertTrue(chordPassages.filter { it.piece }.size == 4)
+        assertTrue(passages.filter { !it.piece }.all { it.rights.status == RightsStatus.ORIGINAL })
+    }
+
     @Test
     fun `Ode to Joy with a held bass holds a left-hand whole note in the step it starts on`() {
         val ode = Curriculum.passage("builtin:ode-to-joy-held-bass")!!
@@ -146,6 +239,7 @@ class CurriculumTest {
     }
 }
 
+private const val F2 = 41
 private const val C3 = 48
 private const val G3 = 55
 private const val C4 = 60

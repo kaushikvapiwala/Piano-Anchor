@@ -1,6 +1,7 @@
 package pianoanchor.engine.content
 
 import pianoanchor.core.model.Skill
+import pianoanchor.core.model.Track
 
 /** Skills built into the app. Titles live here, like passage titles, and are localised with them later. */
 public object Skills {
@@ -52,4 +53,33 @@ public object Skills {
     /** Keeping a left-hand note down while the right hand plays the tune. */
     public val HANDS_HELD_BASS: Skill =
         Skill("hands-held-bass", "Held left-hand note under a tune", setOf(HANDS_TURNS.id, RHYTHM_WHOLE.id))
+
+    /** Playing the C, F and G triads with the left hand in root position. */
+    public val CHORD_TRIADS: Skill =
+        Skill("chord-triads", "C, F and G triads (left hand)", setOf(HANDS_HELD_BASS.id), Track.SONGS)
+
+    /** Changing between chords on the beat, in time. */
+    public val CHORD_CHANGES: Skill =
+        Skill("chord-changes", "Chord changes in time", setOf(CHORD_TRIADS.id, TEMPO_STEADY.id), Track.SONGS)
+
+    /** Holding chords with the left hand under a right-hand melody. */
+    public val CHORD_MELODY: Skill =
+        Skill("chord-melody", "Melody over held chords", setOf(CHORD_CHANGES.id), Track.SONGS)
+
+    /** Playing F and G in first inversion, so the left hand stays close to C. */
+    public val CHORD_INVERSIONS: Skill =
+        Skill("chord-inversions", "F and G in first inversion", setOf(CHORD_CHANGES.id), Track.SONGS)
+
+    /** Playing the A minor triad. */
+    public val CHORD_A_MINOR: Skill =
+        Skill("chord-a-minor", "A minor triad", setOf(CHORD_TRIADS.id), Track.SONGS)
+
+    /** Playing the I-V-vi-IV progression (C, G, Am, F) under a melody. */
+    public val CHORD_FOUR: Skill =
+        Skill(
+            "chord-four",
+            "I\u2013V\u2013vi\u2013IV progression",
+            setOf(CHORD_INVERSIONS.id, CHORD_A_MINOR.id, CHORD_MELODY.id),
+            Track.SONGS,
+        )
 }

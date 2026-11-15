@@ -186,9 +186,21 @@ Flashcards artboard: a back arrow (TalkBack "Back"), the skill title and "Skill 
   more." with a **Next** button.
 - **Summary**: "Ear practice done", "3 skills · 10 of 12 first try" and Done.
 
+## Songs screen
+
+Portrait, with the navigation rail (Songs selected; its glyph is a music note). A "Songs" heading, then one bordered
+card per unit in curriculum order, each with its pieces in content order. Rows are at least 56 dp.
+
+- **Unlocked row**: the title and a progress line: "New", "rung 3 of 5" (the next rung to play, as on Today's Song
+  card) or "✓ Mastered". Tapping opens Practice on that piece at its next rung (a mastered piece at its top rung);
+  with no piano connected it opens Pianos.
+- **Locked row**: dimmed, with a lock and "Needs: <skill title>"; not tappable. TalkBack reads "Locked. Needs <skill
+  title>."
+- **Storage error**: an `errorContainer` card with Retry. The list reloads when the screen is opened again after a run.
+
 ## Today screen
 
-The start screen, portrait. A navigation rail (Today selected, Pianos, Settings gear) on the left; every item has a
+The start screen, portrait. A navigation rail (Today selected, Songs, Pianos, Settings gear; shared by Today and Songs as `AppNavRail`) on the left; every item has a
 text label. Reading order: the greeting by time of day ("Good morning" from 05:00, afternoon from 12:00, evening from
 18:00) and the line "Middle C is calling." naming the cold-open skill ("Ready when you are." with none); the piano
 chip (name, USB or BLE and the latency offset when calibrated, e.g. "FP-30X · BLE · 18 ms"; "No piano" opens Pianos)

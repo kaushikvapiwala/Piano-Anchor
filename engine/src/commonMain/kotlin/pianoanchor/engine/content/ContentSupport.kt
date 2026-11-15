@@ -20,6 +20,15 @@ internal fun exerciseRights(what: String): Rights =
         checkedOn = CHECKED_ON,
     )
 
+/** The rights record of a piece written for Piano Anchor; [what] says what it is. */
+internal fun originalPieceRights(what: String): Rights =
+    Rights(
+        status = RightsStatus.ORIGINAL,
+        origin = "Piano Anchor, 2026",
+        basis = "$what, an original piece written for Piano Anchor.",
+        checkedOn = CHECKED_ON,
+    )
+
 /** The rights record of a public domain tune: [origin] names the work, [basis] says why it is free to use. */
 internal fun publicDomainRights(
     origin: String,
@@ -41,6 +50,7 @@ internal fun builtinPassage(
     skills: Set<String>,
     rights: Rights,
     timeSignature: TimeSignature = FOUR_FOUR,
+    piece: Boolean = false,
 ): Passage =
     Passage(
         id = "builtin:$id",
@@ -50,4 +60,5 @@ internal fun builtinPassage(
         tempoBpm = tempoBpm,
         rights = rights,
         skills = skills,
+        piece = piece,
     )

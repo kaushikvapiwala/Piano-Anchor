@@ -56,6 +56,10 @@ import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.feature.settings.SettingsActions
 import pianoanchor.feature.settings.SettingsScreen
 import pianoanchor.feature.settings.SettingsViewModel
+import pianoanchor.feature.songs.SongsActions
+import pianoanchor.feature.songs.SongsScreen
+import pianoanchor.feature.songs.SongsTarget
+import pianoanchor.feature.songs.SongsViewModel
 import pianoanchor.feature.today.TodayActions
 import pianoanchor.feature.today.TodayScreen
 import pianoanchor.feature.today.TodayTarget
@@ -85,6 +89,9 @@ private sealed interface Destination {
 
     data object Monitor : Destination
 
+    /** The Songs screen, opened from the rail; back returns to Today. */
+    data object Songs : Destination
+
     /** The first-launch onboarding, until it is finished. */
     data object Onboarding : Destination
 
@@ -96,13 +103,13 @@ private sealed interface Destination {
 
     /**
      * Practising [passageId] on [device], starting on [rung] (a card's, or the one picked before a calibration);
-     * back returns to Today when [fromToday], else to the monitor.
+     * back returns to the screen that opened it ([from]): Today, Songs or the monitor.
      */
     data class Practice(
         val device: MidiDevice,
         val passageId: String = Passages.CDE.id,
         val rung: TempoRung = TempoRung.WAIT,
-        val fromToday: Boolean = false,
+        val from: Destination = Monitor,
     ) : Destination
 
     /** The ear screen on [device], running [skills] in order; back returns to Today. */
@@ -130,26 +137,24 @@ private fun AppNavigation() {
     OnboardedEffect { onboarded -> destination = if (onboarded) Destination.Today else Destination.Onboarding }
     val back = { destination = Destination.Today }
     when (val current = destination ?: return) {
-        Destination.Onboarding -> {
-            OnboardingRoute(
-                onPianos = { destination = Destination.OnboardingPianos },
-                onFinished = back,
-            )
-        }
-
-        Destination.OnboardingPianos -> {
-            MonitorRoute(
-                onBack = { destination = Destination.Onboarding },
-                // No way out of the onboarding but back: it must be finished first.
-                onPractice = null,
-                onCalibrate = null,
-            )
+        Destination.Onboarding, Destination.OnboardingPianos -> {
+            OnboardingNavigation(current, go = { destination = it }, onFinished = back)
         }
 
         Destination.Today -> {
             TodayRoute(
                 onPractice = { destination = it },
                 onEar = { destination = it },
+                onSongs = { destination = Destination.Songs },
+                onPianos = { destination = Destination.Monitor },
+                onSettings = { destination = Destination.Settings },
+            )
+        }
+
+        Destination.Songs -> {
+            SongsRoute(
+                onPractice = { destination = it },
+                onToday = back,
                 onPianos = { destination = Destination.Monitor },
                 onSettings = { destination = Destination.Settings },
             )
@@ -170,7 +175,7 @@ private fun AppNavigation() {
         is Destination.Practice -> {
             PracticeRoute(
                 current,
-                onBack = { destination = if (current.fromToday) Destination.Today else Destination.Monitor },
+                onBack = { destination = current.from },
                 onFinished = { destination = Destination.Results(it, current) },
                 onCalibrate = { destination = Destination.Calibrate(current.device, current.copy(rung = it)) },
             )
@@ -187,10 +192,29 @@ private fun AppNavigation() {
         is Destination.Results -> {
             ResultsRoute(
                 current.attemptId,
-                onBack = back,
+                onBack = { destination = current.practice.from },
                 onTryAgain = { destination = current.practice },
             )
         }
+    }
+}
+
+/** The first-launch onboarding and the piano list it opens ([current] is one of the two); [go] navigates. */
+@Composable
+private fun OnboardingNavigation(
+    current: Destination,
+    go: (Destination) -> Unit,
+    onFinished: () -> Unit,
+) {
+    if (current == Destination.Onboarding) {
+        OnboardingRoute(onPianos = { go(Destination.OnboardingPianos) }, onFinished = onFinished)
+    } else {
+        MonitorRoute(
+            onBack = { go(Destination.Onboarding) },
+            // No way out of the onboarding but back: it must be finished first.
+            onPractice = null,
+            onCalibrate = null,
+        )
     }
 }
 
@@ -383,6 +407,7 @@ private fun SettingsRoute(onBack: () -> Unit) {
 private fun TodayRoute(
     onPractice: (Destination.Practice) -> Unit,
     onEar: (Destination.Ear) -> Unit,
+    onSongs: () -> Unit,
     onPianos: () -> Unit,
     onSettings: () -> Unit,
 ) {
@@ -395,7 +420,9 @@ private fun TodayRoute(
             onStart = { card ->
                 when (val target = viewModel.target(card)) {
                     is TodayTarget.Practice -> {
-                        onPractice(Destination.Practice(target.device, target.passageId, target.rung, fromToday = true))
+                        onPractice(
+                            Destination.Practice(target.device, target.passageId, target.rung, Destination.Today),
+                        )
                     }
 
                     TodayTarget.Pianos -> {
@@ -424,11 +451,51 @@ private fun TodayRoute(
                     }
                 }
             },
+            onSongs = onSongs,
             onPianos = onPianos,
             onSettings = onSettings,
             onRetry = viewModel::refresh,
             onSeeRelease = { release -> openInBrowser(context, release.pageUrl) },
             onDismissUpdate = viewModel::dismissUpdate,
+        ),
+    )
+}
+
+/** Songs; its ViewModel lives as long as the route, so coming back from a run loads the pieces afresh. */
+@Composable
+private fun SongsRoute(
+    onPractice: (Destination.Practice) -> Unit,
+    onToday: () -> Unit,
+    onPianos: () -> Unit,
+    onSettings: () -> Unit,
+) {
+    val viewModel: SongsViewModel = koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner())
+    val state by viewModel.state.collectAsState()
+    BackHandler(onBack = onToday)
+    SongsScreen(
+        state,
+        SongsActions(
+            onOpen = { piece ->
+                when (val target = viewModel.target(piece)) {
+                    is SongsTarget.Practice -> {
+                        onPractice(
+                            Destination.Practice(target.device, target.passageId, target.rung, Destination.Songs),
+                        )
+                    }
+
+                    SongsTarget.Pianos -> {
+                        onPianos()
+                    }
+
+                    null -> {
+                        // A locked piece does nothing.
+                    }
+                }
+            },
+            onToday = onToday,
+            onPianos = onPianos,
+            onSettings = onSettings,
+            onRetry = viewModel::refresh,
         ),
     )
 }

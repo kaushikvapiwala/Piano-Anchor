@@ -21,8 +21,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,17 +52,13 @@ import pianoanchor.feature.today.resources.today_card_why_now
 import pianoanchor.feature.today.resources.today_card_why_start
 import pianoanchor.feature.today.resources.today_caught_up
 import pianoanchor.feature.today.resources.today_error_storage
-import pianoanchor.feature.today.resources.today_nav_pianos
-import pianoanchor.feature.today.resources.today_nav_pianos_glyph
-import pianoanchor.feature.today.resources.today_nav_settings
-import pianoanchor.feature.today.resources.today_nav_settings_glyph
-import pianoanchor.feature.today.resources.today_nav_today
-import pianoanchor.feature.today.resources.today_nav_today_glyph
 import pianoanchor.feature.today.resources.today_practice_days
 import pianoanchor.feature.today.resources.today_session_bar
 import pianoanchor.feature.today.resources.today_update_available
 import pianoanchor.feature.today.resources.today_update_dismiss
 import pianoanchor.feature.today.resources.today_update_see
+import pianoanchor.ui.shell.AppNavRail
+import pianoanchor.ui.shell.RailDestination
 import androidx.compose.material3.Card as MaterialCard
 
 private val TouchTarget = 44.dp
@@ -74,8 +68,8 @@ private val CardShape = RoundedCornerShape(20.dp)
 private val BarHeight = 10.dp
 
 /**
- * Today: a rail (Today, Pianos, Settings), the greeting with the piano chip and weekly goal dots, the day's cards,
- * the session bar and the practice-day line. Stateless; nothing animates, so screenshots stay still.
+ * Today: a rail (Today, Songs, Pianos, Settings), the greeting with the piano chip and weekly goal dots, the day's
+ * cards, the session bar and the practice-day line. Stateless; nothing animates, so screenshots stay still.
  */
 @Composable
 public fun TodayScreen(
@@ -85,7 +79,13 @@ public fun TodayScreen(
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
         Row(modifier = Modifier.safeDrawingPadding()) {
-            Rail(actions)
+            AppNavRail(
+                RailDestination.TODAY,
+                onToday = {},
+                onSongs = actions.onSongs,
+                onPianos = actions.onPianos,
+                onSettings = actions.onSettings,
+            )
             Column(
                 modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -115,40 +115,6 @@ public fun TodayScreen(
             }
         }
     }
-}
-
-@Composable
-private fun Rail(actions: TodayActions) {
-    NavigationRail(containerColor = Color.Transparent) {
-        RailItem(true, Res.string.today_nav_today_glyph, stringResource(Res.string.today_nav_today)) {}
-        RailItem(
-            false,
-            Res.string.today_nav_pianos_glyph,
-            stringResource(Res.string.today_nav_pianos),
-            actions.onPianos,
-        )
-        RailItem(
-            false,
-            Res.string.today_nav_settings_glyph,
-            stringResource(Res.string.today_nav_settings),
-            actions.onSettings,
-        )
-    }
-}
-
-@Composable
-private fun RailItem(
-    selected: Boolean,
-    glyph: StringResource,
-    label: String,
-    onClick: () -> Unit,
-) {
-    NavigationRailItem(
-        selected = selected,
-        onClick = onClick,
-        icon = { Text(stringResource(glyph), style = MaterialTheme.typography.titleLarge) },
-        label = { Text(label) },
-    )
 }
 
 @Composable

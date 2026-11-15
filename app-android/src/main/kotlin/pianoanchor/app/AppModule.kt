@@ -30,6 +30,7 @@ import pianoanchor.feature.practice.CalibrationViewModel
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.feature.settings.SettingsViewModel
+import pianoanchor.feature.songs.SongsViewModel
 import pianoanchor.feature.today.TodayViewModel
 import pianoanchor.platform.androidaudio.AndroidMetronomeAdapter
 import pianoanchor.platform.androidaudio.AndroidToneAdapter
@@ -116,5 +117,6 @@ val appModule =
                 get(),
             )
         }
+        viewModel { SongsViewModel(get(), get(), get()) }
         viewModel { TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
     }

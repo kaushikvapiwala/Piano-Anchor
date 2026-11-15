@@ -40,29 +40,34 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **M4.3 Songs & chords** (spec #129) [#127, #77, #79]: six C-position chord skills, four pieces and the Songs screen
-    with tempo-ladder progress and locked pieces.
-2. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
+1. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
     piano's identity reply, a short note fixture and the app version into a file to attach to a GitHub issue; reads
     only, no network.
-3. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
+2. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
     Off) with a Hint button; attempts record the hint level and whether a hint was shown.
-4. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
+3. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
     open performs by default.
-5. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
+4. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
     clean loops; loops are never cold checks.
-6. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
+5. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
     recalled check; aided and wait-mode runs rate at most Hard; Gentle/Standard/Strict presets (M5's exit check).
-7. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
+6. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
     `platform/storage/src/commonMain/sqldelight/pianoanchor/platform/storage/db/Attempt.sq` filters on `started_at_ms`
     alone; add an index on it with a SQLDelight migration so Today's practice-day counts don't scan every attempt.
-8. **Ear days count as practice days** (follow-up of #128; mechanical): ear sets store only reviews, so a day with
+7. **Ear days count as practice days** (follow-up of #128; mechanical): ear sets store only reviews, so a day with
     only ear training leaves Today's "n of 7 days" and the weekly dots empty; count days with an ear review (from
     `LearnerRepositoryPort` reviews) alongside `practiceDays` from attempts.
-9. **One MIDI playback helper** (follow-up of #128; mechanical): onboarding's arpeggio and `EarViewModel` each send
+8. **One MIDI playback helper** (follow-up of #128; mechanical): onboarding's arpeggio and `EarViewModel` each send
     NoteOn/NoteOff for the shared `PLAYBACK_*` tunables; move both onto one helper that plays `tones()` over
     `MidiOutputPort` and releases held keys on cancel, and move the Ear card's amber accent into the shared theme
     in `ui/shell`.
+9. **Song card picks unlocked pieces** (follow-up of #129; needs an owner decision): Today's song card still picks any
+    passage of the newest unit with a learned skill, so it can offer a chord exercise, or a piece that Songs shows
+    as locked; decide whether it should pick only unlocked pieces (as `Pieces.list` judges them).
+10. **Back returns to the opening screen** (follow-up of #129; mechanical): Settings and Pianos opened from the Songs
+    rail go back to Today; remember where they were opened from, as Practice does with `from`.
+11. **One passage-history loader** (follow-up of #129; mechanical): `TodayViewModel` and `SongsViewModel` both build
+    each passage's `PassageHistory` from three `AttemptRepositoryPort` reads; share one loader.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never

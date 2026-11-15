@@ -6,8 +6,8 @@ import pianoanchor.core.model.SkillGraph
 
 /** The built-in content: units in teaching order, the skills they teach and every passage. */
 public object Curriculum {
-    /** The units in teaching order: 0 "Find your way", 1 "Five-finger tunes", 2 "Both hands". */
-    public val units: List<CurriculumUnit> = listOf(UNIT_0, UNIT_1, UNIT_2)
+    /** The units in teaching order: 0 "Find your way", 1 "Five-finger tunes", 2 "Both hands", 3 "Songs and chords". */
+    public val units: List<CurriculumUnit> = listOf(UNIT_0, UNIT_1, UNIT_2, SONGS_UNIT)
 
     /** Every skill, with its prerequisites: those the units teach, then the ear skills (no passage, no unit). */
     public val graph: SkillGraph =
@@ -29,6 +29,12 @@ public object Curriculum {
                 Skills.HANDS_TURNS,
                 Skills.TIME_THREE_FOUR,
                 Skills.HANDS_HELD_BASS,
+                Skills.CHORD_TRIADS,
+                Skills.CHORD_CHANGES,
+                Skills.CHORD_MELODY,
+                Skills.CHORD_INVERSIONS,
+                Skills.CHORD_A_MINOR,
+                Skills.CHORD_FOUR,
             ) + EarSkills.all,
         )
 

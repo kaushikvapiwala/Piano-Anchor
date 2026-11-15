@@ -108,6 +108,7 @@ internal val UNIT_2: CurriculumUnit =
                     bass = listOf(C3, G3, C3, G3, C3, G3, C3, C3),
                     tempoBpm = 66,
                     rights = odeToJoyRights(),
+                    piece = true,
                 ),
             ),
     )
@@ -126,9 +127,10 @@ private fun heldBassPassage(
     bass: List<Int>,
     tempoBpm: Int,
     rights: Rights,
+    piece: Boolean = false,
 ): Passage {
     val skills = setOf(Skills.HANDS_HELD_BASS.id, Skills.RHYTHM_WHOLE.id)
-    val tuneOnly = builtinPassage(id, title, tune, tempoBpm, skills, rights)
+    val tuneOnly = builtinPassage(id, title, tune, tempoBpm, skills, rights, piece = piece)
     val barTicks = tuneOnly.timeSignature.barTicks
     val steps =
         tuneOnly.steps.map { step ->

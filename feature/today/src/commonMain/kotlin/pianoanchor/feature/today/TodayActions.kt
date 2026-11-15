@@ -7,6 +7,7 @@ import pianoanchor.engine.session.Card
 public data class TodayActions(
     val onStart: (Card.PassageCard) -> Unit = {},
     val onStartEar: (Card.Ear) -> Unit = {},
+    val onSongs: () -> Unit = {},
     val onPianos: () -> Unit = {},
     val onSettings: () -> Unit = {},
     val onRetry: () -> Unit = {},

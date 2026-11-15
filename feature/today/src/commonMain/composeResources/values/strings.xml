@@ -35,10 +35,4 @@
     <string name="today_update_available">Version %1$s is available</string>
     <string name="today_update_see">See release</string>
     <string name="today_update_dismiss">Not now</string>
-    <string name="today_nav_today">Today</string>
-    <string name="today_nav_pianos">Pianos</string>
-    <string name="today_nav_settings">Settings</string>
-    <string name="today_nav_today_glyph">●</string>
-    <string name="today_nav_pianos_glyph">♪</string>
-    <string name="today_nav_settings_glyph">⚙</string>
 </resources>
