@@ -102,10 +102,7 @@ public object SessionComposer {
             review,
             lessonMinutes,
             songMinutes,
-            plan.due.filter {
-                it.skillId !=
-                    cold?.let { it.skill.id }
-            },
+            plan.due.filter { state -> state.skillId != cold?.let { it.skill.id } },
         )
     }
 
