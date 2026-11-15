@@ -57,14 +57,31 @@ public class LearnerModel(
         val rating = attempt.band.toRating()
         val recorded = ArrayList<Review>()
         for (skillId in passage.skills.sorted()) {
-            val before = states[skillId]
-            // A review on this day (or, if the clock went back, a later one) is already the cold check.
-            if (before != null && before.lastReviewDay >= day) continue
-            val review = Review(skillId, day, rating, attempt.id)
-            repository.record(review, review.applyTo(before))
-            recorded += review
+            recordColdCheck(states[skillId], Review(skillId, day, rating, attempt.id))?.let { recorded += it }
         }
         return recorded
+    }
+
+    /**
+     * Records a cold check of [skillId] rated by [band] (an ear set, not a played passage), with the same
+     * one-review-per-day rules as [record]. Returns the review, or null when the skill already has one on [day].
+     */
+    public suspend fun recordSkill(
+        skillId: String,
+        band: Band,
+        day: LocalDate,
+        attemptId: String,
+    ): Review? = recordColdCheck(repository.states()[skillId], Review(skillId, day, band.toRating(), attemptId))
+
+    /** Stores [review] unless the skill ([before] is its state) has a review that day already: the first one counts. */
+    private suspend fun recordColdCheck(
+        before: SkillState?,
+        review: Review,
+    ): Review? {
+        // A review on this day (or, if the clock went back, a later one) is already the cold check.
+        if (before != null && before.lastReviewDay >= review.day) return null
+        repository.record(review, review.applyTo(before))
+        return review
     }
 
     /**

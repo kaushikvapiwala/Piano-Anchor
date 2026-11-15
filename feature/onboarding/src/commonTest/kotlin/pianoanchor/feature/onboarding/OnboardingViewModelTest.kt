@@ -135,7 +135,7 @@ class OnboardingViewModelTest {
         on: Boolean,
     ): ByteArray =
         MidiEncoder.encode(
-            if (on) NoteOn(0, 0, note, Tunables.ONBOARDING_VELOCITY) else NoteOff(0, 0, note, 0),
+            if (on) NoteOn(0, 0, note, Tunables.PLAYBACK_VELOCITY) else NoteOff(0, 0, note, 0),
         )
 
     @Test

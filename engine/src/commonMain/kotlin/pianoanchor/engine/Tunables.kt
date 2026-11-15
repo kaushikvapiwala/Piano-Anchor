@@ -476,31 +476,76 @@ public object Tunables {
     public const val EAR_MINUTES_PER_SKILL: Int = 1
 
     /**
-     * The gap between the starts of the onboarding's C, E and G, in milliseconds.
+     * How many items one ear review draws.
+     *
+     * Why: one draw is too noisy (a 50% guess rate on 2 choices).
+     *
+     * Source: owner, M4 grill.
+     */
+    public const val EAR_ITEMS_PER_REVIEW: Int = 4
+
+    /**
+     * How many times the learner may replay one ear item.
+     *
+     * Why: hear it again without turning it into a memory test.
+     *
+     * Source: owner, M4 grill.
+     */
+    public const val EAR_MAX_REPLAYS: Int = 2
+
+    /**
+     * How many answers one ear item allows in total.
+     *
+     * Why: one second chance, then the answer is shown.
+     *
+     * Source: owner, M4 grill.
+     */
+    public const val EAR_MAX_ANSWERS: Int = 2
+
+    /**
+     * The fewest items of a set that must end right (first try or recovered) for the band GOOD.
+     *
+     * Why: 3 of 4 right in the end is "recalled with slips".
+     *
+     * Source: owner, M4 grill.
+     */
+    public const val EAR_GOOD_MIN_RIGHT: Int = 3
+
+    /**
+     * How long a chord of an ear item is held, in milliseconds.
+     *
+     * Why: a chord needs longer than a single note to judge its quality.
+     *
+     * Source: starting value.
+     */
+    public const val EAR_CHORD_LENGTH_MS: Long = 800
+
+    /**
+     * The gap between the starts of the notes the app plays (onboarding's C, E and G; an ear item), in milliseconds.
      *
      * Why: 500 ms gives a clear, unhurried arpeggio on any piano.
      *
      * Source: starting value; the mock's pacing.
      */
-    public const val ONBOARDING_NOTE_GAP_MS: Long = 500
+    public const val PLAYBACK_NOTE_GAP_MS: Long = 500
 
     /**
-     * How long each onboarding note is held before its NoteOff, in milliseconds.
+     * How long each played note is held before its NoteOff, in milliseconds.
      *
-     * Why: shorter than [ONBOARDING_NOTE_GAP_MS], so the three notes sound apart, yet long enough to ring.
+     * Why: shorter than [PLAYBACK_NOTE_GAP_MS], so the three notes sound apart, yet long enough to ring.
      *
      * Source: starting value; the mock's pacing.
      */
-    public const val ONBOARDING_NOTE_LENGTH_MS: Long = 400
+    public const val PLAYBACK_NOTE_LENGTH_MS: Long = 400
 
     /**
-     * The velocity of the onboarding's notes.
+     * The velocity of the notes the app plays to the piano.
      *
      * Why: a medium-soft touch (80 of 127) is clearly audible without startling the learner on any piano.
      *
      * Source: starting value; the mock's pacing.
      */
-    public const val ONBOARDING_VELOCITY: Int = 80
+    public const val PLAYBACK_VELOCITY: Int = 80
 
     /**
      * How long the onboarding waits for a first note, in milliseconds, before it offers the piano list.

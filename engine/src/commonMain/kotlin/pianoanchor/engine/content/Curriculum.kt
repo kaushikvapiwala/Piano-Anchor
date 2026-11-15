@@ -9,7 +9,7 @@ public object Curriculum {
     /** The units in teaching order: 0 "Find your way", 1 "Five-finger tunes", 2 "Both hands". */
     public val units: List<CurriculumUnit> = listOf(UNIT_0, UNIT_1, UNIT_2)
 
-    /** Every skill, with its prerequisites. */
+    /** Every skill, with its prerequisites: those the units teach, then the ear skills (no passage, no unit). */
     public val graph: SkillGraph =
         SkillGraph(
             listOf(
@@ -29,7 +29,7 @@ public object Curriculum {
                 Skills.HANDS_TURNS,
                 Skills.TIME_THREE_FOUR,
                 Skills.HANDS_HELD_BASS,
-            ),
+            ) + EarSkills.all,
         )
 
     /** The passage with [id], or null if there is none (e.g. an attempt of a passage since removed). */
