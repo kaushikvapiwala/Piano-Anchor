@@ -136,3 +136,17 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
 - **Not found**: the error card "Couldn't find this run" with "Back to pianos".
 - **Unavailable** (the store can't be read): the error card "Couldn't load this run." with "Retry" and "Back to
   pianos".
+
+## Settings screen
+
+Portrait, opened from the 44 dp gear in the monitor's header (TalkBack "Settings"); back returns to the monitor.
+Grouped rows under plum group titles, every target at least 44 dp, every change stored at once.
+
+- **Practice**: "Daily practice time" as a three-way segmented control (15, 20, 30 min; each segment is read as
+  "20 minutes"), then "Weekly goal" with the value below ("4 days a week") and a minus and plus stepper (read as
+  "Fewer days" and "More days"; each disables at its end of 1 to 7).
+- **Playing**: the "Click in timed runs" switch, the same choice as the practice screen's click glyph.
+- **Updates**: the "Check for updates" switch with the note "Checks GitHub once a day for a new version. Sends
+  nothing about you." The whole row toggles and reads as a switch.
+- **Storage failure**: the usual `errorContainer` card "Couldn't save the settings. Try again." with Dismiss; the
+  controls show what is stored.

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -36,6 +37,7 @@ import pianoanchor.core.ports.CalibrationRepositoryPort
 import pianoanchor.core.ports.ClockPort
 import pianoanchor.core.ports.MetronomePort
 import pianoanchor.core.ports.MidiInputPort
+import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.analysis.PlayedNotes
 import pianoanchor.engine.grading.Grader
@@ -60,8 +62,9 @@ import kotlin.time.Instant
  * ends early (disconnect, [restart], [selectRung], leaving the screen) is discarded. When the store is unavailable
  * the graded attempt is kept with [PracticeState.saveFailed] until [retrySave] or [discardRun]. [clock] gives the
  * attempt's start time (at the first note); [learner] records each saved attempt as a cold check on the learner day
- * ([zone]); [newId] the attempt's id; [clickSetting] keeps the metronome mute for
- * the app session.
+ * ([zone]); [newId] the attempt's id; [settings] keeps whether the metronome clicks: it seeds
+ * [PracticeState.clickOn] and [toggleClick] writes it back (a store that fails leaves the choice in force for this
+ * screen only).
  *
  * A timed run reads the piano's latency offset from [calibration] when it starts and subtracts it from played times
  * (`docs/algorithms/latency-calibration.md`). A piano without one gets [PracticeState.calibrationOffered] instead of a
@@ -81,12 +84,12 @@ public class PracticeViewModel(
     private val clock: Clock,
     private val learner: LearnerModel,
     private val zone: TimeZone,
-    private val clickSetting: ClickSetting = ClickSetting(),
+    private val settings: SettingsRepositoryPort,
     private val calibrationSkips: CalibrationSkips = CalibrationSkips(),
     initialRung: TempoRung = TempoRung.WAIT,
     private val newId: () -> String,
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(PracticeState.start(passage).copy(clickOn = clickSetting.on.value))
+    private val mutableState = MutableStateFlow(PracticeState.start(passage))
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
 
     private var run: Job? = null
@@ -95,11 +98,15 @@ public class PracticeViewModel(
     /** The graded attempt whose save failed, until it is saved or discarded; null while a retry runs. */
     private var unsaved: Attempt? = null
 
+    /** True once the learner toggled the click here: the stored choice, if read later, no longer applies. */
+    private var clickToggled = false
+
     /** The click pattern of the timed run in progress, null outside one. */
     private var pattern: ClickPattern? = null
 
     init {
         viewModelScope.launch { refreshDoneRungs() }
+        viewModelScope.launch { seedClickOn() }
         selectRung(initialRung)
     }
 
@@ -138,18 +145,44 @@ public class PracticeViewModel(
 
     /**
      * Switches the metronome on or off, also while a run is in progress: the pattern keeps its timing, so turning the
-     * click back on rejoins the beat. The choice is kept for the app session.
+     * click back on rejoins the beat. The choice is stored in the settings; if that fails it still holds until this
+     * screen closes.
      */
     public fun toggleClick() {
-        val on = !clickSetting.on.value
-        clickSetting.on.value = on
+        val on = !mutableState.value.clickOn
+        clickToggled = true
         mutableState.update { it.copy(clickOn = on) }
+        viewModelScope.launch {
+            try {
+                // Stores what the learner now sees, even if the store held something else.
+                settings.update { it.copy(clickOn = on) }
+            } catch (_: StorageUnavailableException) {
+                // Not surfaced here: the choice stays in force for this session.
+            }
+        }
         val running = pattern ?: return
         viewModelScope.launch {
             if (on) running.start(metronome) else metronome.stop()
             // The run ended (and stopped the click) while this start ran: don't leave it clicking.
             if (on && pattern !== running) metronome.stop()
         }
+    }
+
+    /**
+     * Takes the stored click choice as the starting one, unless the learner toggled the click before it was read; a
+     * store that can't be read leaves the default.
+     */
+    private suspend fun seedClickOn() {
+        val stored =
+            try {
+                settings.settings.first().clickOn
+            } catch (_: StorageUnavailableException) {
+                return
+            }
+        if (clickToggled) return
+        mutableState.update { it.copy(clickOn = stored) }
+        // A timed run that started before the read returned began clicking on the default: silence it.
+        if (!stored && pattern != null) metronome.stop()
     }
 
     /**
@@ -424,7 +457,7 @@ public class PracticeViewModel(
             mutableState.update { it.copy(keysDown = it.keysDown + starter.note) }
             val click = ClickPattern(firstBeatNanos, beatNanos, beatsPerBar)
             pattern = click
-            if (clickSetting.on.value) click.start(metronome)
+            if (mutableState.value.clickOn) click.start(metronome)
             scope.launch {
                 runClock(timing)
                 ended.complete(true)

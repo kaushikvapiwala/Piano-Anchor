@@ -23,6 +23,7 @@ import pianoanchor.testing.FakeClock
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
+import pianoanchor.testing.FakeSettingsRepository
 import pianoanchor.testing.FakeWallClock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -46,6 +47,7 @@ class PracticeViewModelCalibrationTest {
     private val learner = LearnerModel(Curriculum.graph, learnerRepository)
     private val skips = CalibrationSkips()
     private val metronome = FakeMetronome(clock)
+    private val settings = FakeSettingsRepository()
     private val wallClock = FakeWallClock(Instant.parse("2026-11-13T09:00:00Z"))
     private val c4 = MidiNote(60)
     private val d4 = MidiNote(62)
@@ -76,6 +78,7 @@ class PracticeViewModelCalibrationTest {
             wallClock,
             learner,
             TimeZone.UTC,
+            settings,
             calibrationSkips = skips,
         ) {
             "attempt-1"
@@ -152,6 +155,7 @@ class PracticeViewModelCalibrationTest {
                     wallClock,
                     learner,
                     TimeZone.UTC,
+                    settings,
                     calibrationSkips = skips,
                     initialRung = TempoRung.P70,
                 ) { "attempt-1" }.also {

@@ -15,4 +15,5 @@ public data class MonitorActions(
     val onDismissError: () -> Unit = {},
     val onPractice: (MidiDevice) -> Unit = {},
     val onCalibrate: (MidiDevice) -> Unit = {},
+    val onSettings: () -> Unit = {},
 )

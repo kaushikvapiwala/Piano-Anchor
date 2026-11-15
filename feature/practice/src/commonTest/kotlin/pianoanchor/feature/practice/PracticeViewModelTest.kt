@@ -35,6 +35,7 @@ import pianoanchor.testing.FakeClock
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
+import pianoanchor.testing.FakeSettingsRepository
 import pianoanchor.testing.FakeWallClock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -60,7 +61,7 @@ class PracticeViewModelTest {
     // Skipped: these tests play timed rungs without the calibration card (PracticeViewModelCalibrationTest has it).
     private val skips = CalibrationSkips().apply { skip(piano.device.id) }
     private val metronome = FakeMetronome(clock)
-    private val clickSetting = ClickSetting()
+    private val settings = FakeSettingsRepository()
     private val openedAt = Instant.parse("2026-11-13T09:00:00Z")
     private val wallClock = FakeWallClock(openedAt)
     private val c4 = MidiNote(60)
@@ -91,7 +92,7 @@ class PracticeViewModelTest {
             wallClock,
             learner,
             TimeZone.UTC,
-            clickSetting,
+            settings,
             skips,
         ) {
             "attempt-${++ids}"
@@ -351,6 +352,7 @@ class PracticeViewModelTest {
                     wallClock,
                     learner,
                     TimeZone.UTC,
+                    settings,
                     calibrationSkips = skips,
                 ) {
                     "next"

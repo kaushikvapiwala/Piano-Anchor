@@ -33,6 +33,7 @@ include(
     ":ui:shell",
     ":feature:monitor",
     ":feature:practice",
+    ":feature:settings",
     ":app-android",
     ":app-desktop",
     ":architecture-tests",

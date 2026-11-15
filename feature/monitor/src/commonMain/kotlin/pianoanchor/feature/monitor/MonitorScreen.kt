@@ -82,7 +82,7 @@ public fun MonitorScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item { Text(stringResource(Res.string.monitor_title), style = MaterialTheme.typography.headlineMedium) }
+            item { Header(actions.onSettings) }
             state.error?.let { error -> item { ErrorCard(error, actions) } }
             devices(state, actions)
             item { StatusText(state) }

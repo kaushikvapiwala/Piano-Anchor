@@ -40,44 +40,43 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
-2. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
-    start screen.
-3. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
-4. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
-5. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
+1. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
+    start screen, and the Settings gear moves from the monitor's header to Today's.
+2. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
+3. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
+4. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
     exit check.
-6. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
+5. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
      identity of a `sys:<id>` fallback id; stable `usb:`/`ble:` ids keep theirs.
-7. **All Notes Off on the practice keyboard** (spec #121; follow-up of #101): control changes 120 and 123–127 clear
+6. **All Notes Off on the practice keyboard** (spec #121; follow-up of #101): control changes 120 and 123–127 clear
     the practice screen's keys-down and wrong-key highlights, through one engine helper shared with `PlayedNotes`.
-8. **Wait-mode last note length** (spec #122; follow-up of #65): after the completing NoteOn, a wait-mode run keeps
+7. **Wait-mode last note length** (spec #122; follow-up of #65): after the completing NoteOn, a wait-mode run keeps
     reading until nothing sounds (keys and pedal) or 3 s pass, so the last notes get their real length.
-9. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
+8. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
     main dispatcher when Results opens; move it to a background dispatcher (injected for tests) before passages grow
     long (mechanical).
-10. **Calibration at 60 BPM** (spec #113) [#67]: clicks one second apart, so every lag up to the 400 ms cap pairs with
+9. **Calibration at 60 BPM** (spec #113) [#67]: clicks one second apart, so every lag up to the 400 ms cap pairs with
     its own click and larger ones are rejected, instead of a lag over 333 ms being stored as a negative offset.
-11. **Calibration last-tap grace** (spec #123) [#113]: keep reading 200 ms after the last click's half beat, so a tap
+10. **Calibration last-tap grace** (spec #123) [#113]: keep reading 200 ms after the last click's half beat, so a tap
     timestamped in time but delivered late still counts.
-12. **Retry a failed calibration save** (spec #124; follow-up of #67): Retry saves the same accepted offset again,
+11. **Retry a failed calibration save** (spec #124; follow-up of #67): Retry saves the same accepted offset again,
     next to Try again and Cancel, as practice does for an unsaved attempt.
-13. **M4.1 Tracks share the daily plan** (spec #127) [#79]: skills get a track (core, songs, ear); new skills rotate
+12. **M4.1 Tracks share the daily plan** (spec #127) [#79]: skills get a track (core, songs, ear); new skills rotate
     between tracks under the shared caps; the composer's Ear card and four-way time split (M4's exit check).
-14. **M4.2 Ear training** (spec #128) [#127, #79, #80]: eight ear skills, echo on the piano and identify on screen, sets
+13. **M4.2 Ear training** (spec #128) [#127, #79, #80]: eight ear skills, echo on the piano and identify on screen, sets
     of 4 fresh items, speaker tones when the piano has no MIDI output.
-15. **M4.3 Songs & chords** (spec #129) [#127, #77, #79]: six C-position chord skills, four pieces and the Songs screen
+14. **M4.3 Songs & chords** (spec #129) [#127, #77, #79]: six C-position chord skills, four pieces and the Songs screen
     with tempo-ladder progress and locked pieces.
-16. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
+15. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
     piano's identity reply, a short note fixture and the app version into a file to attach to a GitHub issue; reads
     only, no network.
-17. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
+16. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
     Off) with a Hint button; attempts record the hint level and whether a hint was shown.
-18. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
+17. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
     open performs by default.
-19. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
+18. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
     clean loops; loops are never cold checks.
-20. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
+19. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
     recalled check; aided and wait-mode runs rate at most Hard; Gentle/Standard/Strict presets (M5's exit check).
 
 ## Owner device checks
@@ -104,7 +103,7 @@ pick these; nothing in "Next up" waits for them.
 |---|---|---|
 | M1 | MIDI input, real-time matcher, offline analyser (🔄 M1.1 rhythm in passages, M1.2 played notes and analyser harness, and M1.3 offline analyser done: exit check met on synthetic takes, real-fixture confirmation pending the hardware check; M1.4a metronome and M1.4b staff rhythm done, the click pending an owner check by ear; M1.4c tempo mode, M1.4d tiles and M1.5 latency calibration done) | Recorded fixtures with injected errors classified ≥ 95% correctly |
 | M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) (✅ M2.1 FSRS-6 memory model, M2.2 skill graph, M2.3 learner storage, M2.4 learner model and the M2.5 90-day simulation exit check done) | Matches reference test vectors; simulated learner behaves sensibly |
-| M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format and M3.2 units 0–2 done) | Used daily for 2 weeks |
+| M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2 and M3.3 settings done) | Used daily for 2 weeks |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (specced: #127–#129) | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting (specced: #132–#135) | Unaided pass required before "learned" |
 | M6 | Curriculum units 3–8, sight-reading staircase, placement | Placement reproducible |

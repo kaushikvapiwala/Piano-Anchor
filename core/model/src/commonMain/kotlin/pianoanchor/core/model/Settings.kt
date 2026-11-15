@@ -1,0 +1,40 @@
+package pianoanchor.core.model
+
+/** Minutes of practice the learner wants per day: one of three choices, as the settings screen offers them. */
+@Suppress("MagicNumber") // The three minute counts are the choices themselves.
+public enum class DailyBudget(
+    public val minutes: Int,
+) {
+    MIN_15(15),
+    MIN_20(20),
+    MIN_30(30),
+}
+
+/**
+ * The weekly practice goal a new learner starts with, in days: four days a week is a habit that fits a working week
+ * and leaves rest days.
+ */
+public const val DEFAULT_WEEKLY_GOAL_DAYS: Int = 4
+
+private const val MAX_WEEKLY_GOAL_DAYS = 7
+
+/** The weekly goals the settings allow, in days: at least one day, at most every day of the week. */
+public val WEEKLY_GOAL_DAYS_RANGE: IntRange = 1..MAX_WEEKLY_GOAL_DAYS
+
+/**
+ * The learner's preferences. [dailyBudget] is the practice time per day, [weeklyGoalDays] the days per week to
+ * practise (in [WEEKLY_GOAL_DAYS_RANGE]), [clickOn] whether the metronome clicks in timed runs and [updateCheckOn]
+ * whether the app checks once a day for a new version.
+ */
+public data class Settings(
+    val dailyBudget: DailyBudget = DailyBudget.MIN_20,
+    val weeklyGoalDays: Int = DEFAULT_WEEKLY_GOAL_DAYS,
+    val clickOn: Boolean = true,
+    val updateCheckOn: Boolean = true,
+) {
+    init {
+        require(weeklyGoalDays in WEEKLY_GOAL_DAYS_RANGE) {
+            "weeklyGoalDays $weeklyGoalDays is outside $WEEKLY_GOAL_DAYS_RANGE"
+        }
+    }
+}
