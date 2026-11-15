@@ -20,6 +20,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.ControlChange
+import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
@@ -41,6 +42,8 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.analysis.PlayedNotes
 import pianoanchor.engine.analysis.releasesAllKeys
 import pianoanchor.engine.grading.Grader
+import pianoanchor.engine.guidance.HintDelay
+import pianoanchor.engine.guidance.HintFading
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.matcher.LiveVerdict
@@ -101,6 +104,14 @@ public class PracticeViewModel(
     /** True once the learner toggled the click here: the stored choice, if read later, no longer applies. */
     private var clickToggled = false
 
+    /** The key-hint level of the run in progress and the delay of its Delayed hints (read when the run starts). */
+    private var hintLevel = HintLevel.FULL
+    private var hintDelayMillis = Tunables.HINT_DELAY_DEFAULT_MS
+
+    /** Whether any hint showed in the run in progress: FULL, a Delayed hint that fired, or the Hint button. */
+    private var hintShown = true
+    private var hintTimer: Job? = null
+
     /** The click pattern of the timed run in progress, null outside one. */
     private var pattern: ClickPattern? = null
 
@@ -121,6 +132,7 @@ public class PracticeViewModel(
      */
     public fun selectRung(rung: TempoRung) {
         flashTimer?.cancel()
+        hintTimer?.cancel()
         unsaved = null
         mutableState.update {
             PracticeState.start(passage).copy(rung = rung, doneRungs = it.doneRungs, clickOn = it.clickOn)
@@ -129,8 +141,47 @@ public class PracticeViewModel(
         run =
             viewModelScope.launch {
                 previous?.cancelAndJoin()
+                loadHints()
                 val bpm = rung.bpm(passage)
                 if (bpm == null) WaitRun().play() else playTimed(bpm)
+            }
+    }
+
+    /** Shows the key band on the waiting step, for that step only (the Hint button). */
+    public fun showHint() {
+        hintShown = true
+        mutableState.update { it.copy(hintVisible = true) }
+    }
+
+    /**
+     * Works out the run's hint level and delay from the passage's stored attempts; a store that can't be read gives
+     * the defaults (FULL).
+     */
+    private suspend fun loadHints() {
+        val history =
+            try {
+                attempts.recent(passage.id, Tunables.HINT_FADE_HISTORY).first()
+            } catch (_: StorageUnavailableException) {
+                emptyList()
+            }
+        hintLevel = HintFading.level(history.asReversed())
+        hintDelayMillis = HintDelay.millis(history)
+        hintShown = hintLevel == HintLevel.FULL
+        mutableState.update { it.copy(hintLevel = hintLevel, hintVisible = hintLevel == HintLevel.FULL) }
+    }
+
+    /**
+     * A new step is waiting: its band shows at once at FULL, otherwise not, and at DELAYED shows after
+     * [hintDelayMillis] unless a key press cancels the timer first.
+     */
+    private fun startHintStep() {
+        hintTimer?.cancel()
+        mutableState.update { it.copy(hintVisible = hintLevel == HintLevel.FULL) }
+        if (hintLevel != HintLevel.DELAYED) return
+        hintTimer =
+            viewModelScope.launch {
+                delay(hintDelayMillis)
+                showHint()
             }
     }
 
@@ -216,6 +267,7 @@ public class PracticeViewModel(
      */
     public suspend fun close() {
         flashTimer?.cancel()
+        hintTimer?.cancel()
         run?.cancelAndJoin()
     }
 
@@ -259,7 +311,9 @@ public class PracticeViewModel(
         )
     }
 
-    private suspend fun save(attempt: Attempt) {
+    private suspend fun save(graded: Attempt) {
+        hintTimer?.cancel()
+        val attempt = graded.copy(hintLevel = hintLevel, hintShown = hintShown)
         try {
             attempts.save(attempt)
         } catch (_: StorageUnavailableException) {
@@ -336,6 +390,7 @@ public class PracticeViewModel(
         private var endNanos = 0L
 
         suspend fun play() {
+            startHintStep()
             coroutineScope {
                 val ended = CompletableDeferred<Unit>()
                 launch {
@@ -417,8 +472,14 @@ public class PracticeViewModel(
 
         private fun onNoteOn(event: NoteOn) {
             if (startedAt == null) startedAt = clock.now()
+            val stepBefore = match.stepIndex
             val step = WaitModeMatcher.reduce(match, event)
             match = step.state
+            if (match.complete) {
+                hintTimer?.cancel() // no step left to help with, and a late hint must not count as shown
+            } else if (match.stepIndex != stepBefore) {
+                startHintStep()
+            }
             events += step.events
             mutableState.update {
                 it.copy(steps = statuses(it.steps, match), currentStep = match.stepIndex)
@@ -449,6 +510,9 @@ public class PracticeViewModel(
         private var startNanos = 0L
         private var firstBeatNanos = 0L
         private var endNanos = 0L
+
+        /** The cursor step whose hint timer runs (or ran), -1 before the run plays. */
+        private var hintStep = -1
 
         /** One click: the time signature's beat unit (a quarter note is [beatNanos] of the tempo). */
         private val beatNanos = beatNanos(bpm) * QUARTER_UNIT / passage.timeSignature.beatUnit
@@ -537,6 +601,7 @@ public class PracticeViewModel(
                         KeyFlash(event.note, correct = false)
                     }
                 }
+            if (flash.correct) hintTimer?.cancel() // played in time: no help needed for this step
             publish(time.nowNanos(), judge)
             pressKey(event.note, flash)
         }
@@ -566,6 +631,10 @@ public class PracticeViewModel(
             val beat = if (sinceFirstBeat < 0) 0 else (sinceFirstBeat / beatNanos % beatsPerBar).toInt() + 1
             val playing = now >= startNanos
             val cursor = if (playing) judge.cursorStep(now) else 0
+            if (playing && cursor != hintStep) {
+                hintStep = cursor
+                startHintStep()
+            }
             mutableState.update {
                 it.copy(
                     phase = if (playing) RunPhase.PLAYING else RunPhase.COUNT_IN,

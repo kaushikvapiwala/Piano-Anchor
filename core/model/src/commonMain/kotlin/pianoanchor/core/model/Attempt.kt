@@ -15,7 +15,9 @@ public enum class Band { CLEAN, GOOD, KEEP_PRACTISING }
  * time of tick 0 for a timed run and the first NoteOn for wait mode (empty for attempts stored before they were kept).
  * [latencyOffsetNanos] is the piano's latency offset the run was judged with (positive: its notes arrive late), kept so
  * Results recompute the same verdicts; null when the run was played uncalibrated, and for wait mode. [playedNotes]
- * stay as played: the offset is subtracted only when they are analysed.
+ * stay as played: the offset is subtracted only when they are analysed. [hintLevel] is the key-hint level the run
+ * started at and [hintShown] whether any hint was shown during it (see [HintLevel]); attempts stored before hints
+ * faded are FULL and shown.
  */
 public data class Attempt(
     val id: String,
@@ -32,6 +34,9 @@ public data class Attempt(
     val tempoBpm: Int?,
     val playedNotes: List<PlayedNote>,
     val latencyOffsetNanos: Long? = null,
+    val hintLevel: HintLevel = HintLevel.FULL,
+    /** True when any hint was shown during the run: FULL level, a delayed hint that fired, or the Hint button. */
+    val hintShown: Boolean = true,
 ) {
     init {
         require(id.isNotBlank()) { "attempt id must not be blank" }

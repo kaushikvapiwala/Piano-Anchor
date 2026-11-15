@@ -57,7 +57,8 @@ private const val KEY_COLOR_MS = 150
 
 /**
  * The live key strip: the label row with the last key's verdict, then two octaves of keys (`keyStripRange`). Target
- * keys of the waiting step carry an amber band; held and flashing keys light up correct or wrong.
+ * keys of the waiting step carry an amber band while [PracticeState.hintVisible];
+ * held and flashing keys light up correct or wrong.
  */
 @Composable
 internal fun KeyStrip(
@@ -80,7 +81,7 @@ internal fun KeyStrip(
             Spacer(Modifier.weight(1f))
             state.lastKey?.let { LastKeyText(it, waiting, timed = state.rung != TempoRung.WAIT) }
         }
-        Keys(state, waiting)
+        Keys(state, if (state.hintVisible) waiting else emptySet())
     }
 }
 

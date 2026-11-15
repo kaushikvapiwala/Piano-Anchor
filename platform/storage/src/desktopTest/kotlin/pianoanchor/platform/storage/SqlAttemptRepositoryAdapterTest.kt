@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.runTest
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.ChordIncomplete
+import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
@@ -21,7 +22,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
@@ -53,6 +56,22 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
             tempoBpm = null,
             playedNotes = emptyList(),
         )
+
+    @Test
+    fun rowsWithoutHintColumnsReadBackAsFullAndShown() =
+        runTest {
+            // What a row stored before schema 7 looks like: the hint columns take their defaults.
+            driver.execute(
+                null,
+                "INSERT INTO attempt(id, passage_id, device_id, started_at_ms, duration_nanos, step_count, " +
+                    "wrong_notes, incomplete_chords, accuracy, band) " +
+                    "VALUES ('old', 'c-d-e', 'usb-1', 1, 1, 1, 0, 0, 1.0, 'CLEAN')",
+                0,
+            )
+            val old = assertNotNull(repository.get("old"))
+            assertEquals(HintLevel.FULL, old.hintLevel)
+            assertTrue(old.hintShown)
+        }
 
     @Test
     fun incompleteChordsWithOneOrNoMissingNotesRoundTrip() =

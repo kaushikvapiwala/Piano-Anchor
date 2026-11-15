@@ -6,6 +6,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.engine.content.Passages
@@ -56,6 +57,18 @@ class PracticeScreenScreenshotTest {
                 lastKey = KeyFlash(f4, correct = false),
             ),
         )
+
+    private val off = start.copy(hintLevel = HintLevel.OFF, hintVisible = false)
+
+    @Test
+    fun hintsOffWithTheHintButton() = capture("hint_off", off)
+
+    @Test
+    fun delayedBeforeTheHint() = capture("hint_delayed_before", off.copy(hintLevel = HintLevel.DELAYED))
+
+    @Test
+    fun delayedAfterTheHint() =
+        capture("hint_delayed_after", off.copy(hintLevel = HintLevel.DELAYED, hintVisible = true))
 
     private val timed = start.copy(rung = TempoRung.P70, doneRungs = setOf(TempoRung.P60))
 

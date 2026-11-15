@@ -11,6 +11,8 @@
     <string name="practice_click_glyph">♪</string>
     <string name="practice_click_on">Click on</string>
     <string name="practice_click_off">Click off</string>
+    <string name="practice_hint_glyph">💡</string>
+    <string name="practice_hint">Show hint</string>
     <string name="practice_ready_timed">Play any key to count in</string>
     <string name="practice_count_in">Count-in</string>
     <string name="practice_beat">Beat %1$s of %2$s</string>

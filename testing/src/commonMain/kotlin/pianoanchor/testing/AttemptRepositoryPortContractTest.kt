@@ -9,6 +9,7 @@ import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.ChordIncomplete
+import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.PlayedNote
@@ -44,6 +45,8 @@ abstract class AttemptRepositoryPortContractTest {
         band: Band = Band.KEEP_PRACTISING,
         playedNotes: List<PlayedNote> = emptyList(),
         latencyOffsetNanos: Long? = null,
+        hintLevel: HintLevel = HintLevel.FULL,
+        hintShown: Boolean = true,
     ) = Attempt(
         id = id,
         passageId = passageId,
@@ -59,6 +62,8 @@ abstract class AttemptRepositoryPortContractTest {
         tempoBpm = tempoBpm,
         playedNotes = playedNotes,
         latencyOffsetNanos = latencyOffsetNanos,
+        hintLevel = hintLevel,
+        hintShown = hintShown,
     )
 
     private suspend fun AttemptRepositoryPort.countBefore(
@@ -177,6 +182,18 @@ abstract class AttemptRepositoryPortContractTest {
             repository.save(uncalibrated)
             assertEquals(calibrated, repository.get("a-1"))
             assertEquals(uncalibrated, repository.get("a-2"))
+        }
+
+    @Test
+    fun saveAndGetRoundTripTheHintLevelAndFlag() =
+        runTest {
+            val repository = createSubject()
+            val unaided = attempt("a-1", startedAtSeconds = 1_000, hintLevel = HintLevel.OFF, hintShown = false)
+            val delayed = attempt("a-2", startedAtSeconds = 2_000, hintLevel = HintLevel.DELAYED, hintShown = true)
+            repository.save(unaided)
+            repository.save(delayed)
+            assertEquals(unaided, repository.get("a-1"))
+            assertEquals(delayed, repository.get("a-2"))
         }
 
     @Test

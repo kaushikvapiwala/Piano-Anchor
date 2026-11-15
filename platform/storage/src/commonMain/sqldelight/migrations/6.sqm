@@ -1,0 +1,4 @@
+-- Schema 6 to 7 (M5.1): the key-hint level an attempt started at and whether a hint showed. Attempts stored before
+-- this were played with the band always on: FULL, shown.
+ALTER TABLE attempt ADD COLUMN hint_level TEXT NOT NULL DEFAULT 'FULL';
+ALTER TABLE attempt ADD COLUMN hint_shown INTEGER NOT NULL DEFAULT 1;

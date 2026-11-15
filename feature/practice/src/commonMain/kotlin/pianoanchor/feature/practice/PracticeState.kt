@@ -1,5 +1,6 @@
 package pianoanchor.feature.practice
 
+import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.ScoreNoteRef
@@ -21,6 +22,9 @@ import pianoanchor.engine.matcher.TempoRung
  * judge's verdicts so far. In a timed run [currentStep] is the cursor and only that step is [StepStatus.WAITING].
  * [calibrationOffered] is true while the screen offers to calibrate the piano's timing before a timed run (the run
  * waits for Calibrate or Skip).
+ *
+ * Key hints (`docs/algorithms/guidance.md`): [hintLevel] is the level the run started at and [hintVisible] whether the
+ * amber band shows on the waiting step's keys right now.
  */
 public data class PracticeState(
     val passage: Passage,
@@ -40,6 +44,8 @@ public data class PracticeState(
     val clickOn: Boolean = true,
     val liveMarks: Map<ScoreNoteRef, LiveMark> = emptyMap(),
     val calibrationOffered: Boolean = false,
+    val hintLevel: HintLevel = HintLevel.FULL,
+    val hintVisible: Boolean = true,
 ) {
     init {
         require(steps.size == passage.steps.size) {
