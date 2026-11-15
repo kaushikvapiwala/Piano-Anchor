@@ -22,6 +22,9 @@ public data class DailyPlan(
     val new: List<Skill>,
 )
 
+/** The attempt id of a placement review: the skill was placed as already learned, not played in a run. */
+public const val PLACEMENT_ATTEMPT_ID: String = "placement"
+
 /** The rating of a cold check from the band of the run: never EASY (`docs/algorithms/learner-model.md`). */
 public fun Band.toRating(): Rating =
     when (this) {
@@ -64,9 +67,28 @@ public class LearnerModel(
     }
 
     /**
+     * Records [skills] as placed on [day]: each gets a placement review (rating GOOD, attemptId =
+     * [PLACEMENT_ATTEMPT_ID]) and a state with learned = true. Skills already reviewed are left alone. Throws
+     * [IllegalArgumentException] for a skill that is not in the graph.
+     */
+    public suspend fun place(
+        skills: Set<String>,
+        day: LocalDate,
+    ) {
+        val unknown = skills.filter { graph.byId(it) == null }
+        require(unknown.isEmpty()) { "unknown skills to place: ${unknown.sorted()}" }
+        val states = repository.states()
+        for (skillId in skills.sorted()) {
+            if (skillId in states) continue
+            val review = Review(skillId, day, Rating.GOOD, PLACEMENT_ATTEMPT_ID)
+            repository.record(review, review.applyTo(null))
+        }
+    }
+
+    /**
      * Skills due on or before [day] (lowest retrievability first, at most MAX_DUE_PER_DAY), then new skills
-     * (unlocked, never introduced; at most MAX_NEW_PER_DAY minus those already introduced on [day]; offered only
-     * while due.size < MAX_DUE_PER_DAY), in graph order.
+     * (unlocked, never introduced; at most MAX_NEW_PER_DAY minus those taught on [day], placed ones excluded;
+     * offered only while due.size < MAX_DUE_PER_DAY), in graph order.
      */
     public suspend fun plan(day: LocalDate): DailyPlan {
         val states = repository.states()
@@ -77,7 +99,8 @@ public class LearnerModel(
                 .take(Tunables.MAX_DUE_PER_DAY)
         if (due.size >= Tunables.MAX_DUE_PER_DAY) return DailyPlan(due, emptyList())
         val learned = states.values.filter { it.learned }.mapTo(HashSet()) { it.skillId }
-        val introducedToday = states.values.count { it.introducedDay == day }
+        // Placed skills were not taught today: they don't use up the day's new-skill slots.
+        val introducedToday = states.values.count { it.introducedDay == day && !it.placed }
         val slots = (Tunables.MAX_NEW_PER_DAY - introducedToday).coerceAtLeast(0)
         val new = graph.unlocked(learned).filter { it.id !in states }.take(slots)
         return DailyPlan(due, new)
@@ -101,6 +124,12 @@ public class LearnerModel(
         repository.replaceStates(rebuilt)
     }
 
+    /**
+     * True for a state that only a placement made: learned without a single recalled cold check. Relies on
+     * `LEARNED_MIN_RECALLED_COLD_CHECKS` being above zero, so a skill that earned learned has recalled checks.
+     */
+    private val SkillState.placed: Boolean get() = learned && recalledColdChecks == 0
+
     private fun retrievability(
         state: SkillState,
         day: LocalDate,
@@ -114,13 +143,15 @@ public class LearnerModel(
             } else {
                 fsrs.next(before.memory, before.lastReviewDay.daysUntil(day), rating)
             }
-        val clean = (before?.cleanColdChecks ?: 0) + if (rating == Rating.GOOD) 1 else 0
-        val recalled = (before?.recalledColdChecks ?: 0) + if (rating == Rating.AGAIN) 0 else 1
+        // A placement is a claim, not a check: it sets learned but is neither a clean nor a recalled cold check.
+        val placement = attemptId == PLACEMENT_ATTEMPT_ID
+        val clean = (before?.cleanColdChecks ?: 0) + if (rating == Rating.GOOD && !placement) 1 else 0
+        val recalled = (before?.recalledColdChecks ?: 0) + if (rating == Rating.AGAIN || placement) 0 else 1
         val stableAndClean =
             clean >= Tunables.LEARNED_MIN_CLEAN_COLD_CHECKS && memory.stability >= Tunables.LEARNED_MIN_STABILITY_DAYS
         val mature = memory.stability >= Tunables.LEARNED_MATURE_STABILITY_DAYS
         val earned = recalled >= Tunables.LEARNED_MIN_RECALLED_COLD_CHECKS && (stableAndClean || mature)
-        val learned = before?.learned == true || earned
+        val learned = before?.learned == true || placement || earned
         return SkillState(
             skillId = skillId,
             memory = memory,

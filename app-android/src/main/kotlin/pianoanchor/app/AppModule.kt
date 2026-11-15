@@ -20,6 +20,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorViewModel
+import pianoanchor.feature.onboarding.OnboardingViewModel
 import pianoanchor.feature.practice.CalibrationSkips
 import pianoanchor.feature.practice.CalibrationViewModel
 import pianoanchor.feature.practice.PracticeViewModel
@@ -56,6 +57,7 @@ val appModule =
         single<CalibrationRepositoryPort> { SqlCalibrationRepositoryAdapter(get(), Dispatchers.IO) }
         single<LearnerRepositoryPort> { SqlLearnerRepositoryAdapter(get(), Dispatchers.IO) }
         single<SettingsRepositoryPort> { SqlSettingsRepositoryAdapter(get(), Dispatchers.IO) }
+        factory { LearnerModel(Curriculum.graph, get()) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get()) }
         viewModel { (device: MidiDevice, passageId: String, rung: TempoRung) ->
             PracticeViewModel(
@@ -67,7 +69,7 @@ val appModule =
                 get(),
                 get(),
                 get(),
-                LearnerModel(Curriculum.graph, get()),
+                get(),
                 get(),
                 get(),
                 get(),
@@ -79,5 +81,16 @@ val appModule =
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
         viewModel { (attemptId: String) -> ResultsViewModel(attemptId, get()) }
         viewModel { SettingsViewModel(get()) }
-        viewModel { TodayViewModel(LearnerModel(Curriculum.graph, get()), get(), get(), get(), get(), get(), get()) }
+        viewModel {
+            OnboardingViewModel(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            )
+        }
+        viewModel { TodayViewModel(get(), get(), get(), get(), get(), get(), get()) }
     }

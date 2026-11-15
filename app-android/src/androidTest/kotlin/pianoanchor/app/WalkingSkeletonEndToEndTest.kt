@@ -29,8 +29,11 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExternalResource
 import org.junit.runner.RunWith
+import org.koin.mp.KoinPlatform
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.content.Passages
 import pianoanchor.feature.monitor.resources.monitor_instrument_model
 import pianoanchor.feature.monitor.resources.monitor_practice
@@ -73,7 +76,22 @@ class WalkingSkeletonEndToEndTest {
     val permissions: GrantPermissionRule =
         GrantPermissionRule.grant(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
 
+    /** The app opens on the onboarding until it is finished: this test starts from Today, as after it. */
     @get:Rule(order = 1)
+    val onboarded: ExternalResource =
+        object : ExternalResource() {
+            override fun before() {
+                runBlocking {
+                    KoinPlatform.getKoin().get<SettingsRepositoryPort>().update {
+                        it.copy(
+                            onboarded = true,
+                        )
+                    }
+                }
+            }
+        }
+
+    @get:Rule(order = 2)
     val compose = createAndroidComposeRule<MainActivity>()
 
     private lateinit var piano: TestPiano

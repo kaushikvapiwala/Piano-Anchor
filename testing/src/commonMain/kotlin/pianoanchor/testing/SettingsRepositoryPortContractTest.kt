@@ -34,8 +34,22 @@ abstract class SettingsRepositoryPortContractTest {
     fun anUpdateIsStoredAndEmitted() =
         runTest {
             val repository = createSubject()
-            repository.update { it.copy(dailyBudget = DailyBudget.MIN_30, weeklyGoalDays = 6, clickOn = false) }
-            val expected = Settings(DailyBudget.MIN_30, weeklyGoalDays = 6, clickOn = false, updateCheckOn = true)
+            repository.update {
+                it.copy(
+                    dailyBudget = DailyBudget.MIN_30,
+                    weeklyGoalDays = 6,
+                    clickOn = false,
+                    onboarded = true,
+                )
+            }
+            val expected =
+                Settings(
+                    DailyBudget.MIN_30,
+                    weeklyGoalDays = 6,
+                    clickOn = false,
+                    updateCheckOn = true,
+                    onboarded = true,
+                )
             assertEquals(expected, repository.settings.first())
             repository.update { it.copy(updateCheckOn = false) }
             assertEquals(expected.copy(updateCheckOn = false), repository.settings.first())

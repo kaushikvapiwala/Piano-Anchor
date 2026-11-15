@@ -24,13 +24,15 @@ public val WEEKLY_GOAL_DAYS_RANGE: IntRange = 1..MAX_WEEKLY_GOAL_DAYS
 /**
  * The learner's preferences. [dailyBudget] is the practice time per day, [weeklyGoalDays] the days per week to
  * practise (in [WEEKLY_GOAL_DAYS_RANGE]), [clickOn] whether the metronome clicks in timed runs and [updateCheckOn]
- * whether the app checks once a day for a new version.
+ * whether the app checks once a day for a new version. [onboarded] is set once the first-launch onboarding is
+ * finished, so the app opens on Today from then on.
  */
 public data class Settings(
     val dailyBudget: DailyBudget = DailyBudget.MIN_20,
     val weeklyGoalDays: Int = DEFAULT_WEEKLY_GOAL_DAYS,
     val clickOn: Boolean = true,
     val updateCheckOn: Boolean = true,
+    val onboarded: Boolean = false,
 ) {
     init {
         require(weeklyGoalDays in WEEKLY_GOAL_DAYS_RANGE) {

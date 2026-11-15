@@ -151,6 +151,24 @@ Grouped rows under plum group titles, every target at least 44 dp, every change 
 - **Storage failure**: the usual `errorContainer` card "Couldn't save the settings. Try again." with Dismiss; the
   controls show what is stored.
 
+## Onboarding screen
+
+Shown once, on first launch, until `onboarded` is stored; then the app opens on Today. Portrait, page colour, one step at
+a time under "Step n of 4" (no accounts, no sign-in line).
+
+1. **Press any key on your piano**: the line "Searching for your piano…" becomes "Connected · FP-30X" (polite live
+   region) when the first note arrives on any listed input. Bluetooth pianos are scanned and connected meanwhile. After
+   30 s without a note, the button "Not found? Open the piano list" opens Pianos; back returns here.
+2. **Hear it, then play it back**: a card with five keys (C to G, C, E and G in the primary container colour). The piano
+   plays C4, E4, G4 (500 ms apart, velocity 80), the card says "Play C, E, G" and any octave counts. A piano with no MIDI
+   output skips the playing; the keys are then read as "C, play this key". A match says "You just played your first chord
+   by ear." with Continue; a miss says "Close! Start again from C." with Replay, and Skip joins it after three misses.
+3. **Calibration**: the calibration screen, hosted in place (`docs/algorithms/latency-calibration.md`). Back or Cancel
+   skips it and stores no offset.
+4. **Where do you want to start?**: "Start at the beginning" (Unit 0, filled card) or, under "I can already play", Unit 1
+   or Unit 2 (title and a one-line summary of what it assumes). Each card is one 44 dp-high-or-more button. A failed save
+   shows the `errorContainer` card "Couldn't save your start point. Tap one to try again."
+
 ## Today screen
 
 The start screen, portrait. A navigation rail (Today selected, Pianos, Settings gear) on the left; every item has a

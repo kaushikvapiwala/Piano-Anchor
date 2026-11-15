@@ -92,11 +92,15 @@ public fun MonitorScreen(
                 val device = state.selected
                 val enabled = device != null && state.connection == Connection.CONNECTED
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { device?.let(actions.onPractice) }, enabled = enabled) {
-                        Text(stringResource(Res.string.monitor_practice))
+                    actions.onPractice?.let { onPractice ->
+                        Button(onClick = { device?.let(onPractice) }, enabled = enabled) {
+                            Text(stringResource(Res.string.monitor_practice))
+                        }
                     }
-                    Button(onClick = { device?.let(actions.onCalibrate) }, enabled = enabled) {
-                        Text(stringResource(Res.string.monitor_calibrate))
+                    actions.onCalibrate?.let { onCalibrate ->
+                        Button(onClick = { device?.let(onCalibrate) }, enabled = enabled) {
+                            Text(stringResource(Res.string.monitor_calibrate))
+                        }
                     }
                 }
             }

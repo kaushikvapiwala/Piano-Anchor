@@ -32,6 +32,7 @@ include(
     ":platform:storage",
     ":ui:shell",
     ":feature:monitor",
+    ":feature:onboarding",
     ":feature:practice",
     ":feature:settings",
     ":feature:today",

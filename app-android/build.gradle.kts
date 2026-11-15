@@ -29,6 +29,7 @@ android {
 dependencies {
     implementation(project(":ui:shell"))
     implementation(project(":feature:monitor"))
+    implementation(project(":feature:onboarding"))
     implementation(project(":feature:practice"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:today"))

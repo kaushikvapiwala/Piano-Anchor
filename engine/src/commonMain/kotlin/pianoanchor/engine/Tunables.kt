@@ -433,4 +433,61 @@ public object Tunables {
      * Source: starting value, owner-agreed shape in the M3 grill; calibrated in M7.
      */
     public const val SESSION_SHARE_SONG: Double = 0.30
+
+    /**
+     * The gap between the starts of the onboarding's C, E and G, in milliseconds.
+     *
+     * Why: 500 ms gives a clear, unhurried arpeggio on any piano.
+     *
+     * Source: starting value; the mock's pacing.
+     */
+    public const val ONBOARDING_NOTE_GAP_MS: Long = 500
+
+    /**
+     * How long each onboarding note is held before its NoteOff, in milliseconds.
+     *
+     * Why: shorter than [ONBOARDING_NOTE_GAP_MS], so the three notes sound apart, yet long enough to ring.
+     *
+     * Source: starting value; the mock's pacing.
+     */
+    public const val ONBOARDING_NOTE_LENGTH_MS: Long = 400
+
+    /**
+     * The velocity of the onboarding's notes.
+     *
+     * Why: a medium-soft touch (80 of 127) is clearly audible without startling the learner on any piano.
+     *
+     * Source: starting value; the mock's pacing.
+     */
+    public const val ONBOARDING_VELOCITY: Int = 80
+
+    /**
+     * How long the onboarding waits for a first note, in milliseconds, before it offers the piano list.
+     *
+     * Why: a piano that is on and connected sends a note within seconds of a key press; a long silence means it
+     * isn't connected, and the Pianos screen is where to find out why.
+     *
+     * Source: starting value; the mock's pacing.
+     */
+    public const val ONBOARDING_CONNECT_HINT_MS: Long = 30_000
+
+    /**
+     * How many missed echo attempts the onboarding allows before it offers Skip.
+     *
+     * Why: three tries are fair for a first chord, and a learner who can't get it (or whose piano doesn't answer
+     * as expected) must not be stuck on the second step.
+     *
+     * Source: spec #80; starting value, the mock's pacing.
+     */
+    public const val ONBOARDING_MISSES_BEFORE_SKIP: Int = 3
+
+    /**
+     * How many stray notes before the C the onboarding's echo check forgives.
+     *
+     * Why: a first key press on an unfamiliar piano is often a wrong one; forgiving one keeps the first success
+     * easy without accepting any random run of notes.
+     *
+     * Source: spec #80; starting value, the mock's pacing.
+     */
+    public const val ONBOARDING_ECHO_MAX_STRAY_NOTES: Int = 1
 }
