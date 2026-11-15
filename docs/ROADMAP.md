@@ -65,10 +65,8 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 13. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
     main dispatcher when Results opens; move it to a background dispatcher (injected for tests) before passages grow
     long (mechanical).
-14. **Calibration lag beyond half a beat** (follow-up of #67; needs an owner decision): taps pair with the nearest
-    click within half a beat (333 ms at 90 BPM), so a real lag above that pairs with the next click and is stored as a
-    negative offset, and the 400 ms out-of-range check can never fire at 90 BPM. Pick a fix (a slower calibration
-    tempo, a lag-biased pairing window, or a lower range cap).
+14. **Calibration at 60 BPM** (spec #113) [#67]: clicks one second apart, so every lag up to the 400 ms cap pairs with
+    its own click and larger ones are rejected, instead of a lag over 333 ms being stored as a negative offset.
 15. **Calibration last-tap grace** (follow-up of #67): the screen stops reading half a beat after the last click, so a
     tap timestamped inside the last click's window but delivered a little later is lost; keep reading for a short
     grace before evaluating (mechanical).
