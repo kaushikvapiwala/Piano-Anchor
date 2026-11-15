@@ -55,8 +55,17 @@ private class CountingInput(
     var open = 0
         private set
 
+    /** The most flows that were collected at the same time. */
+    var maxOpen = 0
+        private set
+
     override fun events(device: MidiDevice): Flow<MidiEvent> =
-        delegate.events(device).onStart { open++ }.onCompletion { open-- }
+        delegate
+            .events(device)
+            .onStart {
+                open++
+                maxOpen = maxOf(maxOpen, open)
+            }.onCompletion { open-- }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -486,6 +495,94 @@ class OnboardingViewModelTest {
             runCurrent()
             play(C4)
             assertEquals(piano.device, vm.state.value.device)
+        }
+
+    @Test
+    fun `restarting from C after a mistake still passes`() =
+        runTest(dispatcher) {
+            val vm = connectAndListen()
+
+            play(C4, E4, C4, E4, G4)
+
+            assertEquals(EchoPhase.PASSED, vm.state.value.echo)
+            assertEquals(1, vm.state.value.misses)
+        }
+
+    @Test
+    fun `the note that caused a miss counts as the first of the next attempt`() =
+        runTest(dispatcher) {
+            val vm = connectAndListen()
+
+            // F misses C E F, then stands as the one forgiven stray note before C E G.
+            play(C4, E4, F4, C4, E4, G4)
+
+            assertEquals(EchoPhase.PASSED, vm.state.value.echo)
+            assertEquals(1, vm.state.value.misses)
+        }
+
+    @Test
+    fun `scanning stops once a piano is picked`() =
+        runTest(dispatcher) {
+            val ble = MidiDevice("ble:AA", "Bluetooth Piano")
+            val late = MidiDevice("ble:LATE", "Late Piano")
+            piano.advertised = listOf(ble)
+            val vm = viewModel()
+            vm.scanBluetooth()
+            runCurrent()
+
+            play(C4)
+            piano.advertised = listOf(ble, late)
+            runCurrent()
+            vm.scanBluetooth() // after the pick: ignored
+
+            val listed = piano.inputDevices.first()
+            assertFalse(late in listed)
+            assertFalse(ble in listed)
+        }
+
+    @Test
+    fun `releasing disconnects the scanned pianos that were not chosen`() =
+        runTest(dispatcher) {
+            val ble = MidiDevice("ble:AA", "Bluetooth Piano")
+            piano.advertised = listOf(ble)
+            val vm = viewModel()
+            vm.scanBluetooth()
+            runCurrent()
+            assertTrue(ble in piano.inputDevices.first())
+
+            vm.release()
+
+            assertFalse(ble in piano.inputDevices.first())
+            assertTrue(piano.device in piano.inputDevices.first())
+        }
+
+    @Test
+    fun `rapid replay then skip never opens the input twice`() =
+        runTest(dispatcher) {
+            val vm = connectAndListen()
+            missThreeTimes()
+
+            vm.replay()
+            vm.continueToCalibration()
+            runCurrent()
+
+            assertEquals(OnboardingStep.CALIBRATE, vm.state.value.step)
+            assertEquals(0, input.open)
+            assertEquals(1, input.maxOpen)
+        }
+
+    @Test
+    fun `rapid replays keep one reader`() =
+        runTest(dispatcher) {
+            val vm = connectAndListen()
+            play(D4, D4)
+
+            repeat(3) { vm.replay() }
+            runCurrent()
+            advanceToMs(testScheduler.currentTime + PLAYBACK_MS)
+
+            assertEquals(1, input.open)
+            assertEquals(1, input.maxOpen)
         }
 
     private companion object {

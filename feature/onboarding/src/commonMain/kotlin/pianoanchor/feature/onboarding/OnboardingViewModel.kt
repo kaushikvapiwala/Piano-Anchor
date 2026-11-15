@@ -3,8 +3,11 @@ package pianoanchor.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
@@ -48,9 +51,11 @@ private val CHORD = listOf(MidiNote(60), MidiNote(64), MidiNote(67))
  * it; the route then hosts the tap calibration; the start point places the skills of the units before it with
  * [learner] and stores `onboarded` in [settings]. The day follows [clock] in [zone].
  *
- * An input has one reader at a time: [close] and [continueToCalibration] return once the piano is closed, so the
- * calibration or the next screen can open it.
+ * An input has one reader at a time: [close] returns once the piano is closed, and the next session or the
+ * calibration starts only after the reader before it has closed. When the ViewModel is cleared, [cleanup] runs
+ * [release], which disconnects the Bluetooth pianos connected for the search that were not chosen.
  */
+@Suppress("TooManyFunctions") // One small function per step of the flow, as in PracticeViewModel.
 public class OnboardingViewModel(
     private val input: MidiInputPort,
     private val output: MidiOutputPort,
@@ -59,6 +64,7 @@ public class OnboardingViewModel(
     private val settings: SettingsRepositoryPort,
     private val clock: Clock,
     private val zone: TimeZone,
+    private val cleanup: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(OnboardingState())
     public val state: StateFlow<OnboardingState> = mutableState.asStateFlow()
@@ -75,7 +81,8 @@ public class OnboardingViewModel(
 
     /** Scans for Bluetooth pianos and connects each one found, so its first note can pick it (once at a time). */
     public fun scanBluetooth() {
-        if (scan?.isActive == true) return
+        // Once a piano is picked the search is over: a late permission answer must not connect more.
+        if (scan?.isActive == true || state.value.device != null) return
         scan =
             viewModelScope.launch {
                 try {
@@ -95,25 +102,17 @@ public class OnboardingViewModel(
     public fun replay() {
         val device = state.value.device ?: return
         if (state.value.step != OnboardingStep.ECHO) return
-        val previous = session
-        session =
-            viewModelScope.launch {
-                previous?.cancelAndJoin()
-                run(device)
-            }
+        launchSession { run(device) }
     }
 
     /**
-     * Leaves the echo for the calibration once it passed, or after [ECHO_MISSES_BEFORE_SKIP] misses (Skip); ignored
-     * otherwise. Closes the piano first: the calibration opens it.
+     * Leaves the echo for the calibration once it passed, or after `ONBOARDING_MISSES_BEFORE_SKIP` misses (Skip);
+     * ignored otherwise. Closes the piano first: the calibration opens it.
      */
     public fun continueToCalibration() {
         val current = state.value
         if (current.step != OnboardingStep.ECHO || !(current.echo == EchoPhase.PASSED || current.canSkipEcho)) return
-        viewModelScope.launch {
-            session?.cancelAndJoin()
-            mutableState.update { it.copy(step = OnboardingStep.CALIBRATE) }
-        }
+        launchSession { mutableState.update { it.copy(step = OnboardingStep.CALIBRATE) } }
     }
 
     /** The calibration is over (done or skipped): on to the start point. */
@@ -129,9 +128,10 @@ public class OnboardingViewModel(
      */
     public fun start(point: StartPoint) {
         if (state.value.step != OnboardingStep.START_POINT || starting?.isActive == true) return
+        val previous = session
         starting =
             viewModelScope.launch {
-                session?.cancelAndJoin()
+                withContext(NonCancellable) { previous?.cancelAndJoin() }
                 try {
                     val skills = Curriculum.units.take(point.unitsPlaced).flatMapTo(HashSet()) { it.skills }
                     learner.place(skills, learnerDay(clock.now(), zone))
@@ -145,7 +145,32 @@ public class OnboardingViewModel(
 
     /** Stops reading the piano and returns once it is closed, e.g. before the piano list opens it. */
     public suspend fun close() {
-        session?.cancelAndJoin()
+        withContext(NonCancellable) { session?.cancelAndJoin() }
+    }
+
+    /** Disconnects every Bluetooth piano the search connected except the chosen one (all of them if none was). */
+    public suspend fun release() {
+        val chosen = state.value.device
+        scan?.cancelAndJoin()
+        for (other in connectedByScan.filter { it.id != chosen?.id }) discovery.disconnect(other)
+        connectedByScan.removeAll { it.id != chosen?.id }
+    }
+
+    override fun onCleared() {
+        cleanup.launch { release() }
+    }
+
+    /**
+     * Runs [block] as the session once the previous one has ended and its reader is closed. The wait can't be
+     * cancelled, so a quick second tap can't open the piano while an earlier reader is still open.
+     */
+    private fun launchSession(block: suspend () -> Unit) {
+        val previous = session
+        session =
+            viewModelScope.launch {
+                withContext(NonCancellable) { previous?.cancelAndJoin() }
+                block()
+            }
     }
 
     /** Waits for a piano when [known] is null, then runs the echo on it; goes back to waiting when it drops. */
@@ -190,9 +215,8 @@ public class OnboardingViewModel(
                 first.await().also { coroutineContext.cancelChildren() }
             }
         mutableState.update { it.copy(device = picked, pianoListHint = false) }
-        // Bluetooth pianos connected for the search but not chosen are let go.
-        for (other in connectedByScan.filter { it.id != picked.id }) discovery.disconnect(other)
-        connectedByScan.removeAll { it.id != picked.id }
+        // The search is over: stop scanning, and let go of the Bluetooth pianos connected for it but not chosen.
+        release()
         return picked
     }
 
@@ -231,6 +255,8 @@ public class OnboardingViewModel(
 
                         else -> {
                             attempt.clear()
+                            // The note that broke the attempt may be the start of the next one (C E C E G).
+                            if (echoCanStillMatch(listOf(note))) attempt += note
                             mutableState.update { it.copy(echo = EchoPhase.MISSED, misses = it.misses + 1) }
                             false
                         }

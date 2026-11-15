@@ -13,6 +13,11 @@
     <string name="onboarding_echo_replay">Replay</string>
     <string name="onboarding_echo_skip">Skip</string>
     <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_key_c">C</string>
+    <string name="onboarding_key_d">D</string>
+    <string name="onboarding_key_e">E</string>
+    <string name="onboarding_key_f">F</string>
+    <string name="onboarding_key_g">G</string>
     <string name="onboarding_key_highlighted">%1$s, play this key</string>
     <string name="onboarding_start_title">Where do you want to start?</string>
     <string name="onboarding_start_beginning">Start at the beginning</string>

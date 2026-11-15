@@ -124,7 +124,10 @@ public class LearnerModel(
         repository.replaceStates(rebuilt)
     }
 
-    /** True for a state that only a placement made: learned without a single recalled cold check. */
+    /**
+     * True for a state that only a placement made: learned without a single recalled cold check. Relies on
+     * `LEARNED_MIN_RECALLED_COLD_CHECKS` being above zero, so a skill that earned learned has recalled checks.
+     */
     private val SkillState.placed: Boolean get() = learned && recalledColdChecks == 0
 
     private fun retrievability(

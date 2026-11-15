@@ -7,6 +7,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.engine.Tunables
 import pianoanchor.ui.shell.PianoAnchorTheme
 
 /**
@@ -49,7 +50,12 @@ class OnboardingScreenScreenshotTest {
     fun echoMissed() =
         capture(
             "echo_missed",
-            OnboardingState(OnboardingStep.ECHO, piano, echo = EchoPhase.MISSED, misses = ECHO_MISSES_BEFORE_SKIP),
+            OnboardingState(
+                OnboardingStep.ECHO,
+                piano,
+                echo = EchoPhase.MISSED,
+                misses = Tunables.ONBOARDING_MISSES_BEFORE_SKIP,
+            ),
         )
 
     @Test

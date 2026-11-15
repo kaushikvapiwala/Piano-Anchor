@@ -1,9 +1,9 @@
 package pianoanchor.engine.onboarding
 
 import pianoanchor.core.model.NoteOn
+import pianoanchor.engine.Tunables
 
 private const val SEMITONES_PER_OCTAVE = 12
-private const val MAX_STRAY_NOTES = 1
 
 /** The pitch classes of the chord the onboarding plays: C, E and G. */
 private val ECHO_PITCH_CLASSES = listOf(0, 4, 7)
@@ -13,7 +13,7 @@ private val ECHO_PITCH_CLASSES = listOf(0, 4, 7)
  * one wrong note before C. Notes after the G don't matter.
  */
 public fun echoMatches(played: List<NoteOn>): Boolean =
-    (0..MAX_STRAY_NOTES).any { strays ->
+    (0..Tunables.ONBOARDING_ECHO_MAX_STRAY_NOTES).any { strays ->
         val notes = pitchClasses(played).drop(strays)
         notes.size >= ECHO_PITCH_CLASSES.size && notes.take(ECHO_PITCH_CLASSES.size) == ECHO_PITCH_CLASSES
     }
@@ -23,7 +23,7 @@ public fun echoMatches(played: List<NoteOn>): Boolean =
  * note. When it is false and [echoMatches] is too, the attempt is a miss.
  */
 public fun echoCanStillMatch(played: List<NoteOn>): Boolean =
-    (0..MAX_STRAY_NOTES).any { strays ->
+    (0..Tunables.ONBOARDING_ECHO_MAX_STRAY_NOTES).any { strays ->
         val notes = pitchClasses(played).drop(strays)
         notes.size <= ECHO_PITCH_CLASSES.size && notes == ECHO_PITCH_CLASSES.take(notes.size)
     }

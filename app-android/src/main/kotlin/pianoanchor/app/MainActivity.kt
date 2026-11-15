@@ -128,8 +128,9 @@ private fun AppNavigation() {
         Destination.OnboardingPianos -> {
             MonitorRoute(
                 onBack = { destination = Destination.Onboarding },
-                onPractice = { destination = Destination.Practice(it) },
-                onCalibrate = { destination = Destination.Calibrate(it, practice = null) },
+                // No way out of the onboarding but back: it must be finished first.
+                onPractice = null,
+                onCalibrate = null,
             )
         }
 
@@ -364,8 +365,8 @@ private class RouteViewModelStoreOwner : ViewModelStoreOwner {
 @Composable
 private fun MonitorRoute(
     onBack: () -> Unit,
-    onPractice: (MidiDevice) -> Unit,
-    onCalibrate: (MidiDevice) -> Unit,
+    onPractice: ((MidiDevice) -> Unit)?,
+    onCalibrate: ((MidiDevice) -> Unit)?,
     viewModel: MonitorViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -417,8 +418,8 @@ private fun MonitorRoute(
                 onEnableBluetooth = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
                 onDismissError = viewModel::dismissError,
                 // An input has one reader: the next screen opens the piano once the monitor has closed it.
-                onPractice = { device -> scope.handOverPiano(viewModel) { onPractice(device) } },
-                onCalibrate = { device -> scope.handOverPiano(viewModel) { onCalibrate(device) } },
+                onPractice = onPractice?.let { go -> { device -> scope.handOverPiano(viewModel) { go(device) } } },
+                onCalibrate = onCalibrate?.let { go -> { device -> scope.handOverPiano(viewModel) { go(device) } } },
             ),
     )
 }

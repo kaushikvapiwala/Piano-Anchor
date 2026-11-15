@@ -6,6 +6,7 @@ import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Rating
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.scheduler.Fsrs
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.passageOf
@@ -19,7 +20,17 @@ import kotlin.time.Instant
 class LearnerPlacementTest {
     private val repository = FakeLearnerRepository()
     private val model =
-        LearnerModel(skillGraphOf("a" to emptySet(), "b" to setOf("a"), "c" to setOf("b")), repository)
+        LearnerModel(
+            skillGraphOf(
+                "a" to emptySet(),
+                "b" to setOf("a"),
+                "c" to setOf("b"),
+                "d" to emptySet(),
+                "e" to emptySet(),
+                "f" to emptySet(),
+            ),
+            repository,
+        )
     private val day = LocalDate(2026, 11, 1)
 
     private fun cleanAttempt() =
@@ -52,7 +63,7 @@ class LearnerPlacementTest {
             assertTrue(state.learned)
             assertEquals(Fsrs().initial(Rating.GOOD), state.memory)
             assertEquals(setOf("a", "b"), model.learnedSkills())
-            assertEquals(listOf("c"), model.plan(day).new.map { it.id })
+            assertEquals(listOf("c", "d"), model.plan(day).new.map { it.id })
         }
 
     @Test
@@ -103,5 +114,18 @@ class LearnerPlacementTest {
             assertEquals(1, after.cleanColdChecks)
             model.replay()
             assertEquals(after, repository.states().getValue("a"))
+        }
+
+    @Test
+    fun `a skill taught today uses a new-skill slot while a placed one does not`() =
+        runTest {
+            // `placed` (learned without a recalled check) is only safe while learned needs at least one recalled check.
+            assertTrue(Tunables.LEARNED_MIN_RECALLED_COLD_CHECKS > 0)
+            model.place(setOf("a"), day)
+            assertEquals(Tunables.MAX_NEW_PER_DAY, model.plan(day).new.size)
+
+            model.record(passageOf(setOf(MidiNote(60)), skills = setOf("d")), cleanAttempt(), day)
+
+            assertEquals(Tunables.MAX_NEW_PER_DAY - 1, model.plan(day).new.size)
         }
 }

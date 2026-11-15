@@ -470,4 +470,24 @@ public object Tunables {
      * Source: starting value; the mock's pacing.
      */
     public const val ONBOARDING_CONNECT_HINT_MS: Long = 30_000
+
+    /**
+     * How many missed echo attempts the onboarding allows before it offers Skip.
+     *
+     * Why: three tries are fair for a first chord, and a learner who can't get it (or whose piano doesn't answer
+     * as expected) must not be stuck on the second step.
+     *
+     * Source: spec #80; starting value, the mock's pacing.
+     */
+    public const val ONBOARDING_MISSES_BEFORE_SKIP: Int = 3
+
+    /**
+     * How many stray notes before the C the onboarding's echo check forgives.
+     *
+     * Why: a first key press on an unfamiliar piano is often a wrong one; forgiving one keeps the first success
+     * easy without accepting any random run of notes.
+     *
+     * Source: spec #80; starting value, the mock's pacing.
+     */
+    public const val ONBOARDING_ECHO_MAX_STRAY_NOTES: Int = 1
 }

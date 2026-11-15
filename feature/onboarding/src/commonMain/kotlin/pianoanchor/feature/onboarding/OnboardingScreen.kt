@@ -55,6 +55,11 @@ import pianoanchor.feature.onboarding.resources.onboarding_echo_replay
 import pianoanchor.feature.onboarding.resources.onboarding_echo_skip
 import pianoanchor.feature.onboarding.resources.onboarding_echo_success
 import pianoanchor.feature.onboarding.resources.onboarding_echo_title
+import pianoanchor.feature.onboarding.resources.onboarding_key_c
+import pianoanchor.feature.onboarding.resources.onboarding_key_d
+import pianoanchor.feature.onboarding.resources.onboarding_key_e
+import pianoanchor.feature.onboarding.resources.onboarding_key_f
+import pianoanchor.feature.onboarding.resources.onboarding_key_g
 import pianoanchor.feature.onboarding.resources.onboarding_key_highlighted
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning_summary
@@ -73,7 +78,14 @@ private val PillShape = RoundedCornerShape(22.dp)
 private const val STEP_COUNT = 4
 
 /** The keys the echo strip draws: C to G, with the chord's three (C, E, G) highlighted. */
-private val KEYS = listOf("C" to true, "D" to false, "E" to true, "F" to false, "G" to true)
+private val KEYS =
+    listOf(
+        Res.string.onboarding_key_c to true,
+        Res.string.onboarding_key_d to false,
+        Res.string.onboarding_key_e to true,
+        Res.string.onboarding_key_f to false,
+        Res.string.onboarding_key_g to true,
+    )
 
 /**
  * First-launch onboarding (Living Studio, `docs/ui/living-studio.md`): one step at a time, as [state] says: press a
@@ -234,7 +246,8 @@ private fun EchoButtons(
 @Composable
 private fun KeyStrip(promptKeys: Boolean) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        for ((name, inChord) in KEYS) {
+        for ((label, inChord) in KEYS) {
+            val name = stringResource(label)
             val colors = MaterialTheme.colorScheme
             val described =
                 if (inChord && promptKeys) stringResource(Res.string.onboarding_key_highlighted, name) else name

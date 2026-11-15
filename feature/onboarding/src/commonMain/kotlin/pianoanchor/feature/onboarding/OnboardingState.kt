@@ -1,9 +1,7 @@
 package pianoanchor.feature.onboarding
 
 import pianoanchor.core.model.MidiDevice
-
-/** Misses after which the echo offers Skip. */
-public const val ECHO_MISSES_BEFORE_SKIP: Int = 3
+import pianoanchor.engine.Tunables
 
 /** The steps of the first-launch onboarding, in order. */
 public enum class OnboardingStep {
@@ -67,5 +65,5 @@ public data class OnboardingState(
     val finished: Boolean = false,
 ) {
     /** True once the echo has been missed often enough to offer Skip. */
-    val canSkipEcho: Boolean get() = misses >= ECHO_MISSES_BEFORE_SKIP
+    val canSkipEcho: Boolean get() = misses >= Tunables.ONBOARDING_MISSES_BEFORE_SKIP
 }
