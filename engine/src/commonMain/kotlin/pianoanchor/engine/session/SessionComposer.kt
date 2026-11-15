@@ -3,6 +3,7 @@ package pianoanchor.engine.session
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RightsStatus
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
 import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.SkillState
@@ -59,13 +60,17 @@ public sealed interface Card {
         override val minutes: Int,
     ) : Card
 
-    /** The most overdue due skill's passage, played cold (no hints): a review. */
+    /**
+     * The most overdue due skill's passage, played cold (no hints): a review. [mode] is PERFORM unless the rung is
+     * WAIT (no clean timed run yet), which has no perform mode.
+     */
     public data class ColdOpen(
         override val passage: Passage,
         override val rung: TempoRung,
         override val minutes: Int,
         val skill: Skill,
         val lastPlayed: Instant?,
+        val mode: RunMode,
     ) : PassageCard
 
     /** First passage of a new skill; [unlockedBy] names the prerequisites just learned ("why now"). */
@@ -168,13 +173,9 @@ public object SessionComposer {
                     // A passage lists only skills of the graph (checked by the content tests).
                     val skill = curriculum.graph.skills.first { it.id == state.skillId }
                     val played = history[passage.id]
-                    Card.ColdOpen(
-                        passage,
-                        highestClean(passage, played) ?: TempoRung.WAIT,
-                        0,
-                        skill,
-                        played?.lastPlayed,
-                    )
+                    val rung = highestClean(passage, played) ?: TempoRung.WAIT
+                    val mode = if (rung == TempoRung.WAIT) RunMode.PRACTICE else RunMode.PERFORM
+                    Card.ColdOpen(passage, rung, 0, skill, played?.lastPlayed, mode)
                 }
         }
 

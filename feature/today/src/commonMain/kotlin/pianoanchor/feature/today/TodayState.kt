@@ -3,6 +3,7 @@ package pianoanchor.feature.today
 import pianoanchor.core.model.DEFAULT_WEEKLY_GOAL_DAYS
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
@@ -49,11 +50,12 @@ public data class TodayState(
 
 /** Where a tapped card leads. */
 public sealed interface TodayTarget {
-    /** Practice [passageId] on [device] at [rung]. */
+    /** Practice [passageId] on [device] at [rung], in [mode] (a cold open performs). */
     public data class Practice(
         val device: MidiDevice,
         val passageId: String,
         val rung: TempoRung,
+        val mode: RunMode = RunMode.PRACTICE,
     ) : TodayTarget
 
     /** The ear screen on [device], running [skills] in order. */

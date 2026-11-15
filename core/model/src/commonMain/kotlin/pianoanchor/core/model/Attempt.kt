@@ -17,7 +17,7 @@ public enum class Band { CLEAN, GOOD, KEEP_PRACTISING }
  * Results recompute the same verdicts; null when the run was played uncalibrated, and for wait mode. [playedNotes]
  * stay as played: the offset is subtracted only when they are analysed. [hintLevel] is the key-hint level the run
  * started at and [hintShown] whether any hint was shown during it (see [HintLevel]); attempts stored before hints
- * faded are FULL and shown.
+ * faded are FULL and shown. [mode] is how the run was played (attempts stored before perform mode are PRACTICE).
  */
 public data class Attempt(
     val id: String,
@@ -37,6 +37,7 @@ public data class Attempt(
     val hintLevel: HintLevel = HintLevel.FULL,
     /** True when any hint was shown during the run: FULL level, a delayed hint that fired, or the Hint button. */
     val hintShown: Boolean = true,
+    val mode: RunMode = RunMode.PRACTICE,
 ) {
     init {
         require(id.isNotBlank()) { "attempt id must not be blank" }
@@ -58,3 +59,6 @@ public data class Attempt(
         }
     }
 }
+
+/** A perform run with no hint: what the learner model calls unaided. */
+public val Attempt.unaided: Boolean get() = mode == RunMode.PERFORM && !hintShown

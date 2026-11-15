@@ -8,6 +8,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
+import pianoanchor.core.model.RunMode
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.EarSkills
 import pianoanchor.engine.content.Skills
@@ -80,6 +81,7 @@ class TodayScreenScreenshotTest {
                                     5,
                                     Skills.KB_MIDDLE_C,
                                     Instant.parse("2026-11-10T09:00:00Z"),
+                                    RunMode.PRACTICE,
                                 ),
                                 Card.Lesson(
                                     passage("skipping-stones"),

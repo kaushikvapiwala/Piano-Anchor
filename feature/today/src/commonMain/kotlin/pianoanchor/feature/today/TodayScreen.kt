@@ -33,11 +33,13 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.Release
+import pianoanchor.core.model.RunMode
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.Session
 import pianoanchor.feature.today.resources.Res
 import pianoanchor.feature.today.resources.today_action_cold_open
+import pianoanchor.feature.today.resources.today_action_cold_open_perform
 import pianoanchor.feature.today.resources.today_action_lesson
 import pianoanchor.feature.today.resources.today_action_retry
 import pianoanchor.feature.today.resources.today_action_song
@@ -231,9 +233,23 @@ private fun cardLabel(card: Card.PassageCard): StringResource =
 
 private fun cardAction(card: Card.PassageCard): StringResource =
     when (card) {
-        is Card.ColdOpen -> Res.string.today_action_cold_open
-        is Card.Lesson -> Res.string.today_action_lesson
-        is Card.Song -> Res.string.today_action_song
+        is Card.ColdOpen -> {
+            if (card.mode ==
+                RunMode.PERFORM
+            ) {
+                Res.string.today_action_cold_open_perform
+            } else {
+                Res.string.today_action_cold_open
+            }
+        }
+
+        is Card.Lesson -> {
+            Res.string.today_action_lesson
+        }
+
+        is Card.Song -> {
+            Res.string.today_action_song
+        }
     }
 
 @Composable

@@ -78,6 +78,12 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
   three levels. Full shows it at once; Delayed shows it only after the learner's usual pause (counted from the
   previous step, or from the written onset in a timed run); Off shows nothing. The band is per step: the next step
   starts without it again at Delayed and Off.
+- **Mode switch**: a two-segment "Practice | Perform" control right of the tempo ladder. Perform is disabled on Wait
+  (its description reads "Pick a tempo to perform"), and picking Wait switches to Practice; changing mode discards a
+  run in progress. In Perform the band, Hint button, blue and orange note colours, timing tags, the legend and the key
+  strip's verdict text are hidden; the staff, cursor, count-in and click stay and pressed keys light in a neutral
+  colour. Results label the run "Performed" beside "run N". Today's cold open card reads "Perform cold open" at a
+  timed rung.
 - **Hint button**: a 44 dp lightbulb in the top bar, left of the click switch. A tap shows the band on the waiting step
   for that step only; TalkBack reads "Show hint".
 - **Click switch**: a 44 dp note glyph left of "End run", struck through while off; TalkBack reads "Click on" or

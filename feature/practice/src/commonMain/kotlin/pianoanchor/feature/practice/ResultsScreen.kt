@@ -28,10 +28,12 @@ import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.RunMode
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_back_to_pianos
 import pianoanchor.feature.practice.resources.practice_retry
 import pianoanchor.feature.practice.resources.results_caption
+import pianoanchor.feature.practice.resources.results_caption_performed
 import pianoanchor.feature.practice.resources.results_caption_tempo
 import pianoanchor.feature.practice.resources.results_headline_clean
 import pianoanchor.feature.practice.resources.results_headline_good
@@ -117,6 +119,13 @@ private fun Header(state: ResultsState.Ready) {
 private fun caption(state: ResultsState.Ready): String =
     if (state.tempoBpm == null) {
         stringResource(Res.string.results_caption, state.passageTitle, state.runNumber.toString())
+    } else if (state.mode == RunMode.PERFORM) {
+        stringResource(
+            Res.string.results_caption_performed,
+            state.passageTitle,
+            state.runNumber.toString(),
+            state.tempoBpm.toString(),
+        )
     } else {
         stringResource(
             Res.string.results_caption_tempo,

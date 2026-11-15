@@ -26,6 +26,7 @@
     <string name="today_card_ear_skill_one">1 skill today</string>
     <string name="today_action_ear">Start ear</string>
     <string name="today_action_cold_open">Start cold open</string>
+    <string name="today_action_cold_open_perform">Perform cold open</string>
     <string name="today_action_lesson">Begin</string>
     <string name="today_action_song">Continue</string>
     <string name="today_session_bar">Today's %1$s minutes: review %2$s, lesson %3$s, song %4$s, ear %5$s</string>

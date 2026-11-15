@@ -91,6 +91,7 @@ internal fun StaffView(
     modifier: Modifier = Modifier,
     liveMarks: Map<ScoreNoteRef, LiveMark> = emptyMap(),
     timed: Boolean = false,
+    legend: Boolean = true,
 ) {
     val colors = MaterialTheme.pianoAnchorColors
     val primary = MaterialTheme.colorScheme.primary
@@ -149,7 +150,7 @@ internal fun StaffView(
                 }
             }
         }
-        Legend(colors, Modifier.align(Alignment.TopEnd))
+        if (legend) Legend(colors, Modifier.align(Alignment.TopEnd))
     }
 }
 

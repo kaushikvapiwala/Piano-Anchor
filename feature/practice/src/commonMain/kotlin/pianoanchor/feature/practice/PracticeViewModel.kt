@@ -29,6 +29,7 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.WrongNote
@@ -72,8 +73,12 @@ import kotlin.time.Instant
  * A timed run reads the piano's latency offset from [calibration] when it starts and subtracts it from played times
  * (`docs/algorithms/latency-calibration.md`). A piano without one gets [PracticeState.calibrationOffered] instead of a
  * run, until [skipCalibration] (remembered in [calibrationSkips] for the app session) or a calibration elsewhere.
- * The ViewModel starts on [initialRung] (wait mode by default),
- * so returning from a calibration lands on the rung the learner had picked.
+ * The ViewModel starts on [initialRung] (wait mode by default) in [initialMode] (practice by default), so
+ * returning from a calibration lands on the rung and mode the learner had picked.
+ *
+ * [selectMode] switches between practice and perform (`docs/algorithms/guidance.md`). A perform run needs a timed
+ * rung: no hint ever shows, the live verdicts (marks, tags, the key strip's text, wrong-key colours) stay hidden, and
+ * the attempt is saved as [RunMode.PERFORM] with `hintShown` false. WAIT always practises.
  */
 @Suppress("TooManyFunctions")
 public class PracticeViewModel(
@@ -90,6 +95,7 @@ public class PracticeViewModel(
     private val settings: SettingsRepositoryPort,
     private val calibrationSkips: CalibrationSkips = CalibrationSkips(),
     initialRung: TempoRung = TempoRung.WAIT,
+    initialMode: RunMode = RunMode.PRACTICE,
     private val newId: () -> String,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(PracticeState.start(passage))
@@ -118,12 +124,12 @@ public class PracticeViewModel(
     init {
         viewModelScope.launch { refreshDoneRungs() }
         viewModelScope.launch { seedClickOn() }
-        selectRung(initialRung)
+        start(initialRung, initialMode)
     }
 
     /** Discards the run and starts over on the same rung, reopening the piano once the old run has closed it. */
     public fun restart() {
-        selectRung(mutableState.value.rung)
+        start(mutableState.value.rung, mutableState.value.mode)
     }
 
     /**
@@ -131,11 +137,29 @@ public class PracticeViewModel(
      * piano is reopened once the old run has closed it (one reader per input).
      */
     public fun selectRung(rung: TempoRung) {
+        start(rung, mutableState.value.mode)
+    }
+
+    /**
+     * Discards any run and switches to [mode], ready to start, like [selectRung]. Perform is ignored while the rung is
+     * WAIT, and so is the mode already selected.
+     */
+    public fun selectMode(mode: RunMode) {
+        val current = mutableState.value
+        if (mode == current.mode || current.rung == TempoRung.WAIT) return
+        start(current.rung, mode)
+    }
+
+    private fun start(
+        rung: TempoRung,
+        requested: RunMode,
+    ) {
+        val mode = if (rung == TempoRung.WAIT) RunMode.PRACTICE else requested
         flashTimer?.cancel()
         hintTimer?.cancel()
         unsaved = null
         mutableState.update {
-            PracticeState.start(passage).copy(rung = rung, doneRungs = it.doneRungs, clickOn = it.clickOn)
+            PracticeState.start(passage).copy(rung = rung, mode = mode, doneRungs = it.doneRungs, clickOn = it.clickOn)
         }
         val previous = run
         run =
@@ -149,6 +173,7 @@ public class PracticeViewModel(
 
     /** Shows the key band on the waiting step, for that step only (the Hint button). */
     public fun showHint() {
+        if (mutableState.value.mode == RunMode.PERFORM) return
         hintShown = true
         mutableState.update { it.copy(hintVisible = true) }
     }
@@ -166,8 +191,10 @@ public class PracticeViewModel(
             }
         hintLevel = HintFading.level(history.asReversed())
         hintDelayMillis = HintDelay.millis(history)
-        hintShown = hintLevel == HintLevel.FULL
-        mutableState.update { it.copy(hintLevel = hintLevel, hintVisible = hintLevel == HintLevel.FULL) }
+        // A perform run gets no hint at all, whatever the level the passage would start at.
+        val aided = hintLevel == HintLevel.FULL && mutableState.value.mode == RunMode.PRACTICE
+        hintShown = aided
+        mutableState.update { it.copy(hintLevel = hintLevel, hintVisible = aided) }
     }
 
     /**
@@ -177,8 +204,9 @@ public class PracticeViewModel(
      */
     private fun startHintStep(answered: Boolean = false) {
         hintTimer?.cancel()
-        mutableState.update { it.copy(hintVisible = hintLevel == HintLevel.FULL) }
-        if (hintLevel != HintLevel.DELAYED || answered) return
+        val practice = mutableState.value.mode == RunMode.PRACTICE
+        mutableState.update { it.copy(hintVisible = practice && hintLevel == HintLevel.FULL) }
+        if (!practice || hintLevel != HintLevel.DELAYED || answered) return
         hintTimer =
             viewModelScope.launch {
                 delay(hintDelayMillis)
@@ -314,7 +342,7 @@ public class PracticeViewModel(
 
     private suspend fun save(graded: Attempt) {
         hintTimer?.cancel()
-        val attempt = graded.copy(hintLevel = hintLevel, hintShown = hintShown)
+        val attempt = graded.copy(hintLevel = hintLevel, hintShown = hintShown, mode = mutableState.value.mode)
         try {
             attempts.save(attempt)
         } catch (_: StorageUnavailableException) {
@@ -364,6 +392,10 @@ public class PracticeViewModel(
         note: MidiNote,
         flash: KeyFlash,
     ) {
+        if (mutableState.value.mode == RunMode.PERFORM) {
+            // The key still lights, in a neutral colour: no verdict, no flash, no last-key text.
+            return mutableState.update { it.copy(keysDown = it.keysDown + note) }
+        }
         mutableState.update {
             it.copy(
                 keysDown = it.keysDown + note,
@@ -615,6 +647,7 @@ public class PracticeViewModel(
         ) {
             answered += at.stepIndex
             if (at.stepIndex == hintStep) hintTimer?.cancel() // played in time: no help needed for this step
+            if (mutableState.value.mode == RunMode.PERFORM) return // no live verdicts in a perform take
             mutableState.update { it.copy(liveMarks = it.liveMarks + (at to mark)) }
         }
 

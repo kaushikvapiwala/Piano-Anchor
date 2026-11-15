@@ -19,6 +19,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
@@ -101,7 +102,8 @@ public class TodayViewModel(
     /** Where tapping [card] leads: Practice on its passage and rung, or Pianos when no piano is connected. */
     public fun target(card: Card.PassageCard): TodayTarget {
         val piano = mutableState.value.piano ?: return TodayTarget.Pianos
-        return TodayTarget.Practice(piano.device, card.passage.id, card.rung)
+        val mode = (card as? Card.ColdOpen)?.mode ?: RunMode.PRACTICE
+        return TodayTarget.Practice(piano.device, card.passage.id, card.rung, mode)
     }
 
     /** Where tapping the Ear [card] leads: the ear screen with its skills, or Pianos when no piano is connected. */

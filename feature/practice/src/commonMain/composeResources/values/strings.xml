@@ -4,6 +4,10 @@
     <string name="practice_chord_join">+</string>
     <string name="practice_list_join">, </string>
     <string name="practice_mode_wait">Wait mode</string>
+    <string name="practice_mode_perform">Perform · %1$s BPM</string>
+    <string name="practice_mode_switch_practice">Practice</string>
+    <string name="practice_mode_switch_perform">Perform</string>
+    <string name="practice_mode_switch_perform_disabled">Pick a tempo to perform</string>
     <string name="practice_tempo_wait">Wait</string>
     <string name="practice_tempo_percent">%1$s%</string>
     <string name="practice_tempo_done">%1$s, done</string>
@@ -42,6 +46,7 @@
     <string name="practice_retry">Retry</string>
     <string name="practice_discard">Discard</string>
     <string name="results_caption">%1$s · run %2$s · wait mode</string>
+    <string name="results_caption_performed">%1$s · run %2$s · Performed · ♩ = %3$s</string>
     <string name="results_caption_tempo">%1$s · run %2$s · ♩ = %3$s</string>
     <string name="results_headline_clean">Every note right.</string>
     <string name="results_headline_good">Mostly right. A few slips to tidy.</string>

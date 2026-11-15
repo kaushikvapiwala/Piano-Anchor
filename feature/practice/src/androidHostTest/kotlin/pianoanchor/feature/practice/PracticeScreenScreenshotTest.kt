@@ -8,6 +8,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.matcher.TempoRung
@@ -97,6 +98,27 @@ class PracticeScreenScreenshotTest {
                 keysDown = setOf(MidiNote(60)),
                 flash = KeyFlash(MidiNote(60), correct = true, deviationMs = 92),
                 lastKey = KeyFlash(MidiNote(60), correct = true, deviationMs = 92),
+            ),
+        )
+
+    @Test
+    fun modeSwitchInPracticeAtATimedRung() = capture("mode_practice", timed)
+
+    @Test
+    fun performTakeMidRunWithNeutralKeys() =
+        capture(
+            "perform_playing",
+            timed.copy(
+                mode = RunMode.PERFORM,
+                hintVisible = false,
+                phase = RunPhase.PLAYING,
+                beat = 2,
+                currentStep = 1,
+                steps =
+                    start.steps.mapIndexed { i, step ->
+                        step.copy(status = if (i == 1) StepStatus.WAITING else StepStatus.UPCOMING)
+                    },
+                keysDown = setOf(MidiNote(60), f4),
             ),
         )
 

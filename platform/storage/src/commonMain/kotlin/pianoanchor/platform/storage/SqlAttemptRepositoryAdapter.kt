@@ -18,6 +18,7 @@ import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.PlayedNote
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
@@ -69,6 +70,7 @@ public class SqlAttemptRepositoryAdapter(
                         latency_offset_nanos = attempt.latencyOffsetNanos,
                         hint_level = attempt.hintLevel.name,
                         hint_shown = if (attempt.hintShown) 1L else 0L,
+                        mode = attempt.mode.name,
                     )
                     attempt.events.forEachIndexed { seq, event -> queries.insertMatchEvent(attempt.id, seq, event) }
                     attempt.playedNotes.forEachIndexed { seq, note ->
@@ -176,6 +178,7 @@ public class SqlAttemptRepositoryAdapter(
             latencyOffsetNanos = row.latency_offset_nanos,
             hintLevel = HintLevel.valueOf(row.hint_level),
             hintShown = row.hint_shown != 0L,
+            mode = RunMode.valueOf(row.mode),
         )
 }
 

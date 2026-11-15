@@ -33,4 +33,15 @@ Each attempt stores the level it started at and `hintShown`: true at Full, or on
 button was tapped during the run. Attempts stored before this existed read back as Full and shown, which is what they
 were. Later milestones use `hintShown` to tell aided runs from unaided ones.
 
+## Run modes
+A run is played in one of two modes, stored as `Attempt.mode` (`RunMode`). Practice is the behaviour above: live
+verdicts plus the faded hints. Perform is one take at a timed rung, like playing from a music stand: no key band at any
+level, no Hint button, no live verdicts (note colours, timing tags and the key strip's verdict text stay hidden, and
+TalkBack announces none); the staff, cursor, count-in, click and the keys lighting neutrally when pressed remain.
+Results show everything afterwards. A perform run always stores `hintShown` false, so an attempt that is `PERFORM` and
+not `hintShown` is unaided (`Attempt.unaided`), which later milestones read without a new port. It still stores the hint
+level the passage would have started at and counts in the fading history like any run. Wait mode has no perform mode: it
+always practises. The mode isn't remembered per passage; Practice opens by default, except that the cold open performs
+when its rung is timed.
+
 Numbers live in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt` (the `HINT_*` constants).
