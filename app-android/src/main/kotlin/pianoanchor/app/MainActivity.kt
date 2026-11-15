@@ -38,6 +38,9 @@ import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorActions
 import pianoanchor.feature.monitor.MonitorScreen
 import pianoanchor.feature.monitor.MonitorViewModel
+import pianoanchor.feature.onboarding.OnboardingActions
+import pianoanchor.feature.onboarding.OnboardingScreen
+import pianoanchor.feature.onboarding.OnboardingViewModel
 import pianoanchor.feature.practice.CalibrationScreen
 import pianoanchor.feature.practice.CalibrationViewModel
 import pianoanchor.feature.practice.PracticeScreen
@@ -66,12 +69,21 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Where the app is: Today, the pianos (the note monitor), the settings, practising or calibrating, or the results. */
+/**
+ * Where the app is: the first-launch onboarding, Today, the pianos (the note monitor), the settings, practising or
+ * calibrating, or the results.
+ */
 private sealed interface Destination {
     /** The start screen. */
     data object Today : Destination
 
     data object Monitor : Destination
+
+    /** The first-launch onboarding, until it is finished. */
+    data object Onboarding : Destination
+
+    /** The piano list opened from the onboarding; back returns to the onboarding. */
+    data object OnboardingPianos : Destination
 
     /** The settings, opened from Today's rail; back returns to Today. */
     data object Settings : Destination
@@ -102,9 +114,25 @@ private sealed interface Destination {
 
 @Composable
 private fun AppNavigation() {
-    var destination by remember { mutableStateOf<Destination>(Destination.Today) }
+    var destination by remember { mutableStateOf<Destination?>(null) }
+    OnboardedEffect { onboarded -> destination = if (onboarded) Destination.Today else Destination.Onboarding }
     val back = { destination = Destination.Today }
-    when (val current = destination) {
+    when (val current = destination ?: return) {
+        Destination.Onboarding -> {
+            OnboardingRoute(
+                onPianos = { destination = Destination.OnboardingPianos },
+                onFinished = back,
+            )
+        }
+
+        Destination.OnboardingPianos -> {
+            MonitorRoute(
+                onBack = { destination = Destination.Onboarding },
+                onPractice = { destination = Destination.Practice(it) },
+                onCalibrate = { destination = Destination.Calibrate(it, practice = null) },
+            )
+        }
+
         Destination.Today -> {
             TodayRoute(
                 onPractice = { destination = it },
@@ -232,6 +260,50 @@ private fun ResultsRoute(
     val state by viewModel.state.collectAsState()
     BackHandler(onBack = onBack)
     ResultsScreen(state, onBack = onBack, onTryAgain = onTryAgain, onRetry = viewModel::retry)
+}
+
+/**
+ * The first-launch onboarding. Its ViewModel lives as long as the route. The calibration step hosts the calibration
+ * screen on the connected piano (the onboarding has closed it first); Done or leaving it moves on, after closing the
+ * piano again. Leaving for the piano list closes the piano too (one reader per input).
+ */
+@Composable
+private fun OnboardingRoute(
+    onPianos: () -> Unit,
+    onFinished: () -> Unit,
+) {
+    val viewModel: OnboardingViewModel = koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner())
+    val state by viewModel.state.collectAsState()
+    val scope = rememberCoroutineScope()
+    val askBluetooth =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) { viewModel.scanBluetooth() }
+    // Scan whatever the answer: without permission the adapter reports it and the search goes on over USB.
+    LaunchedEffect(viewModel) { askBluetooth.launch(BLUETOOTH_PERMISSIONS) }
+    LaunchedEffect(state.finished) { if (state.finished) onFinished() }
+    OnboardingScreen(
+        state,
+        OnboardingActions(
+            onOpenPianoList = { scope.launch { viewModel.close() }.invokeOnCompletion { onPianos() } },
+            onReplay = viewModel::replay,
+            onContinue = viewModel::continueToCalibration,
+            onStart = viewModel::start,
+        ),
+        calibration = { device ->
+            val calibration: CalibrationViewModel =
+                koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device) }
+            val calibrationState by calibration.state.collectAsState()
+            val leave = { scope.launch { calibration.close() }.invokeOnCompletion { viewModel.calibrationFinished() } }
+            BackHandler { leave() }
+            CalibrationScreen(
+                calibrationState,
+                onStart = calibration::start,
+                onDone = { leave() },
+                onCancel = { leave() },
+            )
+        },
+    )
 }
 
 /** The settings screen; its ViewModel lives as long as the route. */

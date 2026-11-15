@@ -1,0 +1,25 @@
+<resources>
+    <string name="onboarding_step">Step %1$s of %2$s</string>
+    <string name="onboarding_connect_title">Press any key on your piano</string>
+    <string name="onboarding_connect_searching">Searching for your piano…</string>
+    <string name="onboarding_connect_connected">Connected · %1$s</string>
+    <string name="onboarding_connect_not_found">Not found? Open the piano list</string>
+    <string name="onboarding_echo_title">Hear it, then play it back</string>
+    <string name="onboarding_echo_listen">Listen: your piano plays C, E, G.</string>
+    <string name="onboarding_echo_play">Play C, E, G</string>
+    <string name="onboarding_echo_any_octave">Any octave will do.</string>
+    <string name="onboarding_echo_success">You just played your first chord by ear.</string>
+    <string name="onboarding_echo_miss">Close! Start again from C.</string>
+    <string name="onboarding_echo_replay">Replay</string>
+    <string name="onboarding_echo_skip">Skip</string>
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_key_highlighted">%1$s, play this key</string>
+    <string name="onboarding_start_title">Where do you want to start?</string>
+    <string name="onboarding_start_beginning">Start at the beginning</string>
+    <string name="onboarding_start_beginning_summary">Unit 0 · %1$s. Nothing is assumed.</string>
+    <string name="onboarding_start_can_play">I can already play</string>
+    <string name="onboarding_start_unit">Unit %1$s · %2$s</string>
+    <string name="onboarding_start_unit_1_summary">You can find middle C and play quarter notes with your right hand.</string>
+    <string name="onboarding_start_unit_2_summary">You can also play steps, skips and half notes, and short five-finger tunes.</string>
+    <string name="onboarding_start_error">Couldn't save your start point. Tap one to try again.</string>
+</resources>

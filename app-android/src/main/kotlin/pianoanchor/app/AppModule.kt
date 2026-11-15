@@ -20,6 +20,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorViewModel
+import pianoanchor.feature.onboarding.OnboardingViewModel
 import pianoanchor.feature.practice.CalibrationSkips
 import pianoanchor.feature.practice.CalibrationViewModel
 import pianoanchor.feature.practice.PracticeViewModel
@@ -79,5 +80,16 @@ val appModule =
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
         viewModel { (attemptId: String) -> ResultsViewModel(attemptId, get()) }
         viewModel { SettingsViewModel(get()) }
+        viewModel {
+            OnboardingViewModel(
+                get(),
+                get(),
+                get(),
+                LearnerModel(Curriculum.graph, get()),
+                get(),
+                get(),
+                get(),
+            )
+        }
         viewModel { TodayViewModel(LearnerModel(Curriculum.graph, get()), get(), get(), get(), get(), get(), get()) }
     }

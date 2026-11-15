@@ -19,6 +19,7 @@ private const val DAILY_BUDGET = "daily_budget"
 private const val WEEKLY_GOAL_DAYS = "weekly_goal_days"
 private const val CLICK_ON = "click_on"
 private const val UPDATE_CHECK_ON = "update_check_on"
+private const val ONBOARDED = "onboarded"
 
 /**
  * [SettingsRepositoryPort] in the on-device SQLite database, one text row per setting. A missing row reads as the
@@ -53,6 +54,7 @@ public class SqlSettingsRepositoryAdapter(
                         queries.put(WEEKLY_GOAL_DAYS, updated.weeklyGoalDays.toString())
                         queries.put(CLICK_ON, updated.clickOn.toString())
                         queries.put(UPDATE_CHECK_ON, updated.updateCheckOn.toString())
+                        queries.put(ONBOARDED, updated.onboarded.toString())
                     }
                 }
             }
@@ -76,6 +78,7 @@ private fun Map<String, String>.toSettings(): Settings {
             },
         clickOn = read(CLICK_ON, defaults.clickOn, String::toBooleanStrictOrNull),
         updateCheckOn = read(UPDATE_CHECK_ON, defaults.updateCheckOn, String::toBooleanStrictOrNull),
+        onboarded = read(ONBOARDED, defaults.onboarded, String::toBooleanStrictOrNull),
     )
 }
 

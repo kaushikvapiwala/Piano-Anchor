@@ -6,8 +6,11 @@ import kotlin.test.assertFailsWith
 
 class SettingsTest {
     @Test
-    fun defaultsAreTwentyMinutesFourDaysWithClickAndUpdateCheckOn() {
-        assertEquals(Settings(DailyBudget.MIN_20, 4, clickOn = true, updateCheckOn = true), Settings())
+    fun defaultsAreTwentyMinutesFourDaysWithClickAndUpdateCheckOnAndNotOnboarded() {
+        assertEquals(
+            Settings(DailyBudget.MIN_20, 4, clickOn = true, updateCheckOn = true, onboarded = false),
+            Settings(),
+        )
     }
 
     @Test

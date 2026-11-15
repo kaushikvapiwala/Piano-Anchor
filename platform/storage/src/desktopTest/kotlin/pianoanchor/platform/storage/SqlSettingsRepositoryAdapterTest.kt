@@ -28,13 +28,15 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             val driver = drivers.open()
             val repository = SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined)
             driver.exec("INSERT INTO setting VALUES ('daily_budget', 'MIN_99'), ('weekly_goal_days', '9')")
-            driver.exec("INSERT INTO setting VALUES ('click_on', 'maybe'), ('update_check_on', 'false')")
+            driver.exec(
+                "INSERT INTO setting VALUES ('click_on', 'maybe'), ('update_check_on', 'false'), ('onboarded', 'yes')",
+            )
             assertEquals(Settings(updateCheckOn = false), repository.settings.first())
 
             repository.update { it.copy(dailyBudget = DailyBudget.MIN_15) }
 
             assertEquals(Settings(DailyBudget.MIN_15, updateCheckOn = false), repository.settings.first())
-            assertEquals(4, driver.count("setting"))
+            assertEquals(5, driver.count("setting"))
         }
 
     @Test

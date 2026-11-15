@@ -66,6 +66,15 @@ The review log is the source of truth and the stored states are a cache. `replay
 each skill's reviews, in day order, through the same rules as `record`, then calls `replaceStates`. It covers the
 graph's skills and any skill that has a cached state. The result equals the states `record` built up.
 
+## Placement
+`place(skills, day)` starts a learner past the early units (the onboarding's "I can already play"). Each skill with no
+state yet gets a review on `day` rated GOOD with attempt id `placement`, so its memory starts as after a first Good, and its
+state is `learned = true`. A placement review is a claim, not a check: it adds nothing to `cleanColdChecks` or
+`recalledColdChecks`, and `replay` treats it the same way, so the rebuilt states equal the stored ones. Skills that
+already have a state are left alone, and a skill outside the graph is rejected. Placed skills come back for review at
+their first interval and confirm themselves there. A placed state (learned, no recalled check) does not use up the day's
+`MAX_NEW_PER_DAY` slots, so the first day still offers new lessons.
+
 ## When storage fails
 `PracticeViewModel` calls `record` after the attempt is saved. If learner storage is unavailable the run is
 already safe, so the failure is skipped without an error card; a replay or the next cold check recovers.
