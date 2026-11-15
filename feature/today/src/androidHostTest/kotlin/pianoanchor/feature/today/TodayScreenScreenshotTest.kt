@@ -9,6 +9,7 @@ import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
 import pianoanchor.engine.content.Curriculum
+import pianoanchor.engine.content.EarSkills
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
@@ -39,6 +40,30 @@ class TodayScreenScreenshotTest {
     private fun passage(id: String) = checkNotNull(Curriculum.passage("builtin:$id"))
 
     private val piano = PianoChip(MidiDevice("ble:AA:BB", "FP-30X"), Transport.BLE, latencyMs = 18)
+
+    @Test
+    fun earCard() =
+        capture(
+            "ear_card",
+            TodayState(
+                session =
+                    Session(
+                        cards =
+                            listOf(
+                                Card.Song(passage("hot-cross-buns"), TempoRung.P70, 6),
+                                Card.Ear(listOf(EarSkills.HIGHER_LOWER, EarSkills.STEP_SKIP, EarSkills.THIRDS), 3),
+                            ),
+                        reviewMinutes = 4,
+                        lessonMinutes = 7,
+                        songMinutes = 6,
+                        earMinutes = 3,
+                        moreDue = emptyList(),
+                    ),
+                piano = piano,
+                daysThisWeek = 3,
+                practicedDays = 9,
+            ),
+        )
 
     @Test
     fun threeCards() =

@@ -6,6 +6,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.Skill
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.CalibrationRepositoryPort
 import pianoanchor.core.ports.ClockPort
@@ -16,10 +17,12 @@ import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
+import pianoanchor.core.ports.TonePort
 import pianoanchor.core.ports.UpdateCheckPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
+import pianoanchor.feature.ear.EarViewModel
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.onboarding.OnboardingViewModel
 import pianoanchor.feature.practice.CalibrationSkips
@@ -29,6 +32,7 @@ import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.feature.settings.SettingsViewModel
 import pianoanchor.feature.today.TodayViewModel
 import pianoanchor.platform.androidaudio.AndroidMetronomeAdapter
+import pianoanchor.platform.androidaudio.AndroidToneAdapter
 import pianoanchor.platform.androidmidi.AndroidClockAdapter
 import pianoanchor.platform.androidmidi.AndroidMidiAdapter
 import pianoanchor.platform.androidnetwork.GitHubUpdateCheckAdapter
@@ -38,6 +42,7 @@ import pianoanchor.platform.storage.SqlInstrumentRepositoryAdapter
 import pianoanchor.platform.storage.SqlLearnerRepositoryAdapter
 import pianoanchor.platform.storage.SqlSettingsRepositoryAdapter
 import pianoanchor.platform.storage.createPianoAnchorDatabaseDriver
+import kotlin.random.Random
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -53,6 +58,7 @@ val appModule =
         single<TimeZone> { TimeZone.currentSystemDefault() }
         single { CalibrationSkips() }
         single<MetronomePort> { AndroidMetronomeAdapter(androidContext(), get()) }
+        single<TonePort> { AndroidToneAdapter(androidContext()) }
         single { createPianoAnchorDatabaseDriver(androidContext()) }
         single<InstrumentRepositoryPort> { SqlInstrumentRepositoryAdapter(get(), Dispatchers.IO) }
         single<AttemptRepositoryPort> { SqlAttemptRepositoryAdapter(get(), Dispatchers.IO) }
@@ -77,6 +83,21 @@ val appModule =
                 get(),
                 get(),
                 rung,
+            ) {
+                Uuid.random().toString()
+            }
+        }
+        viewModel { (device: MidiDevice, skills: List<Skill>) ->
+            EarViewModel(
+                device,
+                skills,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                Random(get<Clock>().now().toEpochMilliseconds()),
             ) {
                 Uuid.random().toString()
             }

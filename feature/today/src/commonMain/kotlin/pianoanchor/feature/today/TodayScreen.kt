@@ -98,10 +98,13 @@ public fun TodayScreen(
                     if (state.caughtUp) {
                         Text(stringResource(Res.string.today_caught_up), style = MaterialTheme.typography.bodyLarge)
                     }
-                    // Until the ear screen (M4.2) gives the Ear card a view, Today shows only passage cards.
-                    val cards = session.cards.filterIsInstance<Card.PassageCard>()
-                    cards.forEach { CardView(it, session, actions.onStart) }
-                    if (cards.isNotEmpty()) SessionBar(session)
+                    for (card in session.cards) {
+                        when (card) {
+                            is Card.PassageCard -> CardView(card, session, actions.onStart)
+                            is Card.Ear -> EarCardView(card, actions.onStartEar)
+                        }
+                    }
+                    if (session.cards.isNotEmpty()) SessionBar(session)
                     Text(
                         stringResource(Res.string.today_practice_days, state.practicedDays, PRACTICE_WINDOW_DAYS),
                         style = MaterialTheme.typography.bodyMedium,
@@ -287,10 +290,10 @@ private fun tempoLine(card: Card.Song): String {
     }
 }
 
-/** The Review, Lesson and Song minutes as proportional segments; its caption is what TalkBack reads. */
+/** The Review, Lesson, Song and Ear minutes as proportional segments; its caption is what TalkBack reads. */
 @Composable
 private fun SessionBar(session: Session) {
-    val total = session.reviewMinutes + session.lessonMinutes + session.songMinutes
+    val total = session.reviewMinutes + session.lessonMinutes + session.songMinutes + session.earMinutes
     val description =
         stringResource(
             Res.string.today_session_bar,
@@ -298,6 +301,7 @@ private fun SessionBar(session: Session) {
             session.reviewMinutes,
             session.lessonMinutes,
             session.songMinutes,
+            session.earMinutes,
         )
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
@@ -309,6 +313,7 @@ private fun SessionBar(session: Session) {
                     session.reviewMinutes to ColdOpenBackground,
                     session.lessonMinutes to MaterialTheme.colorScheme.primary,
                     session.songMinutes to MaterialTheme.colorScheme.outline,
+                    session.earMinutes to amberAccent(),
                 )
             for ((minutes, color) in segments) {
                 if (minutes > 0) {

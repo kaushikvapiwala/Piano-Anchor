@@ -25,6 +25,7 @@ import pianoanchor.core.model.SkillState
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.core.ports.UpdateCheckPort
 import pianoanchor.engine.content.Curriculum
+import pianoanchor.engine.content.EarSkills
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
@@ -156,6 +157,21 @@ class TodayViewModelTest {
                     ?.skill
                     ?.title,
             )
+        }
+
+    @Test
+    fun theEarCardOpensTheEarScreenWithItsSkills() =
+        runTest(dispatcher) {
+            givenStates(skillState(EarSkills.ECHO_NOTE.id, learned = true))
+            val vm = viewModel()
+
+            val ear = assertIs<Card.Ear>(assertNotNull(vm.state.value.session).cards.first { it is Card.Ear })
+            assertEquals(TodayTarget.Ear(piano.device, ear.skills), vm.target(ear))
+            assertEquals(EarSkills.ECHO_NOTE, ear.skills.first())
+
+            piano.unplug()
+            runCurrent()
+            assertEquals(TodayTarget.Pianos, vm.target(ear))
         }
 
     @Test

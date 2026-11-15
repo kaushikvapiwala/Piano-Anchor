@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions") // One small route composable per screen of the app.
+
 package pianoanchor.app
 
 import android.Manifest
@@ -33,8 +35,12 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.Skill
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.matcher.TempoRung
+import pianoanchor.feature.ear.EarActions
+import pianoanchor.feature.ear.EarScreen
+import pianoanchor.feature.ear.EarViewModel
 import pianoanchor.feature.monitor.MonitorActions
 import pianoanchor.feature.monitor.MonitorScreen
 import pianoanchor.feature.monitor.MonitorViewModel
@@ -99,6 +105,12 @@ private sealed interface Destination {
         val fromToday: Boolean = false,
     ) : Destination
 
+    /** The ear screen on [device], running [skills] in order; back returns to Today. */
+    data class Ear(
+        val device: MidiDevice,
+        val skills: List<Skill>,
+    ) : Destination
+
     /** Calibrating [device]'s latency; [practice] is the Practice to return to, null for the monitor. */
     data class Calibrate(
         val device: MidiDevice,
@@ -137,6 +149,7 @@ private fun AppNavigation() {
         Destination.Today -> {
             TodayRoute(
                 onPractice = { destination = it },
+                onEar = { destination = it },
                 onPianos = { destination = Destination.Monitor },
                 onSettings = { destination = Destination.Settings },
             )
@@ -161,6 +174,10 @@ private fun AppNavigation() {
                 onFinished = { destination = Destination.Results(it, current) },
                 onCalibrate = { destination = Destination.Calibrate(current.device, current.copy(rung = it)) },
             )
+        }
+
+        is Destination.Ear -> {
+            EarRoute(current, onBack = back)
         }
 
         is Destination.Calibrate -> {
@@ -226,6 +243,34 @@ private fun PracticeRoute(
         onDiscard = viewModel::discardRun,
         onCalibrate = { leave { onCalibrate(state.rung) } },
         onSkipCalibration = viewModel::skipCalibration,
+    )
+}
+
+/**
+ * The ear screen. Its ViewModel lives as long as the route. Leaving (Done, back) closes the piano first, so Today or
+ * the monitor can reopen it (one reader per input); skills already finished stay recorded.
+ */
+@Composable
+private fun EarRoute(
+    ear: Destination.Ear,
+    onBack: () -> Unit,
+) {
+    val viewModel: EarViewModel =
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(ear.device, ear.skills) }
+    val state by viewModel.state.collectAsState()
+    val scope = rememberCoroutineScope()
+    val leave = { scope.launch { viewModel.close() }.invokeOnCompletion { onBack() } }
+    BackHandler { leave() }
+    EarScreen(
+        state,
+        EarActions(
+            onBack = { leave() },
+            onReplay = viewModel::replay,
+            onAnswer = viewModel::answer,
+            onShowMe = viewModel::showMe,
+            onNext = viewModel::next,
+            onDone = { leave() },
+        ),
     )
 }
 
@@ -337,6 +382,7 @@ private fun SettingsRoute(onBack: () -> Unit) {
 @Composable
 private fun TodayRoute(
     onPractice: (Destination.Practice) -> Unit,
+    onEar: (Destination.Ear) -> Unit,
     onPianos: () -> Unit,
     onSettings: () -> Unit,
 ) {
@@ -353,6 +399,27 @@ private fun TodayRoute(
                     }
 
                     TodayTarget.Pianos -> {
+                        onPianos()
+                    }
+
+                    is TodayTarget.Ear -> {
+                        // Only the Ear card yields this target.
+                        onEar(Destination.Ear(target.device, target.skills))
+                    }
+                }
+            },
+            onStartEar = { card ->
+                when (val target = viewModel.target(card)) {
+                    is TodayTarget.Ear -> {
+                        onEar(Destination.Ear(target.device, target.skills))
+                    }
+
+                    TodayTarget.Pianos -> {
+                        onPianos()
+                    }
+
+                    is TodayTarget.Practice -> {
+                        // Only passage cards yield this target.
                         onPianos()
                     }
                 }

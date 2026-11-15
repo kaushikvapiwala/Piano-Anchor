@@ -3,6 +3,7 @@ package pianoanchor.feature.today
 import pianoanchor.core.model.DEFAULT_WEEKLY_GOAL_DAYS
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
+import pianoanchor.core.model.Skill
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.Session
@@ -53,6 +54,12 @@ public sealed interface TodayTarget {
         val device: MidiDevice,
         val passageId: String,
         val rung: TempoRung,
+    ) : TodayTarget
+
+    /** The ear screen on [device], running [skills] in order. */
+    public data class Ear(
+        val device: MidiDevice,
+        val skills: List<Skill>,
     ) : TodayTarget
 
     /** No piano is connected: the Pianos screen. */
