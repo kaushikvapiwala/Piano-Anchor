@@ -6,8 +6,8 @@ times with the metronome, so an uncorrected delay of 40 ms reads as "late" on ev
 delay once per piano and the app subtracts it afterwards.
 
 ## Method
-`LatencyCalibration.clickTimes` lays out `CALIBRATION_CLICKS` clicks at `CALIBRATION_BPM` (60 BPM, one click a second), all alike (no accent). The
-learner plays any key on each click. `evaluate` then:
+`LatencyCalibration.clickTimes` lays out `CALIBRATION_CLICKS` clicks at `CALIBRATION_BPM` (60 BPM, one click a
+second), all alike (no accent). The learner plays any key on each click. `evaluate` then:
 
 1. pairs each NoteOn with the nearest click if it is within half a beat of it; where several taps pair with one click
    the one nearest the click counts, so a double tap is one tap;
