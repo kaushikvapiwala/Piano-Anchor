@@ -1,5 +1,6 @@
 package pianoanchor.feature.practice
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -267,6 +268,133 @@ class CalibrationViewModelTest {
             runWithTaps(vm, lateMs = 38)
 
             assertEquals(CalibrationResult.Accepted(38 * ms, 0), vm.state.value.result)
+            assertTrue(vm.state.value.saveFailed)
+        }
+
+    /** A run accepted at 38 ms whose save failed; the store then recovers (not failing). */
+    private fun TestScope.saveFailedRun(): CalibrationViewModel {
+        repository.failing = true
+        val vm = calibration()
+        runWithTaps(vm, lateMs = 38)
+        assertTrue(vm.state.value.saveFailed)
+        repository.failing = false
+        return vm
+    }
+
+    @Test
+    fun retryingAFailedSaveStoresTheSameOffset() =
+        runTest(dispatcher) {
+            val vm = saveFailedRun()
+
+            vm.retrySave()
+            runCurrent()
+
+            assertFalse(vm.state.value.saveFailed)
+            assertEquals(CalibrationResult.Accepted(38 * ms, 0), vm.state.value.result)
+            assertEquals(38 * ms, repository.latencyOffsetNanos(piano.device.id))
+        }
+
+    @Test
+    fun aRetryThatFailsAgainCanBeRetriedAgain() =
+        runTest(dispatcher) {
+            val vm = saveFailedRun()
+            repository.failing = true
+
+            vm.retrySave()
+            runCurrent()
+            assertTrue(vm.state.value.saveFailed)
+
+            repository.failing = false
+            vm.retrySave()
+            runCurrent()
+            assertFalse(vm.state.value.saveFailed)
+            assertEquals(38 * ms, repository.latencyOffsetNanos(piano.device.id))
+        }
+
+    @Test
+    fun retryingWithNothingToRetryDoesNotTouchTheStore() =
+        runTest(dispatcher) {
+            val ready = calibration()
+            ready.retrySave()
+            runCurrent()
+            assertEquals(0, repository.setCalls)
+
+            runWithTaps(ready, lateMs = 38)
+            assertEquals(1, repository.setCalls)
+            ready.retrySave()
+            runCurrent()
+            assertEquals(1, repository.setCalls)
+        }
+
+    @Test
+    fun retryingAfterAnUnevenResultDoesNotTouchTheStore() =
+        runTest(dispatcher) {
+            val vm = calibration()
+            val clicks = LatencyCalibration.clickTimes(clock.nowNanos() + Tunables.TEMPO_COUNT_IN_LEAD_MS * ms)
+            vm.start()
+            runCurrent()
+            clicks.forEachIndexed { i, click ->
+                advanceTo(click + (if (i % 2 == 0) 5 else 70) * ms)
+                tap()
+            }
+            advanceTo(clicks.last() + beat)
+            assertTrue(vm.state.value.result is CalibrationResult.TooUneven)
+
+            vm.retrySave()
+            runCurrent()
+
+            assertEquals(0, repository.setCalls)
+        }
+
+    @Test
+    fun aSecondRetryWhileOneRunsIsIgnored() =
+        runTest(dispatcher) {
+            val vm = saveFailedRun()
+            val before = repository.setCalls
+            repository.gate = CompletableDeferred()
+
+            vm.retrySave()
+            runCurrent()
+            vm.retrySave()
+            runCurrent()
+            assertEquals(before + 1, repository.setCalls)
+
+            repository.gate?.complete(Unit)
+            runCurrent()
+            assertFalse(vm.state.value.saveFailed)
+            assertEquals(before + 1, repository.setCalls)
+        }
+
+    @Test
+    fun startDuringARetryIsIgnored() =
+        runTest(dispatcher) {
+            val vm = saveFailedRun()
+            repository.gate = CompletableDeferred()
+            vm.retrySave()
+            runCurrent()
+
+            vm.start()
+            runCurrent()
+
+            assertEquals(CalibrationPhase.DONE, vm.state.value.phase)
+            repository.gate?.complete(Unit)
+            runCurrent()
+            assertFalse(vm.state.value.saveFailed)
+        }
+
+    @Test
+    fun closingDuringARetryCancelsIt() =
+        runTest(dispatcher) {
+            val vm = saveFailedRun()
+            repository.gate = CompletableDeferred()
+            vm.retrySave()
+            runCurrent()
+
+            vm.close()
+            repository.gate?.complete(Unit)
+            runCurrent()
+
+            assertNull(repository.latencyOffsetNanos(piano.device.id))
             assertTrue(vm.state.value.saveFailed)
         }
 

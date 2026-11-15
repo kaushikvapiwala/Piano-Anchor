@@ -47,15 +47,33 @@ public class CalibrationViewModel(
     public val state: StateFlow<CalibrationState> = mutableState.asStateFlow()
 
     private var run: Job? = null
+    private var retry: Job? = null
 
-    /** Starts the clicks. Ignored while a run is in progress; also how Try again begins a new run. */
+    /** Starts the clicks. Ignored while a run or a save retry is in progress; also how Try again begins a new run. */
     public fun start() {
-        if (run?.isActive == true) return
+        if (run?.isActive == true || retry?.isActive == true) return
         run = viewModelScope.launch { calibrate() }
     }
 
-    /** Ends the run without saving anything and returns once the metronome is stopped and the piano closed. */
+    /**
+     * Stores again the accepted offset whose save failed. Ignored unless the run is DONE with an Accepted result and
+     * saveFailed, and while a retry is already running.
+     */
+    public fun retrySave() {
+        val current = mutableState.value
+        val result = current.result
+        if (current.phase != CalibrationPhase.DONE || !current.saveFailed) return
+        if (result !is CalibrationResult.Accepted || retry?.isActive == true) return
+        retry =
+            viewModelScope.launch {
+                val saved = save(result)
+                mutableState.update { it.copy(saveFailed = !saved) }
+            }
+    }
+
+    /** Ends a run or save retry, storing nothing more; returns once the metronome is stopped and the piano closed. */
     public suspend fun close() {
+        retry?.cancelAndJoin()
         run?.cancelAndJoin()
     }
 

@@ -40,26 +40,24 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Retry a failed calibration save** (spec #124; follow-up of #67): Retry saves the same accepted offset again,
-    next to Try again and Cancel, as practice does for an unsaved attempt.
-2. **M4.1 Tracks share the daily plan** (spec #127) [#79]: skills get a track (core, songs, ear); new skills rotate
+1. **M4.1 Tracks share the daily plan** (spec #127) [#79]: skills get a track (core, songs, ear); new skills rotate
     between tracks under the shared caps; the composer's Ear card and four-way time split (M4's exit check).
-3. **M4.2 Ear training** (spec #128) [#127, #79, #80]: eight ear skills, echo on the piano and identify on screen, sets
+2. **M4.2 Ear training** (spec #128) [#127, #79, #80]: eight ear skills, echo on the piano and identify on screen, sets
     of 4 fresh items, speaker tones when the piano has no MIDI output.
-4. **M4.3 Songs & chords** (spec #129) [#127, #77, #79]: six C-position chord skills, four pieces and the Songs screen
+3. **M4.3 Songs & chords** (spec #129) [#127, #77, #79]: six C-position chord skills, four pieces and the Songs screen
     with tempo-ladder progress and locked pieces.
-5. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
+4. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
     piano's identity reply, a short note fixture and the app version into a file to attach to a GitHub issue; reads
     only, no network.
-6. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
+5. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
     Off) with a Hint button; attempts record the hint level and whether a hint was shown.
-7. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
+6. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
     open performs by default.
-8. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
+7. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
     clean loops; loops are never cold checks.
-9. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
+8. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
     recalled check; aided and wait-mode runs rate at most Hard; Gentle/Standard/Strict presets (M5's exit check).
-10. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
+9. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
     `platform/storage/src/commonMain/sqldelight/pianoanchor/platform/storage/db/Attempt.sq` filters on `started_at_ms`
     alone; add an index on it with a SQLDelight migration so Today's practice-day counts don't scan every attempt.
 
