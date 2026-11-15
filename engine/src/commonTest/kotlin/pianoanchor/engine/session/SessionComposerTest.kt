@@ -4,7 +4,10 @@ import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.MemoryState
 import pianoanchor.core.model.Skill
+import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.SkillState
+import pianoanchor.core.model.Track
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.DailyPlan
@@ -158,6 +161,7 @@ class SessionComposerTest {
         val session = compose(plan)
         val used =
             session.cards
+                .filterIsInstance<Card.PassageCard>()
                 .filter { it !is Card.Song }
                 .map { it.passage.id }
                 .toSet()
@@ -174,9 +178,12 @@ class SessionComposerTest {
     fun aCleanWaitRunMovesTheSongToTheFirstTimedRung() {
         val plan = DailyPlan(emptyList(), emptyList())
         val learned = setOf(Skills.RH_TUNES.id)
-        val first = compose(plan, learned = learned).cards.single()
+        val first = assertIs<Card.PassageCard>(compose(plan, learned = learned).cards.single())
         val history = mapOf(first.passage.id to PassageHistory(null, emptySet(), cleanWait = true))
-        assertEquals(TempoRung.P60, compose(plan, history, learned = learned).cards.single().rung)
+        assertEquals(
+            TempoRung.P60,
+            assertIs<Card.PassageCard>(compose(plan, history, learned = learned).cards.single()).rung,
+        )
     }
 
     @Test
@@ -187,14 +194,14 @@ class SessionComposerTest {
                 listOf(Skills.KB_FIND_C),
             )
         val twenty = compose(plan)
-        assertEquals(listOf(5, 9, 6), listOf(twenty.reviewMinutes, twenty.lessonMinutes, twenty.songMinutes))
-        assertEquals(listOf(5, 9, 6), twenty.cards.map { it.minutes })
+        assertEquals(listOf(5, 8, 7), listOf(twenty.reviewMinutes, twenty.lessonMinutes, twenty.songMinutes))
+        assertEquals(listOf(5, 8, 7), twenty.cards.map { it.minutes })
         for (budget in DailyBudget.entries) {
             val s = compose(plan, budget = budget)
-            assertEquals(budget.minutes, s.reviewMinutes + s.lessonMinutes + s.songMinutes)
+            assertEquals(budget.minutes, s.reviewMinutes + s.lessonMinutes + s.songMinutes + s.earMinutes)
         }
         val fifteen = compose(plan, budget = DailyBudget.MIN_15)
-        assertEquals(listOf(4, 7, 4), listOf(fifteen.reviewMinutes, fifteen.lessonMinutes, fifteen.songMinutes))
+        assertEquals(listOf(4, 6, 5), listOf(fifteen.reviewMinutes, fifteen.lessonMinutes, fifteen.songMinutes))
     }
 
     @Test
@@ -206,7 +213,7 @@ class SessionComposerTest {
         assertEquals(0, session.lessonMinutes)
         assertEquals(0, session.songMinutes)
         val noSong = compose(DailyPlan(listOf(state(Skills.KB_MIDDLE_C)), listOf(Skills.KB_FIND_C)), everyUnitClean)
-        // Review 0.25 : lesson 0.45 of 20 minutes.
+        // Review 0.20 : lesson 0.35 of 20 minutes.
         assertEquals(listOf(7, 13), listOf(noSong.reviewMinutes, noSong.lessonMinutes))
     }
 
@@ -248,5 +255,101 @@ class SessionComposerTest {
         val session = compose(DailyPlan(listOf(state(orphan)), listOf(orphan)))
         assertEquals(emptyList(), session.cards)
         assertEquals(listOf(state(orphan)), session.moreDue)
+    }
+
+    private val earA = Skill("ear-a", "Ear A", emptySet(), Track.EAR)
+    private val earB = Skill("ear-b", "Ear B", emptySet(), Track.EAR)
+    private val earC = Skill("ear-c", "Ear C", emptySet(), Track.EAR)
+    private val withEar = SkillGraph(Curriculum.graph.skills + listOf(earA, earB, earC))
+
+    private fun composeEar(
+        plan: DailyPlan,
+        budget: DailyBudget = DailyBudget.MIN_20,
+        history: Map<String, PassageHistory> = emptyMap(),
+    ) = SessionComposer.compose(
+        plan,
+        Curriculum,
+        budget,
+        history,
+        plan.due
+            .filter {
+                it.learned
+            }.mapTo(HashSet()) { it.skillId },
+        withEar,
+    )
+
+    @Test
+    fun `ear skills never become the cold open or lesson`() {
+        val plan = DailyPlan(listOf(state(earA), state(Skills.KB_MIDDLE_C)), listOf(earB, Skills.KB_FIND_C))
+        val session = composeEar(plan)
+        assertEquals(Skills.KB_MIDDLE_C, assertIs<Card.ColdOpen>(session.cards.first()).skill)
+        assertEquals(
+            Skills.KB_FIND_C,
+            session.cards
+                .filterIsInstance<Card.Lesson>()
+                .single()
+                .skill,
+        )
+        assertEquals(emptyList(), session.moreDue)
+        val onlyEar = composeEar(DailyPlan(listOf(state(earA)), listOf(earB)))
+        assertEquals(listOf<Class<*>>(Card.Ear::class.java), onlyEar.cards.map { it::class.java })
+    }
+
+    @Test
+    fun `ear card lists due then new ear skills`() {
+        val plan = DailyPlan(listOf(state(earB), state(earA)), listOf(earC))
+        val ear = assertIs<Card.Ear>(composeEar(plan).cards.last())
+        assertEquals(listOf(earB, earA, earC), ear.skills)
+    }
+
+    @Test
+    fun `ear card count follows its minutes`() {
+        val plan = DailyPlan(listOf(state(earA)), listOf(earB, earC))
+        // 20 minutes with only the ear card: it takes everything, so all three fit.
+        assertEquals(3, assertIs<Card.Ear>(composeEar(plan).cards.single()).skills.size)
+        // With a review and a lesson too, 15% of 20 minutes is 3 minutes at 1 per skill.
+        val busy = DailyPlan(listOf(state(Skills.KB_MIDDLE_C), state(earA)), listOf(Skills.KB_FIND_C, earB, earC))
+        val session = composeEar(busy, DailyBudget.MIN_15, everyUnitClean)
+        val ear = session.cards.filterIsInstance<Card.Ear>().single()
+        assertEquals(session.earMinutes, ear.minutes)
+        assertEquals(maxOf(1, ear.minutes / Tunables.EAR_MINUTES_PER_SKILL), ear.skills.size)
+        // Never fewer than one skill, even when its minutes round to zero.
+        val tiny = composeEar(busy, DailyBudget.entries.minBy { it.minutes }, everyUnitClean)
+        assertEquals(
+            1,
+            tiny.cards
+                .filterIsInstance<Card.Ear>()
+                .single()
+                .skills.size
+                .coerceAtMost(1),
+        )
+    }
+
+    @Test
+    fun `no ear skills gives no ear card and shares its minutes`() {
+        val plan = DailyPlan(listOf(state(Skills.KB_MIDDLE_C)), listOf(Skills.KB_FIND_C))
+        val session = compose(plan, everyUnitClean)
+        assertEquals(0, session.cards.count { it is Card.Ear })
+        assertEquals(0, session.earMinutes)
+        assertEquals(DailyBudget.MIN_20.minutes, session.reviewMinutes + session.lessonMinutes)
+    }
+
+    @Test
+    fun `minutes sum to the budget with four shares`() {
+        val plan =
+            DailyPlan(
+                listOf(state(Skills.KB_MIDDLE_C), state(Skills.RH_TUNES, learned = true), state(earA)),
+                listOf(Skills.KB_FIND_C),
+            )
+        for (budget in DailyBudget.entries) {
+            val s = composeEar(plan, budget)
+            assertEquals(budget.minutes, s.reviewMinutes + s.lessonMinutes + s.songMinutes + s.earMinutes)
+            assertEquals(true, s.earMinutes > 0)
+        }
+        val twenty = composeEar(plan)
+        assertEquals(
+            listOf(4, 7, 6, 3),
+            listOf(twenty.reviewMinutes, twenty.lessonMinutes, twenty.songMinutes, twenty.earMinutes),
+        )
     }
 }

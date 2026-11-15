@@ -65,6 +65,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Skill graph | The skills and their prerequisites as a validated acyclic graph (`SkillGraph`); `unlocked` lists the skills a learner may start next. See `docs/algorithms/learner-model.md`. |
 | Sustain pedal | The right (damper) pedal, sent as control change 64; values 64–127 hold every released note sounding until it drops below 64. |
 | SysEx | System Exclusive: a variable-length, vendor-specific MIDI message framed by 0xF0 and 0xF7. |
+| Track | A strand of the curriculum a skill belongs to (`Track`: core, songs, ear). All tracks share one skill graph, one due list and one daily budget; new skills rotate between tracks (`docs/algorithms/learner-model.md`). |
 | Tempo ladder | The practice screen's tempo rungs: Wait, then 60/70/85/100 % of the written tempo (`TempoRung`). Each timed rung starts a tempo run. |
 | Tempo rung | One step of the tempo ladder. A timed rung shows done (blue) once a clean timed attempt exists at its tempo. |
 | Tempo run | Timed practice at a rung: one key starts a count-in, then the cursor moves with the clock, each note is judged live and the take is graded afterwards by the performance analyser. |

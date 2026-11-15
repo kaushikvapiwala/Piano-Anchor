@@ -435,27 +435,45 @@ public object Tunables {
      *
      * Why: review first and short: memory fades fastest overnight.
      *
-     * Source: starting value, owner-agreed shape in the M3 grill; calibrated in M7.
+     * Source: starting value, owner, M4 grill: the mock's 30-minute plan without Free; calibrated in M7.
      */
-    public const val SESSION_SHARE_REVIEW: Double = 0.25
+    public const val SESSION_SHARE_REVIEW: Double = 0.20
 
     /**
      * The share of the daily budget Today gives to the new lesson segment.
      *
      * Why: new material needs the most focused time.
      *
-     * Source: starting value, owner-agreed shape in the M3 grill; calibrated in M7.
+     * Source: starting value, owner, M4 grill: the mock's 30-minute plan without Free; calibrated in M7.
      */
-    public const val SESSION_SHARE_LESSON: Double = 0.45
+    public const val SESSION_SHARE_LESSON: Double = 0.35
 
     /**
      * The share of the daily budget Today gives to the song segment.
      *
      * Why: motivation and tempo work.
      *
-     * Source: starting value, owner-agreed shape in the M3 grill; calibrated in M7.
+     * Source: starting value, owner, M4 grill: the mock's 30-minute plan without Free; calibrated in M7.
      */
     public const val SESSION_SHARE_SONG: Double = 0.30
+
+    /**
+     * The share of the daily budget Today gives to the ear segment.
+     *
+     * Why: short daily ear practice beats a long weekly one.
+     *
+     * Source: owner, M4 grill: the mock's 30-minute plan without Free; calibrated in M7.
+     */
+    public const val SESSION_SHARE_EAR: Double = 0.15
+
+    /**
+     * The minutes one ear skill takes in the ear segment; it sets how many ear skills the ear card lists.
+     *
+     * Why: one ear review is a set of 4 short items.
+     *
+     * Source: owner, M4 grill: a set of 4 per review.
+     */
+    public const val EAR_MINUTES_PER_SKILL: Int = 1
 
     /**
      * The gap between the starts of the onboarding's C, E and G, in milliseconds.

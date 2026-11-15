@@ -12,6 +12,7 @@ import pianoanchor.core.model.Review
 import pianoanchor.core.model.Skill
 import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.SkillState
+import pianoanchor.core.model.Track
 import pianoanchor.core.ports.LearnerRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.scheduler.Fsrs
@@ -102,8 +103,39 @@ public class LearnerModel(
         // Placed skills were not taught today: they don't use up the day's new-skill slots.
         val introducedToday = states.values.count { it.introducedDay == day && !it.placed }
         val slots = (Tunables.MAX_NEW_PER_DAY - introducedToday).coerceAtLeast(0)
-        val new = graph.unlocked(learned).filter { it.id !in states }.take(slots)
-        return DailyPlan(due, new)
+        return DailyPlan(due, rotateNew(states, learned, slots, day))
+    }
+
+    /**
+     * Fills [slots] one skill at a time from the track introduced least recently (a track never introduced counts as
+     * oldest; ties in [Track] order), taking that track's first candidate in graph order.
+     */
+    private fun rotateNew(
+        states: Map<String, SkillState>,
+        learned: Set<String>,
+        slots: Int,
+        day: LocalDate,
+    ): List<Skill> {
+        val candidates = graph.unlocked(learned).filter { it.id !in states }.toMutableList()
+        // Sorted by day, so a later skill of a track overwrites an earlier one: the map holds the latest day.
+        val lastIntroduced =
+            graph.skills
+                .filter { it.id in states }
+                .sortedBy { states.getValue(it.id).introducedDay }
+                .associateTo(HashMap()) { it.track to states.getValue(it.id).introducedDay }
+        val picked = ArrayList<Skill>()
+        while (picked.size < slots && candidates.isNotEmpty()) {
+            val track =
+                candidates
+                    .map { it.track }
+                    .distinct()
+                    .minWith(compareBy<Track, LocalDate?>(nullsFirst()) { lastIntroduced[it] }.thenBy { it.ordinal })
+            val skill = candidates.first { it.track == track }
+            candidates.remove(skill)
+            picked += skill
+            lastIntroduced[track] = day
+        }
+        return picked
     }
 
     /** The ids of every learned skill (the plan lists only the due and new ones). */
