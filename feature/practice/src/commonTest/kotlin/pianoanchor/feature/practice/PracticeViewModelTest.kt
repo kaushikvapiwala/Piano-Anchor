@@ -125,12 +125,12 @@ class PracticeViewModelTest {
     }
 
     private fun TestScope.after(
-        ms: Long,
+        millis: Long,
         action: () -> Unit = {},
     ) {
-        clock.advanceNanos(ms * this@PracticeViewModelTest.ms)
+        clock.advanceNanos(millis * ms)
         action()
-        advanceTimeBy(ms)
+        advanceTimeBy(millis)
         runCurrent()
     }
 

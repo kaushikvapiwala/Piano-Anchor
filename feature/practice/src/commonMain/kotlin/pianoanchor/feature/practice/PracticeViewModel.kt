@@ -13,9 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -393,7 +391,7 @@ public class PracticeViewModel(
             event: MidiEvent,
             ended: CompletableDeferred<Unit>,
         ) {
-            if (event is NoteOn) return end(ended)
+            if (event is NoteOn) return end(ended, event.timestampNanos)
             midi += event
             updateKeys(event)
             if (PlayedNotes.sounding(midi).isEmpty()) end(ended)
