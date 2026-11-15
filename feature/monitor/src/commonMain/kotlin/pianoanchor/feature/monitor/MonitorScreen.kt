@@ -105,6 +105,7 @@ public fun MonitorScreen(
                 }
             }
             item { RecordingControls(state, actions) }
+            item { ContributeBlock(state, actions) }
             log(state.log)
         }
     }

@@ -13,7 +13,10 @@ import pianoanchor.core.model.Instrument
 import pianoanchor.core.model.InstrumentIdentity
 import pianoanchor.core.model.MidiNote
 import pianoanchor.engine.Tunables
+import pianoanchor.engine.fixture.FixtureCodec
 import pianoanchor.engine.identity.IdentityCodec
+import pianoanchor.engine.kit.ContributionKit
+import pianoanchor.engine.kit.ContributionKitCodec
 import pianoanchor.testing.FakeClock
 import pianoanchor.testing.FakeInstrumentRepository
 import pianoanchor.testing.FakePiano
@@ -50,7 +53,7 @@ class MonitorIdentityTest {
     private fun bytes(vararg v: Int) = ByteArray(v.size) { v[it].toByte() }
 
     private fun TestScope.selected(): MonitorViewModel =
-        MonitorViewModel(piano, piano, piano, instruments, clock, wallClock).also {
+        MonitorViewModel(piano, piano, piano, instruments, clock, wallClock, APP_VERSION).also {
             runCurrent()
             it.select(piano.device)
             runCurrent()
@@ -66,6 +69,40 @@ class MonitorIdentityTest {
     }
 
     private fun unidentified(at: Instant = connectedAt) = Instrument("fake-piano", "Fake Piano", null, at, at)
+
+    @Test
+    fun kitIsNullBeforeAnyRecording() =
+        runTest(dispatcher) {
+            answersIdentity()
+            assertNull(selected().exportKit())
+        }
+
+    @Test
+    fun kitBundlesVersionIdentityAndRecording() =
+        runTest(dispatcher) {
+            answersIdentity()
+            val vm = selected()
+            vm.startRecording()
+            play { piano.press(c4) }
+            vm.stopRecording()
+
+            val fixture = FixtureCodec.decode(vm.exportJsonl()!!)
+            assertEquals(ContributionKitCodec.encode(ContributionKit(APP_VERSION, identity, fixture)), vm.exportKit())
+        }
+
+    @Test
+    fun kitHasNoIdentityWhenThePianoDidNotAnswer() =
+        runTest(dispatcher) {
+            val vm = selected()
+            vm.startRecording()
+            play { piano.press(c4) }
+            vm.stopRecording()
+
+            val fixture = FixtureCodec.decode(vm.exportJsonl()!!)
+            val kit = vm.exportKit()!!
+            assertTrue(""""identity":null""" in kit)
+            assertEquals(ContributionKitCodec.encode(ContributionKit(APP_VERSION, null, fixture)), kit)
+        }
 
     @Test
     fun replyWithinTheTimeoutStoresTheIdentity() =
@@ -189,3 +226,5 @@ class MonitorIdentityTest {
             assertNull(vm.state.value.instrument)
         }
 }
+
+private const val APP_VERSION = "0.1.0"

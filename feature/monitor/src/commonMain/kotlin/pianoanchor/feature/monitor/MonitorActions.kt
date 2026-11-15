@@ -13,6 +13,7 @@ public data class MonitorActions(
     val onStartRecording: () -> Unit = {},
     val onStopRecording: () -> Unit = {},
     val onExport: () -> Unit = {},
+    val onSaveKit: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onEnableBluetooth: () -> Unit = {},
     val onDismissError: () -> Unit = {},

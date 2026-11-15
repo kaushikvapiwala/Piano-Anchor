@@ -29,6 +29,8 @@ import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.engine.Tunables
+import pianoanchor.engine.kit.ContributionKit
+import pianoanchor.engine.kit.ContributionKitCodec
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -39,8 +41,9 @@ private const val SYSEX_FRAME_BYTES = 2
  * JSONL fixture (`fixtures/SCHEMA.md`). On every connect it asks the piano who it is (MIDI Identity Request,
  * `docs/protocols/midi-identity.md`) and stores it in [instruments]; if storing fails it still shows the piano, with
  * [MonitorError.STORAGE], and MIDI keeps flowing. [clock] times messages; [wallClock] gives the recording start time
- * and when a piano was seen.
+ * and when a piano was seen; [appVersion] goes into the contribution kit.
  */
+@Suppress("TooManyFunctions") // One small function per user action, as in the other ViewModels.
 public class MonitorViewModel(
     private val input: MidiInputPort,
     output: MidiOutputPort,
@@ -48,6 +51,7 @@ public class MonitorViewModel(
     instruments: InstrumentRepositoryPort,
     private val clock: ClockPort,
     private val wallClock: Clock,
+    private val appVersion: String,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(MonitorState())
     public val state: StateFlow<MonitorState> = mutableState.asStateFlow()
@@ -164,6 +168,12 @@ public class MonitorViewModel(
 
     /** The recording as fixture JSONL, or null when nothing was recorded. */
     public fun exportJsonl(): String? = recorder.jsonl()
+
+    /** The contribution kit for the current recording, or null when nothing was recorded. */
+    public fun exportKit(): String? =
+        recorder.fixture()?.let {
+            ContributionKitCodec.encode(ContributionKit(appVersion, state.value.instrument?.identity, it))
+        }
 
     public fun dismissError() {
         mutableState.update { it.copy(error = null) }

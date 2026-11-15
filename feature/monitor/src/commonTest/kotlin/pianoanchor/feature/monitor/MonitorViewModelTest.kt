@@ -61,7 +61,7 @@ class MonitorViewModelTest {
     private val wallClock = FakeWallClock(Instant.parse("2026-11-12T10:00:00Z"))
 
     private fun viewModel(input: MidiInputPort = piano) =
-        MonitorViewModel(input, piano, piano, instruments, clock, wallClock)
+        MonitorViewModel(input, piano, piano, instruments, clock, wallClock, APP_VERSION)
 
     private fun TestScope.monitor(): MonitorViewModel = viewModel().also { runCurrent() }
 
@@ -689,3 +689,5 @@ class MonitorViewModelTest {
             assertEquals(1, open)
         }
 }
+
+private const val APP_VERSION = "0.1.0"

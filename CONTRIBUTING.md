@@ -3,6 +3,8 @@
 Thanks for helping! Piano Anchor is an open-source, offline piano coach. Contributions of code, piano
 support, curriculum ideas and bug reports are all welcome.
 
+Own a piano the app does not support yet? Save a contribution kit: see `docs/contribute-a-piano.md`.
+
 ## Getting started
 
 1. Install the Android SDK (Android Studio is easiest). Gradle downloads the right JDK (25) by itself.

@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -69,6 +70,8 @@ import java.io.IOException
 
 private const val FIXTURE_MIME_TYPE = "application/x-ndjson"
 private const val FIXTURE_FILE_NAME = "piano-anchor-fixture.jsonl"
+private const val KIT_MIME_TYPE = "application/json"
+private const val KIT_FILE_NAME = "piano-anchor-kit.json"
 private val BLUETOOTH_PERMISSIONS = arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
 
 class MainActivity : ComponentActivity() {
@@ -525,26 +528,8 @@ private fun MonitorRoute(
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
         ) { viewModel.scanBluetooth() }
-    val export =
-        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(FIXTURE_MIME_TYPE)) { uri ->
-            if (uri == null) return@rememberLauncherForActivityResult
-            scope.launch {
-                val written =
-                    withContext(Dispatchers.IO) {
-                        val jsonl = viewModel.exportJsonl() ?: return@withContext false
-                        try {
-                            context.contentResolver
-                                .openOutputStream(
-                                    uri,
-                                )?.use { it.write(jsonl.encodeToByteArray()) } !=
-                                null
-                        } catch (_: IOException) {
-                            false
-                        }
-                    }
-                if (!written) Toast.makeText(context, R.string.export_failed, Toast.LENGTH_LONG).show()
-            }
-        }
+    val export = rememberSaveLauncher(FIXTURE_MIME_TYPE) { viewModel.exportJsonl() }
+    val saveKit = rememberSaveLauncher(KIT_MIME_TYPE) { viewModel.exportKit() }
     MonitorScreen(
         state = state,
         actions =
@@ -555,6 +540,7 @@ private fun MonitorRoute(
                 onStartRecording = viewModel::startRecording,
                 onStopRecording = viewModel::stopRecording,
                 onExport = { export.launch(FIXTURE_FILE_NAME) },
+                onSaveKit = { saveKit.launch(KIT_FILE_NAME) },
                 onOpenSettings = {
                     val appDetails = Uri.fromParts("package", context.packageName, null)
                     context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, appDetails))
@@ -576,5 +562,32 @@ private fun CoroutineScope.handOverPiano(
     launch {
         monitor.setDeviceOpen(false)
         next()
+    }
+}
+
+/** A "save as" launcher: writes [text] (null: nothing to write) to the file the user picks; toasts on failure. */
+@Composable
+private fun rememberSaveLauncher(
+    mimeType: String,
+    text: () -> String?,
+): ManagedActivityResultLauncher<String, Uri?> {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    return rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(mimeType)) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val written =
+                withContext(Dispatchers.IO) {
+                    val content = text() ?: return@withContext false
+                    try {
+                        context.contentResolver
+                            .openOutputStream(uri)
+                            ?.use { it.write(content.encodeToByteArray()) } != null
+                    } catch (_: IOException) {
+                        false
+                    }
+                }
+            if (!written) Toast.makeText(context, R.string.export_failed, Toast.LENGTH_LONG).show()
+        }
     }
 }
