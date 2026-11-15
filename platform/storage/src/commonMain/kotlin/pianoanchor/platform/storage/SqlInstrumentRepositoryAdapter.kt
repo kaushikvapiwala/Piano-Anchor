@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import pianoanchor.core.model.Instrument
 import pianoanchor.core.model.InstrumentIdentity
+import pianoanchor.core.model.isStableDeviceId
 import pianoanchor.core.ports.InstrumentRepositoryPort
 import pianoanchor.platform.storage.db.PianoAnchorDatabase
 import kotlin.time.Instant
@@ -24,16 +25,33 @@ public class SqlInstrumentRepositoryAdapter(
         withContext(dispatcher) {
             storage("upsert") {
                 val identity = instrument.identity
-                queries.upsert(
-                    device_id = instrument.deviceId,
-                    name = instrument.name,
-                    mfr_id = identity?.let { it.manufacturerId.toHex() },
-                    family = identity?.family?.toLong(),
-                    model = identity?.model?.toLong(),
-                    version = identity?.let { it.version.toHex() },
-                    first_seen_ms = instrument.firstSeen.toEpochMilliseconds(),
-                    last_seen_ms = instrument.lastSeen.toEpochMilliseconds(),
-                )
+                val mfrId = identity?.let { it.manufacturerId.toHex() }
+                val version = identity?.let { it.version.toHex() }
+                val firstSeenMs = instrument.firstSeen.toEpochMilliseconds()
+                val lastSeenMs = instrument.lastSeen.toEpochMilliseconds()
+                if (isStableDeviceId(instrument.deviceId)) {
+                    queries.upsert(
+                        instrument.deviceId,
+                        instrument.name,
+                        mfrId,
+                        identity?.family?.toLong(),
+                        identity?.model?.toLong(),
+                        version,
+                        firstSeenMs,
+                        lastSeenMs,
+                    )
+                } else {
+                    queries.upsertReplacingIdentity(
+                        instrument.deviceId,
+                        instrument.name,
+                        mfrId,
+                        identity?.family?.toLong(),
+                        identity?.model?.toLong(),
+                        version,
+                        firstSeenMs,
+                        lastSeenMs,
+                    )
+                }
             }
         }
 

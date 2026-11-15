@@ -1,6 +1,7 @@
 package pianoanchor.platform.androidmidi
 
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.UNSTABLE_DEVICE_ID_PREFIX
 
 /** Display name when Android reports neither a name nor a product (UI string resource comes with the monitor). */
 internal const val FALLBACK_DEVICE_NAME = "MIDI device"
@@ -45,7 +46,7 @@ private fun baseId(device: SystemDevice): String {
         }
 
         else -> {
-            "sys:${device.systemId}"
+            "$UNSTABLE_DEVICE_ID_PREFIX${device.systemId}"
         }
     }
 }

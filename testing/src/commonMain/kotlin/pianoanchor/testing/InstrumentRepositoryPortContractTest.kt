@@ -96,4 +96,29 @@ abstract class InstrumentRepositoryPortContractTest {
             assertEquals(piano, repository.get("usb-1"))
             assertEquals(other, repository.get("ble-1"))
         }
+
+    @Test
+    fun upsertWithANullIdentityClearsTheStoredIdentityForAnUnstableId() =
+        runTest {
+            val repository = createSubject()
+            val unstable = piano.copy(deviceId = "sys:3")
+            repository.upsert(unstable)
+            repository.upsert(unstable.copy(name = "Renamed", identity = null, lastSeen = later))
+            assertEquals(
+                unstable.copy(name = "Renamed", identity = null, lastSeen = later),
+                repository.get("sys:3"),
+            )
+        }
+
+    @Test
+    fun upsertWithANewIdentityReplacesTheStoredOneForAnUnstableId() =
+        runTest {
+            val repository = createSubject()
+            val unstable = piano.copy(deviceId = "sys:3")
+            val updated =
+                InstrumentIdentity(listOf(0x00, 0x20, 0x33), family = 3, model = 4, version = listOf(2, 0, 0, 0))
+            repository.upsert(unstable)
+            repository.upsert(unstable.copy(identity = updated, lastSeen = later))
+            assertEquals(unstable.copy(identity = updated, lastSeen = later), repository.get("sys:3"))
+        }
 }
