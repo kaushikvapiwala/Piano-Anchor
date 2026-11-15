@@ -98,8 +98,10 @@ public fun TodayScreen(
                     if (state.caughtUp) {
                         Text(stringResource(Res.string.today_caught_up), style = MaterialTheme.typography.bodyLarge)
                     }
-                    session.cards.forEach { CardView(it, session, actions.onStart) }
-                    if (session.cards.isNotEmpty()) SessionBar(session)
+                    // Until the ear screen (M4.2) gives the Ear card a view, Today shows only passage cards.
+                    val cards = session.cards.filterIsInstance<Card.PassageCard>()
+                    cards.forEach { CardView(it, session, actions.onStart) }
+                    if (cards.isNotEmpty()) SessionBar(session)
                     Text(
                         stringResource(Res.string.today_practice_days, state.practicedDays, PRACTICE_WINDOW_DAYS),
                         style = MaterialTheme.typography.bodyMedium,
@@ -202,9 +204,9 @@ private fun UpdateBanner(
 
 @Composable
 private fun CardView(
-    card: Card,
+    card: Card.PassageCard,
     session: Session,
-    onStart: (Card) -> Unit,
+    onStart: (Card.PassageCard) -> Unit,
 ) {
     val dark = card is Card.ColdOpen
     val content = if (dark) OnColdOpen else MaterialTheme.colorScheme.onSurface
@@ -251,14 +253,14 @@ private fun CardView(
     }
 }
 
-private fun cardLabel(card: Card): StringResource =
+private fun cardLabel(card: Card.PassageCard): StringResource =
     when (card) {
         is Card.ColdOpen -> Res.string.today_card_cold_open
         is Card.Lesson -> Res.string.today_card_lesson
         is Card.Song -> Res.string.today_card_song
     }
 
-private fun cardAction(card: Card): StringResource =
+private fun cardAction(card: Card.PassageCard): StringResource =
     when (card) {
         is Card.ColdOpen -> Res.string.today_action_cold_open
         is Card.Lesson -> Res.string.today_action_lesson

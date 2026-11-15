@@ -59,7 +59,17 @@ for guidance fading (M5).
    `MAX_DUE_PER_DAY`. The overflow is not dropped, just not offered; it is still due on later days.
 2. **New:** only while fewer than `MAX_DUE_PER_DAY` are due. Skills unlocked by the learned set that were never
    introduced (a skill is introduced by its first review), in graph order, at most `MAX_NEW_PER_DAY` minus the
-   skills already introduced on that day.
+   skills already introduced on that day. The slots are filled one skill at a time by rotating over tracks (below).
+
+### Tracks
+Every skill belongs to a track (`CORE`, `SONGS` or `EAR`; `CORE` unless stated). All tracks share one skill graph, so
+a prerequisite may sit in another track (an ear skill can need a core skill), one due list and one budget.
+- **Due** ignores tracks: one list, lowest retrievability first, capped in total.
+- **New** rotates: among the tracks that have an unlocked, never-introduced skill, take the one whose most recent
+  `introducedDay` is oldest (a track never introduced counts as oldest; ties in track order CORE, SONGS, EAR), give
+  it its first candidate in graph order, count that track as introduced today and repeat until the slots are full.
+  Rotation follows the latest introduction, not counts, so a track that starts late is not pushed ahead to catch up.
+  A track with nothing unlocked is skipped. Placed skills count as introduced for the rotation too.
 
 ## Replay
 The review log is the source of truth and the stored states are a cache. `replay` rebuilds every state by folding

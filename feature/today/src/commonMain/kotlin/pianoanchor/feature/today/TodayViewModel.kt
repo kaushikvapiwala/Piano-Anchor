@@ -99,7 +99,7 @@ public class TodayViewModel(
     }
 
     /** Where tapping [card] leads: Practice on its passage and rung, or Pianos when no piano is connected. */
-    public fun target(card: Card): TodayTarget {
+    public fun target(card: Card.PassageCard): TodayTarget {
         val piano = mutableState.value.piano ?: return TodayTarget.Pianos
         return TodayTarget.Practice(piano.device, card.passage.id, card.rung)
     }

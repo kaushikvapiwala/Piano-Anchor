@@ -7,6 +7,7 @@ public data class Skill(
     val id: String,
     val title: String,
     val prerequisites: Set<String>,
+    val track: Track = Track.CORE,
 )
 
 /** Skills with prerequisites that form a DAG: unique ids, every prerequisite known, no cycles. */
