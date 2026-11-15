@@ -10,11 +10,14 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
+import pianoanchor.core.model.Rating
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.StorageUnavailableException
@@ -22,10 +25,13 @@ import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.content.Skills
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeCalibrationRepository
 import pianoanchor.testing.FakeClock
+import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
 import pianoanchor.testing.FakeWallClock
@@ -47,6 +53,8 @@ class PracticeViewModelTest {
     private val piano = FakePiano(clock)
     private val attempts = FakeAttemptRepository()
     private val calibration = FakeCalibrationRepository()
+    private val learnerRepository = FakeLearnerRepository()
+    private val learner = LearnerModel(Skills.GRAPH, learnerRepository)
 
     // Skipped: these tests play timed rungs without the calibration card (PracticeViewModelCalibrationTest has it).
     private val skips = CalibrationSkips().apply { skip(piano.device.id) }
@@ -80,6 +88,8 @@ class PracticeViewModelTest {
             metronome,
             clock,
             wallClock,
+            learner,
+            TimeZone.UTC,
             clickSetting,
             skips,
         ) {
@@ -293,6 +303,35 @@ class PracticeViewModelTest {
         }
 
     @Test
+    fun savedRunIsRecordedOnTheLearnerDay() =
+        runTest(dispatcher) {
+            val vm = practice()
+
+            playCde()
+
+            val review = learnerRepository.reviews(Skills.RH_C_POSITION.id).single()
+            assertEquals(LocalDate(2026, 11, 13), review.day)
+            assertEquals(Rating.GOOD, review.rating)
+            assertEquals("attempt-1", review.attemptId)
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun learnerStorageFailureDoesNotDisturbTheSavedRun() =
+        runTest(dispatcher) {
+            val vm = practice()
+            learnerRepository.failing = true
+
+            playCde()
+
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+            assertFalse(vm.state.value.saveFailed)
+            assertNotNull(attempts.get("attempt-1"))
+            learnerRepository.failing = false
+            assertEquals(emptyMap(), learnerRepository.states())
+        }
+
+    @Test
     fun closeEndsTheRunAndFreesThePianoForTheNextReader() =
         runTest(dispatcher) {
             val vm = practice()
@@ -309,6 +348,8 @@ class PracticeViewModelTest {
                     metronome,
                     clock,
                     wallClock,
+                    learner,
+                    TimeZone.UTC,
                     calibrationSkips = skips,
                 ) {
                     "next"

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiDevice
@@ -38,6 +39,8 @@ import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.analysis.PlayedNotes
 import pianoanchor.engine.grading.Grader
+import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.matcher.LiveVerdict
 import pianoanchor.engine.matcher.MatchState
 import pianoanchor.engine.matcher.TempoJudge
@@ -56,7 +59,8 @@ import kotlin.time.Instant
  * ([Grader]), saves it to [attempts] with its played notes and sets [PracticeState.finishedAttemptId]. A run that
  * ends early (disconnect, [restart], [selectRung], leaving the screen) is discarded. When the store is unavailable
  * the graded attempt is kept with [PracticeState.saveFailed] until [retrySave] or [discardRun]. [clock] gives the
- * attempt's start time (at the first note); [newId] the attempt's id; [clickSetting] keeps the metronome mute for
+ * attempt's start time (at the first note); [learner] records each saved attempt as a cold check on the learner day
+ * ([zone]); [newId] the attempt's id; [clickSetting] keeps the metronome mute for
  * the app session.
  *
  * A timed run reads the piano's latency offset from [calibration] when it starts and subtracts it from played times
@@ -75,6 +79,8 @@ public class PracticeViewModel(
     private val metronome: MetronomePort,
     private val time: ClockPort,
     private val clock: Clock,
+    private val learner: LearnerModel,
+    private val zone: TimeZone,
     private val clickSetting: ClickSetting = ClickSetting(),
     private val calibrationSkips: CalibrationSkips = CalibrationSkips(),
     initialRung: TempoRung = TempoRung.WAIT,
@@ -162,6 +168,7 @@ public class PracticeViewModel(
                 } catch (_: StorageUnavailableException) {
                     return@launch settle(attempt, saved = false)
                 }
+                recordLearning(attempt)
                 refreshDoneRungs()
                 settle(attempt, saved = true)
             }
@@ -225,8 +232,21 @@ public class PracticeViewModel(
         } catch (_: StorageUnavailableException) {
             return settle(attempt, saved = false)
         }
+        recordLearning(attempt)
         refreshDoneRungs()
         settle(attempt, saved = true)
+    }
+
+    /**
+     * Records the saved [attempt] as a cold check. The run is already safe, so a learner store that can't be written
+     * is skipped: a replay or the next cold check recovers (`docs/algorithms/learner-model.md`).
+     */
+    private suspend fun recordLearning(attempt: Attempt) {
+        try {
+            learner.record(passage, attempt, learnerDay(attempt.startedAt, zone))
+        } catch (_: StorageUnavailableException) {
+            // Skipped on purpose, see above.
+        }
     }
 
     /** Marks the rungs whose tempo has a clean timed attempt; a store that can't be read leaves them as they are. */

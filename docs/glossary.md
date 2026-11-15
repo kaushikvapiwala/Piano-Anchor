@@ -13,9 +13,10 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Band | The result of an attempt named for the learner: `CLEAN`, `GOOD` or `KEEP_PRACTISING`, from its accuracy and the `BAND_*_MIN_ACCURACY` tunables. |
 | BLE MIDI | MIDI over Bluetooth Low Energy. A BLE MIDI piano is found by a scan and must be connected from the app (`MidiDiscoveryPort`); pairing in the system settings pairs only Bluetooth audio. |
 | Chord window | The `CHORD_CLUSTER_MS` span from a step's first pressed note in which its other notes must follow; the matcher reports an incomplete chord when it runs out. |
-| Cold check | The first attempt of a learned item on a later day, without warm-up or hints; it measures retention. |
+| Cold check | The first saved attempt on a learner day that exercises a skill, in any mode and at any tempo; it becomes the skill's review for that day, rated from its band (`docs/algorithms/learner-model.md`). Later attempts that day change nothing. |
 | Contract test | Abstract test in `testing/` that every implementation of a port must pass. |
 | Difficulty | FSRS: how hard an item is for this learner, 1 (easy) to 10 (hard); part of `MemoryState` (`docs/algorithms/scheduler.md`). |
+| Due | A skill is due on a learner day when its `dueDay` (last review day plus the FSRS interval) is on or before that day; the plan lists due skills lowest retrievability first, at most `MAX_DUE_PER_DAY`. |
 | Error kind | What the performance analyser can report about a score note (`ErrorKind`): wrong note, missed note, extra note, incomplete chord, mistouch, octave, early, late, hesitation, too short, too long (`docs/algorithms/performance-analysis.md`). |
 | FakePiano | In-memory test double in `testing/` that implements both MIDI ports for one wired device, MIDI discovery for the devices it advertises, and decodes incoming bytes with the real parser. |
 | Finding | One error the analyser found (`Finding` in `:core:model`): its error kind, the score note it concerns (`ScoreNoteRef`: step and pitch) and the played note involved, if any. |
@@ -23,6 +24,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hesitation | A pause before a note that is much longer than the music asks for, without a wrong note. |
 | Incomplete chord | `ChordIncomplete`: the chord window of a step ran out before all its notes were pressed; the step must be played again. |
+| Learned | A skill that has `LEARNED_MIN_CLEAN_COLD_CHECKS` clean cold checks on distinct days and stability of at least `LEARNED_MIN_STABILITY_DAYS`. Sticky: it stays learned after a lapse, and it unlocks the skills that depend on it. |
 | Learner day | A calendar date (`kotlinx.datetime.LocalDate`) in the learner's own time zone; a skill gets at most one review per learner day. Stored as ISO `yyyy-mm-dd` text (ADR 0022). |
 | Review | One FSRS review (`Review` in `:core:model`): a cold check of a skill on a learner day that produced a rating, from one attempt. |
 | Review log | The append-only list of reviews kept by `LearnerRepositoryPort`: the source of truth. The cached state per skill (`SkillState`) is derived from it and can be rebuilt by replaying the log. |

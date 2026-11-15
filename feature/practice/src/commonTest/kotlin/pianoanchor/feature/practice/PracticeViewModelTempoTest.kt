@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiDevice
@@ -22,10 +23,13 @@ import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.content.Skills
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeCalibrationRepository
 import pianoanchor.testing.FakeClock
+import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
 import pianoanchor.testing.FakeWallClock
@@ -47,6 +51,8 @@ class PracticeViewModelTempoTest {
     private val piano = FakePiano(clock)
     private val attempts = FakeAttemptRepository()
     private val calibration = FakeCalibrationRepository()
+    private val learnerRepository = FakeLearnerRepository()
+    private val learner = LearnerModel(Skills.GRAPH, learnerRepository)
 
     // Skipped: these tests play timed rungs without the calibration card (PracticeViewModelCalibrationTest has it).
     private val skips = CalibrationSkips().apply { skip(piano.device.id) }
@@ -78,6 +84,8 @@ class PracticeViewModelTempoTest {
             metronome,
             clock,
             wallClock,
+            learner,
+            TimeZone.UTC,
             clickSetting,
             skips,
         ) {

@@ -339,4 +339,49 @@ public object Tunables {
      * Source: py-fsrs default `maximum_interval` (36500), the reference the vectors come from.
      */
     public const val MAX_INTERVAL_DAYS: Int = 36_500
+
+    /**
+     * The learner day starts at this local hour (0-23): a run before it belongs to the previous day.
+     *
+     * Why: late-night practice still belongs to the evening's day.
+     *
+     * Source: starting value, owner-agreed in the M2 grill; calibrated in M7.
+     */
+    public const val LEARNER_DAY_START_HOUR: Int = 4
+
+    /**
+     * The fewest CLEAN cold checks, on distinct days, before a skill counts as learned.
+     *
+     * Why: a skill must have survived at least one night's sleep, not one good session.
+     *
+     * Source: starting value, owner-agreed in the M2 grill; calibrated in M7.
+     */
+    public const val LEARNED_MIN_CLEAN_COLD_CHECKS: Int = 2
+
+    /**
+     * The least FSRS stability, in days, a skill needs to count as learned.
+     *
+     * Why: FSRS expects it to last days, not hours.
+     *
+     * Source: starting value, owner-agreed in the M2 grill; calibrated in M7.
+     */
+    public const val LEARNED_MIN_STABILITY_DAYS: Double = 3.0
+
+    /**
+     * The most new skills the plan introduces on one learner day, counting those already introduced that day.
+     *
+     * Why: new material stays digestible in a 15-20 minute session.
+     *
+     * Source: starting value, owner-agreed in the M2 grill; calibrated in M7.
+     */
+    public const val MAX_NEW_PER_DAY: Int = 2
+
+    /**
+     * The most due skills the plan offers on one learner day; the overflow waits for later days.
+     *
+     * Why: reviews fit the same 15-20 minute session.
+     *
+     * Source: starting value, owner-agreed in the M2 grill; calibrated in M7.
+     */
+    public const val MAX_DUE_PER_DAY: Int = 12
 }

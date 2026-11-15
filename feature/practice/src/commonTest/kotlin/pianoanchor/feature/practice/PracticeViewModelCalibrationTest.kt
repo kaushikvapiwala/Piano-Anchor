@@ -9,14 +9,18 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.content.Skills
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeCalibrationRepository
 import pianoanchor.testing.FakeClock
+import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
 import pianoanchor.testing.FakeWallClock
@@ -38,6 +42,8 @@ class PracticeViewModelCalibrationTest {
     private val piano = FakePiano(clock)
     private val attempts = FakeAttemptRepository()
     private val calibration = FakeCalibrationRepository()
+    private val learnerRepository = FakeLearnerRepository()
+    private val learner = LearnerModel(Skills.GRAPH, learnerRepository)
     private val skips = CalibrationSkips()
     private val metronome = FakeMetronome(clock)
     private val wallClock = FakeWallClock(Instant.parse("2026-11-13T09:00:00Z"))
@@ -68,6 +74,8 @@ class PracticeViewModelCalibrationTest {
             metronome,
             clock,
             wallClock,
+            learner,
+            TimeZone.UTC,
             calibrationSkips = skips,
         ) {
             "attempt-1"
@@ -142,6 +150,8 @@ class PracticeViewModelCalibrationTest {
                     metronome,
                     clock,
                     wallClock,
+                    learner,
+                    TimeZone.UTC,
                     calibrationSkips = skips,
                     initialRung = TempoRung.P70,
                 ) { "attempt-1" }.also {

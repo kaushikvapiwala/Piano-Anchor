@@ -1,6 +1,7 @@
 package pianoanchor.app
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.datetime.TimeZone
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -15,6 +16,8 @@ import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.content.Skills
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.practice.CalibrationSkips
@@ -42,6 +45,7 @@ val appModule =
         single<MidiDiscoveryPort> { get<AndroidMidiAdapter>() }
         single<ClockPort> { AndroidClockAdapter() }
         single<Clock> { Clock.System }
+        single<TimeZone> { TimeZone.currentSystemDefault() }
         single { ClickSetting() }
         single { CalibrationSkips() }
         single<MetronomePort> { AndroidMetronomeAdapter(androidContext(), get()) }
@@ -52,7 +56,21 @@ val appModule =
         single<LearnerRepositoryPort> { SqlLearnerRepositoryAdapter(get(), Dispatchers.IO) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get()) }
         viewModel { (device: MidiDevice, rung: TempoRung) ->
-            PracticeViewModel(device, Passages.CDE, get(), get(), get(), get(), get(), get(), get(), get(), rung) {
+            PracticeViewModel(
+                device,
+                Passages.CDE,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                LearnerModel(Skills.GRAPH, get()),
+                get(),
+                get(),
+                get(),
+                rung,
+            ) {
                 Uuid.random().toString()
             }
         }
