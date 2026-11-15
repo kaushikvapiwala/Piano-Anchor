@@ -72,11 +72,19 @@ class LatencyCalibrationTest {
     }
 
     @Test
-    fun offsetBeyond400MsGivesOutOfRange() {
-        // A slower click list than the app's, so that a tap 450 ms late still pairs with its own click.
-        val slow = List(Tunables.CALIBRATION_CLICKS) { first + it * 1_000 * ms }
-        val taps = slow.map { tap(it + 450 * ms) }
-        assertEquals(CalibrationResult.OutOfRange(450 * ms), LatencyCalibration.evaluate(slow, taps))
+    fun aLagOf380MsIsMeasuredAsPositive() {
+        assertEquals(CalibrationResult.Accepted(380 * ms, 0), LatencyCalibration.evaluate(clicks, steady(380)))
+    }
+
+    @Test
+    fun aLagOf450MsIsRejectedAsOutOfRange() {
+        assertEquals(CalibrationResult.OutOfRange(450 * ms), LatencyCalibration.evaluate(clicks, steady(450)))
+    }
+
+    @Test
+    fun aLagJustUnderTheCapIsAccepted() {
+        val lag = Tunables.CALIBRATION_MAX_OFFSET_MS - 5
+        assertEquals(CalibrationResult.Accepted(lag * ms, 0), LatencyCalibration.evaluate(clicks, steady(lag)))
     }
 
     @Test

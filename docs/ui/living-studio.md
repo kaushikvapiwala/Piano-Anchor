@@ -90,7 +90,7 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
 Landscape like practice, 915×412 dp, page colour and a card (radius 20) with pill buttons (44 dp high).
 
 - **Header**: back (44 dp, same as Cancel), the title "Calibrate timing" (heading, Space Grotesk 700 22 sp) and the
-  line "Play any key on each click. 16 clicks, about 11 seconds."
+  line "Play any key on each click. 16 clicks, about 16 seconds."
 - **Start**: one pill button in the card. It plays the click pattern (no accent).
 - **Running**: a pulse dot (filled for half a beat after each click), "Get ready" while the warm-up clicks play and
   then "Play a key on each click", and the tap counter "7 / 12" (taps on the counted clicks). TalkBack reads the
@@ -102,7 +102,7 @@ Landscape like practice, 915×412 dp, page colour and a card (radius 20) with pi
   "Piano disconnected" card above Start.
 
 The **calibrate card** on the practice screen (secondary container colour, under the top bar) reads "Calibrate timing ·
-about 11 s" with Calibrate and Skip. It shows when a timed rung is selected on a piano with no stored offset; the run
+about 16 s" with Calibrate and Skip. It shows when a timed rung is selected on a piano with no stored offset; the run
 waits for the choice. Skip plays uncalibrated and hides the card for that piano until the app restarts. The monitor's
 "Calibrate timing" button (next to Practice, enabled while connected) opens the same screen and returns to the monitor.
 

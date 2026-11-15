@@ -6,7 +6,7 @@ times with the metronome, so an uncorrected delay of 40 ms reads as "late" on ev
 delay once per piano and the app subtracts it afterwards.
 
 ## Method
-`LatencyCalibration.clickTimes` lays out `CALIBRATION_CLICKS` clicks at `CALIBRATION_BPM`, all alike (no accent). The
+`LatencyCalibration.clickTimes` lays out `CALIBRATION_CLICKS` clicks at `CALIBRATION_BPM` (60 BPM, one click a second), all alike (no accent). The
 learner plays any key on each click. `evaluate` then:
 
 1. pairs each NoteOn with the nearest click if it is within half a beat of it; where several taps pair with one click
@@ -19,7 +19,8 @@ learner plays any key on each click. `evaluate` then:
 6. otherwise `Accepted` with the offset and the spread.
 
 Medians, not means, so one stray tap moves nothing. Half a beat is taken from the spacing of the clicks given, so with
-the app's own pattern (333 ms) the range check is a safety net, and it bites only for slower click lists.
+the app's own pattern the window is 500 ms, wider than `CALIBRATION_MAX_OFFSET_MS`, so every lag the range check
+accepts pairs with its own click and a larger one (say 450 ms) is reported as `OutOfRange` rather than mispaired.
 
 ## One combined offset
 The measurement covers the click leaving the phone, the learner's own reaction and the piano's note arriving, as one

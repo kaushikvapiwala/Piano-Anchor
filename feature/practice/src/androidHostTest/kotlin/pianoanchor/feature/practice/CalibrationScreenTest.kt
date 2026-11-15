@@ -33,7 +33,7 @@ class CalibrationScreenTest {
             setContent { PianoAnchorTheme { CalibrationScreen(CalibrationState(), { starts++ }, {}, {}) } }
 
             onNodeWithText("Calibrate timing").assertExists()
-            onNodeWithText("Play any key on each click. 16 clicks, about 11 seconds.").assertExists()
+            onNodeWithText("Play any key on each click. 16 clicks, about 16 seconds.").assertExists()
             onNodeWithText("Start").performClick()
 
             assertEquals(1, starts)
