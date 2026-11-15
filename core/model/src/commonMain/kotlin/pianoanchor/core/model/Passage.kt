@@ -62,7 +62,8 @@ public data class TimeSignature(
  * A piece of music to practise. [id] is stable (stored with attempts) and not blank; [steps] is not empty and
  * their onsets strictly increase. [tempoBpm] is the written tempo in quarter notes per minute
  * ([MIN_TEMPO_BPM]..[MAX_TEMPO_BPM]). [rights] says why it may ship. [skills] are the ids of the [Skill]s a run
- * exercises (may be empty: such a passage is never scheduled).
+ * exercises (may be empty: such a passage is never scheduled). A [piece] is a tune or song, listed on the Songs
+ * screen; an exercise is not.
  */
 public data class Passage(
     val id: String,
@@ -72,6 +73,7 @@ public data class Passage(
     val tempoBpm: Int,
     val rights: Rights,
     val skills: Set<String> = emptySet(),
+    val piece: Boolean = false,
 ) {
     init {
         require(id.isNotBlank()) { "passage id must not be blank" }

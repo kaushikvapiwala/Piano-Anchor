@@ -1,0 +1,12 @@
+<resources>
+    <string name="songs_title">Songs</string>
+    <string name="songs_new">New</string>
+    <string name="songs_mastered">✓ Mastered</string>
+    <string name="songs_progress">rung %1$s of %2$s</string>
+    <string name="songs_lock_glyph">🔒</string>
+    <string name="songs_needs">Needs: %1$s</string>
+    <string name="songs_locked_description">Locked. Needs %1$s.</string>
+    <string name="songs_row_description">%1$s. %2$s</string>
+    <string name="songs_error_storage">Couldn't load your songs.</string>
+    <string name="songs_action_retry">Retry</string>
+</resources>

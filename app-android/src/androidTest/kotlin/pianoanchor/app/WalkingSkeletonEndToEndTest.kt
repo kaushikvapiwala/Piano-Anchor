@@ -43,13 +43,13 @@ import pianoanchor.feature.practice.resources.practice_last_key_correct
 import pianoanchor.feature.practice.resources.results_caption
 import pianoanchor.feature.practice.resources.results_headline_clean
 import pianoanchor.feature.practice.resources.results_try_again
-import pianoanchor.feature.today.resources.today_nav_pianos
+import pianoanchor.ui.shell.resources.nav_pianos
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import pianoanchor.feature.monitor.resources.Res as MonitorRes
 import pianoanchor.feature.practice.resources.Res as PracticeRes
-import pianoanchor.feature.today.resources.Res as TodayRes
+import pianoanchor.ui.shell.resources.Res as ShellRes
 
 /** How long a step may take on a cold emulator: listing the device, opening it, a screen change. */
 private const val UI_TIMEOUT_MS = 20_000L
@@ -115,7 +115,7 @@ class WalkingSkeletonEndToEndTest {
     @Test
     fun playsCdeTwiceAndCountsRuns() {
         // Today is the start screen; the monitor is behind its Pianos entry.
-        compose.onNodeWithText(text(TodayRes.string.today_nav_pianos)).performClick()
+        compose.onNodeWithText(text(ShellRes.string.nav_pianos)).performClick()
         val select = text(MonitorRes.string.monitor_select_device, piano.name)
         compose.waitUntil(UI_TIMEOUT_MS) {
             compose.onAllNodesWithContentDescription(select).fetchSemanticsNodes().isNotEmpty()

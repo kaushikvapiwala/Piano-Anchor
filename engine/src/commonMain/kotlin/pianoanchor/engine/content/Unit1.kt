@@ -38,6 +38,7 @@ internal val UNIT_1: CurriculumUnit =
                                 "Traditional with no known author, in print by the 18th century, so any copyright " +
                                     "has long expired. The notes are our own arrangement in right-hand C position.",
                         ),
+                    piece = true,
                 ),
                 builtinPassage(
                     id = "skipping-stones",
@@ -80,6 +81,7 @@ internal val UNIT_1: CurriculumUnit =
                                 "Hale died in 1879 and the tune is traditional with no known author, so both are " +
                                     "public domain. The notes are our own arrangement in right-hand C position.",
                         ),
+                    piece = true,
                 ),
                 builtinPassage(
                     id = "au-clair-de-la-lune",
@@ -94,6 +96,7 @@ internal val UNIT_1: CurriculumUnit =
                                 "Traditional with no known author, 18th century, so any copyright has long " +
                                     "expired. The notes are our own arrangement in right-hand C position.",
                         ),
+                    piece = true,
                 ),
                 builtinPassage(
                     id = "lightly-row",
@@ -111,6 +114,7 @@ internal val UNIT_1: CurriculumUnit =
                                     "copyright has long expired. The notes are our own arrangement in right-hand " +
                                     "C position.",
                         ),
+                    piece = true,
                 ),
                 builtinPassage(
                     id = "ode-to-joy",
@@ -121,6 +125,7 @@ internal val UNIT_1: CurriculumUnit =
                     tempoBpm = 72,
                     skills = setOf(Skills.RH_TUNES.id, Skills.RH_STEPS.id, Skills.RHYTHM_HALF.id),
                     rights = odeToJoyRights(),
+                    piece = true,
                 ),
             ),
     )

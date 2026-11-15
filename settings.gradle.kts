@@ -37,6 +37,7 @@ include(
     ":feature:onboarding",
     ":feature:practice",
     ":feature:settings",
+    ":feature:songs",
     ":feature:today",
     ":app-android",
     ":app-desktop",
