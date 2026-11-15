@@ -269,6 +269,7 @@ class ErrorInjectorTest {
                 steps = pitches.mapIndexed { i, pitch -> Step(i * 120, setOf(ScoreNote(pitch, 120))) },
                 timeSignature = TimeSignature(4, 4),
                 tempoBpm = 60,
+                rights = TEST_RIGHTS,
             )
         seeds.forEach { seed ->
             val clean = TakeGenerator(seed).clean(close, 60)

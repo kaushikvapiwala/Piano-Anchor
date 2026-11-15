@@ -99,6 +99,7 @@ class TakeGeneratorTest {
                     },
                 timeSignature = TimeSignature(4, 4),
                 tempoBpm = 60,
+                rights = TEST_RIGHTS,
             )
         seeds.forEach { seed ->
             val take = TakeGenerator(seed).clean(fast, 60)

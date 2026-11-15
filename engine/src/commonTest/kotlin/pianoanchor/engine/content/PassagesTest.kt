@@ -4,7 +4,6 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.TimeSignature
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class PassagesTest {
     @Test
@@ -21,10 +20,4 @@ class PassagesTest {
         assertEquals(listOf(0, 960, 1920), cde.steps.map { it.onsetTicks })
         assertEquals(listOf(960, 960, 1920), cde.steps.map { it.notes.single().lengthTicks })
     }
-
-    @Test
-    fun byIdFindsABuiltInPassage() = assertEquals(Passages.CDE, Passages.byId("builtin:cde"))
-
-    @Test
-    fun byIdIsNullForAnUnknownId() = assertNull(Passages.byId("builtin:gone"))
 }

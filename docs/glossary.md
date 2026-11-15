@@ -26,6 +26,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Incomplete chord | `ChordIncomplete`: the chord window of a step ran out before all its notes were pressed; the step must be played again. |
 | Learned | A skill that has `LEARNED_MIN_RECALLED_COLD_CHECKS` recalled (Hard or Good) cold checks on distinct days, at least `LEARNED_MIN_CLEAN_COLD_CHECKS` of them clean, and stability of at least `LEARNED_MIN_STABILITY_DAYS`. Sticky: it stays learned after a lapse, and it unlocks the skills that depend on it. |
 | Learner day | A calendar date (`kotlinx.datetime.LocalDate`) in the learner's own time zone; a skill gets at most one review per learner day. Stored as ISO `yyyy-mm-dd` text (ADR 0022). |
+| Note text | The compact text line a passage's notes are written in, e.g. `C4q D4q E4h`; parsed by `NoteText`. See `docs/algorithms/note-text.md`. |
 | Review | One FSRS review (`Review` in `:core:model`): a cold check of a skill on a learner day that produced a rating, from one attempt. |
 | Review log | The append-only list of reviews kept by `LearnerRepositoryPort`: the source of truth. The cached state per skill (`SkillState`) is derived from it and can be rebuilt by replaying the log. |
 | Latency offset | How much later (positive) or earlier (negative) a piano's notes arrive than the click they answer, in nanoseconds: the phone's click output, Bluetooth and the piano together. Stored per piano (`CalibrationRepositoryPort`), subtracted from played-note times in timed runs, and kept on each attempt (`Attempt.latencyOffsetNanos`, null = played uncalibrated). |
@@ -52,6 +53,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Reconnect backoff | How the adapter reopens a dropped BLE MIDI device: waits that double from `BLE_RECONNECT_INITIAL_MS` up to `BLE_RECONNECT_MAX_MS`, giving up after `BLE_RECONNECT_GIVE_UP_MS`. |
 | Results screen | The screen after a completed run (`:feature:practice`): "run N" of the passage, a headline from the band, the Pitch tile (correct steps of all, wrong notes, incomplete chords) and Try again. |
 | Retrievability | FSRS: the chance of recalling an item now, 1 right after a review and falling with the days since; `Fsrs.retrievability`. |
+| Rights record | Why a passage may ship (`Rights` in `:core:model`): original or public domain, its origin, the basis and the check date; every passage has one and `docs/generated/rights.md` lists them. |
 | Running status | MIDI shorthand: after one channel status byte, further data-byte groups reuse that status without repeating it. |
 | Skill node | One learnable skill (`Skill` in `:core:model`, e.g. "Right hand, C position"): a stable kebab-case id, a title and its prerequisites. Passages list the skills they exercise. |
 | Stability | FSRS: the days after which recall has fallen to 90%; grows with each successful review. Part of `MemoryState`. |
@@ -68,6 +70,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Tick | The unit of musical time in a passage: `TICKS_PER_QUARTER` (960) ticks per quarter note, so onsets and note lengths are whole numbers. |
 | Time signature | Beats per bar (1–32) and the note value of a beat (1, 2, 4, 8 or 16), e.g. 3/4 (`TimeSignature`). |
 | Tunable | A threshold or prior in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt`, documented with why and source. |
+| Unit | One step of the curriculum (`CurriculumUnit` in `:core:model`): a title, the skills it teaches and the passages that teach them; the units are listed in `Curriculum`. |
 | Wait mode | Practice mode where the music waits until the learner plays the right note(s). |
 | Written tempo | The tempo a passage states, in quarter notes per minute (`Passage.tempoBpm`, 20–300); tempo rungs are percentages of it. |
 | Wrong note | `WrongNote`: a key pressed that isn't in the current step; progress is unchanged. |

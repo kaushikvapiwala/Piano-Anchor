@@ -4,6 +4,8 @@ plugins {
 }
 
 dependencies {
+    // GeneratedDocsTest renders docs/generated/rights.md from the curriculum.
+    testImplementation(project(":engine"))
     testImplementation(libs.konsist)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

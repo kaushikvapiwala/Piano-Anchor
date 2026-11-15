@@ -22,8 +22,8 @@ import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
-import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
@@ -52,7 +52,7 @@ class PracticeViewModelTempoTest {
     private val attempts = FakeAttemptRepository()
     private val calibration = FakeCalibrationRepository()
     private val learnerRepository = FakeLearnerRepository()
-    private val learner = LearnerModel(Skills.GRAPH, learnerRepository)
+    private val learner = LearnerModel(Curriculum.graph, learnerRepository)
 
     // Skipped: these tests play timed rungs without the calibration card (PracticeViewModelCalibrationTest has it).
     private val skips = CalibrationSkips().apply { skip(piano.device.id) }

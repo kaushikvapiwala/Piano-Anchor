@@ -15,8 +15,8 @@ import pianoanchor.core.ports.MetronomePort
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
-import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.monitor.MonitorViewModel
@@ -65,7 +65,7 @@ val appModule =
                 get(),
                 get(),
                 get(),
-                LearnerModel(Skills.GRAPH, get()),
+                LearnerModel(Curriculum.graph, get()),
                 get(),
                 get(),
                 get(),

@@ -1,9 +1,12 @@
 package pianoanchor.core.model
 
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+
+private val rights = Rights(RightsStatus.ORIGINAL, "test", "test", LocalDate(2026, 1, 1))
 
 class PassageTest {
     private val c4 = MidiNote(60)
@@ -23,7 +26,7 @@ class PassageTest {
         id: String = "builtin:c",
         timeSignature: TimeSignature = fourFour,
         tempoBpm: Int = 80,
-    ) = Passage(id, "C", steps, timeSignature, tempoBpm)
+    ) = Passage(id, "C", steps, timeSignature, tempoBpm, rights)
 
     @Test
     fun pitchesListsTheStepsPitches() {
@@ -111,12 +114,13 @@ class PassageTest {
     @Test
     fun passageKeepsItsFields() {
         val steps = listOf(step(0, c4))
-        val passage = Passage("builtin:c", "C", steps, TimeSignature(3, 4), 90)
+        val passage = Passage("builtin:c", "C", steps, TimeSignature(3, 4), 90, rights)
         assertEquals("builtin:c", passage.id)
         assertEquals("C", passage.title)
         assertEquals(steps, passage.steps)
         assertEquals(TimeSignature(3, 4), passage.timeSignature)
         assertEquals(90, passage.tempoBpm)
+        assertEquals(rights, passage.rights)
     }
 
     @Test
