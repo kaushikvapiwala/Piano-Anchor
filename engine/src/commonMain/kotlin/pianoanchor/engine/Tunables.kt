@@ -378,6 +378,18 @@ public object Tunables {
     public const val LEARNED_MIN_STABILITY_DAYS: Double = 3.0
 
     /**
+     * The FSRS stability, in days, at which recalled cold checks alone (at least
+     * [LEARNED_MIN_RECALLED_COLD_CHECKS], none of them clean) make a skill learned.
+     *
+     * Why: a skill recalled every time with small slips, whose memory already lasts weeks, is known well enough to
+     * unlock its dependants; without this, one unlucky skill locked a third of the #73 simulation's graph.
+     *
+     * Source: Anki's "mature" card threshold (an interval of 21 days or more); owner request 2026-11-15 after the
+     * #73 simulation; calibrated in M7.
+     */
+    public const val LEARNED_MATURE_STABILITY_DAYS: Double = 21.0
+
+    /**
      * The most new skills the plan introduces on one learner day, counting those already introduced that day.
      *
      * Why: new material stays digestible in a 15-20 minute session.
