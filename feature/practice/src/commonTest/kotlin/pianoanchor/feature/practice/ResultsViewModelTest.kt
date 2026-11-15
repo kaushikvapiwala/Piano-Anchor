@@ -1,8 +1,10 @@
 package pianoanchor.feature.practice
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
@@ -18,6 +20,7 @@ import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.grading.NoteValue
 import pianoanchor.testing.FakeAttemptRepository
+import kotlin.coroutines.CoroutineContext
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -29,6 +32,22 @@ private const val MS = 1_000_000L
 private const val C4 = 60
 private const val D4 = 62
 private const val E4 = 64
+
+/** Holds dispatched blocks until [runQueued]: shows which work went to the analysis dispatcher. */
+private class HeldDispatcher : CoroutineDispatcher() {
+    val queued = ArrayDeque<Runnable>()
+
+    override fun dispatch(
+        context: CoroutineContext,
+        block: Runnable,
+    ) {
+        queued.add(block)
+    }
+
+    fun runQueued() {
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+    }
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ResultsViewModelTest {
@@ -78,7 +97,7 @@ class ResultsViewModelTest {
         vararg saved: Attempt,
     ): ResultsViewModel {
         saved.forEach { attempts.save(it) }
-        return ResultsViewModel(id, attempts).also { runCurrent() }
+        return ResultsViewModel(id, attempts, dispatcher).also { runCurrent() }
     }
 
     @Test
@@ -266,7 +285,7 @@ class ResultsViewModelTest {
                         limit: Int,
                     ) = error("recent must not be used")
                 }
-            val vm = ResultsViewModel("a-2", countOnly).also { runCurrent() }
+            val vm = ResultsViewModel("a-2", countOnly, dispatcher).also { runCurrent() }
 
             assertEquals(2, (vm.state.value as ResultsState.Ready).runNumber)
         }
@@ -295,7 +314,7 @@ class ResultsViewModelTest {
                 object : AttemptRepositoryPort by attempts {
                     override suspend fun get(id: String): Attempt? = answer.await()
                 }
-            val vm = ResultsViewModel("a-1", slow).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", slow, dispatcher).also { runCurrent() }
             assertEquals(ResultsState.Loading, vm.state.value)
 
             answer.complete(null)
@@ -309,7 +328,7 @@ class ResultsViewModelTest {
             attempts.save(attempt("a-1", 100))
             attempts.failing = true
 
-            val vm = ResultsViewModel("a-1", attempts).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", attempts, dispatcher).also { runCurrent() }
 
             assertEquals(ResultsState.Unavailable, vm.state.value)
         }
@@ -326,7 +345,7 @@ class ResultsViewModelTest {
                     ): Int = throw StorageUnavailableException("countStartedBefore failed")
                 }
 
-            val vm = ResultsViewModel("a-1", countFails).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", countFails, dispatcher).also { runCurrent() }
 
             assertEquals(ResultsState.Unavailable, vm.state.value)
         }
@@ -336,7 +355,7 @@ class ResultsViewModelTest {
         runTest(dispatcher) {
             attempts.save(attempt("a-1", 100))
             attempts.failing = true
-            val vm = ResultsViewModel("a-1", attempts).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", attempts, dispatcher).also { runCurrent() }
 
             attempts.failing = false
             vm.retry()
@@ -357,7 +376,7 @@ class ResultsViewModelTest {
                     override suspend fun get(id: String): Attempt? =
                         if (++reads == 1) firstRead.await() else attempts.get(id)
                 }
-            val vm = ResultsViewModel("a-1", firstHangs).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", firstHangs, dispatcher).also { runCurrent() }
 
             vm.retry()
             runCurrent()
@@ -365,5 +384,20 @@ class ResultsViewModelTest {
             runCurrent()
 
             assertEquals(1, (vm.state.value as ResultsState.Ready).runNumber)
+        }
+
+    @Test
+    fun theAnalysisRunsOnTheAnalysisDispatcher() =
+        runTest(dispatcher) {
+            val notes = listOf(played(C4, 0, 600), played(D4, 750, 600), played(E4, 1500, 1400))
+            attempts.save(attempt("a-1", 100, tempoBpm = 80, playedNotes = notes))
+            val analysis = HeldDispatcher()
+
+            val vm = ResultsViewModel("a-1", attempts, analysis).also { runCurrent() }
+            assertEquals(ResultsState.Loading, vm.state.value)
+
+            analysis.runQueued()
+            runCurrent()
+            assertEquals(TimingTile(0, null, calibrated = false), (vm.state.value as ResultsState.Ready).timing)
         }
 }

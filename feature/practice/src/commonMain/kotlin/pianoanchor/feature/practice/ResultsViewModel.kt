@@ -2,11 +2,14 @@ package pianoanchor.feature.practice
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.ErrorKind
 import pianoanchor.core.model.Passage
@@ -27,11 +30,13 @@ import pianoanchor.engine.grading.noteValue
 /**
  * The results of the run saved as [attemptId] in [attempts]: [ResultsState.Loading] until it is read, then
  * [ResultsState.Ready] or [ResultsState.NotFound], or [ResultsState.Unavailable] when the store can't be read. The
- * run number is one more than the passage's runs started before this one.
+ * run number is one more than the passage's runs started before this one. The run is analysed on
+ * [analysisDispatcher], off the main thread, so a long passage doesn't stall the screen as it opens.
  */
 public class ResultsViewModel(
     private val attemptId: String,
     private val attempts: AttemptRepositoryPort,
+    private val analysisDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<ResultsState>(ResultsState.Loading)
     public val state: StateFlow<ResultsState> = mutableState.asStateFlow()
@@ -63,7 +68,8 @@ public class ResultsViewModel(
     private suspend fun load(): ResultsState {
         val attempt = attempts.get(attemptId) ?: return ResultsState.NotFound
         val passage = Curriculum.passage(attempt.passageId)
-        val summary = passage?.let { ResultsSummary.of(it, attempt, analyse(it, attempt)) }
+        val summary =
+            passage?.let { withContext(analysisDispatcher) { ResultsSummary.of(it, attempt, analyse(it, attempt)) } }
         return ResultsState.Ready(
             passageTitle = passage?.title ?: attempt.passageId,
             runNumber = attempts.countStartedBefore(attempt.passageId, attempt.startedAt) + 1,
