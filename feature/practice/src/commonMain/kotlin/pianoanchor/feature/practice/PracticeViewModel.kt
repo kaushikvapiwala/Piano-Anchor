@@ -98,8 +98,8 @@ public class PracticeViewModel(
     /** The graded attempt whose save failed, until it is saved or discarded; null while a retry runs. */
     private var unsaved: Attempt? = null
 
-    /** The latest known click choice: the stored one once read, then every toggle. A timed run clicks only if true. */
-    private var clickOn = PracticeState.start(passage).clickOn
+    /** True once the learner toggled the click here: the stored choice, if read later, no longer applies. */
+    private var clickToggled = false
 
     /** The click pattern of the timed run in progress, null outside one. */
     private var pattern: ClickPattern? = null
@@ -149,12 +149,13 @@ public class PracticeViewModel(
      * screen closes.
      */
     public fun toggleClick() {
-        val on = !clickOn
-        clickOn = on
+        val on = !mutableState.value.clickOn
+        clickToggled = true
         mutableState.update { it.copy(clickOn = on) }
         viewModelScope.launch {
             try {
-                settings.update { it.copy(clickOn = !it.clickOn) }
+                // Stores what the learner now sees, even if the store held something else.
+                settings.update { it.copy(clickOn = on) }
             } catch (_: StorageUnavailableException) {
                 // Not surfaced here: the choice stays in force for this session.
             }
@@ -167,7 +168,10 @@ public class PracticeViewModel(
         }
     }
 
-    /** Takes the stored click choice as the starting one; a store that can't be read leaves the default. */
+    /**
+     * Takes the stored click choice as the starting one, unless the learner toggled the click before it was read; a
+     * store that can't be read leaves the default.
+     */
     private suspend fun seedClickOn() {
         val stored =
             try {
@@ -175,8 +179,10 @@ public class PracticeViewModel(
             } catch (_: StorageUnavailableException) {
                 return
             }
-        clickOn = stored
+        if (clickToggled) return
         mutableState.update { it.copy(clickOn = stored) }
+        // A timed run that started before the read returned began clicking on the default: silence it.
+        if (!stored && pattern != null) metronome.stop()
     }
 
     /**
@@ -451,7 +457,7 @@ public class PracticeViewModel(
             mutableState.update { it.copy(keysDown = it.keysDown + starter.note) }
             val click = ClickPattern(firstBeatNanos, beatNanos, beatsPerBar)
             pattern = click
-            if (clickOn) click.start(metronome)
+            if (mutableState.value.clickOn) click.start(metronome)
             scope.launch {
                 runClock(timing)
                 ended.complete(true)

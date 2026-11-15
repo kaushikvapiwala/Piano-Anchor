@@ -61,21 +61,33 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun weeklyGoalStepperStoresTheDaysAndStaysInOneToSeven() =
+    fun weeklyGoalStepperStepsTheStoredDaysAndStaysInOneToSeven() =
         runTest(dispatcher) {
             val vm = viewModel()
 
-            vm.setWeeklyGoalDays(6)
+            vm.changeWeeklyGoalDays(by = 1)
             runCurrent()
-            assertEquals(6, vm.state.value.settings.weeklyGoalDays)
+            assertEquals(5, vm.state.value.settings.weeklyGoalDays)
 
-            vm.setWeeklyGoalDays(9)
+            vm.changeWeeklyGoalDays(by = 5)
             runCurrent()
             assertEquals(7, repository.settings.first().weeklyGoalDays)
 
-            vm.setWeeklyGoalDays(0)
+            vm.changeWeeklyGoalDays(by = -10)
             runCurrent()
             assertEquals(1, repository.settings.first().weeklyGoalDays)
+        }
+
+    @Test
+    fun twoQuickStepsBothCount() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+
+            vm.changeWeeklyGoalDays(by = 1)
+            vm.changeWeeklyGoalDays(by = 1)
+            runCurrent()
+
+            assertEquals(6, repository.settings.first().weeklyGoalDays)
         }
 
     @Test
@@ -140,6 +152,20 @@ class SettingsViewModelTest {
             vm.setClickOn(false)
             runCurrent()
 
+            assertFalse(vm.state.value.storageFailed)
+        }
+
+    @Test
+    fun theScreenFollowsTheStoreAgainAfterAFailedFirstRead() =
+        runTest(dispatcher) {
+            repository.failing = true
+            val vm = viewModel()
+            repository.failing = false
+
+            vm.setClickOn(false)
+            runCurrent()
+
+            assertFalse(vm.state.value.settings.clickOn)
             assertFalse(vm.state.value.storageFailed)
         }
 }

@@ -2,10 +2,12 @@ package pianoanchor.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.Settings
@@ -23,7 +25,10 @@ public class SettingsViewModel(
     private val mutableState = MutableStateFlow(SettingsState())
     public val state: StateFlow<SettingsState> = mutableState.asStateFlow()
 
-    init {
+    private var collector: Job = follow()
+
+    /** Shows what the store holds from now on; ends, with the error card, if the store can't be read. */
+    private fun follow(): Job =
         viewModelScope.launch {
             try {
                 repository.settings.collect { stored -> mutableState.update { it.copy(settings = stored) } }
@@ -31,14 +36,13 @@ public class SettingsViewModel(
                 mutableState.update { it.copy(storageFailed = true) }
             }
         }
-    }
 
     /** Sets the practice time per day. */
     public fun setDailyBudget(budget: DailyBudget): Unit = change { it.copy(dailyBudget = budget) }
 
-    /** Sets the practice days per week, kept within [WEEKLY_GOAL_DAYS_RANGE]. */
-    public fun setWeeklyGoalDays(days: Int): Unit =
-        change { it.copy(weeklyGoalDays = days.coerceIn(WEEKLY_GOAL_DAYS_RANGE)) }
+    /** Moves the practice days per week by [by], kept within [WEEKLY_GOAL_DAYS_RANGE]. */
+    public fun changeWeeklyGoalDays(by: Int): Unit =
+        change { it.copy(weeklyGoalDays = (it.weeklyGoalDays + by).coerceIn(WEEKLY_GOAL_DAYS_RANGE)) }
 
     /** Turns the metronome click of timed runs on or off. */
     public fun setClickOn(on: Boolean): Unit = change { it.copy(clickOn = on) }
@@ -56,6 +60,8 @@ public class SettingsViewModel(
             try {
                 repository.update(transform)
                 mutableState.update { it.copy(storageFailed = false) }
+                // A failed read ended the collector: the store works again, so follow it again.
+                if (!collector.isActive) collector = follow()
             } catch (_: StorageUnavailableException) {
                 mutableState.update { it.copy(storageFailed = true) }
             }

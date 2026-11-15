@@ -43,6 +43,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
@@ -412,6 +413,38 @@ class PracticeViewModelTempoTest {
 
             assertFalse(vm.state.value.clickOn)
             startRun(vm)
+            assertNull(metronome.running.value)
+        }
+
+    @Test
+    fun aToggleBeforeTheStoredChoiceIsReadWinsAndIsStored() =
+        runPractice {
+            settings.update { it.copy(clickOn = false) }
+            settings.readDelay = 1.seconds
+            val vm = practice()
+
+            vm.toggleClick() // the screen still shows the default (on), so this turns the click off
+            advanceTimeBy(2.seconds)
+            runCurrent()
+
+            assertFalse(vm.state.value.clickOn)
+            settings.readDelay = Duration.ZERO
+            assertFalse(settings.settings.first().clickOn)
+        }
+
+    @Test
+    fun aStoredOffChoiceReadAfterTheRunStartedSilencesTheClick() =
+        runPractice {
+            settings.update { it.copy(clickOn = false) }
+            settings.readDelay = 1.seconds
+            val vm = practice()
+            startRun(vm)
+            assertNotNull(metronome.running.value) // the default click started before the read returned
+
+            advanceTimeBy(2.seconds)
+            runCurrent()
+
+            assertFalse(vm.state.value.clickOn)
             assertNull(metronome.running.value)
         }
 

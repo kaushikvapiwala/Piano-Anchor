@@ -26,7 +26,7 @@ class SettingsScreenTest {
         SettingsActions(
             onBack = { calls += "back" },
             onDailyBudget = { calls += "budget $it" },
-            onWeeklyGoalDays = { calls += "goal $it" },
+            onWeeklyGoalStep = { calls += "step $it" },
             onClickOn = { calls += "click $it" },
             onUpdateCheckOn = { calls += "update $it" },
             onDismissError = { calls += "dismiss" },
@@ -45,7 +45,7 @@ class SettingsScreenTest {
             onNodeWithText("Check for updates").performClick()
 
             assertEquals(
-                listOf("back", "budget ${DailyBudget.MIN_30}", "goal 3", "goal 5", "click false", "update false"),
+                listOf("back", "budget ${DailyBudget.MIN_30}", "step -1", "step 1", "click false", "update false"),
                 calls,
             )
         }

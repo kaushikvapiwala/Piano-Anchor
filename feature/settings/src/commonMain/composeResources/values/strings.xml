@@ -9,8 +9,10 @@
     <string name="settings_budget_option">%1$s minutes</string>
     <string name="settings_budget_label">%1$s min</string>
     <string name="settings_weekly_goal">Weekly goal</string>
-    <string name="settings_weekly_goal_one">1 day a week</string>
-    <string name="settings_weekly_goal_other">%1$s days a week</string>
+    <plurals name="settings_weekly_goal_days">
+        <item quantity="one">%1$s day a week</item>
+        <item quantity="other">%1$s days a week</item>
+    </plurals>
     <string name="settings_weekly_goal_fewer">Fewer days</string>
     <string name="settings_weekly_goal_more">More days</string>
     <string name="settings_weekly_goal_fewer_glyph">−</string>

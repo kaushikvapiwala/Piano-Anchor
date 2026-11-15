@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -226,7 +227,7 @@ private fun SettingsRoute(onBack: () -> Unit) {
         SettingsActions(
             onBack = onBack,
             onDailyBudget = viewModel::setDailyBudget,
-            onWeeklyGoalDays = viewModel::setWeeklyGoalDays,
+            onWeeklyGoalStep = viewModel::changeWeeklyGoalDays,
             onClickOn = viewModel::setClickOn,
             onUpdateCheckOn = viewModel::setUpdateCheckOn,
             onDismissError = viewModel::dismissError,
@@ -295,10 +296,19 @@ private fun MonitorRoute(
                 onDismissError = viewModel::dismissError,
                 onSettings = onSettings,
                 // An input has one reader: the next screen opens the piano once the monitor has closed it.
-                onPractice = { device -> scope.launch { viewModel.setDeviceOpen(false).also { onPractice(device) } } },
-                onCalibrate = { device ->
-                    scope.launch { viewModel.setDeviceOpen(false).also { onCalibrate(device) } }
-                },
+                onPractice = { device -> scope.handOverPiano(viewModel) { onPractice(device) } },
+                onCalibrate = { device -> scope.handOverPiano(viewModel) { onCalibrate(device) } },
             ),
     )
+}
+
+/** Closes the monitor's reader of the piano, then runs [next], which opens it elsewhere (one reader per input). */
+private fun CoroutineScope.handOverPiano(
+    monitor: MonitorViewModel,
+    next: () -> Unit,
+) {
+    launch {
+        monitor.setDeviceOpen(false)
+        next()
+    }
 }

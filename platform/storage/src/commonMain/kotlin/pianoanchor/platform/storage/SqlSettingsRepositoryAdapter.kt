@@ -48,14 +48,7 @@ public class SqlSettingsRepositoryAdapter(
             withContext(dispatcher) {
                 storage("update") {
                     queries.transaction {
-                        val updated =
-                            change(
-                                queries
-                                    .selectAll()
-                                    .executeAsList()
-                                    .associate { it.key to it.text_value }
-                                    .toSettings(),
-                            )
+                        val updated = change(queries.read())
                         queries.put(DAILY_BUDGET, updated.dailyBudget.name)
                         queries.put(WEEKLY_GOAL_DAYS, updated.weeklyGoalDays.toString())
                         queries.put(CLICK_ON, updated.clickOn.toString())
@@ -69,23 +62,14 @@ public class SqlSettingsRepositoryAdapter(
 
 /** The stored settings, read at once. */
 private fun SettingsQueries.read(): Settings =
-    selectAll()
-        .executeAsList()
-        .associate {
-            it.key to it.text_value
-        }.toSettings()
+    selectAll().executeAsList().associate { it.key to it.text_value }.toSettings()
 
-/** The settings of stored [values] by key; each missing or unreadable one is the default. */
+/** The settings these stored values (by key) hold; each missing or unreadable one is the default. */
 private fun Map<String, String>.toSettings(): Settings {
     val defaults = Settings()
     return Settings(
         dailyBudget =
-            read(DAILY_BUDGET, defaults.dailyBudget) { name ->
-                DailyBudget.entries.firstOrNull {
-                    it.name ==
-                        name
-                }
-            },
+            read(DAILY_BUDGET, defaults.dailyBudget) { name -> DailyBudget.entries.firstOrNull { it.name == name } },
         weeklyGoalDays =
             read(WEEKLY_GOAL_DAYS, defaults.weeklyGoalDays) { text ->
                 WEEKLY_GOAL_DAYS_RANGE.firstOrNull { it.toString() == text }

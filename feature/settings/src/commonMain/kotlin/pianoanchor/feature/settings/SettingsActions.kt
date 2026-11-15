@@ -6,7 +6,8 @@ import pianoanchor.core.model.DailyBudget
 public data class SettingsActions(
     val onBack: () -> Unit = {},
     val onDailyBudget: (DailyBudget) -> Unit = {},
-    val onWeeklyGoalDays: (Int) -> Unit = {},
+    /** Receives -1 (fewer days) or +1 (more days). */
+    val onWeeklyGoalStep: (Int) -> Unit = {},
     val onClickOn: (Boolean) -> Unit = {},
     val onUpdateCheckOn: (Boolean) -> Unit = {},
     val onDismissError: () -> Unit = {},

@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.WEEKLY_GOAL_DAYS_RANGE
@@ -52,12 +53,11 @@ import pianoanchor.feature.settings.resources.settings_title
 import pianoanchor.feature.settings.resources.settings_update_check
 import pianoanchor.feature.settings.resources.settings_update_check_note
 import pianoanchor.feature.settings.resources.settings_weekly_goal
+import pianoanchor.feature.settings.resources.settings_weekly_goal_days
 import pianoanchor.feature.settings.resources.settings_weekly_goal_fewer
 import pianoanchor.feature.settings.resources.settings_weekly_goal_fewer_glyph
 import pianoanchor.feature.settings.resources.settings_weekly_goal_more
 import pianoanchor.feature.settings.resources.settings_weekly_goal_more_glyph
-import pianoanchor.feature.settings.resources.settings_weekly_goal_one
-import pianoanchor.feature.settings.resources.settings_weekly_goal_other
 
 private val TouchTarget = 44.dp
 
@@ -79,7 +79,7 @@ public fun SettingsScreen(
                 GroupTitle(Res.string.settings_group_practice)
                 BudgetRow(state.settings.dailyBudget, actions.onDailyBudget)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                WeeklyGoalRow(state.settings.weeklyGoalDays, actions.onWeeklyGoalDays)
+                WeeklyGoalRow(state.settings.weeklyGoalDays, actions.onWeeklyGoalStep)
                 GroupTitle(Res.string.settings_group_playing)
                 SwitchRow(Res.string.settings_click, null, state.settings.clickOn, actions.onClickOn)
                 GroupTitle(Res.string.settings_group_updates)
@@ -153,16 +153,11 @@ private fun BudgetRow(
 @Composable
 private fun WeeklyGoalRow(
     days: Int,
-    onChange: (Int) -> Unit,
+    onStep: (Int) -> Unit,
 ) {
     val fewer = stringResource(Res.string.settings_weekly_goal_fewer)
     val more = stringResource(Res.string.settings_weekly_goal_more)
-    val value =
-        if (days == 1) {
-            stringResource(Res.string.settings_weekly_goal_one)
-        } else {
-            stringResource(Res.string.settings_weekly_goal_other, days.toString())
-        }
+    val value = pluralStringResource(Res.plurals.settings_weekly_goal_days, days, days.toString())
     Row(
         modifier = Modifier.fillMaxWidth().heightIn(min = TouchTarget).padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -176,10 +171,10 @@ private fun WeeklyGoalRow(
             )
         }
         StepperButton(Res.string.settings_weekly_goal_fewer_glyph, fewer, days > WEEKLY_GOAL_DAYS_RANGE.first) {
-            onChange(days - 1)
+            onStep(-1)
         }
         StepperButton(Res.string.settings_weekly_goal_more_glyph, more, days < WEEKLY_GOAL_DAYS_RANGE.last) {
-            onChange(days + 1)
+            onStep(1)
         }
     }
 }
