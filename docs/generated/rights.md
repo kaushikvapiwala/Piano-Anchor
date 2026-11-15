@@ -6,4 +6,31 @@ and tempo) is original to Piano Anchor; the status says where the music comes fr
 
 | Id | Title | Status | Origin | Basis | Checked on |
 |---|---|---|---|---|---|
+| `builtin:twos-and-threes` | Twos and threes | ORIGINAL | Piano Anchor, 2026 | An exercise on every black key in the groups of two and threes over two octaves, written for Piano Anchor. | 2026-11-15 |
+| `builtin:twos-and-threes-down` | Twos and threes, coming down | ORIGINAL | Piano Anchor, 2026 | An exercise on the black key groups, played from the top down, written for Piano Anchor. | 2026-11-15 |
+| `builtin:all-the-cs` | All the Cs | ORIGINAL | Piano Anchor, 2026 | An exercise on finding C3, C4 and C5, one whole note each, written for Piano Anchor. | 2026-11-15 |
+| `builtin:cs-up-and-down` | Cs up and down | ORIGINAL | Piano Anchor, 2026 | An exercise on jumping between the three Cs, written for Piano Anchor. | 2026-11-15 |
+| `builtin:middle-c-march` | Middle C march | ORIGINAL | Piano Anchor, 2026 | An exercise on playing middle C again and again, written for Piano Anchor. | 2026-11-15 |
+| `builtin:which-c-is-middle` | Which C is middle? | ORIGINAL | Piano Anchor, 2026 | An exercise on picking middle C out from the other Cs, written for Piano Anchor. | 2026-11-15 |
 | `builtin:cde` | C-D-E | ORIGINAL | Piano Anchor, 2026 | Three notes of a rising scale, written for Piano Anchor. | 2026-11-15 |
+| `builtin:five-finger-walk` | Five-finger walk | ORIGINAL | Piano Anchor, 2026 | An exercise on walking C to G and back with the right hand, written for Piano Anchor. | 2026-11-15 |
+| `builtin:steady-quarters` | Steady quarters | ORIGINAL | Piano Anchor, 2026 | An exercise on a steady quarter-note beat, written for Piano Anchor. | 2026-11-15 |
+| `builtin:step-up-step-down` | Step up, step down | ORIGINAL | Piano Anchor, 2026 | An exercise on moving by step up and down the five fingers, written for Piano Anchor. | 2026-11-15 |
+| `builtin:hot-cross-buns` | Hot Cross Buns | PUBLIC_DOMAIN | Hot Cross Buns, traditional English street cry, 18th century or earlier | Traditional with no known author, in print by the 18th century, so any copyright has long expired. The notes are our own arrangement in right-hand C position. | 2026-11-15 |
+| `builtin:skipping-stones` | Skipping stones | ORIGINAL | Piano Anchor, 2026 | An exercise on skipping from C to E to G, written for Piano Anchor. | 2026-11-15 |
+| `builtin:steady-skipping` | Steady skipping | ORIGINAL | Piano Anchor, 2026 | An exercise on skips and steps at a brisker, steady pace, written for Piano Anchor. | 2026-11-15 |
+| `builtin:half-and-quarter` | Half and quarter | ORIGINAL | Piano Anchor, 2026 | An exercise on mixing half notes and quarter notes, written for Piano Anchor. | 2026-11-15 |
+| `builtin:mary-had-a-little-lamb` | Mary Had a Little Lamb | PUBLIC_DOMAIN | Mary Had a Little Lamb: words by Sarah Josepha Hale (1830), tune traditional American, 19th century | Hale died in 1879 and the tune is traditional with no known author, so both are public domain. The notes are our own arrangement in right-hand C position. | 2026-11-15 |
+| `builtin:au-clair-de-la-lune` | Au clair de la lune | PUBLIC_DOMAIN | Au clair de la lune, traditional French song, 18th century | Traditional with no known author, 18th century, so any copyright has long expired. The notes are our own arrangement in right-hand C position. | 2026-11-15 |
+| `builtin:lightly-row` | Lightly Row | PUBLIC_DOMAIN | Lightly Row, from the traditional German song "Hänschen klein", 19th century | A traditional German children's song with no known composer, 19th century, so any copyright has long expired. The notes are our own arrangement in right-hand C position. | 2026-11-15 |
+| `builtin:ode-to-joy` | Ode to Joy | PUBLIC_DOMAIN | Ode to Joy theme, Ludwig van Beethoven, Symphony No. 9 (1824) | Beethoven died in 1827, nearly 200 years ago, so the work is public domain. The notes are our own arrangement in right-hand C position. | 2026-11-15 |
+| `builtin:left-hand-walk` | Left hand walk | ORIGINAL | Piano Anchor, 2026 | An exercise on walking C to G and back with the left hand, written for Piano Anchor. | 2026-11-15 |
+| `builtin:left-hand-steps` | Left hand steps | ORIGINAL | Piano Anchor, 2026 | An exercise on left-hand steps up and down, written for Piano Anchor. | 2026-11-15 |
+| `builtin:long-notes` | Long notes | ORIGINAL | Piano Anchor, 2026 | An exercise on whole notes and half notes in the right hand, written for Piano Anchor. | 2026-11-15 |
+| `builtin:low-whole-notes` | Low whole notes | ORIGINAL | Piano Anchor, 2026 | An exercise on whole notes in the left hand, written for Piano Anchor. | 2026-11-15 |
+| `builtin:turn-taking` | Turn-taking | ORIGINAL | Piano Anchor, 2026 | An exercise on the right hand and the left hand taking turns, written for Piano Anchor. | 2026-11-15 |
+| `builtin:echo` | Echo | ORIGINAL | Piano Anchor, 2026 | An exercise on the left hand answering the right, an octave lower, written for Piano Anchor. | 2026-11-15 |
+| `builtin:waltz-in-c` | Waltz in C | ORIGINAL | Piano Anchor, 2026 | An exercise on counting three beats to the bar, written for Piano Anchor. | 2026-11-15 |
+| `builtin:three-beat-steps` | Three-beat steps | ORIGINAL | Piano Anchor, 2026 | An exercise on steps and a dotted half note in 3/4, written for Piano Anchor. | 2026-11-15 |
+| `builtin:held-bass` | Hold and play | ORIGINAL | Piano Anchor, 2026 | An exercise on a left-hand whole note held under a right-hand line, written for Piano Anchor. | 2026-11-15 |
+| `builtin:ode-to-joy-held-bass` | Ode to Joy with a held bass | PUBLIC_DOMAIN | Ode to Joy theme, Ludwig van Beethoven, Symphony No. 9 (1824) | Beethoven died in 1827, nearly 200 years ago, so the work is public domain. The notes are our own arrangement in right-hand C position. | 2026-11-15 |

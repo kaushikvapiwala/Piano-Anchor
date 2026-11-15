@@ -6,8 +6,8 @@ import kotlin.test.assertEquals
 class ContentTest {
     @Test
     fun builtInGraphIsValid() {
-        assertEquals(listOf("rh-c-position"), Curriculum.graph.skills.map { it.id })
-        assertEquals(emptySet(), Skills.RH_C_POSITION.prerequisites)
+        assertEquals(16, Curriculum.graph.skills.size)
+        assertEquals(setOf("kb-middle-c"), Skills.RH_C_POSITION.prerequisites)
     }
 
     @Test
