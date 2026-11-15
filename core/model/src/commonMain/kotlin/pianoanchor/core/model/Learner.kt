@@ -19,5 +19,14 @@ public data class SkillState(
     val dueDay: LocalDate,
     /** CLEAN cold checks on distinct days. */
     val cleanColdChecks: Int,
+    /** Cold checks rated Hard or Good (recalled), counted like cleanColdChecks; never below it. */
+    val recalledColdChecks: Int,
     val learned: Boolean,
-)
+) {
+    init {
+        require(cleanColdChecks >= 0) { "$skillId: cleanColdChecks $cleanColdChecks is negative" }
+        require(recalledColdChecks >= cleanColdChecks) {
+            "$skillId: recalledColdChecks $recalledColdChecks is below cleanColdChecks $cleanColdChecks"
+        }
+    }
+}

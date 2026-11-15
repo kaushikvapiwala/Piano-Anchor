@@ -80,6 +80,7 @@ private fun LearnerQueries.writeState(state: SkillState) =
         last_review_day = state.lastReviewDay.toString(),
         due_day = state.dueDay.toString(),
         clean_cold_checks = state.cleanColdChecks.toLong(),
+        recalled_cold_checks = state.recalledColdChecks.toLong(),
         learned = if (state.learned) 1L else 0L,
     )
 
@@ -92,6 +93,7 @@ private fun toState(
     lastReviewDay: String,
     dueDay: String,
     cleanColdChecks: Long,
+    recalledColdChecks: Long,
     learned: Long,
 ) = SkillState(
     skillId = skillId,
@@ -100,5 +102,6 @@ private fun toState(
     lastReviewDay = LocalDate.parse(lastReviewDay),
     dueDay = LocalDate.parse(dueDay),
     cleanColdChecks = cleanColdChecks.toInt(),
+    recalledColdChecks = recalledColdChecks.toInt(),
     learned = learned != 0L,
 )

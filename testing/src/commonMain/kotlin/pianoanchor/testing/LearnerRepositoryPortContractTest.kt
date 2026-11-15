@@ -18,6 +18,7 @@ private const val STABILITY = 3.5
 private const val DIFFICULTY = 6.25
 private const val LATER_STABILITY = 8.0
 private const val CLEAN_CHECKS = 2
+private const val RECALLED_CHECKS = 3
 
 private val FIRST_DAY = LocalDate(2026, 11, 1)
 private val SECOND_DAY = LocalDate(2026, 11, 3)
@@ -45,6 +46,7 @@ internal fun skillState(
         lastReviewDay = lastReviewDay,
         dueDay = THIRD_DAY,
         cleanColdChecks = CLEAN_CHECKS,
+        recalledColdChecks = RECALLED_CHECKS,
         learned = learned,
     )
 

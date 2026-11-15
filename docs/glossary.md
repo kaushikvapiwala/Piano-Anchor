@@ -24,7 +24,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hesitation | A pause before a note that is much longer than the music asks for, without a wrong note. |
 | Incomplete chord | `ChordIncomplete`: the chord window of a step ran out before all its notes were pressed; the step must be played again. |
-| Learned | A skill that has `LEARNED_MIN_CLEAN_COLD_CHECKS` clean cold checks on distinct days and stability of at least `LEARNED_MIN_STABILITY_DAYS`. Sticky: it stays learned after a lapse, and it unlocks the skills that depend on it. |
+| Learned | A skill that has `LEARNED_MIN_RECALLED_COLD_CHECKS` recalled (Hard or Good) cold checks on distinct days, at least `LEARNED_MIN_CLEAN_COLD_CHECKS` of them clean, and stability of at least `LEARNED_MIN_STABILITY_DAYS`. Sticky: it stays learned after a lapse, and it unlocks the skills that depend on it. |
 | Learner day | A calendar date (`kotlinx.datetime.LocalDate`) in the learner's own time zone; a skill gets at most one review per learner day. Stored as ISO `yyyy-mm-dd` text (ADR 0022). |
 | Review | One FSRS review (`Review` in `:core:model`): a cold check of a skill on a learner day that produced a rating, from one attempt. |
 | Review log | The append-only list of reviews kept by `LearnerRepositoryPort`: the source of truth. The cached state per skill (`SkillState`) is derived from it and can be rebuilt by replaying the log. |

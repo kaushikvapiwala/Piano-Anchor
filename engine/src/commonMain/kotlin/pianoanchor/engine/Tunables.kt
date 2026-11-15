@@ -352,11 +352,21 @@ public object Tunables {
     /**
      * The fewest CLEAN cold checks, on distinct days, before a skill counts as learned.
      *
-     * Why: a skill must have survived at least one night's sleep, not one good session.
+     * Why: one fully clean run is still required.
      *
-     * Source: starting value, owner-agreed in the M2 grill; calibrated in M7.
+     * Source: owner decision 2026-11-15 after the #73 simulation (was 2); calibrated in M7.
      */
-    public const val LEARNED_MIN_CLEAN_COLD_CHECKS: Int = 2
+    public const val LEARNED_MIN_CLEAN_COLD_CHECKS: Int = 1
+
+    /**
+     * The fewest recalled (Hard or Good) cold checks, on distinct days, before a skill counts as learned.
+     *
+     * Why: two separate recalls show it wasn't luck, while small slips no longer block a skill's dependants for
+     * months.
+     *
+     * Source: owner decision 2026-11-15 after the #73 simulation; calibrated in M7.
+     */
+    public const val LEARNED_MIN_RECALLED_COLD_CHECKS: Int = 2
 
     /**
      * The least FSRS stability, in days, a skill needs to count as learned.

@@ -1,0 +1,4 @@
+-- Schema 4 to 5: cold checks rated Hard or Good, per skill. Existing rows start at their clean count (a lower bound).
+ALTER TABLE skill_state ADD COLUMN recalled_cold_checks INTEGER NOT NULL DEFAULT 0;
+
+UPDATE skill_state SET recalled_cold_checks = clean_cold_checks;
