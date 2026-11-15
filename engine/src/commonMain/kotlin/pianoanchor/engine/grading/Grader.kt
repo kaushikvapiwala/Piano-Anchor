@@ -60,8 +60,8 @@ public object Grader {
     /**
      * Builds the [Attempt] of a completed run of [passage]. [events] must end with [PassageComplete] (else
      * [IllegalArgumentException]); their timestamps are rebased so [startedAtNanos], the first NoteOn's onset, becomes
-     * 0, and so are those of [playedNotes] (stored with the attempt). [startedAt] is the wall clock at that
-     * note. The band is graded under [strictness].
+     * 0, and so are those of [playedNotes] (stored with the attempt). [startedAt] is the wall clock at that note.
+     * The band is graded under [strictness].
      */
     public fun attempt(
         id: String,
@@ -102,8 +102,7 @@ public object Grader {
      * adds to the denominator but doesn't spoil the score note it points at. The attempt keeps no match events;
      * [Attempt.durationNanos] is when the last key came up (0 if before tick 0). [latencyOffsetNanos] (null when
      * uncalibrated) is subtracted from the notes' times before they are analysed; the attempt stores it and the notes
-     * as played. [strictness] sets the
-     * early/late tolerance and the bands.
+     * as played. [strictness] sets the early/late tolerance and the bands.
      */
     public fun timedAttempt(
         id: String,

@@ -70,10 +70,8 @@ public class LearnerModel(
         val rating = attempt.rating()
         val recorded = ArrayList<Review>()
         for (skillId in passage.skills.sorted()) {
-            recordColdCheck(states[skillId], Review(skillId, day, rating, attempt.id, attempt.unaided))?.let {
-                recorded +=
-                    it
-            }
+            val review = Review(skillId, day, rating, attempt.id, attempt.unaided)
+            recordColdCheck(states[skillId], review)?.let { recorded += it }
         }
         return recorded
     }

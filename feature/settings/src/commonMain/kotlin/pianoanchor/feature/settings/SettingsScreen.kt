@@ -252,8 +252,7 @@ private fun StrictnessRows(
             val (title, note) =
                 when (strictness) {
                     Strictness.GENTLE -> {
-                        Res.string.settings_strictness_gentle to
-                            Res.string.settings_strictness_gentle_note
+                        Res.string.settings_strictness_gentle to Res.string.settings_strictness_gentle_note
                     }
 
                     Strictness.STANDARD -> {
@@ -261,8 +260,7 @@ private fun StrictnessRows(
                     }
 
                     Strictness.STRICT -> {
-                        Res.string.settings_strictness_strict to
-                            Res.string.settings_strictness_strict_note
+                        Res.string.settings_strictness_strict to Res.string.settings_strictness_strict_note
                     }
                 }
             Row(

@@ -75,6 +75,8 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 12. **Results grade timing with the run's strictness** (follow-up of #135; mechanical): `ResultsViewModel` re-analyses
     the take with the Standard timing tolerance, so a run played on Gentle or Strict can show timing findings that
     disagree with its stored band; store the strictness on the attempt (or read the setting) and analyse with it.
+13. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
+    cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
