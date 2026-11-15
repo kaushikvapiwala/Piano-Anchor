@@ -35,6 +35,16 @@ public object PlayedNotes {
         val last = ordered.lastOrNull()?.timestampNanos
         return extraction.finish(listOfNotNull(last, endNanos).maxOrNull())
     }
+
+    /**
+     * The pitches still sounding after [events]: keys down, plus notes the sustain pedal holds, under the same rules
+     * as [from] (CC123–127 bring keys up, CC120 also ends held notes).
+     */
+    public fun sounding(events: List<MidiEvent>): Set<MidiNote> {
+        val extraction = Extraction()
+        events.sortedBy { it.timestampNanos }.forEach(extraction::apply)
+        return extraction.sounding()
+    }
 }
 
 private class Extraction {
@@ -57,6 +67,8 @@ private class Extraction {
             else -> Unit
         }
     }
+
+    fun sounding(): Set<MidiNote> = down.keys + held.keys
 
     fun finish(lastNanos: Long?): List<PlayedNote> {
         lastNanos?.let { end ->

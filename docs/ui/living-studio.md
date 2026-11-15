@@ -63,6 +63,8 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
   correct or wrong with a 150 ms colour change; the flash lasts `KEY_FLASH_MS`. All Notes Off and All Sound Off clear every held and wrong key.
 - **Accessibility**: the staff reads as "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."); each key is named; the
   verdict is a polite live region announcing "Correct" or "Wrong, F4".
+- **Finishing**: nothing new shows after the last note. Results open once the last notes stop sounding (keys up, pedal
+  up), at most 3 s after it (`WAIT_MODE_RELEASE_TIMEOUT_MS`); a new key press ends the wait at once.
 - **Disconnected**: the error card "Piano disconnected" with "Back to pianos"; the run is discarded.
 - **Save failed**: the error card "Couldn't save this run." with "Retry" (saves the same run again) and "Discard"
   (drops it and starts a fresh run on the same piano).
