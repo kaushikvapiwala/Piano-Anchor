@@ -39,7 +39,8 @@ class ArchitectureTest {
         val domainImportRoots =
             domainRoots + listOf("kotlin", "kotlinx.coroutines", "kotlinx.serialization", "kotlinx.datetime")
         val frameworkRoots = listOf("android", "androidx", "org.jetbrains.compose", "org.koin", "java", "javax")
-        val networkingRoots = listOf("java.net", "javax.net", "okhttp3", "io.ktor.client")
+        val networkingRoots =
+            listOf("java.net", "javax.net", "okhttp3", "io.ktor.client", "android.net.http", "android.webkit")
         val portNames = ports.map { it.name }.toSet()
 
         /** True when the declaration implements a project port, directly or via base classes/sub-interfaces. */

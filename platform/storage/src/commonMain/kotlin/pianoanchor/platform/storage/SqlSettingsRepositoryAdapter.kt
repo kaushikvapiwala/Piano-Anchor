@@ -108,12 +108,7 @@ private fun String.toReleaseOrNull(): Release? {
     return if (parts.size == 2 && parts.none { it.isEmpty() }) Release(parts[0], parts[1]) else null
 }
 
-private fun String.toLocalDateOrNull(): LocalDate? =
-    try {
-        LocalDate.parse(this)
-    } catch (_: IllegalArgumentException) {
-        null
-    }
+private fun String.toLocalDateOrNull(): LocalDate? = LocalDate.Formats.ISO.parseOrNull(this)
 
 /** The value stored under [key] as [parse] reads it, or [default] if there is none or it is unreadable. */
 private fun <T : Any> Map<String, String>.read(

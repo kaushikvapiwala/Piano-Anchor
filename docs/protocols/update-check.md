@@ -28,8 +28,8 @@ unreadable body) is `null`: the check is silent, with no banner and no error car
 
 ## When it runs
 - When Today opens, if the Settings switch "update check" is on, and at most once per learner day (the day that starts
-  at `LEARNER_DAY_START_HOUR`). The day is stored before the request, so a failed request is not retried until the next
-  day.
+  at `LEARNER_DAY_START_HOUR`). The day is claimed before the request, in the same settings update that checks it, so a failed request is
+  not retried until the next day; only a request cut short by leaving Today gives the day back.
 - Three settings keys hold its state: `last_update_check` (the day), `latest_release` (version and page of the newest
   release seen) and `dismissed_update` (the version whose banner was dismissed).
 - With the switch off no request is made at all, and no banner shows.
@@ -42,4 +42,5 @@ installs an APK.
 
 ## Turning it off
 Settings, "update check" switch. The app also needs the `INTERNET` permission for this and nothing else; an architecture
-test (`ArchitectureTest`) fails when any other module imports `java.net`, `javax.net`, `okhttp3` or `io.ktor.client`.
+test (`ArchitectureTest`) fails when any other module imports `java.net`, `javax.net`, `okhttp3`, `io.ktor.client`, `android.net.http` or
+`android.webkit`.

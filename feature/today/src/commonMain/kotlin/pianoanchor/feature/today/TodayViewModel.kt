@@ -2,14 +2,18 @@ package pianoanchor.feature.today
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
@@ -148,11 +152,18 @@ public class TodayViewModel(
     private suspend fun checkForUpdate() {
         try {
             val day = learnerDay(clock.now(), zone)
-            val stored = settings.settings.first()
-            if (!stored.updateCheckOn) return
-            if (stored.lastUpdateCheck != day) {
-                settings.update { it.copy(lastUpdateCheck = day) }
-                updateCheck.latest()?.let { release -> settings.update { it.copy(latestRelease = release) } }
+
+            fun Settings.due() = updateCheckOn && lastUpdateCheck != day
+            if (settings.settings.first().due()) {
+                var previousCheck: LocalDate? = null
+                var claimed = false
+                // Check again and claim the day in one update, so two Today screens opening together ask once.
+                settings.update { stored ->
+                    claimed = stored.due()
+                    previousCheck = stored.lastUpdateCheck
+                    if (claimed) stored.copy(lastUpdateCheck = day) else stored
+                }
+                if (claimed) fetchLatest(day, previousCheck)
             }
             mutableState.update { it.copy(update = settings.settings.first().bannerRelease()) }
         } catch (_: StorageUnavailableException) {
@@ -160,10 +171,31 @@ public class TodayViewModel(
         }
     }
 
+    /**
+     * Asks for the latest release and stores it. A request cut short by leaving Today gives the day back (to
+     * [previousCheck]), so the next Today visit asks again instead of missing the day.
+     */
+    private suspend fun fetchLatest(
+        day: LocalDate,
+        previousCheck: LocalDate?,
+    ) {
+        val release =
+            try {
+                updateCheck.latest()
+            } catch (e: CancellationException) {
+                withContext(NonCancellable) {
+                    settings.update { if (it.lastUpdateCheck == day) it.copy(lastUpdateCheck = previousCheck) else it }
+                }
+                throw e
+            }
+        if (release != null) settings.update { it.copy(latestRelease = release) }
+    }
+
     /** The release to announce: seen, newer than the installed version and newer than any dismissed one. */
     private fun Settings.bannerRelease(): Release? =
         latestRelease?.takeIf { release ->
-            isNewer(release.version, installedVersion) == true &&
+            updateCheckOn &&
+                isNewer(release.version, installedVersion) == true &&
                 dismissedUpdate?.let { isNewer(release.version, it) } != false
         }
 

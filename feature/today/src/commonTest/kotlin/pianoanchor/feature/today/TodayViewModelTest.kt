@@ -1,8 +1,11 @@
 package pianoanchor.feature.today
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
@@ -19,6 +22,8 @@ import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.SkillState
+import pianoanchor.core.ports.SettingsRepositoryPort
+import pianoanchor.core.ports.UpdateCheckPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
@@ -383,6 +388,59 @@ class TodayViewModelTest {
             )
             runCurrent()
             assertEquals(0, updateCheck.calls)
+        }
+
+    @Test
+    fun `a request cut short by leaving Today gives the day back`() =
+        runTest(dispatcher) {
+            val yesterday = LocalDate(2026, 11, 17)
+            settings.update { it.copy(lastUpdateCheck = yesterday) }
+            val leaving =
+                object : UpdateCheckPort {
+                    override suspend fun latest(): Release? = throw CancellationException("left Today")
+                }
+            TodayViewModel(
+                LearnerModel(Curriculum.graph, learnerRepository),
+                settings,
+                attempts,
+                piano,
+                calibration,
+                clock,
+                TimeZone.UTC,
+                leaving,
+                INSTALLED,
+            )
+            runCurrent()
+            assertEquals(yesterday, settings.settings.first().lastUpdateCheck)
+
+            updateCheck.release = RELEASE_020
+            assertEquals(RELEASE_020, viewModel().state.value.update)
+            assertEquals(1, updateCheck.calls)
+        }
+
+    @Test
+    fun `a day claimed by another Today screen meanwhile is not asked again`() =
+        runTest(dispatcher) {
+            settings.update { it.copy(lastUpdateCheck = today) }
+            // This screen's first read is stale (the day looks unchecked); the claiming update sees the real store.
+            val staleRead =
+                object : SettingsRepositoryPort by settings {
+                    override val settings: Flow<Settings> = flowOf(Settings(weeklyGoalDays = 4))
+                }
+            TodayViewModel(
+                LearnerModel(Curriculum.graph, learnerRepository),
+                staleRead,
+                attempts,
+                piano,
+                calibration,
+                clock,
+                TimeZone.UTC,
+                updateCheck,
+                INSTALLED,
+            )
+            runCurrent()
+            assertEquals(0, updateCheck.calls)
+            assertEquals(today, settings.settings.first().lastUpdateCheck)
         }
 
     @Test
