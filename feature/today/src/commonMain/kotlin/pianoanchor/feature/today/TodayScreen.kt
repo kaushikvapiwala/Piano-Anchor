@@ -232,24 +232,11 @@ private fun cardLabel(card: Card.PassageCard): StringResource =
     }
 
 private fun cardAction(card: Card.PassageCard): StringResource =
-    when (card) {
-        is Card.ColdOpen -> {
-            if (card.mode ==
-                RunMode.PERFORM
-            ) {
-                Res.string.today_action_cold_open_perform
-            } else {
-                Res.string.today_action_cold_open
-            }
-        }
-
-        is Card.Lesson -> {
-            Res.string.today_action_lesson
-        }
-
-        is Card.Song -> {
-            Res.string.today_action_song
-        }
+    when {
+        card is Card.ColdOpen && card.mode == RunMode.PERFORM -> Res.string.today_action_cold_open_perform
+        card is Card.ColdOpen -> Res.string.today_action_cold_open
+        card is Card.Lesson -> Res.string.today_action_lesson
+        else -> Res.string.today_action_song
     }
 
 @Composable
