@@ -155,10 +155,16 @@ class FakePiano(
             }
     }
 
-    /** Plays raw bytes as if the wired piano sent them now, to the open `events` flows of [device]. */
-    fun play(bytes: ByteArray) {
+    /**
+     * Plays raw bytes to the open `events` flows of [device], as if the wired piano sent them now; [stampNanos] is
+     * the events' timestamp, earlier than now for a message a Bluetooth link delivered late.
+     */
+    fun play(
+        bytes: ByteArray,
+        stampNanos: Long = clock.nowNanos(),
+    ) {
         if (device !in devices.value) return
-        parser.feed(bytes, clock.nowNanos()).forEach { event ->
+        parser.feed(bytes, stampNanos).forEach { event ->
             collectors.filter { it.deviceId == device.id }.forEach { it.channel.trySend(event) }
         }
     }
@@ -168,14 +174,15 @@ class FakePiano(
         note: MidiNote,
         velocity: Int = DEFAULT_VELOCITY,
         channel: Int = 0,
-    ) = playChannelMessage(NOTE_ON_STATUS, note, velocity, channel)
+        stampNanos: Long = clock.nowNanos(),
+    ) = playChannelMessage(NOTE_ON_STATUS, note, velocity, channel, stampNanos)
 
     /** Shortcut for a Note Off (status 0x80 + [channel], release velocity [velocity]). */
     fun release(
         note: MidiNote,
         velocity: Int = DEFAULT_VELOCITY,
         channel: Int = 0,
-    ) = playChannelMessage(NOTE_OFF_STATUS, note, velocity, channel)
+    ) = playChannelMessage(NOTE_OFF_STATUS, note, velocity, channel, clock.nowNanos())
 
     /** Removes the wired device from both device lists and completes its open `events` flows. */
     fun unplug() = unlist(device)
@@ -202,10 +209,11 @@ class FakePiano(
         note: MidiNote,
         velocity: Int,
         channel: Int,
+        stampNanos: Long,
     ) {
         require(channel in CHANNEL_RANGE) { "channel must be in $CHANNEL_RANGE, was $channel" }
         require(velocity in DATA_RANGE) { "velocity must be in $DATA_RANGE, was $velocity" }
-        play(byteArrayOf((status + channel).toByte(), note.number.toByte(), velocity.toByte()))
+        play(byteArrayOf((status + channel).toByte(), note.number.toByte(), velocity.toByte()), stampNanos)
     }
 
     private fun requireListed(requested: MidiDevice) {

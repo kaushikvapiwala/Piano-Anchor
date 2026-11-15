@@ -334,6 +334,17 @@ public object Tunables {
     public const val CALIBRATION_MAX_OFFSET_MS: Long = 400
 
     /**
+     * How long calibration keeps reading after the last click's half beat, so a tap timestamped in time but
+     * delivered late still counts.
+     *
+     * Why: Bluetooth MIDI devices send events at connection intervals of 7.5-30 ms and may buffer a few of them;
+     * 200 ms covers that with margin and keeps the result immediate.
+     *
+     * Source: the BLE MIDI specification's connection-interval range, plus an owner decision in the grill.
+     */
+    public const val CALIBRATION_LAST_TAP_GRACE_MS: Long = 200
+
+    /**
      * Recall probability the scheduler aims for when it picks the next review: an item is due when its
      * retrievability falls to this.
      *
