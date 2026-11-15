@@ -39,6 +39,18 @@ position and the time it was played, and places each beat at
   about one buffer and one chunk of the call may still follow the old pattern; callers start patterns ahead of their
   first beat (M1.4c counts in one bar).
 
+## Tones (the ear screen)
+`AndroidToneAdapter` plays the speaker tones of the ear screen when the piano has no MIDI output. It is not timed
+against anything: `ToneRenderer` turns the tone list into one buffer of 16-bit mono PCM, and the adapter writes it to an
+`AudioSink` in 10 ms chunks (`METRONOME_CHUNK_MS`), then a quarter second of silence so the last tone has been played
+by the time the final write returns.
+- Each tone is a sine at equal temperament (A4 = 440 Hz), with a 10 ms fade-in and a 60 ms fade-out so it starts and
+  ends at zero and never clicks.
+- Tones that sound together (a chord) are summed; if the sum would pass 80% of full scale the whole buffer is scaled
+  down to it, so it never clips.
+- The tones use their own sink and track. The metronome and tones never play at once (the ear screen has no click).
+- Cancelling the call stops the sink, which drops queued audio, so the sound ends at once.
+
 ## Known limits
 - Bluetooth output adds a delay the timestamp does not fully show and that differs per headset. M1.5 latency
   calibration measures it together with the piano's MIDI delay as one offset.

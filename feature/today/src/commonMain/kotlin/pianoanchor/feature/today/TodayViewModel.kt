@@ -104,6 +104,12 @@ public class TodayViewModel(
         return TodayTarget.Practice(piano.device, card.passage.id, card.rung)
     }
 
+    /** Where tapping the Ear [card] leads: the ear screen with its skills, or Pianos when no piano is connected. */
+    public fun target(card: Card.Ear): TodayTarget {
+        val piano = mutableState.value.piano ?: return TodayTarget.Pianos
+        return TodayTarget.Ear(piano.device, card.skills)
+    }
+
     private suspend fun loadToday() {
         try {
             val now = clock.now()

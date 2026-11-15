@@ -33,6 +33,7 @@ include(
     ":platform:storage",
     ":ui:shell",
     ":feature:monitor",
+    ":feature:ear",
     ":feature:onboarding",
     ":feature:practice",
     ":feature:settings",

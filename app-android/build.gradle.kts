@@ -52,6 +52,7 @@ android {
 dependencies {
     implementation(project(":ui:shell"))
     implementation(project(":feature:monitor"))
+    implementation(project(":feature:ear"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:practice"))
     implementation(project(":feature:settings"))

@@ -59,6 +59,10 @@ public fun AndroidMetronomeAdapter(
     )
 }
 
+/** Creates the speaker tones on their own `AudioTrack` over [context]'s audio output, created on the first tone. */
+@ExcludeFromCoverage(GLUE)
+public fun AndroidToneAdapter(context: Context): AndroidToneAdapter = AndroidToneAdapter(AudioTrackSink(context))
+
 /**
  * [AudioSink] over a streaming `AudioTrack`: mono 16-bit PCM at the device's native rate,
  * `PERFORMANCE_MODE_LOW_LATENCY` and `USAGE_GAME`, created on the first write and kept open. Writes are non-blocking

@@ -273,16 +273,16 @@ public class OnboardingViewModel(
 }
 
 /**
- * Plays [CHORD] on [device] as an arpeggio: NoteOns `ONBOARDING_NOTE_GAP_MS` apart, each held
- * `ONBOARDING_NOTE_LENGTH_MS`. False if the piano went away.
+ * Plays [CHORD] on [device] as an arpeggio: NoteOns `PLAYBACK_NOTE_GAP_MS` apart, each held
+ * `PLAYBACK_NOTE_LENGTH_MS`. False if the piano went away.
  */
 private suspend fun MidiOutputPort.playChord(device: MidiDevice): Boolean =
     try {
         CHORD.forEachIndexed { i, note ->
-            if (i > 0) delay(Tunables.ONBOARDING_NOTE_GAP_MS - Tunables.ONBOARDING_NOTE_LENGTH_MS)
-            send(device, MidiEncoder.encode(NoteOn(0, CHANNEL, note, Tunables.ONBOARDING_VELOCITY)))
+            if (i > 0) delay(Tunables.PLAYBACK_NOTE_GAP_MS - Tunables.PLAYBACK_NOTE_LENGTH_MS)
+            send(device, MidiEncoder.encode(NoteOn(0, CHANNEL, note, Tunables.PLAYBACK_VELOCITY)))
             try {
-                delay(Tunables.ONBOARDING_NOTE_LENGTH_MS)
+                delay(Tunables.PLAYBACK_NOTE_LENGTH_MS)
             } finally {
                 // A replay or leaving mid-note must not leave the key sounding.
                 withContext(NonCancellable) { send(device, MidiEncoder.encode(NoteOff(0, CHANNEL, note, 0))) }

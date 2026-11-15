@@ -172,6 +172,20 @@ a time under "Step n of 4" (no accounts, no sign-in line).
    or Unit 2 (title and a one-line summary of what it assumes). Each card is one 44 dp-high-or-more button. A failed save
    shows the `errorContainer` card "Couldn't save your start point. Tap one to try again."
 
+## Ear screen
+
+Portrait, opened by Today's Ear card; back (or Done) returns to Today after the piano is closed. Layout after the mock's
+Flashcards artboard: a back arrow (TalkBack "Back"), the skill title and "Skill 1 of 3", the counter "Item 2 of 4"
+(read out) with a progress bar, then a card.
+- **Identify** item: "Listen, then choose what you heard." and two outlined buttons of at least 48 dp with the choice
+  names. **Echo** item: "Listen, then play it back on your piano." and a strip of five keys (C4 to G4).
+- The prompt reads "Listening…" while the item sounds. **Replay (2 left)** plays it again (disabled when none are left).
+- A wrong answer says "Not quite. Listen again." (polite live region) and offers **Show me**. After a second wrong answer
+  or Show me, the answer is shown: for identify the answer button is filled and carries a check mark, for echo the keys
+  of the answer are filled with a check mark before the letter, and the line says "Here is the answer. Listen once
+  more." with a **Next** button.
+- **Summary**: "Ear practice done", "3 skills · 10 of 12 first try" and Done.
+
 ## Today screen
 
 The start screen, portrait. A navigation rail (Today selected, Pianos, Settings gear) on the left; every item has a
@@ -185,8 +199,11 @@ and the weekly goal dots (one per goal day, plum for each day practised since Mo
   "n more to review". **New lesson**: surface with a border, "Begin" and the "why now" line. **Song**: "♩ = 72 · rung 3
   of 5" (wait mode reads "Wait mode · rung 1 of 5") and "Continue". Each opens Practice on the card's passage and
   rung; with no piano connected a card opens Pianos.
-- **Session bar**: Review, Lesson and Song segments with widths proportional to their minutes (a zero segment is
-  left out), decorative; the caption under it, "Today's 20 minutes: review 5, lesson 9, song 6", is what TalkBack reads.
+- **Ear** card: surface with a 2 dp amber border (`#8A5300` light, `#FFC857` dark), the label "EAR · 3 MIN" in amber,
+  the first skill's title, "3 skills today" and an amber "Start ear" button. It opens the Ear screen with its skills.
+- **Session bar**: Review, Lesson, Song and (amber) Ear segments with widths proportional to their minutes (a zero
+  segment is left out), decorative; the caption under it, "Today's 20 minutes: review 4, lesson 7, song 6, ear 3", is
+  what TalkBack reads.
 - **All caught up**: "All caught up. Play a song or come back tomorrow." above the Song card, if any.
 - **Storage error**: an `errorContainer` card with Retry.
 - Nothing animates (the mock's breathing dot is static).

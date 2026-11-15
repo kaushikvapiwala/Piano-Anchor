@@ -123,6 +123,16 @@ Driven port: the learner's [Settings], kept across restarts. Anything never set 
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/SettingsRepositoryPortContractTest.kt`
 
+## `TonePort`
+
+Driven port: plays simple synthesised tones on the device's speaker. Contract: `pianoanchor.testing.TonePortContractTest`.
+
+| Function | Description |
+|---|---|
+| `suspend fun play(tones: List<Tone>)` | Plays [tones] (start offsets relative to the call) and returns once the last one has ended. Cancelling stops the sound at once. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/TonePortContractTest.kt`
+
 ## `UpdateCheckPort`
 
 Driven port: the newest published release. One anonymous HTTPS GET; nothing about the learner is sent (`docs/protocols/update-check.md`). The app's only network use, and the learner can turn it off. Contract: `pianoanchor.testing.UpdateCheckPortContractTest`.

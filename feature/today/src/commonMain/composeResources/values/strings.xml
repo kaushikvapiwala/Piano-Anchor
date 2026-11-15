@@ -21,10 +21,14 @@
     <string name="today_card_why_start">Why now: a good place to start.</string>
     <string name="today_card_tempo">♩ = %1$s · rung %2$s of %3$s</string>
     <string name="today_card_wait">Wait mode · rung %1$s of %2$s</string>
+    <string name="today_card_ear">EAR · %1$s MIN</string>
+    <string name="today_card_ear_skills">%1$s skills today</string>
+    <string name="today_card_ear_skill_one">1 skill today</string>
+    <string name="today_action_ear">Start ear</string>
     <string name="today_action_cold_open">Start cold open</string>
     <string name="today_action_lesson">Begin</string>
     <string name="today_action_song">Continue</string>
-    <string name="today_session_bar">Today's %1$s minutes: review %2$s, lesson %3$s, song %4$s</string>
+    <string name="today_session_bar">Today's %1$s minutes: review %2$s, lesson %3$s, song %4$s, ear %5$s</string>
     <string name="today_caught_up">All caught up. Play a song or come back tomorrow.</string>
     <string name="today_error_storage">Couldn't load today's plan.</string>
     <string name="today_action_retry">Retry</string>

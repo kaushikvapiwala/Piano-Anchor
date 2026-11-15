@@ -1,5 +1,6 @@
 package pianoanchor.engine.content
 
+import pianoanchor.core.model.Track
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -75,9 +76,11 @@ class CurriculumTest {
             .passages
             .flatMap { p -> p.steps.flatMap { it.notes } }
 
+    private val playingSkills get() = Curriculum.graph.skills.filter { it.track != Track.EAR }
+
     @Test
     fun `every skill has at least one passage`() {
-        Curriculum.graph.skills.forEach { skill ->
+        playingSkills.forEach { skill ->
             assertTrue(passages.any { skill.id in it.skills }, skill.id)
         }
     }
@@ -85,7 +88,7 @@ class CurriculumTest {
     @Test
     fun `every skill belongs to exactly one unit`() =
         assertEquals(
-            Curriculum.graph.skills
+            playingSkills
                 .map { it.id }
                 .sorted(),
             Curriculum.units.flatMap { it.skills }.sorted(),

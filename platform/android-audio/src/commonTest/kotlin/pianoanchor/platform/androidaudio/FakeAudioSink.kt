@@ -30,6 +30,9 @@ internal class FakeAudioSink(
     var failNextWrite = false
     private var current: Run? = null
 
+    /** True from the first write of a run until [stop]. */
+    val playing: Boolean get() = current != null
+
     override suspend fun write(frames: ShortArray) {
         if (failNextWrite) {
             failNextWrite = false
