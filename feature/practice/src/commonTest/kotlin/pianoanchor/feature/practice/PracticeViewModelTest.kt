@@ -115,6 +115,28 @@ class PracticeViewModelTest {
         runCurrent()
     }
 
+    /** Plays C and D, then E held (not released), leaving the run in the release tail. */
+    private fun TestScope.playCdAndHoldE() {
+        tap(c4)
+        tap(d4)
+        clock.advanceNanos(300 * ms)
+        piano.press(e4)
+        runCurrent()
+    }
+
+    private fun TestScope.after(
+        ms: Long,
+        action: () -> Unit = {},
+    ) {
+        clock.advanceNanos(ms * this@PracticeViewModelTest.ms)
+        action()
+        advanceTimeBy(ms)
+        runCurrent()
+    }
+
+    private val pedalDown = byteArrayOf(0xB0.toByte(), 64, 127)
+    private val pedalUp = byteArrayOf(0xB0.toByte(), 64, 0)
+
     private fun PracticeViewModel.statuses() = state.value.steps.map { it.status }
 
     @Test
@@ -182,6 +204,137 @@ class PracticeViewModelTest {
             assertNull(attempt.tempoBpm)
             assertEquals(listOf(c4, d4, e4), attempt.playedNotes.map { it.pitch })
             assertEquals(listOf(0L, 300 * ms, 600 * ms), attempt.playedNotes.map { it.downNanos })
+        }
+
+    @Test
+    fun releasedLastKeyEndsTheTailWithItsRealLength() =
+        runTest(dispatcher) {
+            val vm = practice()
+            playCdAndHoldE()
+            assertNull(vm.state.value.finishedAttemptId)
+
+            after(400) { piano.release(e4) }
+
+            val e = assertNotNull(attempts.get("attempt-1")).playedNotes.single { it.pitch == e4 }
+            assertEquals(400 * ms, e.soundingEndNanos - e.downNanos)
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun pedalHoldsTheTailOpenUntilItLifts() =
+        runTest(dispatcher) {
+            val vm = practice()
+            piano.play(pedalDown)
+            playCdAndHoldE()
+            after(200) { piano.release(e4) }
+            assertNull(vm.state.value.finishedAttemptId)
+
+            after(700) { piano.play(pedalUp) }
+
+            val e = assertNotNull(attempts.get("attempt-1")).playedNotes.single { it.pitch == e4 }
+            assertEquals(900 * ms, e.soundingEndNanos - e.downNanos)
+        }
+
+    @Test
+    fun earlierKeysStillDownKeepTheTailOpen() =
+        runTest(dispatcher) {
+            val vm = practice()
+            tap(c4)
+            clock.advanceNanos(300 * ms)
+            piano.press(d4)
+            clock.advanceNanos(300 * ms)
+            piano.press(e4)
+            runCurrent()
+
+            after(100) { piano.release(e4) }
+            assertNull(vm.state.value.finishedAttemptId)
+            after(100) { piano.release(d4) }
+
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun tailEndsAtTheCapWithKeysStillSounding() =
+        runTest(dispatcher) {
+            val vm = practice()
+            playCdAndHoldE()
+
+            after(Tunables.WAIT_MODE_RELEASE_TIMEOUT_MS - 1)
+            assertNull(vm.state.value.finishedAttemptId)
+            after(1)
+
+            val e = assertNotNull(attempts.get("attempt-1")).playedNotes.single { it.pitch == e4 }
+            assertEquals(Tunables.WAIT_MODE_RELEASE_TIMEOUT_MS * ms, e.soundingEndNanos - e.downNanos)
+        }
+
+    @Test
+    fun aNewKeyInTheTailEndsItAtOnceAndIsNotTaken() =
+        runTest(dispatcher) {
+            val vm = practice()
+            playCdAndHoldE()
+
+            after(100) { piano.press(MidiNote(72)) }
+
+            val attempt = assertNotNull(attempts.get("attempt-1"))
+            assertEquals(listOf(c4, d4, e4), attempt.playedNotes.map { it.pitch })
+            assertEquals(setOf(e4), vm.state.value.keysDown)
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun eventsBehindTheKeyThatEndsTheTailAreIgnored() =
+        runTest(dispatcher) {
+            val vm = practice()
+            playCdAndHoldE()
+
+            after(100) {
+                piano.press(MidiNote(72))
+                piano.release(e4)
+            }
+
+            assertNotNull(attempts.get("attempt-1"))
+            assertEquals(setOf(e4), vm.state.value.keysDown)
+        }
+
+    @Test
+    fun aDropInTheTailGradesTheRunAndEndsKeysAtTheDrop() =
+        runTest(dispatcher) {
+            val vm = practice()
+            playCdAndHoldE()
+
+            after(500) { piano.unplug() }
+
+            val e = assertNotNull(attempts.get("attempt-1")).playedNotes.single { it.pitch == e4 }
+            assertEquals(500 * ms, e.soundingEndNanos - e.downNanos)
+            assertEquals(PracticeConnection.CONNECTED, vm.state.value.connection)
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun allNotesOffInTheTailEndsItAtOnce() =
+        runTest(dispatcher) {
+            val vm = practice()
+            playCdAndHoldE()
+
+            after(100) { piano.play(byteArrayOf(0xB0.toByte(), 123, 0)) }
+
+            assertEquals("attempt-1", vm.state.value.finishedAttemptId)
+        }
+
+    @Test
+    fun leavingDuringTheTailSavesNothingAndClosesTheInput() =
+        runTest(dispatcher) {
+            val vm = practice()
+            playCdAndHoldE()
+
+            vm.close()
+            after(Tunables.WAIT_MODE_RELEASE_TIMEOUT_MS)
+
+            assertNull(attempts.get("attempt-1"))
+            assertNull(vm.state.value.finishedAttemptId)
+            val next = practice()
+            tap(c4)
+            assertEquals(1, next.state.value.currentStep)
         }
 
     @Test

@@ -334,16 +334,22 @@ public class PracticeViewModel(
         val midi = mutableListOf<MidiEvent>()
         var startedAt: Instant? = null
 
+        /** Where notes still sounding end: the cap, or the moment the tail ended otherwise. */
+        private var endNanos = 0L
+
         suspend fun play() {
-            try {
-                input
-                    .events(device)
-                    .transformWhile<MidiEvent, Unit> { event ->
-                        onEvent(event)
-                        !match.complete
-                    }.collect()
-            } catch (_: MidiDeviceUnavailableException) {
-                // Not listed (or gone) when the run opened it: same as a drop.
+            coroutineScope {
+                val ended = CompletableDeferred<Unit>()
+                launch {
+                    try {
+                        input.events(device).collect { onEvent(it, this@coroutineScope, ended) }
+                    } catch (_: MidiDeviceUnavailableException) {
+                        // Not listed (or gone) when the run opened it: same as a drop.
+                    }
+                    end(ended) // a drop: after the completing note it grades the run, before it nothing is saved
+                }
+                ended.await()
+                coroutineContext.cancelChildren() // the reader (closing the piano) and a cap timer still running
             }
             if (!match.complete) return mutableState.update { it.disconnected() }
             save(
@@ -354,14 +360,59 @@ public class PracticeViewModel(
                     startedAt = checkNotNull(startedAt),
                     startedAtNanos = checkNotNull(match.startedAtNanos),
                     events = events,
-                    playedNotes = PlayedNotes.from(midi),
+                    playedNotes = PlayedNotes.from(midi, endNanos),
                 ),
             )
         }
 
-        fun onEvent(event: MidiEvent) {
+        private fun end(
+            ended: CompletableDeferred<Unit>,
+            at: Long = time.nowNanos(),
+        ) {
+            if (ended.complete(Unit)) endNanos = at
+        }
+
+        private fun onEvent(
+            event: MidiEvent,
+            scope: CoroutineScope,
+            ended: CompletableDeferred<Unit>,
+        ) {
+            if (ended.isCompleted) return // events already buffered when the tail ended
+            if (match.complete) return onTail(event, ended)
             midi += event
-            if (event is NoteOn) return onNoteOn(event)
+            if (event is NoteOn) {
+                onNoteOn(event)
+                if (match.complete) startTail(scope, ended)
+            } else {
+                updateKeys(event)
+            }
+        }
+
+        /** After the completing NoteOn: keys up and pedal changes join the take until nothing sounds. */
+        private fun onTail(
+            event: MidiEvent,
+            ended: CompletableDeferred<Unit>,
+        ) {
+            if (event is NoteOn) return end(ended)
+            midi += event
+            updateKeys(event)
+            if (PlayedNotes.sounding(midi).isEmpty()) end(ended)
+        }
+
+        /** Ends the tail at the cap, counted from the completing NoteOn, whatever still sounds. */
+        private fun startTail(
+            scope: CoroutineScope,
+            ended: CompletableDeferred<Unit>,
+        ) {
+            val capNanos =
+                midi.last().timestampNanos + Tunables.WAIT_MODE_RELEASE_TIMEOUT_MS.milliseconds.inWholeNanoseconds
+            scope.launch {
+                delay((capNanos - time.nowNanos()).coerceAtLeast(0).nanoseconds)
+                end(ended, capNanos)
+            }
+        }
+
+        private fun updateKeys(event: MidiEvent) {
             if (event is NoteOff) mutableState.update { it.released(event.note) }
             if (event is ControlChange && event.releasesAllKeys()) mutableState.update { it.releasedAll() }
         }

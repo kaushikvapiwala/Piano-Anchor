@@ -119,6 +119,17 @@ public object Tunables {
     public const val IDENTITY_REPLY_TIMEOUT_MS: Long = 1_000
 
     /**
+     * Longest wait, in milliseconds after the NoteOn that completes a wait-mode passage, for the last notes to stop
+     * sounding before the run is graded and saved; notes still sounding then end at this cap.
+     *
+     * Why: people usually lift within a second, so Results open at the natural moment; the cap only guards against a
+     * stuck key, a lost NoteOff or a pedal left down.
+     *
+     * Source: product choice in the owner grill (no outside source).
+     */
+    public const val WAIT_MODE_RELEASE_TIMEOUT_MS: Long = 3_000
+
+    /**
      * Lowest accuracy (0.0–1.0) of a wait-mode attempt graded `Band.CLEAN`.
      *
      * Why: "clean" should allow at most a rare slip on longer passages.

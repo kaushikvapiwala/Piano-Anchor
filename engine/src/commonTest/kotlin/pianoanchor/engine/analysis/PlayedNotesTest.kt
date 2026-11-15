@@ -38,6 +38,35 @@ class PlayedNotesTest {
 
     private fun notes(vararg events: MidiEvent) = PlayedNotes.from(events.toList())
 
+    private fun sounding(vararg events: MidiEvent) = PlayedNotes.sounding(events.toList())
+
+    @Test
+    fun soundingIsEmptyWithoutEvents() = assertEquals(emptySet(), sounding())
+
+    @Test
+    fun soundingHasKeysDown() = assertEquals(setOf(c4), sounding(on(0, c4)))
+
+    @Test
+    fun soundingDropsReleasedKeys() = assertEquals(emptySet(), sounding(on(0, c4), off(1, c4)))
+
+    @Test
+    fun soundingKeepsNotesThePedalHolds() = assertEquals(setOf(c4), sounding(pedal(0, 127), on(1, c4), off(2, c4)))
+
+    @Test
+    fun soundingEndsWhenThePedalLifts() =
+        assertEquals(emptySet(), sounding(pedal(0, 127), on(1, c4), off(2, c4), pedal(3, 0)))
+
+    @Test
+    fun soundingEndsAtAllNotesOff() = assertEquals(emptySet(), sounding(on(0, c4), allNotesOff(1)))
+
+    @Test
+    fun soundingEndsHeldNotesAtAllSoundOff() =
+        assertEquals(emptySet(), sounding(pedal(0, 127), on(1, c4), off(2, c4), allSoundOff(3)))
+
+    @Test
+    fun soundingKeepsPedalHeldNotesAtAllNotesOff() =
+        assertEquals(setOf(c4), sounding(pedal(0, 127), on(1, c4), allNotesOff(2)))
+
     @Test
     fun pairsNoteOnAndOff() {
         assertEquals(listOf(PlayedNote(c4, 70, 100, 200, 200)), notes(on(100, c4, 70), off(200, c4)))

@@ -53,6 +53,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Prerequisite | A skill that must be learned before another one is introduced (`Skill.prerequisites`, by id). |
 | Rating | How a review went for the memory model: `AGAIN`, `HARD`, `GOOD` or `EASY` (`Rating` in `:core:model`). |
 | Reconnect backoff | How the adapter reopens a dropped BLE MIDI device: waits that double from `BLE_RECONNECT_INITIAL_MS` up to `BLE_RECONNECT_MAX_MS`, giving up after `BLE_RECONNECT_GIVE_UP_MS`. |
+| Release tail | The part of a wait-mode run after the NoteOn that completes the passage: keys up and pedal changes still join the take until nothing sounds, a new key is pressed, the piano drops or `WAIT_MODE_RELEASE_TIMEOUT_MS` passes, so the last notes get their real length. |
 | Results screen | The screen after a completed run (`:feature:practice`): "run N" of the passage, a headline from the band, the Pitch tile (correct steps of all, wrong notes, incomplete chords) and Try again. |
 | Retrievability | FSRS: the chance of recalling an item now, 1 right after a review and falling with the days since; `Fsrs.retrievability`. |
 | Rights record | Why a passage may ship (`Rights` in `:core:model`): original or public domain, its origin, the basis and the check date; every passage has one and `docs/generated/rights.md` lists them. |

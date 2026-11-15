@@ -29,6 +29,11 @@ key down, key up and the time the note stopped sounding.
 Key up is what the hand did; the sounding end is what the ear heard. Note-length errors judge key up and ignore the
 pedal; the sounding end is kept for later use.
 
+A wait-mode take includes a release tail: the run keeps reading after the NoteOn that completes the passage until
+nothing is sounding (`PlayedNotes.sounding`: no key down and no note held by the pedal), so the last notes get their
+real length. A new NoteOn, the end of the stream or `WAIT_MODE_RELEASE_TIMEOUT_MS` after the completing NoteOn ends
+the tail; notes still sounding then end at that moment (the cap's time for the cap).
+
 ## Error kinds
 Every finding names one score note (`ScoreNoteRef`: step index and pitch) and the played note involved. Only
 `MISSED_NOTE` and `INCOMPLETE_CHORD` have no played note, and `Finding` enforces that.
