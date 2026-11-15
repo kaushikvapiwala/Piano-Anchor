@@ -50,6 +50,8 @@ import pianoanchor.feature.practice.resources.practice_count_in
 import pianoanchor.feature.practice.resources.practice_discard
 import pianoanchor.feature.practice.resources.practice_disconnected
 import pianoanchor.feature.practice.resources.practice_end_run
+import pianoanchor.feature.practice.resources.practice_hint
+import pianoanchor.feature.practice.resources.practice_hint_glyph
 import pianoanchor.feature.practice.resources.practice_mode_tempo
 import pianoanchor.feature.practice.resources.practice_mode_wait
 import pianoanchor.feature.practice.resources.practice_ready_timed
@@ -62,11 +64,13 @@ import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
 /**
- * The practice screen (Living Studio mock, `docs/ui/living-studio.md`): top bar with the tempo ladder and the click
- * switch, the staff with the passage and a cursor, in a timed run the count-in and pulse line, and the live key strip.
+ * The practice screen (Living Studio mock, `docs/ui/living-studio.md`): top bar with the tempo ladder, the Hint
+ * button and the click switch, the staff with the passage and a cursor, in a timed run the count-in and pulse line,
+ * and the live key strip.
  * Stateless: see [PracticeViewModel]. [onBack] leaves the run (the back button, "End run" and the disconnected card's
  * "Back to pianos"); [onSelectRung] picks a rung of the tempo ladder (discarding the run); [onToggleClick] mutes or
- * unmutes the metronome; [onRetrySave] and [onDiscard] are the save-failed card's Retry and Discard; [onCalibrate] and
+ * unmutes the metronome; [onHint] shows the key band on the waiting step (the
+ * lightbulb button); [onRetrySave] and [onDiscard] are the save-failed card's Retry and Discard; [onCalibrate] and
  * [onSkipCalibration] are the calibrate card's Calibrate and Skip, shown while [PracticeState.calibrationOffered].
  */
 @Composable
@@ -80,10 +84,11 @@ public fun PracticeScreen(
     modifier: Modifier = Modifier,
     onCalibrate: () -> Unit = {},
     onSkipCalibration: () -> Unit = {},
+    onHint: () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.safeDrawingPadding()) {
-            TopBar(state, onBack, onSelectRung, onToggleClick)
+            TopBar(state, onBack, onSelectRung, onToggleClick, onHint)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             if (state.connection == PracticeConnection.DISCONNECTED) {
                 MessageCard(
@@ -133,6 +138,7 @@ private fun TopBar(
     onBack: () -> Unit,
     onSelectRung: (TempoRung) -> Unit,
     onToggleClick: () -> Unit,
+    onHint: () -> Unit,
 ) {
     val bpm = state.rung.bpm(state.passage)
     Row(
@@ -161,6 +167,7 @@ private fun TopBar(
                     ?: stringResource(Res.string.practice_tempo_wait)
             TempoChip(label, selected = rung == state.rung, done = rung in state.doneRungs) { onSelectRung(rung) }
         }
+        HintButton(onHint)
         ClickButton(state.clickOn, onToggleClick)
         Button(
             onClick = onBack,
@@ -170,6 +177,19 @@ private fun TopBar(
         ) {
             Text(stringResource(Res.string.practice_end_run), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         }
+    }
+}
+
+/** The 44 dp lightbulb button that shows the key band on the waiting step, read as "Show hint". */
+@Composable
+private fun HintButton(onHint: () -> Unit) {
+    val label = stringResource(Res.string.practice_hint)
+    TextButton(
+        onClick = onHint,
+        modifier = Modifier.size(44.dp).semantics { contentDescription = label },
+        contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
+    ) {
+        Text(stringResource(Res.string.practice_hint_glyph), fontSize = 20.sp)
     }
 }
 

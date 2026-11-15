@@ -74,6 +74,12 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
 - **Tempo ladder**: every chip selects its rung (selecting ends and discards the run). Selected is plum; a rung with a
   clean timed attempt at its tempo is drawn blue and read as "60%, done". Chips keep their 30 dp look inside a 48 dp
   touch target. The subtitle reads "Tempo run, 56 BPM".
+- **Key hints** (`docs/algorithms/guidance.md`): the amber band on the waiting step's keys fades per passage through
+  three levels. Full shows it at once; Delayed shows it only after the learner's usual pause (counted from the
+  previous step, or from the written onset in a timed run); Off shows nothing. The band is per step: the next step
+  starts without it again at Delayed and Off.
+- **Hint button**: a 44 dp lightbulb in the top bar, left of the click switch. A tap shows the band on the waiting step
+  for that step only; TalkBack reads "Show hint".
 - **Click switch**: a 44 dp note glyph left of "End run", struck through while off; TalkBack reads "Click on" or
   "Click off". On by default and kept until the app closes.
 - **Status line** (36 dp, between staff and keys, timed rungs only): "Play any key to count in" until the first key; then

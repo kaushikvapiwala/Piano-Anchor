@@ -270,6 +270,7 @@ private fun PracticeRoute(
         onDiscard = viewModel::discardRun,
         onCalibrate = { leave { onCalibrate(state.rung) } },
         onSkipCalibration = viewModel::skipCalibration,
+        onHint = viewModel::showHint,
     )
 }
 

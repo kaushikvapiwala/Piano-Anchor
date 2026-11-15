@@ -576,4 +576,67 @@ public object Tunables {
      * Source: spec #80; starting value, the mock's pacing.
      */
     public const val ONBOARDING_ECHO_MAX_STRAY_NOTES: Int = 1
+
+    /**
+     * How many clean runs in a row move a passage's key hints one level down (or keep-practising runs one level up).
+     *
+     * Why: two clean runs show the passage holds without the cue, and one lucky run doesn't fade it.
+     *
+     * Source: spec #132; owner, M5 grill.
+     */
+    public const val HINT_FADE_RUNS: Int = 2
+
+    /**
+     * How many of a passage's latest attempts the hint level is worked out from.
+     *
+     * Why: enough runs to settle the level many times over, with a bounded read.
+     *
+     * Source: spec #132; starting value.
+     */
+    public const val HINT_FADE_HISTORY: Int = 50
+
+    /**
+     * Factor on the learner's median step gap that gives the delay before a Delayed hint.
+     *
+     * Why: half again the learner's usual gap before helping, so a normal pause never triggers the hint.
+     *
+     * Source: spec #132; owner, M5 grill (the mock's "after your usual pause").
+     */
+    public const val HINT_DELAY_FACTOR: Double = 1.5
+
+    /**
+     * How many of a passage's latest runs the median step gap is taken over.
+     *
+     * Why: recent enough to track progress, with enough steps for a stable median.
+     *
+     * Source: spec #132; starting value.
+     */
+    public const val HINT_DELAY_RUNS: Int = 5
+
+    /**
+     * The shortest Delayed-hint delay, in milliseconds.
+     *
+     * Why: never flash the hint for a fluent player.
+     *
+     * Source: spec #132; owner, M5 grill.
+     */
+    public const val HINT_DELAY_MIN_MS: Long = 800
+
+    /**
+     * The longest Delayed-hint delay, in milliseconds.
+     *
+     * Why: never leave a beginner stuck without help.
+     *
+     * Source: spec #132; owner, M5 grill.
+     */
+    public const val HINT_DELAY_MAX_MS: Long = 3_000
+
+    /**
+     * The Delayed-hint delay before the passage has any history, in milliseconds.
+     *
+     * Why: a middle value between the clamps for a learner we know nothing about yet.
+     *
+     * Source: spec #132; owner, M5 grill.
+     */
+    public const val HINT_DELAY_DEFAULT_MS: Long = 1_500
 }

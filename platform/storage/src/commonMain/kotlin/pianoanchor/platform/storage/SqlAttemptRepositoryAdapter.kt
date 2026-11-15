@@ -13,6 +13,7 @@ import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.ChordIncomplete
+import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
@@ -66,6 +67,8 @@ public class SqlAttemptRepositoryAdapter(
                         band = attempt.band.name,
                         tempo_bpm = attempt.tempoBpm?.toLong(),
                         latency_offset_nanos = attempt.latencyOffsetNanos,
+                        hint_level = attempt.hintLevel.name,
+                        hint_shown = if (attempt.hintShown) 1L else 0L,
                     )
                     attempt.events.forEachIndexed { seq, event -> queries.insertMatchEvent(attempt.id, seq, event) }
                     attempt.playedNotes.forEachIndexed { seq, note ->
@@ -171,6 +174,8 @@ public class SqlAttemptRepositoryAdapter(
             tempoBpm = row.tempo_bpm?.toInt(),
             playedNotes = queries.selectNotes(row.id).executeAsList().map(::toPlayedNote),
             latencyOffsetNanos = row.latency_offset_nanos,
+            hintLevel = HintLevel.valueOf(row.hint_level),
+            hintShown = row.hint_shown != 0L,
         )
 }
 

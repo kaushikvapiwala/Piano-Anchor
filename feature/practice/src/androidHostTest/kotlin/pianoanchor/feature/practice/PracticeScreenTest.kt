@@ -106,6 +106,21 @@ class PracticeScreenTest {
         }
 
     @Test
+    fun theHintButtonIsReadAsShowHintAndTapsThrough() =
+        runComposeUiTest {
+            var hints = 0
+            setContent {
+                PianoAnchorTheme {
+                    PracticeScreen(PracticeState.start(Passages.CDE), {}, {}, {}, {}, {}, onHint = { hints++ })
+                }
+            }
+
+            onNodeWithContentDescription("Show hint").performClick()
+
+            assertEquals(1, hints)
+        }
+
+    @Test
     fun readyTimedRunSaysToPlayAKey() =
         runComposeUiTest {
             show(PracticeState.start(Passages.CDE).copy(rung = TempoRung.P60))
