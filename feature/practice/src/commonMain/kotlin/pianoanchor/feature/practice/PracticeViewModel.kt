@@ -172,12 +172,13 @@ public class PracticeViewModel(
 
     /**
      * A new step is waiting: its band shows at once at FULL, otherwise not, and at DELAYED shows after
-     * [hintDelayMillis] unless a key press cancels the timer first.
+     * [hintDelayMillis] unless a key press cancels the timer first. A timed step already answered (played early) gets
+     * no timer.
      */
-    private fun startHintStep() {
+    private fun startHintStep(answered: Boolean = false) {
         hintTimer?.cancel()
         mutableState.update { it.copy(hintVisible = hintLevel == HintLevel.FULL) }
-        if (hintLevel != HintLevel.DELAYED) return
+        if (hintLevel != HintLevel.DELAYED || answered) return
         hintTimer =
             viewModelScope.launch {
                 delay(hintDelayMillis)
@@ -514,6 +515,9 @@ public class PracticeViewModel(
         /** The cursor step whose hint timer runs (or ran), -1 before the run plays. */
         private var hintStep = -1
 
+        /** Steps that got a Correct or TimingOff verdict, possibly before the cursor reached them. */
+        private val answered = mutableSetOf<Int>()
+
         /** One click: the time signature's beat unit (a quarter note is [beatNanos] of the tempo). */
         private val beatNanos = beatNanos(bpm) * QUARTER_UNIT / passage.timeSignature.beatUnit
         private val beatsPerBar = passage.timeSignature.beats
@@ -601,7 +605,6 @@ public class PracticeViewModel(
                         KeyFlash(event.note, correct = false)
                     }
                 }
-            if (flash.correct) hintTimer?.cancel() // played in time: no help needed for this step
             publish(time.nowNanos(), judge)
             pressKey(event.note, flash)
         }
@@ -609,7 +612,11 @@ public class PracticeViewModel(
         private fun mark(
             at: ScoreNoteRef,
             mark: LiveMark,
-        ) = mutableState.update { it.copy(liveMarks = it.liveMarks + (at to mark)) }
+        ) {
+            answered += at.stepIndex
+            if (at.stepIndex == hintStep) hintTimer?.cancel() // played in time: no help needed for this step
+            mutableState.update { it.copy(liveMarks = it.liveMarks + (at to mark)) }
+        }
 
         /** Publishes the clock's state at every beat subdivision until the judge's end. */
         private suspend fun runClock(judge: TempoJudge) {
@@ -633,7 +640,7 @@ public class PracticeViewModel(
             val cursor = if (playing) judge.cursorStep(now) else 0
             if (playing && cursor != hintStep) {
                 hintStep = cursor
-                startHintStep()
+                startHintStep(answered = cursor in answered)
             }
             mutableState.update {
                 it.copy(

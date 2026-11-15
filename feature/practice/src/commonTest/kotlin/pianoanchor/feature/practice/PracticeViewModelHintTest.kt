@@ -16,9 +16,11 @@ import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.StepCorrect
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeCalibrationRepository
 import pianoanchor.testing.FakeClock
@@ -117,6 +119,9 @@ class PracticeViewModelHintTest {
         advanceTimeBy(millis)
         runCurrent()
     }
+
+    /** Like [wait], in 50 ms steps so the clock the cursor reads and the timers' virtual time stay together. */
+    private fun TestScope.tick(millis: Long) = repeat((millis / 50).toInt()) { wait(50) }
 
     private val delayedHistory = arrayOf(Band.CLEAN, Band.CLEAN)
     private val offHistory = arrayOf(Band.CLEAN, Band.CLEAN, Band.CLEAN, Band.CLEAN)
@@ -228,6 +233,41 @@ class PracticeViewModelHintTest {
 
             val saved = assertNotNull(attempts.get("attempt-1"))
             assertEquals(HintLevel.OFF, saved.hintLevel)
+            assertFalse(saved.hintShown)
+        }
+
+    @Test
+    fun delayedTimedStepPlayedEarlyGetsNoHintWhenTheCursorReachesIt() =
+        runTest(dispatcher) {
+            store(*delayedHistory)
+            val vm = practice()
+            vm.selectRung(TempoRung.P60) // 48 BPM: 1250 ms a beat, so the steps are further apart than the delay
+            runCurrent()
+            val beatMs = 1_250L
+            piano.press(c4) // the key that starts the count-in
+            piano.release(c4)
+            runCurrent()
+            tick(Tunables.TEMPO_COUNT_IN_LEAD_MS + 4 * beatMs)
+            piano.press(c4)
+            piano.release(c4)
+            runCurrent()
+            tick(beatMs - 400)
+            piano.press(d4) // 400 ms before D's onset, inside its window
+            piano.release(d4)
+            runCurrent()
+
+            tick(400 + 1_000) // past D's onset and the delay
+            assertEquals(1, vm.state.value.currentStep)
+            assertFalse(vm.state.value.hintVisible)
+
+            tick(beatMs - 1_000)
+            piano.press(e4)
+            piano.release(e4)
+            runCurrent()
+            tick(4 * beatMs)
+
+            val saved = assertNotNull(attempts.get("attempt-1"))
+            assertEquals(HintLevel.DELAYED, saved.hintLevel)
             assertFalse(saved.hintShown)
         }
 
