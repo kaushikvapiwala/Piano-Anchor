@@ -166,6 +166,9 @@ Grouped rows under plum group titles, every target at least 44 dp, every change 
   "20 minutes"), then "Weekly goal" with the value below ("4 days a week") and a minus and plus stepper (read as
   "Fewer days" and "More days"; each disables at its end of 1 to 7).
 - **Playing**: the "Click in timed runs" switch, the same choice as the practice screen's click glyph.
+- **Strictness** (below the click switch, in the Playing group): "Strictness" with three radio rows, each a title and
+  a one-line description: "Gentle: more room for timing and slips", "Standard: the default", "Strict: tight timing,
+  few slips". The whole row selects and reads as a radio button; a change applies to the next run.
 - **Updates**: the "Check for updates" switch with the note "Checks GitHub once a day for a new version. Sends
   nothing about you." The whole row toggles and reads as a switch.
 - **Storage failure**: the usual `errorContainer` card "Couldn't save the settings. Try again." with Dismiss; the

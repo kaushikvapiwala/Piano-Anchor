@@ -16,9 +16,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 private val DAY = LocalDate(2026, 11, 1)
-private val REVIEW = Review("pitch:c4", DAY, Rating.GOOD, "a-1")
+private val REVIEW = Review("pitch:c4", DAY, Rating.GOOD, "a-1", unaided = true)
 private val STATE =
-    SkillState("pitch:c4", MemoryState(3.5, 6.25), DAY, DAY, LocalDate(2026, 11, 4), 1, 2, false)
+    SkillState("pitch:c4", MemoryState(3.5, 6.25), DAY, DAY, LocalDate(2026, 11, 4), 1, 2, 1, false)
 
 class SqlLearnerRepositoryAdapterTest : LearnerRepositoryPortContractTest() {
     private val drivers = InMemoryDrivers()

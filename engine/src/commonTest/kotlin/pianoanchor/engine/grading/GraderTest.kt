@@ -7,7 +7,9 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.StepCorrect
+import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WrongNote
+import pianoanchor.engine.profile
 import pianoanchor.testing.passageOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -44,6 +46,31 @@ class GraderTest {
         assertEquals(Band.GOOD, Grader.band(0.80))
         assertEquals(Band.KEEP_PRACTISING, Grader.band(0.7999))
         assertEquals(Band.KEEP_PRACTISING, Grader.band(0.0))
+    }
+
+    @Test
+    fun theSameAccuracyGetsADifferentBandPerStrictness() {
+        fun bands(accuracy: Double) = Strictness.entries.map { Grader.band(accuracy, it.profile()) }
+
+        assertEquals(listOf(Band.CLEAN, Band.CLEAN, Band.GOOD), bands(0.97))
+        assertEquals(listOf(Band.CLEAN, Band.GOOD, Band.GOOD), bands(0.92))
+        assertEquals(listOf(Band.GOOD, Band.GOOD, Band.KEEP_PRACTISING), bands(0.85))
+        assertEquals(listOf(Band.GOOD, Band.KEEP_PRACTISING, Band.KEEP_PRACTISING), bands(0.78))
+        assertEquals(listOf(Band.KEEP_PRACTISING, Band.KEEP_PRACTISING, Band.KEEP_PRACTISING), bands(0.70))
+        assertEquals(Grader.band(0.92, Strictness.STANDARD.profile()), Grader.band(0.92))
+    }
+
+    @Test
+    fun aWaitModeAttemptIsBandedByTheStrictness() {
+        val events =
+            listOf(WrongNote(0, 0, c4), StepCorrect(1, 0), StepCorrect(2, 1), StepCorrect(3, 2), PassageComplete(4, 2))
+
+        fun band(strictness: Strictness) =
+            Grader.attempt("a-1", passage, "usb-1", wallClock, 0, events, strictness = strictness.profile()).band
+
+        // 3 steps and 1 wrong note: accuracy 0.75.
+        assertEquals(Band.KEEP_PRACTISING, band(Strictness.STANDARD))
+        assertEquals(Band.GOOD, band(Strictness.GENTLE))
     }
 
     @Test

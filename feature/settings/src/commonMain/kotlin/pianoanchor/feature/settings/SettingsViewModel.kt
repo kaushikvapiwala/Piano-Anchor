@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WEEKLY_GOAL_DAYS_RANGE
 import pianoanchor.core.ports.SettingsRepositoryPort
 
@@ -46,6 +47,9 @@ public class SettingsViewModel(
 
     /** Turns the metronome click of timed runs on or off. */
     public fun setClickOn(on: Boolean): Unit = change { it.copy(clickOn = on) }
+
+    /** Sets how strictly the next run is graded. */
+    public fun setStrictness(strictness: Strictness): Unit = change { it.copy(strictness = strictness) }
 
     /** Turns the daily check for a new version on or off. */
     public fun setUpdateCheckOn(on: Boolean): Unit = change { it.copy(updateCheckOn = on) }

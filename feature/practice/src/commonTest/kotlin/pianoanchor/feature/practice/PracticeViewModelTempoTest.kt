@@ -20,6 +20,7 @@ import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
@@ -253,6 +254,35 @@ class PracticeViewModelTempoTest {
             )
             assertEquals(KeyFlash(f4, correct = false), vm.state.value.lastKey)
             assertEquals(setOf(f4), vm.state.value.wrongKeys)
+        }
+
+    /** The live mark of D, played [lateMs] late, with [strictness] stored; the band is 156 ms on Standard. */
+    private suspend fun TestScope.liveMarkOfD4(
+        strictness: Strictness,
+        lateMs: Long,
+    ): LiveMark? {
+        settings.update { it.copy(strictness = strictness) }
+        val vm = practice()
+        startRun(vm)
+        advance(countInMs)
+        press(c4)
+        advance(beatMs + lateMs)
+        press(d4)
+        return vm.state.value.liveMarks[ScoreNoteRef(1, d4)]
+    }
+
+    @Test
+    fun aGentleStrictnessWidensTheLiveTolerance() =
+        runPractice {
+            // At 48 BPM the early/late band is 234 ms on Gentle: 200 ms late is on time.
+            assertEquals(LiveMark.Correct, liveMarkOfD4(Strictness.GENTLE, 200))
+        }
+
+    @Test
+    fun aStrictStrictnessNarrowsTheLiveTolerance() =
+        runPractice {
+            // The band is 104 ms on Strict: 150 ms late is off, though Standard (156 ms) allows it.
+            assertEquals(LiveMark.TimingOff(150), liveMarkOfD4(Strictness.STRICT, 150))
         }
 
     @Test

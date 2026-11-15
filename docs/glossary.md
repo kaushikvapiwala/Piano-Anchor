@@ -28,7 +28,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hint level | How much help a run of a passage starts with: Full (amber key band at once), Delayed (after the learner's usual pause) or Off (only on the Hint button). Faded by clean runs, restored by keep-practising runs (`HintFading`, `docs/algorithms/guidance.md`). |
 | Perform run | An attempt played in perform mode: one take at a timed rung with no hints and no live verdicts (`mode` PERFORM). |
-| Unaided run | A perform run with no hint shown (`Attempt.unaided`); always the case for a perform run. |
+| Unaided run | A perform run with no hint shown (`Attempt.unaided`); always the case for a perform run. `Review.unaided` also holds for ear sets and placement. A skill needs one unaided recalled check before it counts as learned (`docs/algorithms/learner-model.md`). |
 | Aided run | An attempt with `hintShown` true: the key band showed at some point (Full level, a Delayed hint that fired, or the Hint button). |
 | Hesitation | A pause before a note that is much longer than the music asks for, without a wrong note. |
 | Identify | An ear item answered by tapping the name of what was heard on screen (higher or lower, step or skip, an interval, a chord quality). Two choices in M4. |
@@ -71,6 +71,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Stability | FSRS: the days after which recall has fallen to 90%; grows with each successful review. Part of `MemoryState`. |
 | Stable device id | The `MidiDevice.id` an adapter derives from what the platform reports (e.g. `usb:<manufacturer>/<product>/<serial>`, `ble:<address>`), so the same instrument keeps its id across reconnects when the platform reports enough to tell it apart. |
 | Step | One moment in a passage: the keys to press together (one note, or a chord) at its onset, each with a written length in ticks (`ScoreNote`). Wait mode reads only its pitches. |
+| Strictness | The learner's Settings choice of Gentle, Standard (default) or Strict: it scales the timing tolerance and the CLEAN and GOOD accuracy bands of the next run (`StrictnessProfile`, `docs/algorithms/grading.md`). |
 | Skill graph | The skills and their prerequisites as a validated acyclic graph (`SkillGraph`); `unlocked` lists the skills a learner may start next. See `docs/algorithms/learner-model.md`. |
 | Sustain pedal | The right (damper) pedal, sent as control change 64; values 64–127 hold every released note sounding until it drops below 64. |
 | SysEx | System Exclusive: a variable-length, vendor-specific MIDI message framed by 0xF0 and 0xF7. |

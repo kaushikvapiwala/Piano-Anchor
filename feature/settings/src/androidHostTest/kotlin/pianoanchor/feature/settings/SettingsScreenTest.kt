@@ -28,6 +28,7 @@ class SettingsScreenTest {
             onDailyBudget = { calls += "budget $it" },
             onWeeklyGoalStep = { calls += "step $it" },
             onClickOn = { calls += "click $it" },
+            onStrictness = { calls += "strictness $it" },
             onUpdateCheckOn = { calls += "update $it" },
             onDismissError = { calls += "dismiss" },
         )
@@ -42,12 +43,32 @@ class SettingsScreenTest {
             onNodeWithContentDescription("Fewer days").performClick()
             onNodeWithContentDescription("More days").performClick()
             onNodeWithText("Click in timed runs").performClick()
+            onNodeWithText("Strict").performClick()
             onNodeWithText("Check for updates").performClick()
 
             assertEquals(
-                listOf("back", "budget ${DailyBudget.MIN_30}", "step -1", "step 1", "click false", "update false"),
+                listOf(
+                    "back",
+                    "budget ${DailyBudget.MIN_30}",
+                    "step -1",
+                    "step 1",
+                    "click false",
+                    "strictness STRICT",
+                    "update false",
+                ),
                 calls,
             )
+        }
+
+    @Test
+    fun strictnessOffersThreePresetsWithADescriptionEach() =
+        runComposeUiTest {
+            setContent { PianoAnchorTheme { SettingsScreen(SettingsState(), actions) } }
+
+            onNodeWithText("Strictness").assertExists()
+            onNodeWithText("More room for timing and slips").assertExists()
+            onNodeWithText("The default").assertExists()
+            onNodeWithText("Tight timing, few slips").assertExists()
         }
 
     @Test

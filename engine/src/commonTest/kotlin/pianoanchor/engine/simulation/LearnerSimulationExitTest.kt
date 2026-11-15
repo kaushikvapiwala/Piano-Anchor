@@ -8,6 +8,7 @@ import kotlinx.datetime.plus
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
 import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.SkillState
@@ -105,9 +106,14 @@ private fun attemptOf(
     accuracy = 1.0,
     band = band,
     events = emptyList(),
-    tempoBpm = null,
+    // A simulated cold check is an unaided perform run: timed, no hint.
+    tempoBpm = COLD_CHECK_BPM,
     playedNotes = emptyList(),
+    hintShown = false,
+    mode = RunMode.PERFORM,
 )
+
+private const val COLD_CHECK_BPM = 60
 
 private suspend fun simulate(
     seed: Long,

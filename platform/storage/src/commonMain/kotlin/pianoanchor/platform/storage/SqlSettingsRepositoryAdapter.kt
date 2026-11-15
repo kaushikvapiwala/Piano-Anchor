@@ -12,6 +12,7 @@ import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.Settings
+import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WEEKLY_GOAL_DAYS_RANGE
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.platform.storage.db.PianoAnchorDatabase
@@ -25,6 +26,7 @@ private const val ONBOARDED = "onboarded"
 private const val LAST_UPDATE_CHECK = "last_update_check"
 private const val LATEST_RELEASE = "latest_release"
 private const val DISMISSED_UPDATE = "dismissed_update"
+private const val STRICTNESS = "strictness"
 
 /** A stored text that is "not set" (the rows of absent values hold it, so every update writes every row). */
 private const val UNSET = ""
@@ -69,6 +71,7 @@ public class SqlSettingsRepositoryAdapter(
                         queries.put(LAST_UPDATE_CHECK, updated.lastUpdateCheck.stored())
                         queries.put(LATEST_RELEASE, updated.latestRelease.stored())
                         queries.put(DISMISSED_UPDATE, updated.dismissedUpdate ?: UNSET)
+                        queries.put(STRICTNESS, updated.strictness.name)
                     }
                 }
             }
@@ -96,6 +99,11 @@ private fun Map<String, String>.toSettings(): Settings {
         lastUpdateCheck = this[LAST_UPDATE_CHECK]?.toLocalDateOrNull(),
         latestRelease = this[LATEST_RELEASE]?.toReleaseOrNull(),
         dismissedUpdate = this[DISMISSED_UPDATE]?.takeIf { it != UNSET },
+        strictness =
+            read(
+                STRICTNESS,
+                defaults.strictness,
+            ) { name -> Strictness.entries.firstOrNull { it.name == name } },
     )
 }
 

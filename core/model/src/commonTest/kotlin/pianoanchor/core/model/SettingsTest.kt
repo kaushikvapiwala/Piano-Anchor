@@ -23,6 +23,12 @@ class SettingsTest {
     }
 
     @Test
+    fun strictnessDefaultsToStandard() {
+        assertEquals(Strictness.STANDARD, Settings().strictness)
+        assertEquals(Strictness.STRICT, Settings(strictness = Strictness.STRICT).strictness)
+    }
+
+    @Test
     fun budgetsKnowTheirMinutes() {
         assertEquals(listOf(15, 20, 30), DailyBudget.entries.map { it.minutes })
     }

@@ -33,6 +33,7 @@ class SessionComposerTest {
         dueDay = day,
         cleanColdChecks = 0,
         recalledColdChecks = 0,
+        unaidedRecalledChecks = 0,
         learned = learned,
     )
 

@@ -34,7 +34,13 @@ public class SqlLearnerRepositoryAdapter(
                     require(!queries.hasReview(review.skillId, review.day.toString()).executeAsOne()) {
                         "${review.skillId} already has a review on ${review.day}"
                     }
-                    queries.insertReview(review.skillId, review.day.toString(), review.rating.name, review.attemptId)
+                    queries.insertReview(
+                        review.skillId,
+                        review.day.toString(),
+                        review.rating.name,
+                        review.attemptId,
+                        if (review.unaided) 1L else 0L,
+                    )
                     queries.writeState(state)
                 }
             }
@@ -54,8 +60,8 @@ public class SqlLearnerRepositoryAdapter(
         withContext(dispatcher) {
             storage("reviews") {
                 queries
-                    .selectReviews(skillId) { skill, day, rating, attemptId ->
-                        Review(skill, LocalDate.parse(day), Rating.valueOf(rating), attemptId)
+                    .selectReviews(skillId) { skill, day, rating, attemptId, unaided ->
+                        Review(skill, LocalDate.parse(day), Rating.valueOf(rating), attemptId, unaided != 0L)
                     }.executeAsList()
             }
         }
@@ -81,6 +87,7 @@ private fun LearnerQueries.writeState(state: SkillState) =
         due_day = state.dueDay.toString(),
         clean_cold_checks = state.cleanColdChecks.toLong(),
         recalled_cold_checks = state.recalledColdChecks.toLong(),
+        unaided_recalled_checks = state.unaidedRecalledChecks.toLong(),
         learned = if (state.learned) 1L else 0L,
     )
 
@@ -94,6 +101,7 @@ private fun toState(
     dueDay: String,
     cleanColdChecks: Long,
     recalledColdChecks: Long,
+    unaidedRecalledChecks: Long,
     learned: Long,
 ) = SkillState(
     skillId = skillId,
@@ -103,5 +111,6 @@ private fun toState(
     dueDay = LocalDate.parse(dueDay),
     cleanColdChecks = cleanColdChecks.toInt(),
     recalledColdChecks = recalledColdChecks.toInt(),
+    unaidedRecalledChecks = unaidedRecalledChecks.toInt(),
     learned = learned != 0L,
 )

@@ -6,8 +6,11 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.ScoreNoteRef
+import pianoanchor.core.model.Strictness
+import pianoanchor.core.model.StrictnessProfile
 import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.engine.analysis.timingToleranceNanos
+import pianoanchor.engine.profile
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -73,15 +76,17 @@ public sealed interface LiveVerdict {
  * Live, approximate per-note judge for a timed run; the analyser gives the verdict afterwards
  * (`docs/algorithms/tempo-judge.md`). Tick 0 of [passage] sounds at [startNanos], tempo [bpm]. [latencyOffsetNanos] is
  * the piano's latency offset (`docs/algorithms/latency-calibration.md`): it is subtracted from every played time.
+ * [strictness] sets the on-time tolerance.
  */
 public class TempoJudge(
     private val passage: Passage,
     bpm: Int,
     startNanos: Long,
     private val latencyOffsetNanos: Long = 0,
+    strictness: StrictnessProfile = Strictness.STANDARD.profile(),
 ) {
     private val nanosPerTick = beatNanos(bpm).toDouble() / TICKS_PER_QUARTER
-    private val tolerance = timingToleranceNanos(beatNanos(bpm).toDouble())
+    private val tolerance = timingToleranceNanos(beatNanos(bpm).toDouble(), strictness)
     private val onsets = passage.steps.map { startNanos + (it.onsetTicks * nanosPerTick).roundToLong() }
     private val judged = HashSet<ScoreNoteRef>()
 

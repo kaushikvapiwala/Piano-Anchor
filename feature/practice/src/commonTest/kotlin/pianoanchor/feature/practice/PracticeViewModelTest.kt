@@ -21,6 +21,7 @@ import pianoanchor.core.model.Rating
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
@@ -368,6 +369,34 @@ class PracticeViewModelTest {
         }
 
     @Test
+    fun theStoredStrictnessBandsTheRun() =
+        runTest(dispatcher) {
+            settings.update { it.copy(strictness = Strictness.GENTLE) }
+            practice()
+
+            tap(c4)
+            tap(f4)
+            tap(d4)
+            tap(e4)
+
+            assertEquals(Band.GOOD, assertNotNull(attempts.get("attempt-1")).band) // 0.75 is Gentle's Good bar
+        }
+
+    @Test
+    fun anUnreadableSettingsStoreGradesWithStandard() =
+        runTest(dispatcher) {
+            settings.failing = true
+            practice()
+
+            tap(c4)
+            tap(f4)
+            tap(d4)
+            tap(e4)
+
+            assertEquals(Band.KEEP_PRACTISING, assertNotNull(attempts.get("attempt-1")).band)
+        }
+
+    @Test
     fun allNotesOffClearsKeysAndWrongKeys() =
         runTest(dispatcher) {
             val vm = practice()
@@ -507,7 +536,8 @@ class PracticeViewModelTest {
 
             val review = learnerRepository.reviews(Skills.RH_C_POSITION.id).single()
             assertEquals(LocalDate(2026, 11, 13), review.day)
-            assertEquals(Rating.GOOD, review.rating)
+            assertEquals(Rating.HARD, review.rating) // a clean wait-mode run is capped at Hard
+            assertFalse(review.unaided)
             assertEquals("attempt-1", review.attemptId)
             assertEquals("attempt-1", vm.state.value.finishedAttemptId)
         }

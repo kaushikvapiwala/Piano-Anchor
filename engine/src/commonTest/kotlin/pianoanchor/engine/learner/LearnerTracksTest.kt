@@ -7,6 +7,7 @@ import kotlinx.datetime.plus
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
 import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.Track
@@ -51,8 +52,10 @@ class LearnerTracksTest {
             accuracy = 1.0,
             band = band,
             events = emptyList(),
-            tempoBpm = null,
+            tempoBpm = 60,
             playedNotes = emptyList(),
+            hintShown = false,
+            mode = RunMode.PERFORM,
         ),
         day(offset),
     )

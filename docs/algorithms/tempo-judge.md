@@ -18,7 +18,8 @@ beat). Halving the gap makes the windows of neighbouring steps meet without over
 one step.
 
 - A match within the early/late band (`TIMING_TOLERANCE_MS` or `TIMING_TOLERANCE_BEAT_FRACTION` of a beat, whichever
-  is larger, the analyser's own band) is `Correct`; further off it is `TimingOff` with the deviation in milliseconds
+  is larger, the analyser's own band; the Gentle and Strict presets use their own pair, see "Strictness" in
+  `docs/algorithms/grading.md`) is `Correct`; further off it is `TimingOff` with the deviation in milliseconds
   (plus late, minus early).
 - No match is `Wrong`: a pitch the score doesn't ask for here, a repeat of a judged note, or a note too far from any
   step.

@@ -8,8 +8,11 @@ import pianoanchor.core.model.PLAYED_NOTE_ORDER
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.ScoreNoteRef
+import pianoanchor.core.model.Strictness
+import pianoanchor.core.model.StrictnessProfile
 import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.engine.Tunables
+import pianoanchor.engine.profile
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToLong
@@ -22,14 +25,18 @@ private val MISTOUCH_SEMITONES = 1..2
 private fun nanosPerTick(bpm: Number): Double = NANOS_PER_MINUTE / bpm.toDouble() / TICKS_PER_QUARTER
 
 /**
- * The early/late band at a beat (quarter note) of [beatNanos], in nanoseconds: max([Tunables.TIMING_TOLERANCE_MS],
- * [Tunables.TIMING_TOLERANCE_BEAT_FRACTION] × beat). An onset further than this from where the tempo puts it is
- * early or late.
+ * The early/late band at a beat (quarter note) of [beatNanos], in nanoseconds: max([StrictnessProfile.timingToleranceMs],
+ * [StrictnessProfile.timingToleranceBeatFraction] × beat) of [strictness] (Standard: [Tunables.TIMING_TOLERANCE_MS] and
+ * [Tunables.TIMING_TOLERANCE_BEAT_FRACTION]). An onset further than this from where the tempo puts it is early or
+ * late.
  */
-public fun timingToleranceNanos(beatNanos: Double): Double =
+public fun timingToleranceNanos(
+    beatNanos: Double,
+    strictness: StrictnessProfile = Strictness.STANDARD.profile(),
+): Double =
     max(
-        (Tunables.TIMING_TOLERANCE_MS * NANOS_PER_MILLI).toDouble(),
-        Tunables.TIMING_TOLERANCE_BEAT_FRACTION * beatNanos,
+        (strictness.timingToleranceMs * NANOS_PER_MILLI).toDouble(),
+        strictness.timingToleranceBeatFraction * beatNanos,
     )
 
 /** What early and late are measured against (`docs/algorithms/performance-analysis.md`). */
@@ -81,20 +88,24 @@ public data class PerformanceAnalysis(
 
 /** The offline performance analyser (`docs/algorithms/performance-analysis.md`). */
 public object PerformanceAnalyser {
-    /** Aligns [notes] (any order) to [passage] and classifies every error, timed against [tempo]. */
+    /**
+     * Aligns [notes] (any order) to [passage] and classifies every error, timed against [tempo]. [strictness] sets the
+     * early/late tolerance; the other thresholds are fixed.
+     */
     public fun analyse(
         passage: Passage,
         notes: List<PlayedNote>,
         tempo: TempoReference,
+        strictness: StrictnessProfile = Strictness.STANDARD.profile(),
     ): PerformanceAnalysis {
         val played = notes.sortedWith(PLAYED_NOTE_ORDER)
         val target = tempo as? TempoReference.Target
         val alignmentNanosPerTick = nanosPerTick(target?.bpm ?: passage.tempoBpm)
         val first = align(passage, played, alignmentNanosPerTick, target?.startNanos)
-        val mistouches = mistouches(passage, played, first, alignmentNanosPerTick)
+        val mistouches = mistouches(passage, played, first, alignmentNanosPerTick, strictness)
         val kept = played.filterNot { note -> mistouches.any { it.second === note } }
         val alignment = align(passage, kept, alignmentNanosPerTick, target?.startNanos)
-        return Classification(passage, tempo, alignment, alignmentNanosPerTick).analysis(mistouches)
+        return Classification(passage, tempo, alignment, alignmentNanosPerTick, strictness).analysis(mistouches)
     }
 
     /**
@@ -108,12 +119,13 @@ public object PerformanceAnalyser {
         played: List<PlayedNote>,
         alignment: Alignment,
         nanosPerTick: Double,
+        strictness: StrictnessProfile,
     ): List<Pair<ScoreNoteRef, PlayedNote>> {
         val ticksOf = { ref: ScoreNoteRef -> passage.steps[ref.stepIndex].onsetTicks }
         val exact = alignment.matched.filter { (ref, note) -> note.pitch == ref.pitch }
         val exactTicksOf = exact.entries.associate { (ref, note) -> note to ticksOf(ref) }
         val window = Tunables.MISTOUCH_WINDOW_MS * NANOS_PER_MILLI
-        val tolerance = timingToleranceNanos(nanosPerTick * TICKS_PER_QUARTER)
+        val tolerance = timingToleranceNanos(nanosPerTick * TICKS_PER_QUARTER, strictness)
         return played.mapNotNull { touch ->
             val ownTicks = exactTicksOf[touch]
             exact.entries
@@ -146,6 +158,7 @@ private class Classification(
     private val tempo: TempoReference,
     private val alignment: Alignment,
     private val alignmentNanosPerTick: Double,
+    private val strictness: StrictnessProfile,
 ) {
     private val steps = passage.steps
     private val refsByStep =
@@ -266,7 +279,7 @@ private class Classification(
     ) {
         val step = steps[ref.stepIndex]
         val deviation = note.downNanos - clock.expectedNanos(step.onsetTicks)
-        val tolerance = timingToleranceNanos(clock.nanosPerTick * TICKS_PER_QUARTER)
+        val tolerance = timingToleranceNanos(clock.nanosPerTick * TICKS_PER_QUARTER, strictness)
         if (abs(deviation) > tolerance) {
             report(if (deviation < 0) ErrorKind.EARLY else ErrorKind.LATE, ref, note)
         }

@@ -1,0 +1,7 @@
+-- Schema 9 to 10 (M5.4): whether a review was an unaided check, and how many unaided recalled checks a skill has.
+-- Every review stored so far predates hints fading, so it counts as unaided (the column default), and each state
+-- backfills its count from its Hard or Good reviews, so skills keep their learned status and earlier checks count.
+-- Placement reviews are not checks: a placed skill, with no recalled checks, stays at 0.
+ALTER TABLE review ADD COLUMN unaided INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE skill_state ADD COLUMN unaided_recalled_checks INTEGER NOT NULL DEFAULT 0;
+UPDATE skill_state SET unaided_recalled_checks = recalled_cold_checks;

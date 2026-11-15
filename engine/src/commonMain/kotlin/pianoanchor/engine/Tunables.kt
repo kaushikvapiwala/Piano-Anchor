@@ -176,6 +176,78 @@ public object Tunables {
     public const val TIMING_TOLERANCE_BEAT_FRACTION: Double = 0.125
 
     /**
+     * [Strictness.GENTLE]'s timing floor in milliseconds (the [TIMING_TOLERANCE_MS] role).
+     *
+     * Why: 50% more room than Standard for a learner whose hands are still settling.
+     *
+     * Source: owner, M5 grill.
+     */
+    public const val GENTLE_TIMING_TOLERANCE_MS: Long = 90
+
+    /**
+     * [Strictness.GENTLE]'s early/late band as a fraction of a beat (the [TIMING_TOLERANCE_BEAT_FRACTION] role).
+     *
+     * Why: the same 50% more room as the millisecond floor, at slow tempos.
+     *
+     * Source: owner, M5 grill.
+     */
+    public const val GENTLE_TIMING_TOLERANCE_BEAT_FRACTION: Double = 0.1875
+
+    /**
+     * Lowest accuracy of a [Strictness.GENTLE] run graded `Band.CLEAN`.
+     *
+     * Why: a band step below Standard's [BAND_CLEAN_MIN_ACCURACY], so a couple of slips on a long passage still count.
+     *
+     * Source: owner, M5 grill.
+     */
+    public const val GENTLE_BAND_CLEAN_MIN_ACCURACY: Double = 0.90
+
+    /**
+     * Lowest accuracy of a [Strictness.GENTLE] run graded `Band.GOOD`.
+     *
+     * Why: a band step below Standard's [BAND_GOOD_MIN_ACCURACY].
+     *
+     * Source: owner, M5 grill.
+     */
+    public const val GENTLE_BAND_GOOD_MIN_ACCURACY: Double = 0.75
+
+    /**
+     * [Strictness.STRICT]'s timing floor in milliseconds (the [TIMING_TOLERANCE_MS] role).
+     *
+     * Why: a third tighter than Standard for a learner who wants clean timing.
+     *
+     * Source: owner, M5 grill.
+     */
+    public const val STRICT_TIMING_TOLERANCE_MS: Long = 40
+
+    /**
+     * [Strictness.STRICT]'s early/late band as a fraction of a beat (the [TIMING_TOLERANCE_BEAT_FRACTION] role).
+     *
+     * Why: the same one-third tighter band at slow tempos.
+     *
+     * Source: owner, M5 grill.
+     */
+    public const val STRICT_TIMING_TOLERANCE_BEAT_FRACTION: Double = 0.083
+
+    /**
+     * Lowest accuracy of a [Strictness.STRICT] run graded `Band.CLEAN`.
+     *
+     * Why: a band step above Standard's [BAND_CLEAN_MIN_ACCURACY]: almost no slips.
+     *
+     * Source: owner, M5 grill.
+     */
+    public const val STRICT_BAND_CLEAN_MIN_ACCURACY: Double = 0.98
+
+    /**
+     * Lowest accuracy of a [Strictness.STRICT] run graded `Band.GOOD`.
+     *
+     * Why: a band step above Standard's [BAND_GOOD_MIN_ACCURACY].
+     *
+     * Source: owner, M5 grill.
+     */
+    public const val STRICT_BAND_GOOD_MIN_ACCURACY: Double = 0.90
+
+    /**
      * A step whose gap from the previous step is at least this many times the expected gap (and at least
      * [HESITATION_MIN_MS]) is a `HESITATION`, not a late note.
      *
@@ -390,6 +462,15 @@ public object Tunables {
      * Source: owner decision 2026-11-15 after the #73 simulation; calibrated in M7.
      */
     public const val LEARNED_MIN_RECALLED_COLD_CHECKS: Int = 2
+
+    /**
+     * The fewest unaided recalled (Hard or Good) cold checks, on distinct days, before a skill counts as learned.
+     *
+     * Why: one unaided pass shows the skill holds without help.
+     *
+     * Source: owner, M5 grill (M5 exit check).
+     */
+    public const val LEARNED_MIN_UNAIDED_CHECKS: Int = 1
 
     /**
      * The least FSRS stability, in days, a skill needs to count as learned.

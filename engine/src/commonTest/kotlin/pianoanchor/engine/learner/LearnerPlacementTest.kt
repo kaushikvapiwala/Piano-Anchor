@@ -6,6 +6,7 @@ import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Rating
+import pianoanchor.core.model.RunMode
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.scheduler.Fsrs
 import pianoanchor.testing.FakeLearnerRepository
@@ -46,8 +47,10 @@ class LearnerPlacementTest {
             accuracy = 1.0,
             band = Band.CLEAN,
             events = emptyList(),
-            tempoBpm = null,
+            tempoBpm = 60,
             playedNotes = emptyList(),
+            hintShown = false,
+            mode = RunMode.PERFORM,
         )
 
     @Test
@@ -58,6 +61,8 @@ class LearnerPlacementTest {
             val review = repository.reviews("a").single()
             assertEquals(Rating.GOOD, review.rating)
             assertEquals(PLACEMENT_ATTEMPT_ID, review.attemptId)
+            assertTrue(review.unaided)
+            assertEquals(0, repository.states().getValue("a").unaidedRecalledChecks)
             assertEquals(day, review.day)
             val state = repository.states().getValue("a")
             assertTrue(state.learned)
