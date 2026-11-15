@@ -639,4 +639,22 @@ public object Tunables {
      * Source: spec #132; owner, M5 grill.
      */
     public const val HINT_DELAY_DEFAULT_MS: Long = 1_500
+
+    /**
+     * How many consecutive bars a spot loop repeats.
+     *
+     * Why: long enough for musical context, short enough to repeat quickly.
+     *
+     * Source: owner, M5 grill (spec #134).
+     */
+    public const val SPOT_LOOP_BARS: Int = 2
+
+    /**
+     * How many CLEAN spot loops in a row end a spot loop and offer the full passage again.
+     *
+     * Why: two clean loops in a row show the fix holds.
+     *
+     * Source: owner, M5 grill (spec #134).
+     */
+    public const val SPOT_LOOP_CLEAN_TARGET: Int = 2
 }

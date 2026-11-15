@@ -84,6 +84,11 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
   strip's verdict text are hidden; the staff, cursor, count-in and click stay and pressed keys light in a neutral
   colour. Results label the run "Performed" beside "run N". Today's cold open card reads "Perform cold open" at a
   timed rung.
+- **Spot loop** (`docs/algorithms/guidance.md`): Results show an outlined "Loop bars 5–6" ("Loop bar 3" for one bar)
+  under "Try again" when a window of bars had findings. The loop run reads "Spot loop · bars 5–6 · clean 0 of 2" as
+  its subtitle, has no mode switch, and restarts at once after each loop with a short result line under the staff
+  ("Clean", "2 wrong notes"). After two clean loops in a row a card says "Bars 5–6 are clean. Play the whole piece?"
+  with "Play it" and "Keep looping". Back leaves at any time.
 - **Hint button**: a 44 dp lightbulb in the top bar, left of the click switch. A tap shows the band on the waiting step
   for that step only; TalkBack reads "Show hint".
 - **Click switch**: a 44 dp note glyph left of "End run", struck through while off; TalkBack reads "Click on" or

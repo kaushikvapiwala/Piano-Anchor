@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
@@ -54,6 +55,7 @@ import pianoanchor.feature.practice.CalibrationViewModel
 import pianoanchor.feature.practice.PracticeScreen
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsScreen
+import pianoanchor.feature.practice.ResultsState
 import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.feature.settings.SettingsActions
 import pianoanchor.feature.settings.SettingsScreen
@@ -107,7 +109,8 @@ private sealed interface Destination {
 
     /**
      * Practising [passageId] on [device], starting on [rung] (a card's, or the one picked before a calibration);
-     * back returns to the screen that opened it ([from]): Today, Songs or the monitor.
+     * back returns to the screen that opened it ([from]): Today, Songs or the monitor. With [spot], it loops those
+     * bars of the passage one rung below [rung] (a spot loop); "Play it" then plays the whole passage at [rung].
      */
     data class Practice(
         val device: MidiDevice,
@@ -115,6 +118,7 @@ private sealed interface Destination {
         val rung: TempoRung = TempoRung.WAIT,
         val from: Destination = Monitor,
         val mode: RunMode = RunMode.PRACTICE,
+        val spot: BarRange? = null,
     ) : Destination
 
     /** The ear screen on [device], running [skills] in order; back returns to Today. */
@@ -185,6 +189,7 @@ private fun AppNavigation() {
                 onCalibrate = { rung, mode ->
                     destination = Destination.Calibrate(current.device, current.copy(rung = rung, mode = mode))
                 },
+                onPlayWhole = { rung -> destination = current.copy(rung = rung, spot = null) },
             )
         }
 
@@ -197,11 +202,7 @@ private fun AppNavigation() {
         }
 
         is Destination.Results -> {
-            ResultsRoute(
-                current.attemptId,
-                onBack = { destination = current.practice.from },
-                onTryAgain = { destination = current.practice },
-            )
+            ResultsRoute(current, go = { destination = it })
         }
     }
 }
@@ -253,11 +254,16 @@ private fun PracticeRoute(
     onBack: () -> Unit,
     onFinished: (attemptId: String) -> Unit,
     onCalibrate: (TempoRung, RunMode) -> Unit,
+    onPlayWhole: (TempoRung) -> Unit,
 ) {
     LandscapeEffect()
     val viewModel: PracticeViewModel =
         koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) {
-            parametersOf(practice.device, practice.passageId, practice.rung to practice.mode)
+            parametersOf(
+                practice.device,
+                practice.passageId,
+                PracticeStart(practice.rung, practice.mode, practice.spot),
+            )
         }
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
@@ -272,10 +278,13 @@ private fun PracticeRoute(
         onToggleClick = viewModel::toggleClick,
         onRetrySave = viewModel::retrySave,
         onDiscard = viewModel::discardRun,
-        onCalibrate = { leave { onCalibrate(state.rung, state.mode) } },
+        // A spot loop is one rung below the run's: calibrating returns to the run's rung, which the loop lowers again.
+        onCalibrate = { leave { onCalibrate(state.spotLoop?.fullRung ?: state.rung, state.mode) } },
         onSkipCalibration = viewModel::skipCalibration,
         onHint = viewModel::showHint,
         onSelectMode = viewModel::selectMode,
+        onPlayWhole = { state.spotLoop?.let { loop -> leave { onPlayWhole(loop.fullRung) } } },
+        onKeepLooping = viewModel::keepLooping,
     )
 }
 
@@ -332,19 +341,33 @@ private fun CalibrationRoute(
     )
 }
 
-/** The results of the run saved as [attemptId], landscape like practice. "Try again" practises on the same piano. */
+/**
+ * The results of the run saved as [results], landscape like practice. "Try again" practises on the same piano; "Loop
+ * bars" opens a spot loop on those bars at the run's rung; [go] navigates.
+ */
 @Composable
 private fun ResultsRoute(
-    attemptId: String,
-    onBack: () -> Unit,
-    onTryAgain: () -> Unit,
+    results: Destination.Results,
+    go: (Destination) -> Unit,
 ) {
     LandscapeEffect()
     val viewModel: ResultsViewModel =
-        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(attemptId) }
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(results.attemptId) }
     val state by viewModel.state.collectAsState()
+    val onBack = { go(results.practice.from) }
+    val onTryAgain = { go(results.practice) }
     BackHandler(onBack = onBack)
-    ResultsScreen(state, onBack = onBack, onTryAgain = onTryAgain, onRetry = viewModel::retry)
+    ResultsScreen(
+        state,
+        onBack = onBack,
+        onTryAgain = onTryAgain,
+        onRetry = viewModel::retry,
+        onLoopBars = { spot ->
+            (state as? ResultsState.Ready)?.let {
+                go(results.practice.copy(rung = it.rung, mode = RunMode.PRACTICE, spot = spot))
+            }
+        },
+    )
 }
 
 /**

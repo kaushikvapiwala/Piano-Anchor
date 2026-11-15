@@ -249,7 +249,7 @@ private fun pitchDetail(state: ResultsState.Ready): String {
 
 /** "[count] …" from [plural], or null when [count] is zero. */
 @Composable
-private fun slip(
+internal fun slip(
     plural: PluralStringResource,
     count: Int,
 ): String? = if (count > 0) pluralStringResource(plural, count, count.toString()) else null

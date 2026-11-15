@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MatchEvent
@@ -96,9 +98,11 @@ public class PracticeViewModel(
     private val calibrationSkips: CalibrationSkips = CalibrationSkips(),
     initialRung: TempoRung = TempoRung.WAIT,
     initialMode: RunMode = RunMode.PRACTICE,
+    private val spot: BarRange? = null,
     private val newId: () -> String,
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(PracticeState.start(passage))
+    private val mutableState =
+        MutableStateFlow(PracticeState.start(passage).copy(spotLoop = spot?.let { SpotLoopState(it, initialRung) }))
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
 
     private var run: Job? = null
@@ -124,7 +128,7 @@ public class PracticeViewModel(
     init {
         viewModelScope.launch { refreshDoneRungs() }
         viewModelScope.launch { seedClickOn() }
-        start(initialRung, initialMode)
+        start(if (spot == null) initialRung else initialRung.below(), initialMode)
     }
 
     /** Discards the run and starts over on the same rung, reopening the piano once the old run has closed it. */
@@ -142,11 +146,11 @@ public class PracticeViewModel(
 
     /**
      * Discards any run and switches to [mode], ready to start, like [selectRung]. Perform is ignored while the rung is
-     * WAIT, and so is the mode already selected.
+     * WAIT or a spot loop runs, and so is the mode already selected.
      */
     public fun selectMode(mode: RunMode) {
         val current = mutableState.value
-        if (mode == current.mode || current.rung == TempoRung.WAIT) return
+        if (spot != null || mode == current.mode || current.rung == TempoRung.WAIT) return
         start(current.rung, mode)
     }
 
@@ -154,12 +158,20 @@ public class PracticeViewModel(
         rung: TempoRung,
         requested: RunMode,
     ) {
-        val mode = if (rung == TempoRung.WAIT) RunMode.PRACTICE else requested
+        val mode = if (rung == TempoRung.WAIT || spot != null) RunMode.PRACTICE else requested
         flashTimer?.cancel()
         hintTimer?.cancel()
         unsaved = null
         mutableState.update {
-            PracticeState.start(passage).copy(rung = rung, mode = mode, doneRungs = it.doneRungs, clickOn = it.clickOn)
+            PracticeState
+                .start(passage)
+                .copy(
+                    rung = rung,
+                    mode = mode,
+                    doneRungs = it.doneRungs,
+                    clickOn = it.clickOn,
+                    spotLoop = it.spotLoop,
+                )
         }
         val previous = run
         run =
@@ -342,7 +354,13 @@ public class PracticeViewModel(
 
     private suspend fun save(graded: Attempt) {
         hintTimer?.cancel()
-        val attempt = graded.copy(hintLevel = hintLevel, hintShown = hintShown, mode = mutableState.value.mode)
+        val attempt =
+            graded.copy(
+                hintLevel = hintLevel,
+                hintShown = hintShown,
+                mode = mutableState.value.mode,
+                spot = spot,
+            )
         try {
             attempts.save(attempt)
         } catch (_: StorageUnavailableException) {
@@ -383,9 +401,34 @@ public class PracticeViewModel(
         saved: Boolean,
     ) {
         unsaved = if (saved) null else attempt
+        if (saved && spot != null) return loopFinished(attempt)
         mutableState.update {
             if (saved) it.copy(saveFailed = false, finishedAttemptId = attempt.id) else it.copy(saveFailed = true)
         }
+    }
+
+    /** A saved spot loop: counts it towards the clean streak and starts the next loop, unless the target is reached. */
+    private fun loopFinished(attempt: Attempt) {
+        val clean = attempt.band == Band.CLEAN
+        var reached = false
+        mutableState.update {
+            val loop = checkNotNull(it.spotLoop)
+            val streak = if (clean) loop.cleanLoops + 1 else 0
+            reached = streak >= Tunables.SPOT_LOOP_CLEAN_TARGET
+            val result = LoopResult(clean, attempt.wrongNotes, attempt.incompleteChords)
+            it.copy(
+                saveFailed = false,
+                spotLoop = loop.copy(cleanLoops = streak, lastLoop = result, offerFull = reached),
+            )
+        }
+        if (!reached) restart()
+    }
+
+    /** After the "bars are clean" card: loops on, with the clean streak starting again. */
+    public fun keepLooping() {
+        val loop = mutableState.value.spotLoop ?: return
+        mutableState.update { it.copy(spotLoop = loop.copy(cleanLoops = 0, offerFull = false)) }
+        restart()
     }
 
     private fun pressKey(

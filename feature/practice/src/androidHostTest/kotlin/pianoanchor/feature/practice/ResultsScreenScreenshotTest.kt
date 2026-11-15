@@ -7,6 +7,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.RunMode
 import pianoanchor.engine.grading.NoteValue
 import pianoanchor.ui.shell.PianoAnchorTheme
@@ -81,6 +82,13 @@ class ResultsScreenScreenshotTest {
     @Test
     fun waitRunWithAHesitation() =
         capture("wait_hesitation", clean.copy(hesitation = HesitationTile(1, Pause(14, "D4"))))
+
+    @Test
+    fun offeringASpotLoop() =
+        capture(
+            "spot_loop",
+            clean.copy(band = Band.GOOD, wrongNotes = 2, spot = BarRange(5, 6)),
+        )
 
     @Test
     fun notFound() = capture("not_found", ResultsState.NotFound)

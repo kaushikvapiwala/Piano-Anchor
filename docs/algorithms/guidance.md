@@ -44,4 +44,24 @@ level the passage would have started at and counts in the fading history like an
 always practises. The mode isn't remembered per passage; Practice opens by default, except that the cold open performs
 when its rung is timed.
 
-Numbers live in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt` (the `HINT_*` constants).
+Numbers live in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt` (the `HINT_*` and `SPOT_LOOP_*` constants).
+
+## Spot loops
+
+After a run, Results can offer to loop the stretch that went worst.
+
+- **Findings per bar.** A bar of a step is its onset tick divided by the bar length (from the time signature), plus
+  one. A wait-mode run's findings are its `WrongNote` and `ChordIncomplete` events, counted at the step they name. A
+  timed run's findings are the performance analyser's, counted at their score note's step.
+- **Window.** `SpotFinder.worst` slides a window of `SPOT_LOOP_BARS` bars over the passage and picks the one with the
+  most findings; the earliest wins a tie. A passage shorter than the window gives its whole range. No findings, no
+  window, and Results offer nothing. A perform take offers none either: loops are practice.
+- **Slice.** `Passage.slice` keeps the steps inside the bars, moves them so the first bar starts at tick 0 and keeps
+  the time signature, tempo, rights and skills. Its id gets a `#bars5-6` suffix so attempts stay attributable.
+- **Loop run.** Practice opens on the slice in practice mode, one tempo rung below the run's (wait mode stays wait).
+  Each finished loop is graded and saved as usual with `spot` set, then the next one starts at once; a short line
+  says "Clean" or what went wrong. After `SPOT_LOOP_CLEAN_TARGET` CLEAN loops in a row the screen asks whether to play
+  the whole piece ("Play it" opens the full passage at the original rung) or keep looping (the streak restarts). Any
+  loop that is not clean resets the streak.
+- **Not a review.** An attempt with `spot` set is never a cold check (`LearnerModel.record` skips it), does not count
+  for hint fading, and is left out of the clean-tempo and clean-wait-run queries of the attempt store.

@@ -96,6 +96,16 @@
     <string name="results_hesitation_description">Hesitation: %1$s</string>
     <string name="results_timing_not_calibrated">%1$s · not calibrated</string>
     <string name="results_try_again">Try again</string>
+    <string name="results_loop_bars">Loop bars %1$s–%2$s</string>
+    <string name="results_loop_bar">Loop bar %1$s</string>
+    <string name="practice_spot_subtitle_bars">Spot loop · bars %1$s–%2$s · clean %3$s of %4$s</string>
+    <string name="practice_spot_subtitle_bar">Spot loop · bar %1$s · clean %2$s of %3$s</string>
+    <string name="practice_spot_result_clean">Clean</string>
+    <string name="practice_spot_result_not_clean">Not clean</string>
+    <string name="practice_spot_clean_bars">Bars %1$s–%2$s are clean. Play the whole piece?</string>
+    <string name="practice_spot_clean_bar">Bar %1$s is clean. Play the whole piece?</string>
+    <string name="practice_spot_play_it">Play it</string>
+    <string name="practice_spot_keep_looping">Keep looping</string>
     <string name="results_not_found">Couldn't find this run</string>
     <string name="results_unavailable">Couldn't load this run.</string>
     <string name="practice_calibrate_offer">Calibrate timing · about %1$s s</string>

@@ -73,6 +73,7 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
             assertEquals(HintLevel.FULL, old.hintLevel)
             assertTrue(old.hintShown)
             assertEquals(RunMode.PRACTICE, old.mode)
+            assertNull(old.spot)
         }
 
     @Test

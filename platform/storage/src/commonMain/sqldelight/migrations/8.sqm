@@ -1,0 +1,4 @@
+-- Schema 8 to 9 (M5.3): the bar range of a spot-loop attempt; both null for a full run, as for every attempt stored
+-- before spot loops.
+ALTER TABLE attempt ADD COLUMN spot_first_bar INTEGER;
+ALTER TABLE attempt ADD COLUMN spot_last_bar INTEGER;

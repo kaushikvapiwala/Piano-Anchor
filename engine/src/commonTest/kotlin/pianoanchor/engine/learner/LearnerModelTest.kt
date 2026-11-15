@@ -6,6 +6,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.Rating
@@ -64,6 +65,16 @@ class LearnerModelTest {
     ) = model.record(passage(skill), attempt(band), day(offset))
 
     private suspend fun state(skill: String) = repository.states().getValue(skill)
+
+    @Test
+    fun `spot attempts are not cold checks`() =
+        runTest {
+            val spot = attempt(Band.CLEAN).copy(spot = BarRange(1, 2))
+            assertEquals(emptyList(), model.record(passage("a"), spot, day(0)))
+            assertTrue(repository.states().isEmpty())
+            // The day's cold check is still to come: a full run after the loop counts.
+            assertEquals(1, check("a", 0).size)
+        }
 
     @Test
     fun `first run of the day records one review per passage skill`() =

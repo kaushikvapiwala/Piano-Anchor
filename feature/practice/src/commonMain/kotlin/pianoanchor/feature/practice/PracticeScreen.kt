@@ -77,6 +77,8 @@ import pianoanchor.ui.shell.pianoAnchorColors
  * unmutes the metronome; [onHint] shows the key band on the waiting step (the
  * lightbulb button); [onRetrySave] and [onDiscard] are the save-failed card's Retry and Discard; [onCalibrate] and
  * [onSkipCalibration] are the calibrate card's Calibrate and Skip, shown while [PracticeState.calibrationOffered].
+ * A spot loop ([PracticeState.spotLoop]) shows its progress as the subtitle and the last loop's result under the
+ * staff; its "bars are clean" card has [onPlayWhole] ("Play it") and [onKeepLooping].
  */
 @Composable
 public fun PracticeScreen(
@@ -91,6 +93,8 @@ public fun PracticeScreen(
     onSkipCalibration: () -> Unit = {},
     onHint: () -> Unit = {},
     onSelectMode: (RunMode) -> Unit = {},
+    onPlayWhole: () -> Unit = {},
+    onKeepLooping: () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.safeDrawingPadding()) {
@@ -121,6 +125,9 @@ public fun PracticeScreen(
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
             }
+            state.spotLoop?.takeIf { it.offerFull }?.let { loop ->
+                SpotCleanCard(loop.bars, onPlayWhole, onKeepLooping, modifier = CARD_MODIFIER)
+            }
             StaffView(
                 passage = state.passage,
                 steps = state.steps,
@@ -134,6 +141,7 @@ public fun PracticeScreen(
             ) {
                 RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
             }
+            state.spotLoop?.lastLoop?.let { LoopResultLine(it, Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) }
             KeyStrip(state, modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth())
         }
     }
@@ -158,7 +166,9 @@ private fun TopBar(
         Column {
             Text(state.passage.title, fontFamily = displayFontFamily, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(
-                if (bpm == null) {
+                if (state.spotLoop != null) {
+                    spotSubtitle(state.spotLoop)
+                } else if (bpm == null) {
                     stringResource(Res.string.practice_mode_wait)
                 } else if (state.mode == RunMode.PERFORM) {
                     stringResource(Res.string.practice_mode_perform, bpm.toString())
@@ -177,7 +187,7 @@ private fun TopBar(
                     ?: stringResource(Res.string.practice_tempo_wait)
             TempoChip(label, selected = rung == state.rung, done = rung in state.doneRungs) { onSelectRung(rung) }
         }
-        ModeSwitch(state, onSelectMode)
+        if (state.spotLoop == null) ModeSwitch(state, onSelectMode)
         if (state.showsVerdicts) HintButton(onHint)
         ClickButton(state.clickOn, onToggleClick)
         Button(

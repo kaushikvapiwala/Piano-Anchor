@@ -8,6 +8,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
@@ -20,6 +21,7 @@ import pianoanchor.core.ports.AttemptRepositoryPort
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.Instant
 
@@ -49,6 +51,7 @@ abstract class AttemptRepositoryPortContractTest {
         hintLevel: HintLevel = HintLevel.FULL,
         hintShown: Boolean = true,
         mode: RunMode = RunMode.PRACTICE,
+        spot: BarRange? = null,
     ) = Attempt(
         id = id,
         passageId = passageId,
@@ -67,6 +70,7 @@ abstract class AttemptRepositoryPortContractTest {
         hintLevel = hintLevel,
         hintShown = hintShown,
         mode = mode,
+        spot = spot,
     )
 
     private suspend fun AttemptRepositoryPort.countBefore(
@@ -209,6 +213,31 @@ abstract class AttemptRepositoryPortContractTest {
             repository.save(practice)
             assertEquals(perform, repository.get("a-1"))
             assertEquals(practice, repository.get("a-2"))
+        }
+
+    @Test
+    fun saveAndGetRoundTripTheSpotRange() =
+        runTest {
+            val repository = createSubject()
+            val spot = attempt("a-1", startedAtSeconds = 1_000, spot = BarRange(5, 6))
+            val full = attempt("a-2", startedAtSeconds = 2_000)
+            repository.save(spot)
+            repository.save(full)
+            assertEquals(spot, repository.get("a-1"))
+            assertNull(assertNotNull(repository.get("a-2")).spot)
+        }
+
+    @Test
+    fun spotAttemptsAreNotCleanRuns() =
+        runTest {
+            val repository = createSubject()
+            val spot = BarRange(1, 2)
+            repository.save(
+                attempt("a-1", startedAtSeconds = 1_000, tempoBpm = TEMPO_A, band = Band.CLEAN, spot = spot),
+            )
+            repository.save(attempt("a-2", startedAtSeconds = 2_000, band = Band.CLEAN, spot = spot))
+            assertEquals(emptySet(), repository.cleanTempos("c-d-e"))
+            assertEquals(false, repository.hasCleanWaitRun("c-d-e"))
         }
 
     @Test
