@@ -60,7 +60,7 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
 - **Key strip**: "Live keys · play the piano" and the last key's verdict ("E4 · correct, moving on",
   "F4 · waiting for E4"), then two octaves from the C at or below the passage's lowest note. White keys 60 dp on a
   62 dp pitch, black keys 34×46 dp; the waiting step's keys carry an 18 dp amber band; held and flashing keys turn
-  correct or wrong with a 150 ms colour change; the flash lasts `KEY_FLASH_MS`.
+  correct or wrong with a 150 ms colour change; the flash lasts `KEY_FLASH_MS`. All Notes Off and All Sound Off clear every held and wrong key.
 - **Accessibility**: the staff reads as "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."); each key is named; the
   verdict is a polite live region announcing "Correct" or "Wrong, F4".
 - **Disconnected**: the error card "Piano disconnected" with "Back to pianos"; the run is discarded.

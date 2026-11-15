@@ -215,6 +215,47 @@ class PracticeViewModelTest {
         }
 
     @Test
+    fun allNotesOffClearsKeysAndWrongKeys() =
+        runTest(dispatcher) {
+            val vm = practice()
+            piano.press(MidiNote(61))
+            runCurrent()
+            assertEquals(setOf(MidiNote(61)), vm.state.value.wrongKeys)
+
+            piano.play(byteArrayOf(0xB0.toByte(), 123, 0))
+            runCurrent()
+
+            assertEquals(emptySet(), vm.state.value.keysDown)
+            assertEquals(emptySet(), vm.state.value.wrongKeys)
+        }
+
+    @Test
+    fun allSoundOffClearsKeysEvenWithThePedalDown() =
+        runTest(dispatcher) {
+            val vm = practice()
+            piano.play(byteArrayOf(0xB0.toByte(), 64, 127))
+            piano.press(c4)
+            runCurrent()
+            assertEquals(setOf(c4), vm.state.value.keysDown)
+
+            piano.play(byteArrayOf(0xB0.toByte(), 120, 0))
+            runCurrent()
+
+            assertEquals(emptySet(), vm.state.value.keysDown)
+        }
+
+    @Test
+    fun otherControlChangesLeaveKeysLit() =
+        runTest(dispatcher) {
+            val vm = practice()
+            piano.press(c4)
+            piano.play(byteArrayOf(0xB0.toByte(), 7, 100))
+            runCurrent()
+
+            assertEquals(setOf(c4), vm.state.value.keysDown)
+        }
+
+    @Test
     fun keysDownFollowNoteOnAndNoteOff() =
         runTest(dispatcher) {
             val vm = practice()

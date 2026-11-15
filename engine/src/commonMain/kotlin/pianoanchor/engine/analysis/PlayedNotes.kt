@@ -11,15 +11,6 @@ import pianoanchor.core.model.PlayedNote
 /** The sustain (damper) pedal's controller number (MIDI 1.0 specification, control change 64). */
 private const val SUSTAIN_CONTROLLER = 64
 
-/** All Sound Off (MIDI 1.0 channel mode message, control change 120): every sounding note stops at once. */
-private const val ALL_SOUND_OFF_CONTROLLER = 120
-
-/**
- * All Notes Off and the mode changes that imply it (MIDI 1.0 channel mode messages: control change 123, and Omni
- * Off/On and Mono/Poly On at 124–127): every key comes up, the pedal still holds.
- */
-private val ALL_NOTES_OFF_CONTROLLERS = (123..127).toSet()
-
 /** Sustain pedal values at or above this are "down" (MIDI 1.0: 0–63 off, 64–127 on). */
 private const val SUSTAIN_DOWN_MIN = 64
 
@@ -79,20 +70,9 @@ private class Extraction {
         event: ControlChange,
         t: Long,
     ) {
-        when (event.controller) {
-            SUSTAIN_CONTROLLER -> {
-                pedal(event.value >= SUSTAIN_DOWN_MIN, t)
-            }
-
-            in ALL_NOTES_OFF_CONTROLLERS -> {
-                releaseAll(t)
-            }
-
-            ALL_SOUND_OFF_CONTROLLER -> {
-                releaseAll(t)
-                silenceHeld(t)
-            }
-        }
+        if (event.controller == SUSTAIN_CONTROLLER) pedal(event.value >= SUSTAIN_DOWN_MIN, t)
+        if (event.releasesAllKeys()) releaseAll(t)
+        if (event.silencesAll()) silenceHeld(t)
     }
 
     private fun releaseAll(t: Long) = down.keys.toList().forEach { release(it, t) }

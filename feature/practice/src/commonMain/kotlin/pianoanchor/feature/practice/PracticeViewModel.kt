@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
@@ -40,6 +41,7 @@ import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.analysis.PlayedNotes
+import pianoanchor.engine.analysis.releasesAllKeys
 import pianoanchor.engine.grading.Grader
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
@@ -361,6 +363,7 @@ public class PracticeViewModel(
             midi += event
             if (event is NoteOn) return onNoteOn(event)
             if (event is NoteOff) mutableState.update { it.released(event.note) }
+            if (event is ControlChange && event.releasesAllKeys()) mutableState.update { it.releasedAll() }
         }
 
         private fun onNoteOn(event: NoteOn) {
@@ -429,6 +432,7 @@ public class PracticeViewModel(
             ended: CompletableDeferred<Boolean>,
         ) {
             if (event is NoteOff) mutableState.update { it.released(event.note) }
+            if (event is ControlChange && event.releasesAllKeys()) mutableState.update { it.releasedAll() }
             val judge = judge
             if (judge == null) {
                 // The key that starts the count-in is not graded and not part of the take; a pedal already down is.
@@ -548,6 +552,9 @@ private fun statuses(
     }
 
 private fun PracticeState.released(note: MidiNote) = copy(keysDown = keysDown - note, wrongKeys = wrongKeys - note)
+
+/** All Notes Off / All Sound Off: every key comes up, pedal or not; a running flash fades on its own timer. */
+private fun PracticeState.releasedAll() = copy(keysDown = emptySet(), wrongKeys = emptySet())
 
 /** The run is discarded: the piano is gone, nothing is on screen from it. */
 private fun PracticeState.disconnected() =
