@@ -98,14 +98,10 @@ public fun TodayScreen(
                     if (state.caughtUp) {
                         Text(stringResource(Res.string.today_caught_up), style = MaterialTheme.typography.bodyLarge)
                     }
-                    session.cards.filterIsInstance<Card.PassageCard>().forEach {
-                        CardView(
-                            it,
-                            session,
-                            actions.onStart,
-                        )
-                    }
-                    if (session.cards.isNotEmpty()) SessionBar(session)
+                    // Until the ear screen (M4.2) gives the Ear card a view, Today shows only passage cards.
+                    val cards = session.cards.filterIsInstance<Card.PassageCard>()
+                    cards.forEach { CardView(it, session, actions.onStart) }
+                    if (cards.isNotEmpty()) SessionBar(session)
                     Text(
                         stringResource(Res.string.today_practice_days, state.practicedDays, PRACTICE_WINDOW_DAYS),
                         style = MaterialTheme.typography.bodyMedium,
