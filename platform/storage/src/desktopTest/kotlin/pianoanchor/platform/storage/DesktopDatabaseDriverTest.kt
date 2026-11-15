@@ -1,5 +1,6 @@
 package pianoanchor.platform.storage
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
@@ -10,6 +11,7 @@ import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.AfterTest
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertNotNull
@@ -189,4 +191,31 @@ class DesktopDatabaseDriverTest {
                 assertEquals(true, states.getValue("pitch:d4").learned)
             }
         }
+
+    @Test
+    fun migration10To11IndexesAttemptsByStartSoPracticeDayCountsSkipAScan() {
+        file.parentFile.mkdirs()
+        // The committed version-10 schema file, which has no index on started_at_ms alone.
+        File("src/commonMain/sqldelight/databases/10.db").copyTo(file)
+        JdbcSqliteDriver("jdbc:sqlite:${file.path}").use { old -> old.exec("PRAGMA user_version = 10") }
+
+        createPianoAnchorDatabaseDriver(file).use { driver ->
+            val plan =
+                driver
+                    .executeQuery(
+                        identifier = null,
+                        sql = "EXPLAIN QUERY PLAN SELECT started_at_ms FROM attempt WHERE started_at_ms >= 0",
+                        mapper = { cursor ->
+                            val details = mutableListOf<String>()
+                            while (cursor.next().value) details += cursor.getString(PLAN_DETAIL_COLUMN).orEmpty()
+                            QueryResult.Value(details.joinToString("\n"))
+                        },
+                        parameters = 0,
+                    ).value
+            assertContains(plan, "attempt_started")
+        }
+    }
 }
+
+// EXPLAIN QUERY PLAN rows are (id, parent, notused, detail).
+private const val PLAN_DETAIL_COLUMN = 3
