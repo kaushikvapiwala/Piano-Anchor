@@ -43,8 +43,11 @@ for guidance fading (M5).
   `Fsrs.next(memory, days since the last review, rating)`.
 - `dueDay` is the review day plus `Fsrs.intervalDays(memory)`.
 - `cleanColdChecks` counts Good ratings (clean runs) on distinct days; a lapse does not reset it.
-- `learned` becomes true once there are `LEARNED_MIN_CLEAN_COLD_CHECKS` clean cold checks and the stability is at
-  least `LEARNED_MIN_STABILITY_DAYS`. It is sticky: a learned skill stays learned (it keeps unlocking its
+- `recalledColdChecks` counts Hard and Good ratings (recalled runs, clean or with small slips) the same way; Again
+  adds nothing, a lapse does not reset it, and it is never below `cleanColdChecks`.
+- `learned` becomes true once there are `LEARNED_MIN_RECALLED_COLD_CHECKS` recalled cold checks, at least
+  `LEARNED_MIN_CLEAN_COLD_CHECKS` of them clean, and the stability is at least `LEARNED_MIN_STABILITY_DAYS`. A
+  skill that is recalled every time with small slips therefore no longer stalls its dependants. It is sticky: a learned skill stays learned (it keeps unlocking its
   dependants), and a lapse only makes it due sooner, through FSRS.
 
 ## The daily plan
@@ -67,14 +70,14 @@ already safe, so the failure is skipped without an error card; a replay or the n
 ## Worked example
 One skill, default parameters, five review days. Stability is in days.
 
-| Day | Run | Rating | Stability | Due | Clean checks | Learned |
-|---|---|---|---|---|---|---|
-| 1 | clean | Good | 2.31 | day 3 | 1 | no |
-| 3 | clean | Good | 10.96 | day 14 | 2 | yes (2 clean, stability over 3) |
-| 8 | good band | Hard | 22.49 | day 30 | 2 | yes |
-| 20 | keep practising | Again | 1.93 | day 22 | 2 | yes (sticky) |
-| 22 | clean | Good | 4.55 | day 27 | 3 | yes |
+| Day | Run | Rating | Stability | Due | Clean checks | Recalled | Learned |
+|---|---|---|---|---|---|---|---|
+| 1 | clean | Good | 2.31 | day 3 | 1 | 1 | no |
+| 3 | clean | Good | 10.96 | day 14 | 2 | 2 | yes (2 recalled, 2 clean, stability over 3) |
+| 8 | good band | Hard | 22.49 | day 30 | 2 | 3 | yes |
+| 20 | keep practising | Again | 1.93 | day 22 | 2 | 3 | yes (sticky) |
+| 22 | clean | Good | 4.55 | day 27 | 3 | 4 | yes |
 
-Day 1 is the first review, so it starts from the initial stability of a Good rating. On day 3 the second clean cold
-check pushes stability past the bar and the skill is learned. Day 8 is an early review (not yet due), rated Hard.
+Day 1 is the first review, so it starts from the initial stability of a Good rating. On day 3 the second recalled cold
+check (one clean is enough) pushes stability past the bar and the skill is learned. Day 8 is an early review (not yet due), rated Hard.
 On day 20 a lapse cuts stability to under two days and the skill is due again in two, but it stays learned.

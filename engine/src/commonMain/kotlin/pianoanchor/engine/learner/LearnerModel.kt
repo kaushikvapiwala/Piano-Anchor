@@ -107,8 +107,12 @@ public class LearnerModel(
                 fsrs.next(before.memory, before.lastReviewDay.daysUntil(day), rating)
             }
         val clean = (before?.cleanColdChecks ?: 0) + if (rating == Rating.GOOD) 1 else 0
-        val minStability = memory.stability >= Tunables.LEARNED_MIN_STABILITY_DAYS
-        val learned = before?.learned == true || (clean >= Tunables.LEARNED_MIN_CLEAN_COLD_CHECKS && minStability)
+        val recalled = (before?.recalledColdChecks ?: 0) + if (rating == Rating.AGAIN) 0 else 1
+        val earned =
+            recalled >= Tunables.LEARNED_MIN_RECALLED_COLD_CHECKS &&
+                clean >= Tunables.LEARNED_MIN_CLEAN_COLD_CHECKS &&
+                memory.stability >= Tunables.LEARNED_MIN_STABILITY_DAYS
+        val learned = before?.learned == true || earned
         return SkillState(
             skillId = skillId,
             memory = memory,
@@ -116,6 +120,7 @@ public class LearnerModel(
             lastReviewDay = day,
             dueDay = day.plus(fsrs.intervalDays(memory), DateTimeUnit.DAY),
             cleanColdChecks = clean,
+            recalledColdChecks = recalled,
             learned = learned,
         )
     }

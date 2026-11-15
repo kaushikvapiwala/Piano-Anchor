@@ -121,6 +121,58 @@ class LearnerModelTest {
         }
 
     @Test
+    fun `twoHardChecksAndNoCleanOneIsNotLearned`() =
+        runTest {
+            check("a", 0, Band.GOOD)
+            check("a", 3, Band.GOOD)
+
+            val s = state("a")
+            assertEquals(2, s.recalledColdChecks)
+            assertEquals(0, s.cleanColdChecks)
+            assertTrue(s.memory.stability >= Tunables.LEARNED_MIN_STABILITY_DAYS)
+            assertFalse(s.learned)
+        }
+
+    @Test
+    fun `oneCleanAndOneHardCheckIsLearnedOnceStable`() =
+        runTest {
+            check("a", 0, Band.CLEAN)
+            assertFalse(state("a").learned)
+            check("a", 3, Band.GOOD)
+
+            val s = state("a")
+            assertEquals(2, s.recalledColdChecks)
+            assertEquals(1, s.cleanColdChecks)
+            assertTrue(s.memory.stability >= Tunables.LEARNED_MIN_STABILITY_DAYS)
+            assertTrue(s.learned)
+        }
+
+    @Test
+    fun `theSimulationStallCaseIsLearned`() =
+        runTest {
+            check("a", 0, Band.GOOD)
+            check("a", 1, Band.CLEAN)
+            check("a", 6, Band.GOOD)
+
+            val s = state("a")
+            assertEquals(3, s.recalledColdChecks)
+            assertEquals(1, s.cleanColdChecks)
+            assertTrue(s.learned)
+        }
+
+    @Test
+    fun `againCountsAsNeitherRecalledNorClean`() =
+        runTest {
+            check("a", 0, Band.CLEAN)
+            check("a", 3, Band.KEEP_PRACTISING)
+
+            val s = state("a")
+            assertEquals(1, s.recalledColdChecks)
+            assertEquals(1, s.cleanColdChecks)
+            assertFalse(s.learned)
+        }
+
+    @Test
     fun `learned after two clean cold checks on different days with stability above the minimum`() =
         runTest {
             check("a", 0)
@@ -171,6 +223,7 @@ class LearnerModelTest {
             val s = state("a")
             assertTrue(s.learned)
             assertEquals(2, s.cleanColdChecks)
+            assertEquals(2, s.recalledColdChecks)
             assertTrue(s.dueDay <= day(42))
         }
 

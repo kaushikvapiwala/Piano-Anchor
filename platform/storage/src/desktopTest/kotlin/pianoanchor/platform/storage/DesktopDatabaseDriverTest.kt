@@ -118,4 +118,25 @@ class DesktopDatabaseDriverTest {
             assertEquals(1, driver.count("calibration"))
         }
     }
+
+    @Test
+    fun migration4To5StartsRecalledChecksAtTheCleanCount() =
+        runTest {
+            file.parentFile.mkdirs()
+            // The committed version-4 schema file, with a skill state written the way version 4 did.
+            File("src/commonMain/sqldelight/databases/4.db").copyTo(file)
+            JdbcSqliteDriver("jdbc:sqlite:${file.path}").use { old ->
+                old.exec("PRAGMA user_version = 4")
+                old.exec(
+                    "INSERT INTO skill_state VALUES " +
+                        "('pitch:c4', 3.5, 6.25, '2026-11-01', '2026-11-03', '2026-11-10', 2, 1)",
+                )
+            }
+
+            createPianoAnchorDatabaseDriver(file).use { driver ->
+                val state = SqlLearnerRepositoryAdapter(driver, Dispatchers.Unconfined).states().getValue("pitch:c4")
+                assertEquals(2, state.cleanColdChecks)
+                assertEquals(2, state.recalledColdChecks)
+            }
+        }
 }

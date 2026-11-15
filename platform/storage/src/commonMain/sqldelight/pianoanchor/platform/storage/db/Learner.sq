@@ -17,6 +17,7 @@ CREATE TABLE skill_state (
     last_review_day TEXT NOT NULL,
     due_day TEXT NOT NULL,
     clean_cold_checks INTEGER NOT NULL,
+    recalled_cold_checks INTEGER NOT NULL,
     learned INTEGER NOT NULL
 );
 
@@ -31,11 +32,11 @@ SELECT skill_id, day, rating, attempt_id FROM review WHERE skill_id = ? ORDER BY
 
 upsertState:
 INSERT OR REPLACE INTO skill_state(
-    skill_id, stability, difficulty, introduced_day, last_review_day, due_day, clean_cold_checks, learned
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    skill_id, stability, difficulty, introduced_day, last_review_day, due_day, clean_cold_checks, recalled_cold_checks, learned
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 selectStates:
-SELECT skill_id, stability, difficulty, introduced_day, last_review_day, due_day, clean_cold_checks, learned
+SELECT skill_id, stability, difficulty, introduced_day, last_review_day, due_day, clean_cold_checks, recalled_cold_checks, learned
 FROM skill_state;
 
 deleteStates:
