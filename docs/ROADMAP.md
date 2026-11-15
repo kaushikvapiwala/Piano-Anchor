@@ -40,37 +40,35 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **All Notes Off on the practice keyboard** (spec #121; follow-up of #101): control changes 120 and 123–127 clear
-    the practice screen's keys-down and wrong-key highlights, through one engine helper shared with `PlayedNotes`.
-2. **Wait-mode last note length** (spec #122; follow-up of #65): after the completing NoteOn, a wait-mode run keeps
+1. **Wait-mode last note length** (spec #122; follow-up of #65): after the completing NoteOn, a wait-mode run keeps
     reading until nothing sounds (keys and pedal) or 3 s pass, so the last notes get their real length.
-3. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
+2. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
     main dispatcher when Results opens; move it to a background dispatcher (injected for tests) before passages grow
     long (mechanical).
-4. **Calibration at 60 BPM** (spec #113) [#67]: clicks one second apart, so every lag up to the 400 ms cap pairs with
+3. **Calibration at 60 BPM** (spec #113) [#67]: clicks one second apart, so every lag up to the 400 ms cap pairs with
     its own click and larger ones are rejected, instead of a lag over 333 ms being stored as a negative offset.
-5. **Calibration last-tap grace** (spec #123) [#113]: keep reading 200 ms after the last click's half beat, so a tap
+4. **Calibration last-tap grace** (spec #123) [#113]: keep reading 200 ms after the last click's half beat, so a tap
     timestamped in time but delivered late still counts.
-6. **Retry a failed calibration save** (spec #124; follow-up of #67): Retry saves the same accepted offset again,
+5. **Retry a failed calibration save** (spec #124; follow-up of #67): Retry saves the same accepted offset again,
     next to Try again and Cancel, as practice does for an unsaved attempt.
-7. **M4.1 Tracks share the daily plan** (spec #127) [#79]: skills get a track (core, songs, ear); new skills rotate
+6. **M4.1 Tracks share the daily plan** (spec #127) [#79]: skills get a track (core, songs, ear); new skills rotate
     between tracks under the shared caps; the composer's Ear card and four-way time split (M4's exit check).
-8. **M4.2 Ear training** (spec #128) [#127, #79, #80]: eight ear skills, echo on the piano and identify on screen, sets
+7. **M4.2 Ear training** (spec #128) [#127, #79, #80]: eight ear skills, echo on the piano and identify on screen, sets
     of 4 fresh items, speaker tones when the piano has no MIDI output.
-9. **M4.3 Songs & chords** (spec #129) [#127, #77, #79]: six C-position chord skills, four pieces and the Songs screen
+8. **M4.3 Songs & chords** (spec #129) [#127, #77, #79]: six C-position chord skills, four pieces and the Songs screen
     with tempo-ladder progress and locked pieces.
-10. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
+9. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
     piano's identity reply, a short note fixture and the app version into a file to attach to a GitHub issue; reads
     only, no network.
-11. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
+10. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
     Off) with a Hint button; attempts record the hint level and whether a hint was shown.
-12. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
+11. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
     open performs by default.
-13. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
+12. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
     clean loops; loops are never cold checks.
-14. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
+13. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
     recalled check; aided and wait-mode runs rate at most Hard; Gentle/Standard/Strict presets (M5's exit check).
-15. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
+14. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
     `platform/storage/src/commonMain/sqldelight/pianoanchor/platform/storage/db/Attempt.sq` filters on `started_at_ms`
     alone; add an index on it with a SQLDelight migration so Today's practice-day counts don't scan every attempt.
 

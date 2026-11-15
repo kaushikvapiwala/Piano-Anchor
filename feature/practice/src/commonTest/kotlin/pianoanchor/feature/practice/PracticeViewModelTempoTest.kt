@@ -568,6 +568,43 @@ class PracticeViewModelTempoTest {
         }
 
     @Test
+    fun allNotesOffClearsTheStartingKeyDuringTheCountIn() =
+        runPractice {
+            val vm = practice()
+            vm.selectRung(TempoRung.P60)
+            runCurrent()
+            piano.press(f4)
+            runCurrent()
+            assertEquals(setOf(f4), vm.state.value.keysDown)
+
+            piano.play(byteArrayOf(0xB0.toByte(), 123, 0))
+            runCurrent()
+
+            assertEquals(emptySet(), vm.state.value.keysDown)
+        }
+
+    @Test
+    fun allNotesOffClearsKeysDuringTheTimedRun() =
+        runPractice {
+            val vm = practice()
+            vm.selectRung(TempoRung.P60)
+            runCurrent()
+            piano.press(f4)
+            runCurrent()
+            piano.release(f4)
+            advance(countInMs)
+            piano.press(c4)
+            runCurrent()
+            assertEquals(setOf(c4), vm.state.value.keysDown)
+
+            piano.play(byteArrayOf(0xB0.toByte(), 123, 0))
+            runCurrent()
+
+            assertEquals(emptySet(), vm.state.value.keysDown)
+            assertEquals(emptySet(), vm.state.value.wrongKeys)
+        }
+
+    @Test
     fun doneRungsComeFromCleanTempos() =
         runPractice {
             attempts.save(timedAttempt("old-1", tempoBpm = 48, band = Band.CLEAN))
