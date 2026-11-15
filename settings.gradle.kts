@@ -29,6 +29,7 @@ include(
     ":testing",
     ":platform:android-midi",
     ":platform:android-audio",
+    ":platform:android-network",
     ":platform:storage",
     ":ui:shell",
     ":feature:monitor",

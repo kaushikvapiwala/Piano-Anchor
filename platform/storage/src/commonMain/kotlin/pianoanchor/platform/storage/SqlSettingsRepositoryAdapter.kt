@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.Release
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.WEEKLY_GOAL_DAYS_RANGE
 import pianoanchor.core.ports.SettingsRepositoryPort
@@ -20,6 +22,15 @@ private const val WEEKLY_GOAL_DAYS = "weekly_goal_days"
 private const val CLICK_ON = "click_on"
 private const val UPDATE_CHECK_ON = "update_check_on"
 private const val ONBOARDED = "onboarded"
+private const val LAST_UPDATE_CHECK = "last_update_check"
+private const val LATEST_RELEASE = "latest_release"
+private const val DISMISSED_UPDATE = "dismissed_update"
+
+/** A stored text that is "not set" (the rows of absent values hold it, so every update writes every row). */
+private const val UNSET = ""
+
+/** Separates a release's version from its page URL in the `latest_release` row; neither contains a space. */
+private const val RELEASE_SEPARATOR = " "
 
 /**
  * [SettingsRepositoryPort] in the on-device SQLite database, one text row per setting. A missing row reads as the
@@ -55,6 +66,9 @@ public class SqlSettingsRepositoryAdapter(
                         queries.put(CLICK_ON, updated.clickOn.toString())
                         queries.put(UPDATE_CHECK_ON, updated.updateCheckOn.toString())
                         queries.put(ONBOARDED, updated.onboarded.toString())
+                        queries.put(LAST_UPDATE_CHECK, updated.lastUpdateCheck.stored())
+                        queries.put(LATEST_RELEASE, updated.latestRelease.stored())
+                        queries.put(DISMISSED_UPDATE, updated.dismissedUpdate ?: UNSET)
                     }
                 }
             }
@@ -79,8 +93,22 @@ private fun Map<String, String>.toSettings(): Settings {
         clickOn = read(CLICK_ON, defaults.clickOn, String::toBooleanStrictOrNull),
         updateCheckOn = read(UPDATE_CHECK_ON, defaults.updateCheckOn, String::toBooleanStrictOrNull),
         onboarded = read(ONBOARDED, defaults.onboarded, String::toBooleanStrictOrNull),
+        lastUpdateCheck = this[LAST_UPDATE_CHECK]?.toLocalDateOrNull(),
+        latestRelease = this[LATEST_RELEASE]?.toReleaseOrNull(),
+        dismissedUpdate = this[DISMISSED_UPDATE]?.takeIf { it != UNSET },
     )
 }
+
+private fun LocalDate?.stored(): String = if (this == null) UNSET else toString()
+
+private fun Release?.stored(): String = if (this == null) UNSET else version + RELEASE_SEPARATOR + pageUrl
+
+private fun String.toReleaseOrNull(): Release? {
+    val parts = split(RELEASE_SEPARATOR)
+    return if (parts.size == 2 && parts.none { it.isEmpty() }) Release(parts[0], parts[1]) else null
+}
+
+private fun String.toLocalDateOrNull(): LocalDate? = LocalDate.Formats.ISO.parseOrNull(this)
 
 /** The value stored under [key] as [parse] reads it, or [default] if there is none or it is unreadable. */
 private fun <T : Any> Map<String, String>.read(

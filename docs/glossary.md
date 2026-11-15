@@ -72,6 +72,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Tick | The unit of musical time in a passage: `TICKS_PER_QUARTER` (960) ticks per quarter note, so onsets and note lengths are whole numbers. |
 | Time signature | Beats per bar (1–32) and the note value of a beat (1, 2, 4, 8 or 16), e.g. 3/4 (`TimeSignature`). |
 | Tunable | A threshold or prior in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt`, documented with why and source. |
+| Update check | The opt-out daily request for the latest release (`UpdateCheckPort`, `docs/protocols/update-check.md`): the app's only network call. Today shows a banner when the release is newer than the installed version. |
 | Unit | One step of the curriculum (`CurriculumUnit` in `:core:model`): a title, the skills it teaches and the passages that teach them; the units are listed in `Curriculum`. |
 | Weekly goal | The days per week the learner aims to practise, 1–7, default 4 (`Settings.weeklyGoalDays`). |
 | Wait mode | Practice mode where the music waits until the learner plays the right note(s). |

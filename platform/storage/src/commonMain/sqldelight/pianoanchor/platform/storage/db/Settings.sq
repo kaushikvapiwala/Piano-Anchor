@@ -1,5 +1,7 @@
 -- The learner's settings (SettingsRepositoryPort) as key-value rows with text values; a missing row means the default.
--- Keys: daily_budget (DailyBudget name), weekly_goal_days, click_on and update_check_on (true or false).
+-- Keys: daily_budget (DailyBudget name), weekly_goal_days, click_on, update_check_on and onboarded (true or false),
+-- last_update_check (an ISO date), latest_release (version and page URL, space-separated) and dismissed_update
+-- (a version); an empty text means not set.
 CREATE TABLE setting (
     key TEXT NOT NULL PRIMARY KEY,
     text_value TEXT NOT NULL

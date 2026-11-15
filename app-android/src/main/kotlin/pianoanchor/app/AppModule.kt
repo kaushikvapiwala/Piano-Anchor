@@ -16,6 +16,7 @@ import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
+import pianoanchor.core.ports.UpdateCheckPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
@@ -30,6 +31,7 @@ import pianoanchor.feature.today.TodayViewModel
 import pianoanchor.platform.androidaudio.AndroidMetronomeAdapter
 import pianoanchor.platform.androidmidi.AndroidClockAdapter
 import pianoanchor.platform.androidmidi.AndroidMidiAdapter
+import pianoanchor.platform.androidnetwork.GitHubUpdateCheckAdapter
 import pianoanchor.platform.storage.SqlAttemptRepositoryAdapter
 import pianoanchor.platform.storage.SqlCalibrationRepositoryAdapter
 import pianoanchor.platform.storage.SqlInstrumentRepositoryAdapter
@@ -57,6 +59,7 @@ val appModule =
         single<CalibrationRepositoryPort> { SqlCalibrationRepositoryAdapter(get(), Dispatchers.IO) }
         single<LearnerRepositoryPort> { SqlLearnerRepositoryAdapter(get(), Dispatchers.IO) }
         single<SettingsRepositoryPort> { SqlSettingsRepositoryAdapter(get(), Dispatchers.IO) }
+        single<UpdateCheckPort> { GitHubUpdateCheckAdapter(BuildConfig.VERSION_NAME, BuildConfig.UPDATE_REPOSITORY) }
         factory { LearnerModel(Curriculum.graph, get()) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get()) }
         viewModel { (device: MidiDevice, passageId: String, rung: TempoRung) ->
@@ -92,5 +95,5 @@ val appModule =
                 get(),
             )
         }
-        viewModel { TodayViewModel(get(), get(), get(), get(), get(), get(), get()) }
+        viewModel { TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
     }

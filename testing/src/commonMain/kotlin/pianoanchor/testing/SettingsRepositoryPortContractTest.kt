@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.Release
 import pianoanchor.core.model.Settings
 import pianoanchor.core.ports.SettingsRepositoryPort
 import kotlin.test.Test
@@ -53,6 +55,23 @@ abstract class SettingsRepositoryPortContractTest {
             assertEquals(expected, repository.settings.first())
             repository.update { it.copy(updateCheckOn = false) }
             assertEquals(expected.copy(updateCheckOn = false), repository.settings.first())
+        }
+
+    @Test
+    fun theUpdateCheckStateIsStoredAndCleared() =
+        runTest {
+            val repository = createSubject()
+            val state =
+                Settings(
+                    lastUpdateCheck = LocalDate(2026, 11, 18),
+                    latestRelease = Release("0.2.0", "https://github.com/o/r/releases/tag/v0.2.0"),
+                    dismissedUpdate = "0.2.0",
+                )
+            repository.update { it.copy(lastUpdateCheck = state.lastUpdateCheck, latestRelease = state.latestRelease) }
+            repository.update { it.copy(dismissedUpdate = "0.2.0") }
+            assertEquals(state, repository.settings.first())
+            repository.update { it.copy(lastUpdateCheck = null, latestRelease = null, dismissedUpdate = null) }
+            assertEquals(Settings(), repository.settings.first())
         }
 
     @Test

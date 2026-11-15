@@ -1,5 +1,7 @@
 package pianoanchor.core.model
 
+import kotlinx.datetime.LocalDate
+
 /** Minutes of practice the learner wants per day: one of three choices, as the settings screen offers them. */
 @Suppress("MagicNumber") // The three minute counts are the choices themselves.
 public enum class DailyBudget(
@@ -25,7 +27,9 @@ public val WEEKLY_GOAL_DAYS_RANGE: IntRange = 1..MAX_WEEKLY_GOAL_DAYS
  * The learner's preferences. [dailyBudget] is the practice time per day, [weeklyGoalDays] the days per week to
  * practise (in [WEEKLY_GOAL_DAYS_RANGE]), [clickOn] whether the metronome clicks in timed runs and [updateCheckOn]
  * whether the app checks once a day for a new version. [onboarded] is set once the first-launch onboarding is
- * finished, so the app opens on Today from then on.
+ * finished, so the app opens on Today from then on. The update check keeps its own state here: [lastUpdateCheck] is the
+ * learner day of the last request (at most one a day), [latestRelease] the newest release it has seen and
+ * [dismissedUpdate] the version whose banner the learner dismissed with "Not now".
  */
 public data class Settings(
     val dailyBudget: DailyBudget = DailyBudget.MIN_20,
@@ -33,6 +37,9 @@ public data class Settings(
     val clickOn: Boolean = true,
     val updateCheckOn: Boolean = true,
     val onboarded: Boolean = false,
+    val lastUpdateCheck: LocalDate? = null,
+    val latestRelease: Release? = null,
+    val dismissedUpdate: String? = null,
 ) {
     init {
         require(weeklyGoalDays in WEEKLY_GOAL_DAYS_RANGE) {

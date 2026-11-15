@@ -7,6 +7,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.Release
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.matcher.TempoRung
@@ -112,6 +113,24 @@ class TodayScreenScreenshotTest {
                         moreDue = emptyList(),
                     ),
                 greeting = Greeting.AFTERNOON,
+            ),
+        )
+
+    @Test
+    fun updateBanner() =
+        capture(
+            "update_banner",
+            TodayState(
+                session =
+                    Session(
+                        cards = listOf(Card.Song(passage("hot-cross-buns"), TempoRung.P85, 20)),
+                        reviewMinutes = 0,
+                        lessonMinutes = 0,
+                        songMinutes = 20,
+                        moreDue = emptyList(),
+                    ),
+                piano = piano,
+                update = Release("0.2.0", "https://github.com/kaushikvapiwala/Piano-Anchor/releases/tag/v0.2.0"),
             ),
         )
 }

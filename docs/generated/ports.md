@@ -122,3 +122,13 @@ Driven port: the learner's [Settings], kept across restarts. Anything never set 
 | `suspend fun update(change: (Settings) -> Settings)` | Replaces the settings with [change] applied to the current ones. Atomic: concurrent updates apply one after the other, each to the result of the one before, so none is lost. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/SettingsRepositoryPortContractTest.kt`
+
+## `UpdateCheckPort`
+
+Driven port: the newest published release. One anonymous HTTPS GET; nothing about the learner is sent (`docs/protocols/update-check.md`). The app's only network use, and the learner can turn it off. Contract: `pianoanchor.testing.UpdateCheckPortContractTest`.
+
+| Function | Description |
+|---|---|
+| `suspend fun latest(): Release?` | The latest release, or null when it can't be known (offline, error, rate limit). Never throws, except for cancellation. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/UpdateCheckPortContractTest.kt`

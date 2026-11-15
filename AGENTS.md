@@ -75,4 +75,4 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 - Copy code from GPL projects, piano-vendor apps or commercial learning apps (clean-room; Apache-2.0 repo).
 - Write a piano setting (SysEx address) that isn't documented and verified; probe unknown ones with reads only.
 - Bundle copyrighted music. Pieces must be public domain (with a rights record) or original.
-- Add network calls, analytics or accounts. Learner data stays on the device (sync is opt-in, later).
+- Add network calls, analytics or accounts. The one exception is the opt-out update check (ADR 0004, `UpdateCheckPort`). Learner data stays on the device (sync is opt-in, later).

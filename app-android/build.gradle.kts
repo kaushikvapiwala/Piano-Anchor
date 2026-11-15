@@ -6,7 +6,10 @@ plugins {
 // runs src/androidTest on a Gradle Managed Device (needs KVM), against the virtual piano in src/debug. Not part of
 // fastCheck, check or ciBuild; e2e.yml runs it.
 android {
+    buildFeatures { buildConfig = true }
     defaultConfig {
+        // The GitHub repository the update check asks for its latest release: the one place a fork changes.
+        buildConfigField("String", "UPDATE_REPOSITORY", "\"kaushikvapiwala/Piano-Anchor\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // With the orchestrator, every test starts on an empty app: no database, no known pianos.
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
@@ -36,6 +39,7 @@ dependencies {
     implementation(project(":engine"))
     implementation(project(":platform:android-midi"))
     implementation(project(":platform:android-audio"))
+    implementation(project(":platform:android-network"))
     implementation(project(":platform:storage"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)

@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import pianoanchor.core.model.Release
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.Session
@@ -61,6 +62,9 @@ import pianoanchor.feature.today.resources.today_nav_today
 import pianoanchor.feature.today.resources.today_nav_today_glyph
 import pianoanchor.feature.today.resources.today_practice_days
 import pianoanchor.feature.today.resources.today_session_bar
+import pianoanchor.feature.today.resources.today_update_available
+import pianoanchor.feature.today.resources.today_update_dismiss
+import pianoanchor.feature.today.resources.today_update_see
 import androidx.compose.material3.Card as MaterialCard
 
 private val TouchTarget = 44.dp
@@ -88,6 +92,7 @@ public fun TodayScreen(
             ) {
                 Header(state, actions.onPianos)
                 if (state.storageFailed) ErrorCard(actions.onRetry)
+                state.update?.let { UpdateBanner(it, actions) }
                 val session = state.session
                 if (session != null) {
                     if (state.caughtUp) {
@@ -154,6 +159,42 @@ private fun ErrorCard(onRetry: () -> Unit) {
             Text(stringResource(Res.string.today_error_storage))
             TextButton(onClick = onRetry, modifier = Modifier.heightIn(min = TouchTarget)) {
                 Text(stringResource(Res.string.today_action_retry), color = MaterialTheme.colorScheme.onErrorContainer)
+            }
+        }
+    }
+}
+
+/** A newer version is out: its number, a link to the release page and "Not now". */
+@Composable
+private fun UpdateBanner(
+    release: Release,
+    actions: TodayActions,
+) {
+    MaterialCard(
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(Res.string.today_update_available, release.version))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(
+                    onClick = { actions.onSeeRelease(release) },
+                    modifier = Modifier.heightIn(min = TouchTarget),
+                ) {
+                    Text(
+                        stringResource(Res.string.today_update_see),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+                TextButton(onClick = actions.onDismissUpdate, modifier = Modifier.heightIn(min = TouchTarget)) {
+                    Text(
+                        stringResource(Res.string.today_update_dismiss),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
             }
         }
     }

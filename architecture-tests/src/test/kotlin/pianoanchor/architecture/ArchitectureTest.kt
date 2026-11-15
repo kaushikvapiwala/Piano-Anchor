@@ -39,6 +39,8 @@ class ArchitectureTest {
         val domainImportRoots =
             domainRoots + listOf("kotlin", "kotlinx.coroutines", "kotlinx.serialization", "kotlinx.datetime")
         val frameworkRoots = listOf("android", "androidx", "org.jetbrains.compose", "org.koin", "java", "javax")
+        val networkingRoots =
+            listOf("java.net", "javax.net", "okhttp3", "io.ktor.client", "android.net.http", "android.webkit")
         val portNames = ports.map { it.name }.toSet()
 
         /** True when the declaration implements a project port, directly or via base classes/sub-interfaces. */
@@ -94,6 +96,14 @@ class ArchitectureTest {
         production.files
             .filter { under(it.packagee?.name, "pianoanchor.feature") }
             .assertFalse(strict = true) { file -> file.imports.any { underAny(it.name, forbidden) } }
+    }
+
+    @Test
+    fun `networking imports only in platform android-network (docs protocols update-check)`() {
+        // Production code only: the app's one network call is the opt-out update check (ADR 0004, AGENTS.md "Never").
+        production.files
+            .filterNot { it.path.replace('\\', '/').contains("/platform/android-network/") }
+            .assertFalse(strict = true) { file -> file.imports.any { underAny(it.name, networkingRoots) } }
     }
 
     @Test
