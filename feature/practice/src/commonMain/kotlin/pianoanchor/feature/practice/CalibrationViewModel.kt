@@ -85,7 +85,10 @@ public class CalibrationViewModel(
         }
     }
 
-    /** Plays the clicks and collects the taps; true when the pattern ran out, false when the piano's stream ended. */
+    /**
+     * Plays the clicks and collects the taps; true when the pattern and the last-tap grace ran out, false when the
+     * piano's stream ended.
+     */
     private suspend fun listen(
         clicks: List<Long>,
         taps: MutableList<NoteOn>,
@@ -114,6 +117,7 @@ public class CalibrationViewModel(
                     delayUntil(at + halfBeat)
                     mutableState.update { it.copy(pulse = false) }
                 }
+                delay(Tunables.CALIBRATION_LAST_TAP_GRACE_MS.milliseconds) // late-delivered taps still arrive
                 ended.complete(true)
             }
             val finished = ended.await()

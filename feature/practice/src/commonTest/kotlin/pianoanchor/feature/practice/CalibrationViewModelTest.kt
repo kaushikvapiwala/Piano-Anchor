@@ -76,6 +76,88 @@ class CalibrationViewModelTest {
         advanceTo(clicks.last() + beat)
     }
 
+    /** Taps every click but the last on time and waits for the last click's half beat; returns the clicks. */
+    private fun TestScope.runUntilLastHalfBeat(vm: CalibrationViewModel): List<Long> {
+        val clicks = LatencyCalibration.clickTimes(clock.nowNanos() + Tunables.TEMPO_COUNT_IN_LEAD_MS * ms)
+        vm.start()
+        runCurrent()
+        clicks.dropLast(1).forEach { click ->
+            advanceTo(click + 38 * ms)
+            tap()
+        }
+        advanceTo(clicks.last() + beat / 2)
+        return clicks
+    }
+
+    private val grace = Tunables.CALIBRATION_LAST_TAP_GRACE_MS * ms
+
+    @Test
+    fun aLastTapTimestampedInTimeButDeliveredLateStillCounts() =
+        runTest(dispatcher) {
+            val vm = calibration()
+            val clicks = runUntilLastHalfBeat(vm)
+            val before = vm.state.value.countedTaps
+
+            advanceTo(clock.nowNanos() + 100 * ms)
+            piano.press(c4, stampNanos = clicks.last() + 30 * ms)
+            runCurrent()
+            assertEquals(before + 1, vm.state.value.countedTaps)
+
+            advanceTo(clock.nowNanos() + grace)
+            val accepted = vm.state.value.result as CalibrationResult.Accepted
+            assertEquals(38 * ms, accepted.offsetNanos)
+            assertEquals(CalibrationState.COUNTED_CLICKS, vm.state.value.countedTaps)
+            assertEquals(accepted.offsetNanos, repository.latencyOffsetNanos(piano.device.id))
+        }
+
+    @Test
+    fun aTapDeliveredAfterTheGraceIsNotCounted() =
+        runTest(dispatcher) {
+            val vm = calibration()
+            val clicks = runUntilLastHalfBeat(vm)
+            val before = vm.state.value.countedTaps
+
+            advanceTo(clock.nowNanos() + 250 * ms)
+            piano.press(c4, stampNanos = clicks.last() + 30 * ms)
+            runCurrent()
+
+            assertEquals(CalibrationPhase.DONE, vm.state.value.phase)
+            assertEquals(before, vm.state.value.countedTaps)
+            assertEquals(CalibrationResult.Accepted(38 * ms, 0), vm.state.value.result)
+        }
+
+    @Test
+    fun theGraceDoesNotWidenTheWindow() =
+        runTest(dispatcher) {
+            val vm = calibration()
+            val clicks = runUntilLastHalfBeat(vm)
+            val before = vm.state.value.countedTaps
+
+            advanceTo(clock.nowNanos() + 100 * ms)
+            piano.press(c4, stampNanos = clicks.last() + beat / 2 + 50 * ms)
+            runCurrent()
+
+            assertEquals(before, vm.state.value.countedTaps)
+            advanceTo(clock.nowNanos() + grace)
+            assertEquals(CalibrationResult.Accepted(38 * ms, 0), vm.state.value.result)
+        }
+
+    @Test
+    fun aPianoThatDropsDuringTheGraceEndsTheRunWithoutAResult() =
+        runTest(dispatcher) {
+            val vm = calibration()
+            runUntilLastHalfBeat(vm)
+            advanceTo(clock.nowNanos() + 100 * ms)
+
+            piano.unplug()
+            runCurrent()
+
+            assertTrue(vm.state.value.disconnected)
+            assertNull(vm.state.value.result)
+            assertNull(repository.latencyOffsetNanos(piano.device.id))
+            assertNull(metronome.running.value)
+        }
+
     @Test
     fun startPlaysThePattern() =
         runTest(dispatcher) {

@@ -22,6 +22,13 @@ Medians, not means, so one stray tap moves nothing. Half a beat is taken from th
 the app's own pattern the window is 500 ms, wider than `CALIBRATION_MAX_OFFSET_MS`, so every lag the range check
 accepts pairs with its own click and a larger one (say 450 ms) is reported as `OutOfRange` rather than mispaired.
 
+## Reading past the last click
+The run does not evaluate at the last click's half beat but reads for `CALIBRATION_LAST_TAP_GRACE_MS` (200 ms) more.
+Bluetooth MIDI delivers events at connection intervals of 7.5-30 ms and may buffer a few, so the last tap can be
+timestamped inside its click's window yet arrive after the window closed. The grace only lets such late deliveries in:
+a tap still counts only if `countedOffsets` accepts its timestamp, so the window is not widened. A drop during the
+grace is handled like a drop during the run: no result, nothing saved.
+
 ## One combined offset
 The measurement covers the click leaving the phone, the learner's own reaction and the piano's note arriving, as one
 number. That is deliberate: grading compares piano time with click time, and exactly this sum is what it needs. The
@@ -46,4 +53,4 @@ the monitor.
 - Drift over time and velocity are out of scope.
 
 Tunables: `CALIBRATION_CLICKS`, `CALIBRATION_BPM`, `CALIBRATION_WARMUP_CLICKS`, `CALIBRATION_MIN_TAPS`,
-`CALIBRATION_MAX_SPREAD_MS`, `CALIBRATION_MAX_OFFSET_MS`.
+`CALIBRATION_MAX_SPREAD_MS`, `CALIBRATION_MAX_OFFSET_MS`, `CALIBRATION_LAST_TAP_GRACE_MS`.
