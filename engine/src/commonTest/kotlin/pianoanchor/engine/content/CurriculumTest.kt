@@ -152,6 +152,17 @@ class CurriculumTest {
     }
 
     @Test
+    fun `every chord-unit melody ends with its chords`() =
+        chordPassages.forEach { passage ->
+            val ends =
+                passage.steps
+                    .flatMap { step -> step.notes.map { (it.pitch.number >= C4) to step.onsetTicks + it.lengthTicks } }
+                    .groupBy({ it.first }, { it.second })
+                    .mapValues { (_, hand) -> hand.max() }
+            ends[true]?.let { assertEquals(ends[false], it, passage.id) }
+        }
+
+    @Test
     fun `every chord-unit passage is written at 60-88 BPM`() =
         chordPassages.forEach { assertTrue(it.tempoBpm in 60..88, it.id) }
 

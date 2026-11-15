@@ -192,7 +192,7 @@ private fun AppNavigation() {
         is Destination.Results -> {
             ResultsRoute(
                 current.attemptId,
-                onBack = back,
+                onBack = { destination = current.practice.from },
                 onTryAgain = { destination = current.practice },
             )
         }

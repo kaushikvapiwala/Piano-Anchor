@@ -171,7 +171,8 @@ private fun chordPassage(
     val steps =
         (chords.steps + melody)
             .groupBy { it.onsetTicks }
-            .toSortedMap()
+            .entries
+            .sortedBy { it.key }
             .map { (onset, same) -> Step(onset, same.flatMapTo(LinkedHashSet()) { it.notes }) }
     return chords.copy(steps = steps)
 }

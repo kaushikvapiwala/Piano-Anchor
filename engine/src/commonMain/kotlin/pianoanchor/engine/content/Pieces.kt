@@ -6,6 +6,9 @@ import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.SkillState
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.PassageHistory
+import pianoanchor.engine.session.highestClean
+import pianoanchor.engine.session.isClean
+import pianoanchor.engine.session.nextRung
 
 /** Where a piece stands for the learner: [LOCKED] until its skills are reachable, then new, in progress or mastered. */
 public enum class PieceStatus { LOCKED, NEW, IN_PROGRESS, MASTERED }
@@ -55,12 +58,8 @@ public object Pieces {
             graph.skills.firstOrNull { skill ->
                 skill.id in passage.skills && !skill.prerequisites.all { states[it]?.learned == true }
             }
-        val clean =
-            TempoRung.entries.filter { rung ->
-                val bpm = rung.bpm(passage)
-                history != null && if (bpm == null) history.cleanWait else bpm in history.cleanTempos
-            }
-        val highest = clean.lastOrNull()
+        val clean = TempoRung.entries.count { isClean(passage, history, it) }
+        val highest = highestClean(passage, history)
         val status =
             when {
                 waitingFor != null -> PieceStatus.LOCKED
@@ -68,7 +67,6 @@ public object Pieces {
                 highest == TempoRung.P100 -> PieceStatus.MASTERED
                 else -> PieceStatus.IN_PROGRESS
             }
-        val next = if (highest == null) TempoRung.WAIT else TempoRung.entries.getOrNull(highest.ordinal + 1)
-        return PieceView(passage, unitTitle, status, clean.size, TempoRung.entries.size, next, waitingFor)
+        return PieceView(passage, unitTitle, status, clean, TempoRung.entries.size, nextRung(highest), waitingFor)
     }
 }
