@@ -83,12 +83,12 @@ class CurriculumTest {
     }
 
     @Test
-    fun `every unit skill belongs to exactly one unit`() =
+    fun `every skill belongs to exactly one unit`() =
         assertEquals(
             Curriculum.graph.skills
                 .map { it.id }
-                .toSet(),
-            Curriculum.units.flatMap { it.skills }.toSet(),
+                .sorted(),
+            Curriculum.units.flatMap { it.skills }.sorted(),
         )
 
     @Test

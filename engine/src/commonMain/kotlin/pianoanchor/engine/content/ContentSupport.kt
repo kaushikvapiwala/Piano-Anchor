@@ -11,12 +11,12 @@ internal val THREE_FOUR = TimeSignature(beats = 3, beatUnit = 4)
 
 private val CHECKED_ON = LocalDate(year = 2026, month = 11, day = 15)
 
-/** The rights record of an exercise written for Piano Anchor; [basis] says what it is. */
-internal fun originalRights(basis: String): Rights =
+/** The rights record of an exercise written for Piano Anchor; [what] says what it practises. */
+internal fun exerciseRights(what: String): Rights =
     Rights(
         status = RightsStatus.ORIGINAL,
         origin = "Piano Anchor, 2026",
-        basis = basis,
+        basis = "An exercise on $what, written for Piano Anchor.",
         checkedOn = CHECKED_ON,
     )
 
@@ -51,6 +51,3 @@ internal fun builtinPassage(
         rights = rights,
         skills = skills,
     )
-
-/** The rights record of an exercise in the first three units; [what] says what it practises. */
-internal fun exerciseRights(what: String): Rights = originalRights("An exercise on $what, written for Piano Anchor.")

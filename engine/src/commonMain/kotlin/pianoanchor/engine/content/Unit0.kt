@@ -23,7 +23,7 @@ internal val UNIT_0: CurriculumUnit =
                     notes = "C#4q D#4q F#4q G#4q | A#4q C#5q D#5q F#5q | G#5q A#5q rh",
                     tempoBpm = 50,
                     skills = setOf(Skills.KB_BLACK_GROUPS.id),
-                    rights = exerciseRights("every black key in the groups of two and threes over two octaves"),
+                    rights = exerciseRights("every black key in the groups of two and three over two octaves"),
                 ),
                 builtinPassage(
                     id = "twos-and-threes-down",

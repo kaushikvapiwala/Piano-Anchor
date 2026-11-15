@@ -6,7 +6,7 @@ and tempo) is original to Piano Anchor; the status says where the music comes fr
 
 | Id | Title | Status | Origin | Basis | Checked on |
 |---|---|---|---|---|---|
-| `builtin:twos-and-threes` | Twos and threes | ORIGINAL | Piano Anchor, 2026 | An exercise on every black key in the groups of two and threes over two octaves, written for Piano Anchor. | 2026-11-15 |
+| `builtin:twos-and-threes` | Twos and threes | ORIGINAL | Piano Anchor, 2026 | An exercise on every black key in the groups of two and three over two octaves, written for Piano Anchor. | 2026-11-15 |
 | `builtin:twos-and-threes-down` | Twos and threes, coming down | ORIGINAL | Piano Anchor, 2026 | An exercise on the black key groups, played from the top down, written for Piano Anchor. | 2026-11-15 |
 | `builtin:all-the-cs` | All the Cs | ORIGINAL | Piano Anchor, 2026 | An exercise on finding C3, C4 and C5, one whole note each, written for Piano Anchor. | 2026-11-15 |
 | `builtin:cs-up-and-down` | Cs up and down | ORIGINAL | Piano Anchor, 2026 | An exercise on jumping between the three Cs, written for Piano Anchor. | 2026-11-15 |
