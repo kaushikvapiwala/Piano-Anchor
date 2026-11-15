@@ -101,4 +101,21 @@ class DesktopDatabaseDriverTest {
                 assertEquals(38_000_000L, calibration.latencyOffsetNanos("usb-1"))
             }
         }
+
+    @Test
+    fun migration3To4AddsEmptyReviewAndSkillStateTables() {
+        file.parentFile.mkdirs()
+        // The committed version-3 schema file, with a calibration row written the way version 3 did.
+        File("src/commonMain/sqldelight/databases/3.db").copyTo(file)
+        JdbcSqliteDriver("jdbc:sqlite:${file.path}").use { old ->
+            old.exec("PRAGMA user_version = 3")
+            old.exec("INSERT INTO calibration VALUES ('usb-1', 38000000)")
+        }
+
+        createPianoAnchorDatabaseDriver(file).use { driver ->
+            assertEquals(0, driver.count("review"))
+            assertEquals(0, driver.count("skill_state"))
+            assertEquals(1, driver.count("calibration"))
+        }
+    }
 }

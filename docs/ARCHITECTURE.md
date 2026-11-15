@@ -18,7 +18,7 @@ Rules in this document are enforced by `architecture-tests/` (Konsist) and the c
 | Module | Role | Notes |
 |---|---|---|
 | `:core:model` | Domain types (e.g. `MidiNote`, `MidiEvent`, `Attempt`) | Pure Kotlin, 100% coverage |
-| `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`, `MidiDiscoveryPort`, `MetronomePort`, `InstrumentRepositoryPort`, `AttemptRepositoryPort`, `CalibrationRepositoryPort`) | Interfaces only, each with KDoc |
+| `:core:ports` | Driven ports (e.g. `ClockPort`, `MidiInputPort`, `MidiOutputPort`, `MidiDiscoveryPort`, `MetronomePort`, `InstrumentRepositoryPort`, `AttemptRepositoryPort`, `CalibrationRepositoryPort`, `LearnerRepositoryPort`) | Interfaces only, each with KDoc |
 | `:engine` | Coaching logic: the `midi` byte-stream parser, the `matcher` (wait mode), `grading`, `analysis` (played notes from MIDI events, the offline performance analyser), built-in `content` passages; `Tunables` holds every threshold | Pure Kotlin, 100% coverage |
 | `:testing` | Fakes (e.g. `FakePiano`, `FakeMetronome`), abstract port contract tests and the analyser test harness (`TakeGenerator`, `ErrorInjector`, `ClassificationScore`) | Used by test source sets only |
 | `:platform:android-midi` | Driven adapters over Android's MIDI service: `AndroidMidiAdapter` (both MIDI ports and Bluetooth LE discovery), `AndroidClockAdapter` | Logic in `commonMain`, 100% coverage on the JVM; `androidMain` glue excluded (see Testing) |
@@ -39,7 +39,8 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
 
 ## Dependency rules
 - Domain code (`pianoanchor.core.*`, `pianoanchor.engine`) imports only Kotlin, `kotlinx.coroutines` (for `Flow`
-  in ports, ADR 0013), `kotlinx.serialization` (fixture format, ADR 0016) and other domain code: no Android,
+  in ports, ADR 0013), `kotlinx.serialization` (fixture format, ADR 0016), `kotlinx.datetime` (learner days, ADR 0022)
+  and other domain code: no Android,
   AndroidX, Compose, Koin or `java.*`/`javax.*`.
 - `:testing` depends on `:engine` (`FakePiano` uses the real `MidiParser`). Only test code uses it: production code
   outside `pianoanchor.testing` never imports it.

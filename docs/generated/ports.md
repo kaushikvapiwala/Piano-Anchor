@@ -51,6 +51,19 @@ Driven port: the pianos the app has seen, kept across app restarts and keyed by 
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/InstrumentRepositoryPortContractTest.kt`
 
+## `LearnerRepositoryPort`
+
+Driven port: the learner's review log (the source of truth) and the cached state per skill, which a replay of the log can always rebuild. Throws [StorageUnavailableException] when the store can't be read or written (#55). Contract: `pianoanchor.testing.LearnerRepositoryPortContractTest`.
+
+| Function | Description |
+|---|---|
+| `suspend fun record(review: Review, state: SkillState)` | Appends [review] and replaces the cached [state] of its skill in one transaction. Throws [IllegalArgumentException] when the skill already has a review on that day or [SkillState.skillId] differs. |
+| `suspend fun states(): Map<String, SkillState>` | Cached states of every skill seen, keyed by id. |
+| `suspend fun reviews(skillId: String): List<Review>` | Reviews of [skillId] in day order. |
+| `suspend fun replaceStates(states: Collection<SkillState>)` | Replaces every cached state (after a replay); the log is untouched. |
+
+Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/LearnerRepositoryPortContractTest.kt`
+
 ## `MetronomePort`
 
 Driven port: an audible beat. Times are in the [ClockPort] domain (monotonic nanoseconds). Contract: `pianoanchor.testing.MetronomePortContractTest`.

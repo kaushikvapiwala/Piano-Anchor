@@ -14,6 +14,7 @@ kover = "0.9.11"
 konsist = "0.18.1"
 junit = "6.1.3"
 kotlinx-serialization = "1.13.0"
+kotlinx-datetime = "0.8.0"
 koin = "4.2.2"
 androidx-lifecycle = "2.11.0"
 roborazzi = "1.78.0"
@@ -40,6 +41,7 @@ compose-resources = { module = "org.jetbrains.compose.components:components-reso
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose-material3" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 # KMP build of androidx.lifecycle (JetBrains); on Android it resolves to the Google artifact.
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }

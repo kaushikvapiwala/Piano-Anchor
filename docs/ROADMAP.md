@@ -40,41 +40,39 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **M2.3 Learner storage** (spec #71) [#69, #70]: review log plus cached skill state behind a learner repository port;
-   adds kotlinx-datetime (ADR).
-2. **M2.4 Learner model** (spec #72) [#69, #70, #71]: cold checks rated from the band, learned rule, due list and daily
+1. **M2.4 Learner model** (spec #72) [#69, #70, #71]: cold checks rated from the band, learned rule, due list and daily
    limits; recorded after every saved run.
-3. **M2.5 Learner simulation exit check** (spec #73) [#72]: seeded 90-day simulation (retention, load, prerequisite
+2. **M2.5 Learner simulation exit check** (spec #73) [#72]: seeded 90-day simulation (retention, load, prerequisite
    order, recovery after a skip).
-4. **M3.1 Content format** (spec #76) [#59, #70]: note text, rights records, units; the rights document generated from the
+3. **M3.1 Content format** (spec #76) [#59, #70]: note text, rights records, units; the rights document generated from the
    content.
-5. **M3.2 Units 0–2 content** (spec #77, approved) [#76].
-6. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
-7. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
+4. **M3.2 Units 0–2 content** (spec #77, approved) [#76].
+5. **M3.3 Settings** (spec #78) [#65]: settings port on SQLite and a Settings screen.
+6. **M3.4 Today and session composer** (spec #79) [#72, #77, #78]: cold open, lesson and song cards; Today becomes the
     start screen.
-8. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
-9. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
-10. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
+7. **M3.5 Onboarding** (spec #80) [#67, #72, #77, #78, #79]: connect, echo C-E-G, calibrate, choose a start unit.
+8. **M3.6 Update check** (spec #81) [#78, #79]: the opt-out daily check, the app's only network call.
+9. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
     exit check.
-11. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
+10. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
     identity of a `sys:<id>` fallback id; stable `usb:`/`ble:` ids keep theirs.
-12. **All Notes Off on the practice keyboard** (follow-up of #101): the practice screen's keys-down and wrong-key
+11. **All Notes Off on the practice keyboard** (follow-up of #101): the practice screen's keys-down and wrong-key
     highlights still ignore control changes 120 and 123–127, so a key whose NoteOff was lost stays lit; clear them
     as `PlayedNotes` does (mechanical).
-13. **Wait-mode last note length** (follow-up of #65): a wait-mode run stops reading at the NoteOn that completes the
+12. **Wait-mode last note length** (follow-up of #65): a wait-mode run stops reading at the NoteOn that completes the
     passage, so its stored played notes end the last note at its own key-down (zero length); keep reading until those
     keys come up or a short timeout passes, before the analyser grades wait-mode takes (mechanical).
-14. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
+13. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
     main dispatcher when Results opens; move it to a background dispatcher (injected for tests) before passages grow
     long (mechanical).
-15. **Calibration lag beyond half a beat** (follow-up of #67; needs an owner decision): taps pair with the nearest
+14. **Calibration lag beyond half a beat** (follow-up of #67; needs an owner decision): taps pair with the nearest
     click within half a beat (333 ms at 90 BPM), so a real lag above that pairs with the next click and is stored as a
     negative offset, and the 400 ms out-of-range check can never fire at 90 BPM. Pick a fix (a slower calibration
     tempo, a lag-biased pairing window, or a lower range cap).
-16. **Calibration last-tap grace** (follow-up of #67): the screen stops reading half a beat after the last click, so a
+15. **Calibration last-tap grace** (follow-up of #67): the screen stops reading half a beat after the last click, so a
     tap timestamped inside the last click's window but delivered a little later is lost; keep reading for a short
     grace before evaluating (mechanical).
-17. **Retry a failed calibration save** (follow-up of #67): when saving an accepted offset fails, offer to retry the
+16. **Retry a failed calibration save** (follow-up of #67): when saving an accepted offset fails, offer to retry the
     save instead of only Try again (a new 16-click run) and Cancel, as practice does for an unsaved attempt
     (mechanical).
 
@@ -101,7 +99,7 @@ pick these; nothing in "Next up" waits for them.
 | Milestone | Scope | Exit check |
 |---|---|---|
 | M1 | MIDI input, real-time matcher, offline analyser (🔄 M1.1 rhythm in passages, M1.2 played notes and analyser harness, and M1.3 offline analyser done: exit check met on synthetic takes, real-fixture confirmation pending the hardware check; M1.4a metronome and M1.4b staff rhythm done, the click pending an owner check by ear; M1.4c tempo mode, M1.4d tiles and M1.5 latency calibration done) | Recorded fixtures with injected errors classified ≥ 95% correctly |
-| M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) (specced: #69–#73; 🔄 M2.1 FSRS-6 memory model done) | Matches reference test vectors; simulated learner behaves sensibly |
+| M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) (specced: #69–#73; 🔄 M2.1 FSRS-6 memory model and M2.3 learner storage done) | Matches reference test vectors; simulated learner behaves sensibly |
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82) | Used daily for 2 weeks |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting | Unaided pass required before "learned" |

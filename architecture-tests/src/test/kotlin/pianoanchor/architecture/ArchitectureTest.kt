@@ -36,7 +36,8 @@ class ArchitectureTest {
                 "pianoanchor.platform",
                 "pianoanchor.testing",
             )
-        val domainImportRoots = domainRoots + listOf("kotlin", "kotlinx.coroutines", "kotlinx.serialization")
+        val domainImportRoots =
+            domainRoots + listOf("kotlin", "kotlinx.coroutines", "kotlinx.serialization", "kotlinx.datetime")
         val frameworkRoots = listOf("android", "androidx", "org.jetbrains.compose", "org.koin", "java", "javax")
         val portNames = ports.map { it.name }.toSet()
 
