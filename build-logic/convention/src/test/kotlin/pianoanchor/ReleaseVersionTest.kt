@@ -25,6 +25,11 @@ class ReleaseVersionTest {
     }
 
     @Test
+    fun `rejects leading zeros`() {
+        assertThrows(IllegalArgumentException::class.java) { releaseVersionCode("0.01.0") }
+    }
+
+    @Test
     fun `rejects a name that is not X_Y_Z`() {
         assertThrows(IllegalArgumentException::class.java) { releaseVersionCode("0.0.0-dev") }
     }

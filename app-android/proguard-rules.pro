@@ -1,7 +1,7 @@
 # R8 keep rules for the release build (isMinifyEnabled in build.gradle.kts). The libraries below ship most of their own
 # consumer rules; these cover what they leave to reflection or to generated code. Checked by release.yml's smoke test.
 
-# Koin: modules are built with lambdas, but definitions are looked up by Kotlin class name at runtime.
+# Koin and SQLDelight: kept whole until the first releases prove narrower rules safe (the smoke test is the check).
 -keepnames class kotlin.Metadata
 -keep class org.koin.** { *; }
 -dontwarn org.koin.**

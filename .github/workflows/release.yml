@@ -34,7 +34,7 @@ jobs:
       - name: Check the tag
         id: version
         run: |
-          if ! printf '%s' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if ! printf '%s' "$TAG" | grep -Eq '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
             echo "::error::Tag must look like vX.Y.Z, got: $TAG"
             exit 1
           fi
@@ -63,21 +63,22 @@ jobs:
             fi
           done
           exit "$missing"
+      - name: CI build
+        run: ./gradlew ciBuild --continue
       - name: Decode the keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
-          echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
-      - name: CI build
-        run: ./gradlew ciBuild --continue
       - name: Build the signed release APK
         env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           VERSION: ${{ steps.version.outputs.version }}
-        run: ./gradlew :app-android:assembleRelease "-PpianoanchorVersion=$VERSION"
+        # No configuration cache: it would store the signing passwords read at configuration time on disk.
+        run: ./gradlew :app-android:assembleRelease --no-configuration-cache "-PpianoanchorVersion=$VERSION"
       - name: Verify the signature and compute the SHA-256
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -135,11 +136,16 @@ jobs:
           package=io.github.kaushikvapiwala.pianoanchor
           "$adb" install dist/piano-anchor-*.apk
           "$adb" logcat -c
-          "$adb" shell monkey -p "$package" -c android.intent.category.LAUNCHER 1
-          for _ in $(seq 1 12); do
+          activity="$("$adb" shell cmd package resolve-activity --brief "$package" | tail -n 1 | tr -d '\r')"
+          "$adb" shell am start -W -n "$activity"
+          for _ in $(seq 1 24); do
             sleep 5
-            "$adb" shell uiautomator dump /sdcard/ui.xml > /dev/null
-            if "$adb" shell cat /sdcard/ui.xml | grep -Eq 'Press any key on your piano|Practised [0-9]+ of the last'; then
+            # A stale dump from an earlier round must not pass, and a dump fails while the UI is still settling.
+            "$adb" shell rm -f /sdcard/ui.xml
+            "$adb" shell uiautomator dump /sdcard/ui.xml > /dev/null || true
+            if "$adb" shell pidof "$package" > /dev/null &&
+              "$adb" shell cat /sdcard/ui.xml 2> /dev/null |
+              grep -Eq 'Press any key on your piano|Practised [0-9]+ of the last'; then
               echo "The first screen rendered."
               exit 0
             fi
@@ -203,11 +209,12 @@ jobs:
             echo "3. Optional: check the SHA-256 above with a checksum app before you install."
           } > notes.md
 
-          flags=()
-          if [ "${VERSION%%.*}" = 0 ]; then flags+=(--prerelease); fi
-          # A rerun replaces the release of the same tag; the tag itself stays.
+          # No --prerelease, even for 0.x: the update check reads /releases/latest, which skips pre-releases.
+          # A rerun updates the release of the same tag in place, so the tag never goes without one.
           if gh release view "$TAG" --repo "$REPOSITORY" > /dev/null 2>&1; then
-            gh release delete "$TAG" --repo "$REPOSITORY" --yes
+            gh release upload "$TAG" "dist/$apk" "dist/$apk.sha256" --repo "$REPOSITORY" --clobber
+            gh release edit "$TAG" --repo "$REPOSITORY" --title "Piano Anchor $VERSION" --notes-file notes.md
+          else
+            gh release create "$TAG" "dist/$apk" "dist/$apk.sha256" --repo "$REPOSITORY" \
+              --verify-tag --title "Piano Anchor $VERSION" --notes-file notes.md
           fi
-          gh release create "$TAG" "dist/$apk" "dist/$apk.sha256" --repo "$REPOSITORY" \
-            --verify-tag --title "Piano Anchor $VERSION" --notes-file notes.md "${flags[@]}"

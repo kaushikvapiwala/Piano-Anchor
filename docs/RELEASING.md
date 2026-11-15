@@ -41,12 +41,13 @@ What the Release holds:
 - Title `Piano Anchor X.Y.Z`, asset `piano-anchor-X.Y.Z.apk` and its `.sha256` file.
 - Notes drawn from the Conventional Commit subjects since the previous tag, grouped into features, fixes and other,
   then the SHA-256 and the install steps (allow installs from this source). There is no changelog file.
-- A pre-release flag while the major version is 0.
+- No pre-release flag, even while the major version is 0: GitHub's `/releases/latest`, which the update check
+  reads, skips pre-releases, so a 0.x pre-release would never be offered.
 
 ## 3. Versions
 
 - versionName is the tag without the `v`. versionCode is `X*10000 + Y*100 + Z`, so `0.1.0` is 100 and `1.2.3` is
-  10203. Minor and patch must each be at most 99; the build fails otherwise
+  10203. Minor and patch must each be at most 99, and no part has a leading zero; the build fails otherwise
   (`build-logic/convention/src/main/kotlin/pianoanchor/ReleaseVersion.kt`).
 - The workflow passes the version to Gradle as `-PpianoanchorVersion=X.Y.Z`. Builds without it are `0.0.0-dev`,
   versionCode 1. The update check compares `X.Y.Z` numbers only, so a dev build never offers an update.
