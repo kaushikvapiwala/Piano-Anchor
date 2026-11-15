@@ -23,6 +23,9 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hesitation | A pause before a note that is much longer than the music asks for, without a wrong note. |
 | Incomplete chord | `ChordIncomplete`: the chord window of a step ran out before all its notes were pressed; the step must be played again. |
+| Learner day | A calendar date (`kotlinx.datetime.LocalDate`) in the learner's own time zone; a skill gets at most one review per learner day. Stored as ISO `yyyy-mm-dd` text (ADR 0022). |
+| Review | One FSRS review (`Review` in `:core:model`): a cold check of a skill on a learner day that produced a rating, from one attempt. |
+| Review log | The append-only list of reviews kept by `LearnerRepositoryPort`: the source of truth. The cached state per skill (`SkillState`) is derived from it and can be rebuilt by replaying the log. |
 | Latency offset | How much later (positive) or earlier (negative) a piano's notes arrive than the click they answer, in nanoseconds: the phone's click output, Bluetooth and the piano together. Stored per piano (`CalibrationRepositoryPort`), subtracted from played-note times in timed runs, and kept on each attempt (`Attempt.latencyOffsetNanos`, null = played uncalibrated). |
 | Calibration | The 16-click tapping run that measures a piano's latency offset (`LatencyCalibration`, `docs/algorithms/latency-calibration.md`). |
 | Instrument | A piano the app has seen, stored by its stable device id (`InstrumentRepositoryPort`): display name, instrument identity if it answered, and when it was first and last seen. Per-piano data (latency, velocity curve) hangs off it. |

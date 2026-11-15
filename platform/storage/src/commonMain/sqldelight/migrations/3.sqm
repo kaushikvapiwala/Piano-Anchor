@@ -1,0 +1,19 @@
+-- Schema 3 to 4 (M2.3): the learner's review log and the cached state per skill (LearnerRepositoryPort).
+CREATE TABLE review (
+    skill_id TEXT NOT NULL,
+    day TEXT NOT NULL,
+    rating TEXT NOT NULL,
+    attempt_id TEXT NOT NULL,
+    PRIMARY KEY (skill_id, day)
+);
+
+CREATE TABLE skill_state (
+    skill_id TEXT NOT NULL PRIMARY KEY,
+    stability REAL NOT NULL,
+    difficulty REAL NOT NULL,
+    introduced_day TEXT NOT NULL,
+    last_review_day TEXT NOT NULL,
+    due_day TEXT NOT NULL,
+    clean_cold_checks INTEGER NOT NULL,
+    learned INTEGER NOT NULL
+);

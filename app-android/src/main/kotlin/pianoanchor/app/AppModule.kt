@@ -9,6 +9,7 @@ import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.CalibrationRepositoryPort
 import pianoanchor.core.ports.ClockPort
 import pianoanchor.core.ports.InstrumentRepositoryPort
+import pianoanchor.core.ports.LearnerRepositoryPort
 import pianoanchor.core.ports.MetronomePort
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
@@ -27,6 +28,7 @@ import pianoanchor.platform.androidmidi.AndroidMidiAdapter
 import pianoanchor.platform.storage.SqlAttemptRepositoryAdapter
 import pianoanchor.platform.storage.SqlCalibrationRepositoryAdapter
 import pianoanchor.platform.storage.SqlInstrumentRepositoryAdapter
+import pianoanchor.platform.storage.SqlLearnerRepositoryAdapter
 import pianoanchor.platform.storage.createPianoAnchorDatabaseDriver
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
@@ -47,6 +49,7 @@ val appModule =
         single<InstrumentRepositoryPort> { SqlInstrumentRepositoryAdapter(get(), Dispatchers.IO) }
         single<AttemptRepositoryPort> { SqlAttemptRepositoryAdapter(get(), Dispatchers.IO) }
         single<CalibrationRepositoryPort> { SqlCalibrationRepositoryAdapter(get(), Dispatchers.IO) }
+        single<LearnerRepositoryPort> { SqlLearnerRepositoryAdapter(get(), Dispatchers.IO) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get()) }
         viewModel { (device: MidiDevice, rung: TempoRung) ->
             PracticeViewModel(device, Passages.CDE, get(), get(), get(), get(), get(), get(), get(), get(), rung) {

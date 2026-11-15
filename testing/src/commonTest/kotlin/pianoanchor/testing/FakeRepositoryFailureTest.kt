@@ -81,4 +81,15 @@ class FakeRepositoryFailureTest {
             assertFailsWith<StorageUnavailableException> { calibration.latencyOffsetNanos("usb-1") }
             assertFailsWith<StorageUnavailableException> { calibration.setLatencyOffsetNanos("usb-1", 1) }
         }
+
+    @Test
+    fun aFailingLearnerRepositoryThrowsStorageUnavailableExceptionFromEveryMethod() =
+        runTest {
+            val learner = FakeLearnerRepository().apply { failing = true }
+
+            assertFailsWith<StorageUnavailableException> { learner.record(review(), skillState()) }
+            assertFailsWith<StorageUnavailableException> { learner.states() }
+            assertFailsWith<StorageUnavailableException> { learner.reviews("pitch:c4") }
+            assertFailsWith<StorageUnavailableException> { learner.replaceStates(listOf(skillState())) }
+        }
 }
