@@ -54,23 +54,19 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     exit check.
 9. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
      identity of a `sys:<id>` fallback id; stable `usb:`/`ble:` ids keep theirs.
-10. **All Notes Off on the practice keyboard** (follow-up of #101): the practice screen's keys-down and wrong-key
-    highlights still ignore control changes 120 and 123–127, so a key whose NoteOff was lost stays lit; clear them
-    as `PlayedNotes` does (mechanical).
-11. **Wait-mode last note length** (follow-up of #65): a wait-mode run stops reading at the NoteOn that completes the
-    passage, so its stored played notes end the last note at its own key-down (zero length); keep reading until those
-    keys come up or a short timeout passes, before the analyser grades wait-mode takes (mechanical).
+10. **All Notes Off on the practice keyboard** (spec #121; follow-up of #101): control changes 120 and 123–127 clear
+    the practice screen's keys-down and wrong-key highlights, through one engine helper shared with `PlayedNotes`.
+11. **Wait-mode last note length** (spec #122; follow-up of #65): after the completing NoteOn, a wait-mode run keeps
+    reading until nothing sounds (keys and pedal) or 3 s pass, so the last notes get their real length.
 12. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
     main dispatcher when Results opens; move it to a background dispatcher (injected for tests) before passages grow
     long (mechanical).
 13. **Calibration at 60 BPM** (spec #113) [#67]: clicks one second apart, so every lag up to the 400 ms cap pairs with
     its own click and larger ones are rejected, instead of a lag over 333 ms being stored as a negative offset.
-14. **Calibration last-tap grace** (follow-up of #67): the screen stops reading half a beat after the last click, so a
-    tap timestamped inside the last click's window but delivered a little later is lost; keep reading for a short
-    grace before evaluating (mechanical).
-15. **Retry a failed calibration save** (follow-up of #67): when saving an accepted offset fails, offer to retry the
-    save instead of only Try again (a new 16-click run) and Cancel, as practice does for an unsaved attempt
-    (mechanical).
+14. **Calibration last-tap grace** (spec #123) [#113]: keep reading 200 ms after the last click's half beat, so a tap
+    timestamped in time but delivered late still counts.
+15. **Retry a failed calibration save** (spec #124; follow-up of #67): Retry saves the same accepted offset again,
+    next to Try again and Cancel, as practice does for an unsaved attempt.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
