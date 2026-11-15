@@ -40,34 +40,33 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
-    piano's identity reply, a short note fixture and the app version into a file to attach to a GitHub issue; reads
-    only, no network.
-2. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
+1. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
     Off) with a Hint button; attempts record the hint level and whether a hint was shown.
-3. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
+2. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
     open performs by default.
-4. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
+3. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
     clean loops; loops are never cold checks.
-5. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
+4. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
     recalled check; aided and wait-mode runs rate at most Hard; Gentle/Standard/Strict presets (M5's exit check).
-6. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
+5. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
     `platform/storage/src/commonMain/sqldelight/pianoanchor/platform/storage/db/Attempt.sq` filters on `started_at_ms`
     alone; add an index on it with a SQLDelight migration so Today's practice-day counts don't scan every attempt.
-7. **Ear days count as practice days** (follow-up of #128; mechanical): ear sets store only reviews, so a day with
+6. **Ear days count as practice days** (follow-up of #128; mechanical): ear sets store only reviews, so a day with
     only ear training leaves Today's "n of 7 days" and the weekly dots empty; count days with an ear review (from
     `LearnerRepositoryPort` reviews) alongside `practiceDays` from attempts.
-8. **One MIDI playback helper** (follow-up of #128; mechanical): onboarding's arpeggio and `EarViewModel` each send
+7. **One MIDI playback helper** (follow-up of #128; mechanical): onboarding's arpeggio and `EarViewModel` each send
     NoteOn/NoteOff for the shared `PLAYBACK_*` tunables; move both onto one helper that plays `tones()` over
     `MidiOutputPort` and releases held keys on cancel, and move the Ear card's amber accent into the shared theme
     in `ui/shell`.
-9. **Song card picks unlocked pieces** (follow-up of #129; needs an owner decision): Today's song card still picks any
+8. **Song card picks unlocked pieces** (follow-up of #129; needs an owner decision): Today's song card still picks any
     passage of the newest unit with a learned skill, so it can offer a chord exercise, or a piece that Songs shows
     as locked; decide whether it should pick only unlocked pieces (as `Pieces.list` judges them).
-10. **Back returns to the opening screen** (follow-up of #129; mechanical): Settings and Pianos opened from the Songs
+9. **Back returns to the opening screen** (follow-up of #129; mechanical): Settings and Pianos opened from the Songs
     rail go back to Today; remember where they were opened from, as Practice does with `from`.
-11. **One passage-history loader** (follow-up of #129; mechanical): `TodayViewModel` and `SongsViewModel` both build
+10. **One passage-history loader** (follow-up of #129; mechanical): `TodayViewModel` and `SongsViewModel` both build
     each passage's `PassageHistory` from three `AttemptRepositoryPort` reads; share one loader.
+11. **M4 cleanup** (end of M4; mechanical): run `/simplify` on the whole M4 diff (#151–#153 and the contribute-a-piano kit) as
+    its own small cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
@@ -102,7 +101,7 @@ pick these; nothing in "Next up" waits for them.
 | M1 | MIDI input, real-time matcher, offline analyser (🔄 M1.1 rhythm in passages, M1.2 played notes and analyser harness, and M1.3 offline analyser done: exit check met on synthetic takes, real-fixture confirmation pending the hardware check; M1.4a metronome and M1.4b staff rhythm done, the click pending an owner check by ear; M1.4c tempo mode, M1.4d tiles and M1.5 latency calibration done) | Recorded fixtures with injected errors classified ≥ 95% correctly |
 | M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) (✅ M2.1 FSRS-6 memory model, M2.2 skill graph, M2.3 learner storage, M2.4 learner model and the M2.5 90-day simulation exit check done) | Matches reference test vectors; simulated learner behaves sensibly |
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2, M3.3 settings, M3.4 Today, M3.5 onboarding, M3.6 update check and M3.7 release pipeline done; v0.1.0 and the dogfood are the owner's) | Dogfood (`docs/RELEASING.md`): the owner uses the released APK; Today's practice-day line shows 14 practice days within 16, and no open `dogfood` issue is labelled `blocker` |
-| M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (specced: #127–#129) | All tracks share the daily plan |
+| M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (✅ done: tracks in the daily plan #151, ear #152, songs and chords #153, the contribute-a-piano kit #154) | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting (specced: #132–#135) | Unaided pass required before "learned" |
 | M6 | Curriculum units 3–8, sight-reading staircase, placement | Placement reproducible |
 | M7 | Heatmaps, recordings, calibration report | Predicted vs observed retention plotted |

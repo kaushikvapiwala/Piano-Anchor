@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.ControlChange
+import pianoanchor.core.model.Instrument
+import pianoanchor.core.model.InstrumentIdentity
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
@@ -61,6 +63,7 @@ public class MonitorViewModel(
     private var scan: Job? = null
     private var selectedAtNanos = 0L
     private val recorder = FixtureRecorder()
+    private var recordedDeviceId: String? = null
     private val identifier = InstrumentIdentifier(output, instruments, wallClock)
 
     init {
@@ -152,6 +155,7 @@ public class MonitorViewModel(
 
     /** Starts a new recording (discarding the previous one); times count from its first message. */
     public fun startRecording() {
+        recordedDeviceId = state.value.selected?.id
         recorder.start(
             deviceName =
                 state.value.selected
@@ -172,7 +176,9 @@ public class MonitorViewModel(
     /** The contribution kit for the current recording, or null when nothing was recorded. */
     public fun exportKit(): String? =
         recorder.fixture()?.let {
-            ContributionKitCodec.encode(ContributionKit(appVersion, state.value.instrument?.identity, it))
+            ContributionKitCodec.encode(
+                ContributionKit(appVersion, kitIdentity(state.value.instrument, recordedDeviceId), it),
+            )
         }
 
     public fun dismissError() {
@@ -257,6 +263,12 @@ public class MonitorViewModel(
         }
     }
 }
+
+/** [instrument]'s identity if it is the piano the recording came from ([recordedDeviceId]), else null. */
+internal fun kitIdentity(
+    instrument: Instrument?,
+    recordedDeviceId: String?,
+): InstrumentIdentity? = instrument?.takeIf { it.deviceId == recordedDeviceId }?.identity
 
 /** Adds [line] at the top of the log, keeping the newest `Tunables.MONITOR_LOG_LINES`. */
 private fun MonitorState.withLine(line: LogLine) = copy(log = (listOf(line) + log).take(Tunables.MONITOR_LOG_LINES))
