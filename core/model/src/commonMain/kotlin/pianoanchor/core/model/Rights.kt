@@ -20,4 +20,11 @@ public data class Rights(
     val origin: String,
     val basis: String,
     val checkedOn: LocalDate,
-)
+) {
+    init {
+        if (status == RightsStatus.PUBLIC_DOMAIN) {
+            require(origin.isNotBlank()) { "a public domain record must name its origin" }
+            require(basis.isNotBlank()) { "a public domain record must say why it is public domain" }
+        }
+    }
+}

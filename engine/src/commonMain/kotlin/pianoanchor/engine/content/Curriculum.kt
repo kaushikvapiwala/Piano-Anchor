@@ -21,11 +21,5 @@ public object Curriculum {
     public val graph: SkillGraph = SkillGraph(listOf(Skills.RH_C_POSITION))
 
     /** The passage with [id], or null if there is none (e.g. an attempt of a passage since removed). */
-    public fun passage(id: String): Passage? =
-        units.firstNotNullOfOrNull { unit ->
-            unit.passages.firstOrNull {
-                it.id ==
-                    id
-            }
-        }
+    public fun passage(id: String): Passage? = units.flatMap { it.passages }.firstOrNull { it.id == id }
 }

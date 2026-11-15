@@ -12,7 +12,7 @@ bigger than needed, and some are GPL.
 
 ## Grammar
 
-Tokens are separated by spaces.
+Tokens are separated by whitespace (spaces, tabs or newlines).
 
 - **Note:** `<name><accidental?><octave><length>`, e.g. `E4q` or `F#3h`. Names are `A`-`G`, the accidental is `#` or
   `b`, the octave is -1..9 and the pitch must stay within MIDI 0..127 (so C-1 is the lowest note and G9 the highest).
@@ -28,8 +28,9 @@ onsets: it produces no step, and the staff does not draw it until stems and rest
 
 ## Checks
 
-- Every bar line must close a bar that fills the time signature exactly. Without bar lines, the whole text must still
-  be a whole number of bars. Pickup bars (anacrusis) are not supported yet.
+- The parser is given the passage's time signature. Every bar line must close a bar that fills it exactly, and after
+  the last bar line comes exactly one more bar or nothing. Without bar lines, the whole text must still be a whole
+  number of bars. Pickup bars (anacrusis) are not supported yet.
 - Errors throw `IllegalArgumentException` and name the token by its 1-based position (bar lines and chords count as
   one token each) and its text, e.g. `token 7 'H4q': unknown note name`.
-- Empty text is an error.
+- Empty text, and text with only rests, is an error.

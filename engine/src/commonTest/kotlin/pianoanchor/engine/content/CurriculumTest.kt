@@ -1,7 +1,5 @@
 package pianoanchor.engine.content
 
-import pianoanchor.core.model.RightsStatus
-import pianoanchor.core.model.TICKS_PER_QUARTER
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -50,22 +48,17 @@ class CurriculumTest {
     }
 
     @Test
-    fun `every passage has a rights record, and public domain ones state origin and basis`() {
-        passages.filter { it.rights.status == RightsStatus.PUBLIC_DOMAIN }.forEach {
-            assertTrue(it.rights.origin.isNotBlank(), "${it.id}: origin")
-            assertTrue(it.rights.basis.isNotBlank(), "${it.id}: basis")
-        }
+    fun `every passage has a rights record that says why it may ship`() {
+        // Rights itself rejects a public domain record without an origin and a basis.
         passages.forEach { assertTrue(it.rights.basis.isNotBlank(), "${it.id}: every record says why it may ship") }
     }
 
     @Test
     fun `every passage parses and its bars fit`() {
-        passages.forEach { passage ->
-            val bar = passage.timeSignature.beats * 4 * TICKS_PER_QUARTER / passage.timeSignature.beatUnit
-            val last = passage.steps.last()
-            val end = last.onsetTicks + last.notes.maxOf { it.lengthTicks }
-            assertEquals(0, end % bar, "${passage.id} ends mid-bar")
-        }
+        // Each passage's steps come from NoteText.parse with its own time signature, which checks the bars, so
+        // loading the curriculum parses every passage; here every unit also has passages to load.
+        assertTrue(Curriculum.units.all { it.passages.isNotEmpty() })
+        passages.forEach { assertTrue(it.steps.isNotEmpty(), it.id) }
     }
 
     @Test

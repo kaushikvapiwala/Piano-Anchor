@@ -13,12 +13,14 @@ private const val Q = TICKS_PER_QUARTER
 /** A sixteenth-note bar: any whole number of sixteenths fits, so tests of single events need no padding. */
 private val ANY_LENGTH = TimeSignature(1, 16)
 
+private val FOUR_FOUR = TimeSignature(4, 4)
+
 class NoteTextTest {
     private fun pitches(text: String) = NoteText.parse(text, ANY_LENGTH).map { step -> step.pitches.map { it.number } }
 
     private fun message(
         text: String,
-        time: TimeSignature = TimeSignature(4, 4),
+        time: TimeSignature = FOUR_FOUR,
     ) = assertFailsWith<IllegalArgumentException> { NoteText.parse(text, time) }.message.orEmpty()
 
     @Test
@@ -52,13 +54,13 @@ class NoteTextTest {
 
     @Test
     fun `rest moves later onsets`() {
-        assertEquals(listOf(0, 2 * Q), NoteText.parse("C4q rq D4h").map { it.onsetTicks })
-        assertEquals(listOf(2 * Q), NoteText.parse("rh C4h").map { it.onsetTicks })
+        assertEquals(listOf(0, 2 * Q), NoteText.parse("C4q rq D4h", FOUR_FOUR).map { it.onsetTicks })
+        assertEquals(listOf(2 * Q), NoteText.parse("rh C4h", FOUR_FOUR).map { it.onsetTicks })
     }
 
     @Test
     fun `bar lines must fill the time signature`() {
-        assertEquals(3, NoteText.parse("C4h D4h | E4w").size)
+        assertEquals(3, NoteText.parse("C4h D4h | E4w", FOUR_FOUR).size)
         assertEquals(6, NoteText.parse("C4q D4q E4q | F4q G4q A4q |", TimeSignature(3, 4)).size)
         assertEquals(
             "token 3 '|': bar has 2880 ticks, expected 3840 for TimeSignature(beats=4, beatUnit=4)",
@@ -69,6 +71,18 @@ class NoteTextTest {
     }
 
     @Test
+    fun `after a bar line the last bar must be exactly one bar`() {
+        assertEquals(2, NoteText.parse("C4w | D4w", FOUR_FOUR).size)
+        assertTrue(message("C4w | D4w E4w").startsWith("the last bar has 7680 ticks"))
+    }
+
+    @Test
+    fun `rejects text with only rests`() = assertEquals("note text has no notes, only rests", message("rw"))
+
+    @Test
+    fun `any whitespace separates tokens`() = assertEquals(listOf(listOf(60), listOf(62)), pitches("C4q\n\tD4q"))
+
+    @Test
     fun `rejects unknown name`() {
         assertEquals("token 7 'H4q': unknown note name", message("C4h C4h | C4w | C4h H4q"))
         assertTrue(message("C4q Cq").contains("octave number"))
@@ -77,6 +91,7 @@ class NoteTextTest {
     @Test
     fun `rejects octave out of range`() {
         assertTrue(message("C10q").contains("octave 10 out of range"))
+        assertTrue(message("C99999999999q").startsWith("token 1 'C99999999999q': octave 99999999999 out of range"))
         assertTrue(message("G#9q").contains("outside MIDI"))
         assertTrue(message("C-2q").contains("octave -2 out of range"))
         assertTrue(message("Cb-1q").contains("pitch -1 is outside MIDI"))

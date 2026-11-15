@@ -16,8 +16,8 @@ public object Passages {
         Passage(
             id = "builtin:cde",
             title = "C-D-E",
-            steps = NoteText.parse("C4q D4q E4h"),
-            timeSignature = TimeSignature(beats = 4, beatUnit = 4),
+            steps = NoteText.parse("C4q D4q E4h", FOUR_FOUR),
+            timeSignature = FOUR_FOUR,
             tempoBpm = CDE_TEMPO_BPM,
             rights =
                 Rights(
@@ -32,3 +32,5 @@ public object Passages {
 
 /** A gentle beginner pace for the first passage. */
 private const val CDE_TEMPO_BPM = 80
+
+private val FOUR_FOUR = TimeSignature(beats = 4, beatUnit = 4)

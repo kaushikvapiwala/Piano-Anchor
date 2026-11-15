@@ -14,11 +14,11 @@ public object NoteText {
      */
     public fun parse(
         text: String,
-        timeSignature: TimeSignature = TimeSignature(beats = 4, beatUnit = 4),
+        timeSignature: TimeSignature,
     ): List<Step> {
         val tokens = tokenize(text)
         require(tokens.isNotEmpty()) { "note text is empty" }
-        val barTicks = timeSignature.beats * WHOLE_TICKS / timeSignature.beatUnit
+        val barTicks = timeSignature.barTicks
         val steps = ArrayList<Step>()
         var position = 0
         var barStart = 0
@@ -34,9 +34,12 @@ public object NoteText {
                 position += length
             }
         }
-        require(position % barTicks == 0) {
-            "the last bar has ${position % barTicks} ticks, expected $barTicks for $timeSignature"
+        val lastBar = position - barStart
+        require(if (barStart == 0) lastBar % barTicks == 0 else lastBar == 0 || lastBar == barTicks) {
+            "the last bar has ${if (barStart == 0) lastBar % barTicks else lastBar} ticks, expected $barTicks for " +
+                "$timeSignature"
         }
+        require(steps.isNotEmpty()) { "note text has no notes, only rests" }
         return steps
     }
 }
@@ -82,7 +85,7 @@ private class Token(
         check(name.firstOrNull() in 'A'..'G') { "unknown note name" }
         val match = PITCH_REGEX.find(name) ?: fail("expected an octave number after the note name")
         val (letter, accidental, octaveText) = match.destructured
-        val octave = octaveText.toInt()
+        val octave = octaveText.toIntOrNull() ?: fail("octave $octaveText out of range $MIN_OCTAVE..$MAX_OCTAVE")
         check(octave in MIN_OCTAVE..MAX_OCTAVE) { "octave $octave out of range $MIN_OCTAVE..$MAX_OCTAVE" }
         val midi = (octave + 1) * SEMITONES + PITCH_CLASS.getValue(letter.single()) + ACCIDENTAL.getValue(accidental)
         check(midi in 0..MAX_MIDI) { "pitch $midi is outside MIDI 0..$MAX_MIDI" }
@@ -98,7 +101,7 @@ private class Token(
 /** Splits on spaces, keeping a bracketed chord together as one token. */
 private fun tokenize(text: String): List<Token> {
     val tokens = ArrayList<Token>()
-    val parts = text.split(' ').filter { it.isNotEmpty() }.iterator()
+    val parts = text.split(WHITESPACE).filter { it.isNotEmpty() }.iterator()
     while (parts.hasNext()) {
         var part = parts.next()
         val index = tokens.size + 1
@@ -121,6 +124,7 @@ private const val MIN_OCTAVE = -1
 private const val MAX_OCTAVE = 9
 private const val MAX_MIDI = 127
 private const val WHOLE_TICKS = 4 * TICKS_PER_QUARTER
+private val WHITESPACE = Regex("\\s+")
 private val PITCH_REGEX = Regex("^([A-G])([#b]?)(-?\\d+)")
 private val PITCH_CLASS = mapOf('C' to 0, 'D' to 2, 'E' to 4, 'F' to 5, 'G' to 7, 'A' to 9, 'B' to 11)
 private val ACCIDENTAL = mapOf("" to 0, "#" to 1, "b" to -1)

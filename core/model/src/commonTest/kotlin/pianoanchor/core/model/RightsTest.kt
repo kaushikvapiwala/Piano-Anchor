@@ -3,6 +3,7 @@ package pianoanchor.core.model
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class RightsTest {
     private val day = LocalDate(2026, 11, 15)
@@ -17,13 +18,25 @@ class RightsTest {
     }
 
     @Test
-    fun curriculumUnitKeepsItsParts() {
-        val unit = CurriculumUnit("unit-0", "First notes", listOf("rh-c-position"), emptyList())
-        assertEquals("unit-0", unit.id)
-        assertEquals("First notes", unit.title)
-        assertEquals(listOf("rh-c-position"), unit.skills)
-        assertEquals(emptyList(), unit.passages)
+    fun publicDomainNeedsAnOrigin() {
+        assertFailsWith<IllegalArgumentException> {
+            Rights(
+                RightsStatus.PUBLIC_DOMAIN,
+                " ",
+                "Author died in 1827",
+                day,
+            )
+        }
     }
+
+    @Test
+    fun publicDomainNeedsABasis() {
+        assertFailsWith<IllegalArgumentException> { Rights(RightsStatus.PUBLIC_DOMAIN, "Ode to Joy", "", day) }
+    }
+
+    @Test
+    fun originalMayLeaveOriginBlank() =
+        assertEquals("", Rights(RightsStatus.ORIGINAL, "", "Written for us", day).origin)
 
     @Test
     fun rightsStatusHasTwoValues() =

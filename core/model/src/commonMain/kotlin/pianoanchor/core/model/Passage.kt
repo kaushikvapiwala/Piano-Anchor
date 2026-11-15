@@ -14,6 +14,7 @@ public const val MAX_TEMPO_BPM: Int = 300
 
 private val BEATS_RANGE = 1..32
 private val BEAT_UNITS = setOf(1, 2, 4, 8, 16)
+private const val QUARTERS_PER_WHOLE = 4
 
 /** One key of a step: its [pitch] and written length in ticks ([lengthTicks] > 0). */
 public data class ScoreNote(
@@ -52,13 +53,16 @@ public data class TimeSignature(
         require(beats in BEATS_RANGE) { "time signature beats must be in $BEATS_RANGE, was $beats" }
         require(beatUnit in BEAT_UNITS) { "time signature beat unit must be one of $BEAT_UNITS, was $beatUnit" }
     }
+
+    /** The length of one bar in ticks. */
+    val barTicks: Int get() = beats * QUARTERS_PER_WHOLE * TICKS_PER_QUARTER / beatUnit
 }
 
 /**
  * A piece of music to practise. [id] is stable (stored with attempts) and not blank; [steps] is not empty and
  * their onsets strictly increase. [tempoBpm] is the written tempo in quarter notes per minute
- * ([MIN_TEMPO_BPM]..[MAX_TEMPO_BPM]). [rights] says why it may
- * ship. [skills] are the ids of the [Skill]s a run exercises (may be empty: such a passage is never scheduled).
+ * ([MIN_TEMPO_BPM]..[MAX_TEMPO_BPM]). [rights] says why it may ship. [skills] are the ids of the [Skill]s a run
+ * exercises (may be empty: such a passage is never scheduled).
  */
 public data class Passage(
     val id: String,

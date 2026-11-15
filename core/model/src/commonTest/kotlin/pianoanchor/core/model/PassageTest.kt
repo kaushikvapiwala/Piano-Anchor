@@ -86,6 +86,12 @@ class PassageTest {
     }
 
     @Test
+    fun barTicksIsOneBarOfTheTimeSignature() {
+        assertEquals(4 * TICKS_PER_QUARTER, fourFour.barTicks)
+        assertEquals(3 * TICKS_PER_QUARTER / 2, TimeSignature(3, 8).barTicks)
+    }
+
+    @Test
     fun rejectsTimeSignatureBeatsOutOf1To32() {
         listOf(0, 33).forEach { beats -> assertFailsWith<IllegalArgumentException> { TimeSignature(beats, 4) } }
         listOf(1, 32).forEach { beats -> assertEquals(beats, TimeSignature(beats, 4).beats) }
