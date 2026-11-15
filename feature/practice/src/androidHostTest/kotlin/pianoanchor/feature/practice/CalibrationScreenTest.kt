@@ -1,6 +1,7 @@
 package pianoanchor.feature.practice
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -30,7 +31,7 @@ class CalibrationScreenTest {
     fun startShowsTheTitleAndInstructionAndStarts() =
         runComposeUiTest {
             var starts = 0
-            setContent { PianoAnchorTheme { CalibrationScreen(CalibrationState(), { starts++ }, {}, {}) } }
+            setContent { PianoAnchorTheme { CalibrationScreen(CalibrationState(), { starts++ }, {}, {}, {}) } }
 
             onNodeWithText("Calibrate timing").assertExists()
             onNodeWithText("Play any key on each click. 16 clicks, about 16 seconds.").assertExists()
@@ -43,7 +44,7 @@ class CalibrationScreenTest {
     fun runningShowsGetReadyThenTheCounterWithADescription() =
         runComposeUiTest {
             val state = mutableStateOf(CalibrationState(phase = CalibrationPhase.RUNNING, click = 2))
-            setContent { PianoAnchorTheme { CalibrationScreen(state.value, {}, {}, {}) } }
+            setContent { PianoAnchorTheme { CalibrationScreen(state.value, {}, {}, {}, {}) } }
             onNodeWithText("Get ready").assertExists()
 
             state.value = CalibrationState(phase = CalibrationPhase.RUNNING, click = 11, pulse = true, countedTaps = 7)
@@ -57,7 +58,7 @@ class CalibrationScreenTest {
         runComposeUiTest {
             var dones = 0
             val state = mutableStateOf(done(CalibrationResult.Accepted(38 * ms, 5 * ms)))
-            setContent { PianoAnchorTheme { CalibrationScreen(state.value, {}, { dones++ }, {}) } }
+            setContent { PianoAnchorTheme { CalibrationScreen(state.value, {}, {}, { dones++ }, {}) } }
 
             onNodeWithText("Your piano answers 38 ms after the click. Saved.").assertExists()
             onNodeWithText("Done").performClick()
@@ -73,15 +74,14 @@ class CalibrationScreenTest {
             var tries = 0
             var cancels = 0
             val state = mutableStateOf(done(CalibrationResult.TooUneven(60 * ms)))
-            setContent { PianoAnchorTheme { CalibrationScreen(state.value, { tries++ }, {}, { cancels++ }) } }
+            setContent { PianoAnchorTheme { CalibrationScreen(state.value, { tries++ }, {}, {}, { cancels++ }) } }
 
             onNodeWithText("Taps were uneven").assertExists()
             state.value = done(CalibrationResult.TooFewTaps(3))
             onNodeWithText("Too few taps").assertExists()
             state.value = done(CalibrationResult.OutOfRange(450 * ms))
             onNodeWithText("That's more than 0.4 s: check the connection").assertExists()
-            state.value = done(CalibrationResult.Accepted(38 * ms, 0), saveFailed = true)
-            onNodeWithText("Couldn't save the result.").assertExists()
+            onNodeWithText("Retry").assertDoesNotExist()
 
             onNodeWithText("Try again").performClick()
             onNodeWithText("Cancel").performClick()
@@ -90,11 +90,34 @@ class CalibrationScreenTest {
         }
 
     @Test
+    fun aFailedSaveOffersRetryTryAgainAndCancelInThatOrder() =
+        runComposeUiTest {
+            var retries = 0
+            var tries = 0
+            var cancels = 0
+            val state = done(CalibrationResult.Accepted(38 * ms, 0), saveFailed = true)
+            setContent {
+                PianoAnchorTheme {
+                    CalibrationScreen(state, { tries++ }, { retries++ }, {}, { cancels++ })
+                }
+            }
+
+            onNodeWithText("Couldn't save the result.").assertExists()
+            val lefts =
+                listOf("Retry", "Try again", "Cancel").map { onNodeWithText(it).fetchSemanticsNode().boundsInRoot.left }
+            assertEquals(lefts.sorted(), lefts)
+            onNodeWithText("Retry").performClick()
+            onNodeWithText("Try again").performClick()
+            onNodeWithText("Cancel").performClick()
+            assertEquals(listOf(1, 1, 1), listOf(retries, tries, cancels))
+        }
+
+    @Test
     fun aDroppedPianoShowsTheDisconnectedCard() =
         runComposeUiTest {
             var cancels = 0
             setContent {
-                PianoAnchorTheme { CalibrationScreen(CalibrationState(disconnected = true), {}, {}, { cancels++ }) }
+                PianoAnchorTheme { CalibrationScreen(CalibrationState(disconnected = true), {}, {}, {}, { cancels++ }) }
             }
 
             onNodeWithText("Piano disconnected").assertExists()

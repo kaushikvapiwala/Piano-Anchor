@@ -245,7 +245,13 @@ private fun CalibrationRoute(
     val scope = rememberCoroutineScope()
     val leave = { scope.launch { viewModel.close() }.invokeOnCompletion { onLeave() } }
     BackHandler { leave() }
-    CalibrationScreen(state, onStart = viewModel::start, onDone = { leave() }, onCancel = { leave() })
+    CalibrationScreen(
+        state,
+        onStart = viewModel::start,
+        onRetrySave = viewModel::retrySave,
+        onDone = { leave() },
+        onCancel = { leave() },
+    )
 }
 
 /** The results of the run saved as [attemptId], landscape like practice. "Try again" practises on the same piano. */
@@ -300,6 +306,7 @@ private fun OnboardingRoute(
             CalibrationScreen(
                 calibrationState,
                 onStart = calibration::start,
+                onRetrySave = calibration::retrySave,
                 onDone = { leave() },
                 onCancel = { leave() },
             )

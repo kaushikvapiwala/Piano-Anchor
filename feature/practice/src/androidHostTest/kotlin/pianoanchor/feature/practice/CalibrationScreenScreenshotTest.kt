@@ -25,7 +25,7 @@ class CalibrationScreenScreenshotTest {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             captureRoboImage("screenshots/CalibrationScreen_${name}_$theme.png") {
-                PianoAnchorTheme(darkTheme = dark) { CalibrationScreen(state, {}, {}, {}) }
+                PianoAnchorTheme(darkTheme = dark) { CalibrationScreen(state, {}, {}, {}, {}) }
             }
         }
     }
@@ -58,6 +58,19 @@ class CalibrationScreenScreenshotTest {
                 click = 16,
                 countedTaps = 12,
                 result = CalibrationResult.TooUneven(60_000_000),
+            ),
+        )
+
+    @Test
+    fun saveFailed() =
+        capture(
+            "save_failed",
+            CalibrationState(
+                phase = CalibrationPhase.DONE,
+                click = 16,
+                countedTaps = 12,
+                result = CalibrationResult.Accepted(38_000_000, 6_000_000),
+                saveFailed = true,
             ),
         )
 }

@@ -1,7 +1,10 @@
 package pianoanchor.testing
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
@@ -11,6 +14,7 @@ import pianoanchor.core.model.StorageUnavailableException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.time.Instant
 
 class FakeRepositoryFailureTest {
@@ -87,6 +91,22 @@ class FakeRepositoryFailureTest {
 
             assertFailsWith<StorageUnavailableException> { calibration.latencyOffsetNanos("usb-1") }
             assertFailsWith<StorageUnavailableException> { calibration.setLatencyOffsetNanos("usb-1", 1) }
+        }
+
+    @Test
+    fun aGatedCalibrationRepositoryWaitsToWriteAndCountsTheCalls() =
+        runTest {
+            val gate = CompletableDeferred<Unit>()
+            val calibration = FakeCalibrationRepository().apply { this.gate = gate }
+
+            val write = launch { calibration.setLatencyOffsetNanos("usb-1", 7) }
+            yield()
+            assertEquals(1, calibration.setCalls)
+            assertNull(calibration.latencyOffsetNanos("usb-1"))
+
+            gate.complete(Unit)
+            write.join()
+            assertEquals(7L, calibration.latencyOffsetNanos("usb-1"))
         }
 
     @Test

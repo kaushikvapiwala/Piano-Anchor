@@ -97,9 +97,10 @@ Landscape like practice, 915×412 dp, page colour and a card (radius 20) with pi
   counter as "7 of 12 taps".
 - **Accepted**: "Your piano answers 38 ms after the click. Saved." ("before" when negative) and Done. The line is a
   polite live region, so TalkBack reads it when it appears.
-- **Any other result**: one line ("Taps were uneven", "Too few taps", "That's more than 0.4 s: check the connection",
-  or "Couldn't save the result." when the store failed) with Try again and Cancel. A dropped piano shows the
-  "Piano disconnected" card above Start.
+- **Any other result**: one line ("Taps were uneven", "Too few taps" or "That's more than 0.4 s: check the connection")
+  with Try again and Cancel. A dropped piano shows the "Piano disconnected" card above Start.
+- **Accepted but not saved**: "Couldn't save the result." with Retry (filled; saves the same offset again, as often
+  as needed), Try again (outlined; a new 16-click run) and Cancel (outlined). Success shows the Accepted line and Done.
 
 The **calibrate card** on the practice screen (secondary container colour, under the top bar) reads "Calibrate timing ·
 about 16 s" with Calibrate and Skip. It shows when a timed rung is selected on a piano with no stored offset; the run

@@ -108,6 +108,7 @@
     <string name="calibration_out_of_range">That's more than %1$s s: check the connection</string>
     <string name="calibration_save_failed">Couldn't save the result.</string>
     <string name="calibration_done">Done</string>
+    <string name="calibration_retry">Retry</string>
     <string name="calibration_try_again">Try again</string>
     <string name="calibration_cancel">Cancel</string>
 </resources>

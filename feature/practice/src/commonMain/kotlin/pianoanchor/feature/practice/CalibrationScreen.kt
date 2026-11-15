@@ -45,6 +45,7 @@ import pianoanchor.feature.practice.resources.calibration_get_ready
 import pianoanchor.feature.practice.resources.calibration_intro
 import pianoanchor.feature.practice.resources.calibration_out_of_range
 import pianoanchor.feature.practice.resources.calibration_play_now
+import pianoanchor.feature.practice.resources.calibration_retry
 import pianoanchor.feature.practice.resources.calibration_save_failed
 import pianoanchor.feature.practice.resources.calibration_start
 import pianoanchor.feature.practice.resources.calibration_title
@@ -65,13 +66,15 @@ private val MAX_OFFSET_SECONDS = Tunables.CALIBRATION_MAX_OFFSET_MS / MILLIS_PER
 
 /**
  * The calibration screen (Living Studio, `docs/ui/living-studio.md`): the title and instruction, then Start, the pulse
- * with the tap counter while the clicks play, and the result with Done (accepted) or Try again and Cancel. Stateless:
- * see [CalibrationViewModel]. [onCancel] is also the back button; [onDone] leaves after an accepted result.
+ * with the tap counter while the clicks play, and the result with Done (accepted), Retry (accepted but not saved),
+ * Try again and Cancel. Stateless: see [CalibrationViewModel]. [onCancel] is also the back button; [onRetrySave]
+ * stores the accepted offset again; [onDone] leaves after an accepted result.
  */
 @Composable
 public fun CalibrationScreen(
     state: CalibrationState,
     onStart: () -> Unit,
+    onRetrySave: () -> Unit,
     onDone: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -122,7 +125,7 @@ public fun CalibrationScreen(
                     when (state.phase) {
                         CalibrationPhase.READY -> PillButton(stringResource(Res.string.calibration_start), onStart)
                         CalibrationPhase.RUNNING -> Running(state)
-                        CalibrationPhase.DONE -> Done(state, onStart, onDone, onCancel)
+                        CalibrationPhase.DONE -> Done(state, onStart, onRetrySave, onDone, onCancel)
                     }
                 }
             }
@@ -160,11 +163,15 @@ private fun Running(state: CalibrationState) {
     }
 }
 
-/** The result line (read out as it appears) and the buttons: Done when accepted and saved, else Try again, Cancel. */
+/**
+ * The result line (read out as it appears) and the buttons: Done when accepted and saved; Retry first when the save
+ * failed; else Try again, Cancel.
+ */
 @Composable
 private fun Done(
     state: CalibrationState,
     onTryAgain: () -> Unit,
+    onRetrySave: () -> Unit,
     onDone: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -178,14 +185,13 @@ private fun Done(
         if (saved) {
             PillButton(stringResource(Res.string.calibration_done), onDone)
         } else {
-            PillButton(stringResource(Res.string.calibration_try_again), onTryAgain)
-            OutlinedButton(
-                onClick = onCancel,
-                modifier = Modifier.height(44.dp),
-                shape = RoundedCornerShape(22.dp),
-            ) {
-                Text(stringResource(Res.string.calibration_cancel), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            if (state.saveFailed) {
+                PillButton(stringResource(Res.string.calibration_retry), onRetrySave)
+                PillOutlinedButton(stringResource(Res.string.calibration_try_again), onTryAgain)
+            } else {
+                PillButton(stringResource(Res.string.calibration_try_again), onTryAgain)
             }
+            PillOutlinedButton(stringResource(Res.string.calibration_cancel), onCancel)
         }
     }
 }
@@ -227,6 +233,16 @@ private fun PillButton(
     onClick: () -> Unit,
 ) {
     Button(onClick = onClick, modifier = Modifier.height(44.dp), shape = RoundedCornerShape(22.dp)) {
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun PillOutlinedButton(
+    label: String,
+    onClick: () -> Unit,
+) {
+    OutlinedButton(onClick = onClick, modifier = Modifier.height(44.dp), shape = RoundedCornerShape(22.dp)) {
         Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
     }
 }
