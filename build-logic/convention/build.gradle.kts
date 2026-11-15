@@ -10,4 +10,9 @@ dependencies {
     implementation(libs.gradle.plugin.detekt)
     implementation(libs.gradle.plugin.spotless)
     implementation(libs.gradle.plugin.kover)
+
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
+
+tasks.test { useJUnitPlatform() }

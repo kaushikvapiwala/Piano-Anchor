@@ -14,6 +14,26 @@ android {
         // With the orchestrator, every test starts on an empty app: no database, no known pianos.
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
+    // Release signing (docs/RELEASING.md): release.yml decodes the keystore to a temp file and sets these four
+    // variables. Without them (local builds) the release APK is built unsigned, which still checks the R8 rules.
+    val keystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")
+    signingConfigs {
+        if (keystoreFile != null) {
+            create("release") {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (keystoreFile != null) signingConfig = signingConfigs.getByName("release")
+        }
+    }
     testOptions {
         execution = "ANDROIDX_TEST_ORCHESTRATOR"
         managedDevices {

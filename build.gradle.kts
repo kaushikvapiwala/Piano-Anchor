@@ -70,6 +70,8 @@ tasks.register("fastCheck") {
     description = "Checks root/build-logic formatting, docs and hooks; subprojects contribute their own fastCheck."
     // Gradle also runs `fastCheck` in every subproject that has one (task-name selection).
     dependsOn("spotlessCheck", docsCheck, gitlinkCheck, hooksTest)
+    // The convention plugins' own unit tests (the release version code).
+    dependsOn(gradle.includedBuild("build-logic").task(":convention:test"))
 }
 
 // Every module: a project with no child projects (`:core` and `:ui` are only folders that group modules).

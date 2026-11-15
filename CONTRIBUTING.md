@@ -32,6 +32,11 @@ support, curriculum ideas and bug reports are all welcome.
   All except Dependency Review are required to merge; it can take up to 15 minutes, so it is advisory.
   Fix anything it reports before merging.
 
+## Releases
+
+Maintainers cut releases by pushing a `vX.Y.Z` tag; `docs/RELEASING.md` has the one-time signing setup, the steps
+and the checklist.
+
 ## Using AI assistants
 
 AI-assisted contributions are welcome. This repo is set up for coding agents. You are responsible for

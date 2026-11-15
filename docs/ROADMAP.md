@@ -40,41 +40,39 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **M3.7 Release pipeline** (spec #82): tag-driven signed APK on GitHub Releases; then v0.1.0 and the dogfood
-    exit check.
-2. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
+1. **Unstable ids and kept identities** (spec #95; follow-up of #56): a missed Identity Reply clears the stored
      identity of a `sys:<id>` fallback id; stable `usb:`/`ble:` ids keep theirs.
-3. **All Notes Off on the practice keyboard** (spec #121; follow-up of #101): control changes 120 and 123–127 clear
+2. **All Notes Off on the practice keyboard** (spec #121; follow-up of #101): control changes 120 and 123–127 clear
     the practice screen's keys-down and wrong-key highlights, through one engine helper shared with `PlayedNotes`.
-4. **Wait-mode last note length** (spec #122; follow-up of #65): after the completing NoteOn, a wait-mode run keeps
+3. **Wait-mode last note length** (spec #122; follow-up of #65): after the completing NoteOn, a wait-mode run keeps
     reading until nothing sounds (keys and pedal) or 3 s pass, so the last notes get their real length.
-5. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
+4. **Results analysis off the main thread** (follow-up of #66): `ResultsViewModel` runs `PerformanceAnalyser` on the
     main dispatcher when Results opens; move it to a background dispatcher (injected for tests) before passages grow
     long (mechanical).
-6. **Calibration at 60 BPM** (spec #113) [#67]: clicks one second apart, so every lag up to the 400 ms cap pairs with
+5. **Calibration at 60 BPM** (spec #113) [#67]: clicks one second apart, so every lag up to the 400 ms cap pairs with
     its own click and larger ones are rejected, instead of a lag over 333 ms being stored as a negative offset.
-7. **Calibration last-tap grace** (spec #123) [#113]: keep reading 200 ms after the last click's half beat, so a tap
+6. **Calibration last-tap grace** (spec #123) [#113]: keep reading 200 ms after the last click's half beat, so a tap
     timestamped in time but delivered late still counts.
-8. **Retry a failed calibration save** (spec #124; follow-up of #67): Retry saves the same accepted offset again,
+7. **Retry a failed calibration save** (spec #124; follow-up of #67): Retry saves the same accepted offset again,
     next to Try again and Cancel, as practice does for an unsaved attempt.
-9. **M4.1 Tracks share the daily plan** (spec #127) [#79]: skills get a track (core, songs, ear); new skills rotate
+8. **M4.1 Tracks share the daily plan** (spec #127) [#79]: skills get a track (core, songs, ear); new skills rotate
     between tracks under the shared caps; the composer's Ear card and four-way time split (M4's exit check).
-10. **M4.2 Ear training** (spec #128) [#127, #79, #80]: eight ear skills, echo on the piano and identify on screen, sets
+9. **M4.2 Ear training** (spec #128) [#127, #79, #80]: eight ear skills, echo on the piano and identify on screen, sets
     of 4 fresh items, speaker tones when the piano has no MIDI output.
-11. **M4.3 Songs & chords** (spec #129) [#127, #77, #79]: six C-position chord skills, four pieces and the Songs screen
+10. **M4.3 Songs & chords** (spec #129) [#127, #77, #79]: six C-position chord skills, four pieces and the Songs screen
     with tempo-ladder progress and locked pieces.
-12. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
+11. **M4.4 Contribute-a-piano kit** (mechanical; write its spec with Assumptions): a guided export that bundles a
     piano's identity reply, a short note fixture and the app version into a file to attach to a GitHub issue; reads
     only, no network.
-13. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
+12. **M5.1 Hint fading** (spec #132) [#79]: key hints fade per passage (Full, Delayed after 1.5× your usual gap,
     Off) with a Hint button; attempts record the hint level and whether a hint was shown.
-14. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
+13. **M5.2 Perform mode** (spec #133) [#132, #79]: one take at a timed rung with no hints or live verdicts; Today's cold
     open performs by default.
-15. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
+14. **M5.3 Spot loops** (spec #134) [#132, #133]: Results offer to loop the worst two bars one rung lower until two
     clean loops; loops are never cold checks.
-16. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
+15. **M5.4 Unaided pass and strictness** (spec #135) [#132, #133, #78, #73, #128]: learned needs one unaided
     recalled check; aided and wait-mode runs rate at most Hard; Gentle/Standard/Strict presets (M5's exit check).
-17. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
+16. **Practice-day query index** (follow-up of #79; mechanical): `selectStartedSince` in
     `platform/storage/src/commonMain/sqldelight/pianoanchor/platform/storage/db/Attempt.sq` filters on `started_at_ms`
     alone; add an index on it with a SQLDelight migration so Today's practice-day counts don't scan every attempt.
 
@@ -82,6 +80,9 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
 pick these; nothing in "Next up" waits for them.
 
+- **First release and dogfood (M3 exit):** cut v0.1.0 by following `docs/RELEASING.md` (keystore, secrets, the
+  `dogfood` and `blocker` labels, then the tag; the first run also proves the untested emulator smoke job), then use
+  the released APK daily as the M3 exit check says.
 - **Hardware check:** install the debug app (the `app-android-debug-<sha>` artifact of the latest CI run
   on main, or `./gradlew :app-android:assembleDebug`), connect a piano over BLE, play keys, survive a disconnect
   and export a C-D-E fixture into `fixtures/` (the 1.4b BLE scan/connect glue and the 1.4a USB transport on real
@@ -95,7 +96,9 @@ pick these; nothing in "Next up" waits for them.
 - **Metronome by ear** (from M1.4a, #63): on the first tempo-mode run on a device, check the click's timing against
   the cursor and that the accent is audible on phone speakers.
 - **Update check on a device** (from M3.6, #81): once a release exists, open Today with "update check" on and an
-  older debug build: the banner names the newer version, "See release" opens its page, "Not now" hides it; with the
+  older build (untagged builds are `0.0.0-dev` and never offer updates, so build one with
+  `./gradlew :app-android:assembleDebug -PpianoanchorVersion=0.0.9`): the banner names the newer version, "See
+  release" opens its page, "Not now" hides it; with the
   switch off, no request (the `HttpsURLConnection` glue runs only on a device).
 - **Real recording:** once the hardware check lands its C-D-E fixture, add a replay test of it to
   `MatchWaitModeFlowTest` and run the performance analyser on it (the M1 exit check on a real recording).
@@ -105,7 +108,7 @@ pick these; nothing in "Next up" waits for them.
 |---|---|---|
 | M1 | MIDI input, real-time matcher, offline analyser (🔄 M1.1 rhythm in passages, M1.2 played notes and analyser harness, and M1.3 offline analyser done: exit check met on synthetic takes, real-fixture confirmation pending the hardware check; M1.4a metronome and M1.4b staff rhythm done, the click pending an owner check by ear; M1.4c tempo mode, M1.4d tiles and M1.5 latency calibration done) | Recorded fixtures with injected errors classified ≥ 95% correctly |
 | M2 | Learner model (skill graph) and spaced-repetition scheduler (FSRS-6) (✅ M2.1 FSRS-6 memory model, M2.2 skill graph, M2.3 learner storage, M2.4 learner model and the M2.5 90-day simulation exit check done) | Matches reference test vectors; simulated learner behaves sensibly |
-| M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2, M3.3 settings, M3.4 Today, M3.5 onboarding and M3.6 update check done) | Used daily for 2 weeks |
+| M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2, M3.3 settings, M3.4 Today, M3.5 onboarding, M3.6 update check and M3.7 release pipeline done; v0.1.0 and the dogfood are the owner's) | Dogfood (`docs/RELEASING.md`): the owner uses the released APK; Today's practice-day line shows 14 practice days within 16, and no open `dogfood` issue is labelled `blocker` |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (specced: #127–#129) | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting (specced: #132–#135) | Unaided pass required before "learned" |
 | M6 | Curriculum units 3–8, sight-reading staircase, placement | Placement reproducible |
