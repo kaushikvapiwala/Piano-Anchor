@@ -18,6 +18,13 @@
     <string name="settings_weekly_goal_fewer_glyph">−</string>
     <string name="settings_weekly_goal_more_glyph">+</string>
     <string name="settings_click">Click in timed runs</string>
+    <string name="settings_strictness">Strictness</string>
+    <string name="settings_strictness_gentle">Gentle</string>
+    <string name="settings_strictness_gentle_note">More room for timing and slips</string>
+    <string name="settings_strictness_standard">Standard</string>
+    <string name="settings_strictness_standard_note">The default</string>
+    <string name="settings_strictness_strict">Strict</string>
+    <string name="settings_strictness_strict_note">Tight timing, few slips</string>
     <string name="settings_update_check">Check for updates</string>
     <string name="settings_update_check_note">Checks GitHub once a day for a new version. Sends nothing about you.</string>
     <string name="settings_error_storage">Couldn't save the settings. Try again.</string>

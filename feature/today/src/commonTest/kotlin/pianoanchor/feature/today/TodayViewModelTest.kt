@@ -99,6 +99,7 @@ class TodayViewModelTest {
         dueDay = dueDay,
         cleanColdChecks = 0,
         recalledColdChecks = 0,
+        unaidedRecalledChecks = 0,
         learned = learned,
     )
 

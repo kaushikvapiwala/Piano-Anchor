@@ -432,6 +432,7 @@ private fun SettingsRoute(onBack: () -> Unit) {
             onDailyBudget = viewModel::setDailyBudget,
             onWeeklyGoalStep = viewModel::changeWeeklyGoalDays,
             onClickOn = viewModel::setClickOn,
+            onStrictness = viewModel::setStrictness,
             onUpdateCheckOn = viewModel::setUpdateCheckOn,
             onDismissError = viewModel::dismissError,
         ),

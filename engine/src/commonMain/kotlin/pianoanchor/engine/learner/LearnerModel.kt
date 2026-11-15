@@ -6,6 +6,7 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.plus
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.MemoryState
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.Rating
 import pianoanchor.core.model.Review
@@ -13,6 +14,7 @@ import pianoanchor.core.model.Skill
 import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.SkillState
 import pianoanchor.core.model.Track
+import pianoanchor.core.model.unaided
 import pianoanchor.core.ports.LearnerRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.scheduler.Fsrs
@@ -33,6 +35,15 @@ public fun Band.toRating(): Rating =
         Band.GOOD -> Rating.HARD
         Band.CLEAN -> Rating.GOOD
     }
+
+/**
+ * The cold-check rating of [attempt]: the band's rating, capped at HARD when the run was aided (a hint was shown) or in
+ * wait mode (no tempo), so a Good rating needs a timed run without help (`docs/algorithms/learner-model.md`).
+ */
+public fun Attempt.rating(): Rating {
+    val rating = band.toRating()
+    return if (rating == Rating.GOOD && (hintShown || tempoBpm == null)) Rating.HARD else rating
+}
 
 /**
  * The learner model: turns saved runs into FSRS reviews of the passage's skills, keeps each skill's state, and
@@ -56,10 +67,13 @@ public class LearnerModel(
     ): List<Review> {
         if (attempt.spot != null) return emptyList()
         val states = repository.states()
-        val rating = attempt.band.toRating()
+        val rating = attempt.rating()
         val recorded = ArrayList<Review>()
         for (skillId in passage.skills.sorted()) {
-            recordColdCheck(states[skillId], Review(skillId, day, rating, attempt.id))?.let { recorded += it }
+            recordColdCheck(states[skillId], Review(skillId, day, rating, attempt.id, attempt.unaided))?.let {
+                recorded +=
+                    it
+            }
         }
         return recorded
     }
@@ -76,7 +90,10 @@ public class LearnerModel(
         attemptId: String,
     ): Review? {
         require(graph.byId(skillId) != null) { "unknown skill to record: $skillId" }
-        return recordColdCheck(repository.states()[skillId], Review(skillId, day, band.toRating(), attemptId))
+        return recordColdCheck(
+            repository.states()[skillId],
+            Review(skillId, day, band.toRating(), attemptId, unaided = true),
+        )
     }
 
     /** Stores [review] unless the skill ([before] is its state) has a review that day already: the first one counts. */
@@ -104,7 +121,7 @@ public class LearnerModel(
         val states = repository.states()
         for (skillId in skills.sorted()) {
             if (skillId in states) continue
-            val review = Review(skillId, day, Rating.GOOD, PLACEMENT_ATTEMPT_ID)
+            val review = Review(skillId, day, Rating.GOOD, PLACEMENT_ATTEMPT_ID, unaided = true)
             repository.record(review, review.applyTo(null))
         }
     }
@@ -200,12 +217,11 @@ public class LearnerModel(
             }
         // A placement is a claim, not a check: it sets learned but is neither a clean nor a recalled cold check.
         val placement = attemptId == PLACEMENT_ATTEMPT_ID
-        val clean = (before?.cleanColdChecks ?: 0) + if (rating == Rating.GOOD && !placement) 1 else 0
-        val recalled = (before?.recalledColdChecks ?: 0) + if (rating == Rating.AGAIN || placement) 0 else 1
-        val stableAndClean =
-            clean >= Tunables.LEARNED_MIN_CLEAN_COLD_CHECKS && memory.stability >= Tunables.LEARNED_MIN_STABILITY_DAYS
-        val mature = memory.stability >= Tunables.LEARNED_MATURE_STABILITY_DAYS
-        val earned = recalled >= Tunables.LEARNED_MIN_RECALLED_COLD_CHECKS && (stableAndClean || mature)
+        val clean = (before?.cleanColdChecks ?: 0) + (rating == Rating.GOOD && !placement).toInt()
+        val recalled = (before?.recalledColdChecks ?: 0) + (rating != Rating.AGAIN && !placement).toInt()
+        val unaided =
+            (before?.unaidedRecalledChecks ?: 0) + (this.unaided && rating != Rating.AGAIN && !placement).toInt()
+        val earned = earnsLearned(memory, clean, recalled, unaided)
         val learned = before?.learned == true || placement || earned
         return SkillState(
             skillId = skillId,
@@ -215,7 +231,25 @@ public class LearnerModel(
             dueDay = day.plus(fsrs.intervalDays(memory), DateTimeUnit.DAY),
             cleanColdChecks = clean,
             recalledColdChecks = recalled,
+            unaidedRecalledChecks = unaided,
             learned = learned,
         )
     }
+
+    /** Whether these counts and [memory] earn learned (`docs/algorithms/learner-model.md`). */
+    private fun earnsLearned(
+        memory: MemoryState,
+        clean: Int,
+        recalled: Int,
+        unaided: Int,
+    ): Boolean {
+        val stableAndClean =
+            clean >= Tunables.LEARNED_MIN_CLEAN_COLD_CHECKS && memory.stability >= Tunables.LEARNED_MIN_STABILITY_DAYS
+        val mature = memory.stability >= Tunables.LEARNED_MATURE_STABILITY_DAYS
+        return recalled >= Tunables.LEARNED_MIN_RECALLED_COLD_CHECKS &&
+            unaided >= Tunables.LEARNED_MIN_UNAIDED_CHECKS &&
+            (stableAndClean || mature)
+    }
 }
+
+private fun Boolean.toInt(): Int = if (this) 1 else 0

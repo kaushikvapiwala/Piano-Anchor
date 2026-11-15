@@ -35,8 +35,13 @@ backwards) also records nothing, because FSRS needs the gap to be at least one d
 
 ## Ratings
 The band of the attempt gives the rating: `KEEP_PRACTISING` is Again, `GOOD` is Hard and `CLEAN` is Good. Easy is
-never produced: it inflates intervals, and motor skills fade less predictably than facts. Tempo-aware ratings wait
-for guidance fading (M5).
+never produced: it inflates intervals, and motor skills fade less predictably than facts. `Attempt.rating()` then caps
+the rating at Hard when the run was aided (a hint was shown) or in wait mode (no tempo), so a Good rating, and with it
+a clean cold check, needs a timed run without help. Ratings are not scaled by tempo: only wait mode is capped.
+Ear sets and placement have no hints, so they are unaided.
+
+A `Review` records whether the check was `unaided`: a perform run with no hint (`Attempt.unaided`), an ear set or a
+placement. The learner's strictness changes the band a run gets when it is played; stored bands are never regraded.
 
 ## State after a review
 - The first review of a skill uses `Fsrs.initial(rating)` and sets `introducedDay`; later ones use
@@ -45,12 +50,15 @@ for guidance fading (M5).
 - `cleanColdChecks` counts Good ratings (clean runs) on distinct days; a lapse does not reset it.
 - `recalledColdChecks` counts Hard and Good ratings (recalled runs, clean or with small slips) the same way; Again
   adds nothing, a lapse does not reset it, and it is never below `cleanColdChecks`.
+- `unaidedRecalledChecks` counts Hard and Good ratings of unaided reviews on distinct days; a placement review adds
+  nothing, and it is never above `recalledColdChecks`.
 - `learned` becomes true once there are `LEARNED_MIN_RECALLED_COLD_CHECKS` recalled cold checks, at least
+  `LEARNED_MIN_UNAIDED_CHECKS` of them unaided (the M5 exit check: one pass without help shows the skill holds), at least
   `LEARNED_MIN_CLEAN_COLD_CHECKS` of them clean, and the stability is at least `LEARNED_MIN_STABILITY_DAYS`; or
   once there are that many recalled cold checks, clean or not, and the stability is at least
   `LEARNED_MATURE_STABILITY_DAYS` (Anki's "mature" bar). A skill that is recalled every time with small slips
   therefore can't stall its dependants for good: the 90-day simulation found a skill recalled seven times, never
-  clean, that locked a third of the graph. It is sticky: a learned skill stays learned (it keeps unlocking its
+  clean, that locked a third of the graph. The unaided check can also be the clean one. It is sticky: a learned skill stays learned (it keeps unlocking its
   dependants), and a lapse only makes it due sooner, through FSRS.
 
 ## The daily plan
@@ -84,6 +92,12 @@ state is `learned = true`. A placement review is a claim, not a check: it adds n
 already have a state are left alone, and a skill outside the graph is rejected. Placed skills come back for review at
 their first interval and confirm themselves there. A placed state (learned, no recalled check) does not use up the day's
 `MAX_NEW_PER_DAY` slots, so the first day still offers new lessons.
+
+## Existing progress
+The migration to schema 10 marks every stored review `unaided` (they predate fading hints, and marking them aided would
+lock skills the learner has earned) and gives each state an `unaidedRecalledChecks` equal to its `recalledColdChecks`,
+so `replay` keeps those skills learned and earlier checks count. Placed skills stay learned: their recalled count is 0.
+Already-learned skills are not re-checked.
 
 ## When storage fails
 `PracticeViewModel` calls `record` after the attempt is saved. If learner storage is unavailable the run is

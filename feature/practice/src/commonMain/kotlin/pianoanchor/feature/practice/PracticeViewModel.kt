@@ -34,6 +34,8 @@ import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.Strictness
+import pianoanchor.core.model.StrictnessProfile
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.CalibrationRepositoryPort
@@ -55,6 +57,7 @@ import pianoanchor.engine.matcher.TempoJudge
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.matcher.WaitModeMatcher
 import pianoanchor.engine.matcher.beatNanos
+import pianoanchor.engine.profile
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
@@ -117,6 +120,9 @@ public class PracticeViewModel(
     /** The key-hint level of the run in progress and the delay of its Delayed hints (read when the run starts). */
     private var hintLevel = HintLevel.FULL
     private var hintDelayMillis = Tunables.HINT_DELAY_DEFAULT_MS
+
+    /** The strictness profile runs are judged and graded with, read from the settings when the screen opens. */
+    private var strictness: StrictnessProfile = Strictness.STANDARD.profile()
 
     /** Whether any hint showed in the run in progress: FULL, a Delayed hint that fired, or the Hint button. */
     private var hintShown = true
@@ -263,20 +269,21 @@ public class PracticeViewModel(
     }
 
     /**
-     * Takes the stored click choice as the starting one, unless the learner toggled the click before it was read; a
-     * store that can't be read leaves the default.
+     * Takes the stored click choice as the starting one, unless the learner toggled the click before it was read, and
+     * the stored strictness for the runs; a store that can't be read leaves the defaults.
      */
     private suspend fun seedClickOn() {
         val stored =
             try {
-                settings.settings.first().clickOn
+                settings.settings.first()
             } catch (_: StorageUnavailableException) {
                 return
             }
+        strictness = stored.strictness.profile()
         if (clickToggled) return
-        mutableState.update { it.copy(clickOn = stored) }
+        mutableState.update { it.copy(clickOn = stored.clickOn) }
         // A timed run that started before the read returned began clicking on the default: silence it.
-        if (!stored && pattern != null) metronome.stop()
+        if (!stored.clickOn && pattern != null) metronome.stop()
     }
 
     /**
@@ -350,6 +357,7 @@ public class PracticeViewModel(
                 bpm = bpm,
                 notes = timed.notes(),
                 latencyOffsetNanos = offsetNanos,
+                strictness = strictness,
             ),
         )
     }
@@ -492,6 +500,7 @@ public class PracticeViewModel(
                     startedAtNanos = checkNotNull(match.startedAtNanos),
                     events = events,
                     playedNotes = PlayedNotes.from(midi, endNanos),
+                    strictness = strictness,
                 ),
             )
         }
@@ -649,7 +658,7 @@ public class PracticeViewModel(
             startedAt = clock.now()
             firstBeatNanos = time.nowNanos() + Tunables.TEMPO_COUNT_IN_LEAD_MS.milliseconds.inWholeNanoseconds
             startNanos = firstBeatNanos + beatsPerBar * beatNanos
-            val timing = TempoJudge(passage, bpm, startNanos, latencyOffsetNanos ?: 0)
+            val timing = TempoJudge(passage, bpm, startNanos, latencyOffsetNanos ?: 0, strictness)
             judge = timing
             endNanos = timing.endNanos + (latencyOffsetNanos ?: 0).coerceAtLeast(0)
             mutableState.update { it.copy(keysDown = it.keysDown + starter.note) }

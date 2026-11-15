@@ -158,4 +158,35 @@ class DesktopDatabaseDriverTest {
             assertEquals(1, driver.count("skill_state"))
         }
     }
+
+    @Test
+    fun migration9To10MarksOldReviewsUnaidedAndBackfillsTheUnaidedRecalledChecks() =
+        runTest {
+            file.parentFile.mkdirs()
+            // The committed version-9 schema file, with reviews and states written the way version 9 did.
+            File("src/commonMain/sqldelight/databases/9.db").copyTo(file)
+            JdbcSqliteDriver("jdbc:sqlite:${file.path}").use { old ->
+                old.exec("PRAGMA user_version = 9")
+                old.exec("INSERT INTO review VALUES ('pitch:c4', '2026-11-01', 'HARD', 'a-1')")
+                old.exec("INSERT INTO review VALUES ('pitch:d4', '2026-11-01', 'GOOD', 'placement')")
+                old.exec(
+                    "INSERT INTO skill_state VALUES " +
+                        "('pitch:c4', 3.5, 6.25, '2026-11-01', '2026-11-03', '2026-11-10', 1, 0, 3)",
+                )
+                old.exec(
+                    "INSERT INTO skill_state VALUES " +
+                        "('pitch:d4', 3.5, 6.25, '2026-11-01', '2026-11-01', '2026-11-10', 0, 1, 0)",
+                )
+            }
+
+            createPianoAnchorDatabaseDriver(file).use { driver ->
+                val repository = SqlLearnerRepositoryAdapter(driver, Dispatchers.Unconfined)
+                assertEquals(true, repository.reviews("pitch:c4").single().unaided)
+                val states = repository.states()
+                assertEquals(3, states.getValue("pitch:c4").unaidedRecalledChecks)
+                assertEquals(false, states.getValue("pitch:c4").learned)
+                assertEquals(0, states.getValue("pitch:d4").unaidedRecalledChecks)
+                assertEquals(true, states.getValue("pitch:d4").learned)
+            }
+        }
 }

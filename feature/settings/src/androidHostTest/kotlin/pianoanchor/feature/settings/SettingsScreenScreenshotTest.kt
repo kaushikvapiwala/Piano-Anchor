@@ -8,6 +8,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.Settings
+import pianoanchor.core.model.Strictness
 import pianoanchor.ui.shell.PianoAnchorTheme
 
 /**
@@ -38,7 +39,13 @@ class SettingsScreenScreenshotTest {
         capture(
             "changed",
             SettingsState(
-                Settings(DailyBudget.MIN_30, weeklyGoalDays = 7, clickOn = false, updateCheckOn = false),
+                Settings(
+                    DailyBudget.MIN_30,
+                    weeklyGoalDays = 7,
+                    clickOn = false,
+                    updateCheckOn = false,
+                    strictness = Strictness.STRICT,
+                ),
             ),
         )
 

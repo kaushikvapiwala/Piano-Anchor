@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.Settings
+import pianoanchor.core.model.Strictness
 import pianoanchor.testing.FakeSettingsRepository
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -100,6 +101,19 @@ class SettingsViewModelTest {
 
             assertFalse(repository.settings.first().clickOn)
             assertFalse(vm.state.value.settings.clickOn)
+        }
+
+    @Test
+    fun strictnessIsSavedAndReadBack() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            assertEquals(Strictness.STANDARD, vm.state.value.settings.strictness)
+
+            vm.setStrictness(Strictness.GENTLE)
+            runCurrent()
+
+            assertEquals(Strictness.GENTLE, repository.settings.first().strictness)
+            assertEquals(Strictness.GENTLE, vm.state.value.settings.strictness)
         }
 
     @Test

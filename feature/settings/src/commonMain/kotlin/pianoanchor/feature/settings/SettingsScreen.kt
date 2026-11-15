@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
@@ -17,6 +19,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -36,6 +39,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WEEKLY_GOAL_DAYS_RANGE
 import pianoanchor.feature.settings.resources.Res
 import pianoanchor.feature.settings.resources.settings_action_dismiss
@@ -49,6 +53,13 @@ import pianoanchor.feature.settings.resources.settings_error_storage
 import pianoanchor.feature.settings.resources.settings_group_playing
 import pianoanchor.feature.settings.resources.settings_group_practice
 import pianoanchor.feature.settings.resources.settings_group_updates
+import pianoanchor.feature.settings.resources.settings_strictness
+import pianoanchor.feature.settings.resources.settings_strictness_gentle
+import pianoanchor.feature.settings.resources.settings_strictness_gentle_note
+import pianoanchor.feature.settings.resources.settings_strictness_standard
+import pianoanchor.feature.settings.resources.settings_strictness_standard_note
+import pianoanchor.feature.settings.resources.settings_strictness_strict
+import pianoanchor.feature.settings.resources.settings_strictness_strict_note
 import pianoanchor.feature.settings.resources.settings_title
 import pianoanchor.feature.settings.resources.settings_update_check
 import pianoanchor.feature.settings.resources.settings_update_check_note
@@ -61,7 +72,7 @@ import pianoanchor.feature.settings.resources.settings_weekly_goal_more_glyph
 
 private val TouchTarget = 44.dp
 
-/** The settings: grouped rows for the daily budget, weekly goal, click and update check. Stateless. */
+/** The settings: grouped rows for the daily budget, weekly goal, click, strictness and update check. Stateless. */
 @Composable
 public fun SettingsScreen(
     state: SettingsState,
@@ -82,6 +93,8 @@ public fun SettingsScreen(
                 WeeklyGoalRow(state.settings.weeklyGoalDays, actions.onWeeklyGoalStep)
                 GroupTitle(Res.string.settings_group_playing)
                 SwitchRow(Res.string.settings_click, null, state.settings.clickOn, actions.onClickOn)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                StrictnessRows(state.settings.strictness, actions.onStrictness)
                 GroupTitle(Res.string.settings_group_updates)
                 SwitchRow(
                     Res.string.settings_update_check,
@@ -224,6 +237,57 @@ private fun SwitchRow(
             }
         }
         Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
+/** The strictness choice: one selectable row per preset with its one-line description. */
+@Composable
+private fun StrictnessRows(
+    selected: Strictness,
+    onSelect: (Strictness) -> Unit,
+) {
+    Column(modifier = Modifier.selectableGroup().padding(vertical = 4.dp)) {
+        Text(stringResource(Res.string.settings_strictness), style = MaterialTheme.typography.bodyLarge)
+        Strictness.entries.forEach { strictness ->
+            val (title, note) =
+                when (strictness) {
+                    Strictness.GENTLE -> {
+                        Res.string.settings_strictness_gentle to
+                            Res.string.settings_strictness_gentle_note
+                    }
+
+                    Strictness.STANDARD -> {
+                        Res.string.settings_strictness_standard to Res.string.settings_strictness_standard_note
+                    }
+
+                    Strictness.STRICT -> {
+                        Res.string.settings_strictness_strict to
+                            Res.string.settings_strictness_strict_note
+                    }
+                }
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = TouchTarget)
+                        .selectable(
+                            selected = strictness == selected,
+                            onClick = { onSelect(strictness) },
+                            role = Role.RadioButton,
+                        ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = strictness == selected, onClick = null)
+                Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
+                    Text(stringResource(title), style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        stringResource(note),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }
 

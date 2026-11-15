@@ -3,6 +3,8 @@ package pianoanchor.engine.matcher
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.ScoreNoteRef
+import pianoanchor.core.model.Strictness
+import pianoanchor.engine.profile
 import pianoanchor.testing.passageOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -102,5 +104,27 @@ class TempoJudgeTest {
         // A negative offset moves the other way.
         val early = TempoJudge(passage, bpm = 60, startNanos = start, latencyOffsetNanos = -300 * ms)
         assertEquals(LiveVerdict.TimingOff(ScoreNoteRef(0, c4), 400), early.onNoteOn(on(c4, 100)))
+    }
+
+    @Test
+    fun theSameNoteGetsADifferentVerdictPerStrictness() {
+        // 60 BPM: Gentle's band is 187.5 ms, Standard's 125 ms, Strict's 83 ms. A note 100 ms and one 150 ms late.
+        fun verdict(
+            strictness: Strictness,
+            lateMs: Long,
+        ) = TempoJudge(passage, bpm = 60, startNanos = start, strictness = strictness.profile())
+            .onNoteOn(on(d4, 1_000 + lateMs))
+
+        val onTime = LiveVerdict.Correct(ScoreNoteRef(1, d4))
+        assertEquals(onTime, verdict(Strictness.GENTLE, 150))
+        assertEquals(LiveVerdict.TimingOff(ScoreNoteRef(1, d4), 150), verdict(Strictness.STANDARD, 150))
+        assertEquals(onTime, verdict(Strictness.STANDARD, 100))
+        assertEquals(LiveVerdict.TimingOff(ScoreNoteRef(1, d4), 100), verdict(Strictness.STRICT, 100))
+    }
+
+    @Test
+    fun theDefaultStrictnessIsStandard() {
+        val standard = TempoJudge(passage, 60, start, strictness = Strictness.STANDARD.profile())
+        assertEquals(standard.onNoteOn(on(d4, 1_150)), judge.onNoteOn(on(d4, 1_150)))
     }
 }

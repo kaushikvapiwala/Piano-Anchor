@@ -3,6 +3,8 @@ package pianoanchor.engine.grading
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PlayedNote
+import pianoanchor.core.model.Strictness
+import pianoanchor.engine.profile
 import pianoanchor.testing.passageOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -143,5 +145,42 @@ class GraderTimedTest {
         assertEquals(Band.CLEAN, calibrated.band)
         assertEquals(150 * ms, calibrated.latencyOffsetNanos)
         assertEquals(late, calibrated.playedNotes)
+    }
+
+    @Test
+    fun theSameTakeIsJudgedByTheStrictnessInForce() {
+        // The last key is 100 ms late: beyond Strict's 83 ms band, inside Standard's 125 ms and Gentle's 187 ms.
+        val slightlyLate = listOf(note(c4, 0), note(d4, 1_000), note(e4, 2_100))
+        // 150 ms late: beyond Standard's band too.
+        val late = listOf(note(c4, 0), note(d4, 1_000), note(e4, 2_150))
+
+        fun band(
+            notes: List<PlayedNote>,
+            strictness: Strictness,
+        ) = Grader.timedAttempt("a-1", passage, "usb-1", startedAt, 60, notes, strictness = strictness.profile()).band
+
+        assertEquals(Band.CLEAN, band(slightlyLate, Strictness.GENTLE))
+        assertEquals(Band.CLEAN, band(slightlyLate, Strictness.STANDARD))
+        assertEquals(Band.KEEP_PRACTISING, band(slightlyLate, Strictness.STRICT))
+        assertEquals(Band.CLEAN, band(late, Strictness.GENTLE))
+        assertEquals(Band.KEEP_PRACTISING, band(late, Strictness.STANDARD))
+    }
+
+    @Test
+    fun theDefaultStrictnessIsStandard() {
+        val late = listOf(note(c4, 0), note(d4, 1_000), note(e4, 2_150))
+
+        assertEquals(
+            Grader.timedAttempt(
+                "a-1",
+                passage,
+                "usb-1",
+                startedAt,
+                60,
+                late,
+                strictness = Strictness.STANDARD.profile(),
+            ),
+            Grader.timedAttempt("a-1", passage, "usb-1", startedAt, 60, late),
+        )
     }
 }

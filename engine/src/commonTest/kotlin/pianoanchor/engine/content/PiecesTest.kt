@@ -22,6 +22,7 @@ class PiecesTest {
             dueDay = day,
             cleanColdChecks = 0,
             recalledColdChecks = 0,
+            unaidedRecalledChecks = 0,
             learned = true,
         )
 

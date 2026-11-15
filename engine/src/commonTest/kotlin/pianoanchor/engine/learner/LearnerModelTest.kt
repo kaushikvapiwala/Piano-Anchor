@@ -10,6 +10,7 @@ import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.Rating
+import pianoanchor.core.model.RunMode
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.scheduler.Fsrs
 import pianoanchor.engine.scheduler.FsrsParameters
@@ -41,28 +42,35 @@ class LearnerModelTest {
 
     private fun passage(vararg skills: String): Passage = passageOf(setOf(MidiNote(60)), skills = skills.toSet())
 
-    private fun attempt(band: Band) =
-        Attempt(
-            id = "attempt-${++attempts}",
-            passageId = "test:passage",
-            deviceId = "usb-1",
-            startedAt = Instant.parse("2026-11-01T10:00:00Z"),
-            durationNanos = 1,
-            stepCount = 1,
-            wrongNotes = 0,
-            incompleteChords = 0,
-            accuracy = 1.0,
-            band = band,
-            events = emptyList(),
-            tempoBpm = null,
-            playedNotes = emptyList(),
-        )
+    /** A run of [band]: by default an unaided perform run at 60 BPM, so a clean one rates Good. */
+    private fun attempt(
+        band: Band,
+        unaided: Boolean = true,
+        timed: Boolean = true,
+    ) = Attempt(
+        id = "attempt-${++attempts}",
+        passageId = "test:passage",
+        deviceId = "usb-1",
+        startedAt = Instant.parse("2026-11-01T10:00:00Z"),
+        durationNanos = 1,
+        stepCount = 1,
+        wrongNotes = 0,
+        incompleteChords = 0,
+        accuracy = 1.0,
+        band = band,
+        events = emptyList(),
+        tempoBpm = if (timed) 60 else null,
+        playedNotes = emptyList(),
+        hintShown = !unaided,
+        mode = if (unaided) RunMode.PERFORM else RunMode.PRACTICE,
+    )
 
     private suspend fun check(
         skill: String,
         offset: Int,
         band: Band = Band.CLEAN,
-    ) = model.record(passage(skill), attempt(band), day(offset))
+        unaided: Boolean = true,
+    ) = model.record(passage(skill), attempt(band, unaided), day(offset))
 
     private suspend fun state(skill: String) = repository.states().getValue(skill)
 
@@ -191,6 +199,78 @@ class LearnerModelTest {
             assertEquals(1, s.cleanColdChecks)
             assertTrue(s.memory.stability >= Tunables.LEARNED_MIN_STABILITY_DAYS)
             assertTrue(s.learned)
+        }
+
+    @Test
+    fun `two aided clean checks with stability met are not learned without an unaided check`() =
+        runTest {
+            check("a", 0, unaided = false)
+            check("a", 3, unaided = false)
+
+            val s = state("a")
+            assertEquals(2, s.recalledColdChecks)
+            assertEquals(0, s.unaidedRecalledChecks)
+            assertTrue(s.memory.stability >= Tunables.LEARNED_MIN_STABILITY_DAYS)
+            assertFalse(s.learned)
+        }
+
+    @Test
+    fun `an aided check is rated hard so it is never a clean check`() =
+        runTest {
+            check("a", 0, unaided = false)
+
+            assertEquals(Rating.HARD, repository.reviews("a").single().rating)
+            assertFalse(repository.reviews("a").single().unaided)
+            assertEquals(0, state("a").cleanColdChecks)
+        }
+
+    @Test
+    fun `learned after one unaided recalled check`() =
+        runTest {
+            check("a", 0, unaided = false)
+            check("a", 3, unaided = false)
+            assertFalse(state("a").learned)
+
+            check("a", 6)
+
+            val s = state("a")
+            assertEquals(1, s.unaidedRecalledChecks)
+            assertTrue(s.learned)
+        }
+
+    @Test
+    fun `the unaided check can be the clean one`() =
+        runTest {
+            check("a", 0, Band.GOOD, unaided = false)
+            check("a", 3)
+
+            val s = state("a")
+            assertEquals(1, s.cleanColdChecks)
+            assertEquals(1, s.unaidedRecalledChecks)
+            assertTrue(s.learned)
+        }
+
+    @Test
+    fun `an unaided lapse is not an unaided recalled check`() =
+        runTest {
+            check("a", 0, Band.KEEP_PRACTISING)
+
+            assertEquals(0, state("a").unaidedRecalledChecks)
+        }
+
+    @Test
+    fun `learned stays learned and replay keeps pre-migration reviews that count as unaided`() =
+        runTest {
+            check("a", 0)
+            check("a", 3)
+            model.place(setOf("d"), day(0))
+            val before = repository.states()
+            assertTrue(before.getValue("a").learned)
+            assertTrue(before.getValue("d").learned)
+
+            model.replay()
+
+            assertEquals(before, repository.states())
         }
 
     @Test

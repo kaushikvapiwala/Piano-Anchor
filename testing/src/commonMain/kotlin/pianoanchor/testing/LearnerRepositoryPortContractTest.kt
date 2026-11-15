@@ -19,6 +19,7 @@ private const val DIFFICULTY = 6.25
 private const val LATER_STABILITY = 8.0
 private const val CLEAN_CHECKS = 2
 private const val RECALLED_CHECKS = 3
+private const val UNAIDED_RECALLED_CHECKS = 1
 
 private val FIRST_DAY = LocalDate(2026, 11, 1)
 private val SECOND_DAY = LocalDate(2026, 11, 3)
@@ -30,7 +31,8 @@ internal fun review(
     day: LocalDate = FIRST_DAY,
     rating: Rating = Rating.GOOD,
     attemptId: String = "a-${day.toEpochDays()}",
-): Review = Review(skillId, day, rating, attemptId)
+    unaided: Boolean = true,
+): Review = Review(skillId, day, rating, attemptId, unaided)
 
 /** A cached state of [skillId] with distinguishable values. */
 internal fun skillState(
@@ -47,6 +49,7 @@ internal fun skillState(
         dueDay = THIRD_DAY,
         cleanColdChecks = CLEAN_CHECKS,
         recalledColdChecks = RECALLED_CHECKS,
+        unaidedRecalledChecks = UNAIDED_RECALLED_CHECKS,
         learned = learned,
     )
 
@@ -75,6 +78,18 @@ abstract class LearnerRepositoryPortContractTest {
             )
             assertEquals(listOf(review()), repository.reviews(SKILL))
             assertEquals(listOf(review(OTHER_SKILL, rating = Rating.AGAIN)), repository.reviews(OTHER_SKILL))
+        }
+
+    @Test
+    fun theUnaidedFlagOfAReviewRoundTrips() =
+        runTest {
+            val repository = createSubject()
+            repository.record(review(unaided = false), skillState())
+            repository.record(review(OTHER_SKILL, unaided = true), skillState(OTHER_SKILL))
+
+            assertEquals(listOf(review(unaided = false)), repository.reviews(SKILL))
+            assertEquals(listOf(review(OTHER_SKILL, unaided = true)), repository.reviews(OTHER_SKILL))
+            assertEquals(UNAIDED_RECALLED_CHECKS, repository.states().getValue(SKILL).unaidedRecalledChecks)
         }
 
     @Test

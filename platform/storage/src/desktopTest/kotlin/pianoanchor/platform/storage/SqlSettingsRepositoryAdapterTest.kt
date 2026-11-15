@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.runTest
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.Strictness
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.testing.SettingsRepositoryPortContractTest
 import kotlin.test.AfterTest
@@ -36,7 +37,7 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             repository.update { it.copy(dailyBudget = DailyBudget.MIN_15) }
 
             assertEquals(Settings(DailyBudget.MIN_15, updateCheckOn = false), repository.settings.first())
-            assertEquals(8, driver.count("setting"))
+            assertEquals(9, driver.count("setting"))
         }
 
     @Test
@@ -52,6 +53,17 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
                 driver.exec("UPDATE setting SET text_value = '$unreadable' WHERE key = 'latest_release'")
                 assertEquals(Settings(), SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first())
             }
+        }
+
+    @Test
+    fun anUnknownStoredStrictnessFallsBackToStandard() =
+        runTest {
+            val driver = drivers.open()
+            driver.exec("INSERT INTO setting VALUES ('strictness', 'RELAXED')")
+
+            val stored = SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first()
+
+            assertEquals(Strictness.STANDARD, stored.strictness)
         }
 
     @Test

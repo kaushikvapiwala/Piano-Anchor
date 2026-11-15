@@ -13,6 +13,7 @@ import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.Settings
+import pianoanchor.core.model.Strictness
 import pianoanchor.core.ports.SettingsRepositoryPort
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -55,6 +56,17 @@ abstract class SettingsRepositoryPortContractTest {
             assertEquals(expected, repository.settings.first())
             repository.update { it.copy(updateCheckOn = false) }
             assertEquals(expected.copy(updateCheckOn = false), repository.settings.first())
+        }
+
+    @Test
+    fun strictnessIsSavedAndReadBack() =
+        runTest {
+            val repository = createSubject()
+            assertEquals(Strictness.STANDARD, repository.settings.first().strictness)
+            repository.update { it.copy(strictness = Strictness.STRICT) }
+            assertEquals(Strictness.STRICT, repository.settings.first().strictness)
+            repository.update { it.copy(strictness = Strictness.GENTLE) }
+            assertEquals(Strictness.GENTLE, repository.settings.first().strictness)
         }
 
     @Test

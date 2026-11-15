@@ -11,6 +11,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class LearnerRecordSkillTest {
     private val repository = FakeLearnerRepository()
@@ -23,6 +24,8 @@ class LearnerRecordSkillTest {
             val review = assertNotNull(model.recordSkill("ear-echo-note", Band.GOOD, monday, "ear:1"))
             assertEquals(Rating.HARD, review.rating)
             assertEquals("ear:1", review.attemptId)
+            assertTrue(review.unaided)
+            assertEquals(1, repository.states().getValue("ear-echo-note").unaidedRecalledChecks)
             assertEquals(monday, repository.states().getValue("ear-echo-note").lastReviewDay)
         }
 

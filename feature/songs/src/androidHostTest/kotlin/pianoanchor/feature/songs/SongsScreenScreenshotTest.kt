@@ -45,6 +45,7 @@ class SongsScreenScreenshotTest {
             dueDay = LocalDate(2026, 11, 20),
             cleanColdChecks = 0,
             recalledColdChecks = 0,
+            unaidedRecalledChecks = 0,
             learned = true,
         )
 
