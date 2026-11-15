@@ -25,33 +25,25 @@ public class SqlInstrumentRepositoryAdapter(
         withContext(dispatcher) {
             storage("upsert") {
                 val identity = instrument.identity
-                val mfrId = identity?.let { it.manufacturerId.toHex() }
-                val version = identity?.let { it.version.toHex() }
-                val firstSeenMs = instrument.firstSeen.toEpochMilliseconds()
-                val lastSeenMs = instrument.lastSeen.toEpochMilliseconds()
-                if (isStableDeviceId(instrument.deviceId)) {
-                    queries.upsert(
-                        instrument.deviceId,
-                        instrument.name,
-                        mfrId,
-                        identity?.family?.toLong(),
-                        identity?.model?.toLong(),
-                        version,
-                        firstSeenMs,
-                        lastSeenMs,
-                    )
-                } else {
-                    queries.upsertReplacingIdentity(
-                        instrument.deviceId,
-                        instrument.name,
-                        mfrId,
-                        identity?.family?.toLong(),
-                        identity?.model?.toLong(),
-                        version,
-                        firstSeenMs,
-                        lastSeenMs,
-                    )
-                }
+                val upsert =
+                    if (isStableDeviceId(
+                            instrument.deviceId,
+                        )
+                    ) {
+                        queries::upsert
+                    } else {
+                        queries::upsertReplacingIdentity
+                    }
+                upsert(
+                    instrument.deviceId,
+                    instrument.name,
+                    identity?.let { it.manufacturerId.toHex() },
+                    identity?.family?.toLong(),
+                    identity?.model?.toLong(),
+                    identity?.let { it.version.toHex() },
+                    instrument.firstSeen.toEpochMilliseconds(),
+                    instrument.lastSeen.toEpochMilliseconds(),
+                )
             }
         }
 
