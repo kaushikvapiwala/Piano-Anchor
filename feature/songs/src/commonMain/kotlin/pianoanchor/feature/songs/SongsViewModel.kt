@@ -17,7 +17,7 @@ import pianoanchor.engine.content.PieceStatus
 import pianoanchor.engine.content.PieceView
 import pianoanchor.engine.content.Pieces
 import pianoanchor.engine.matcher.TempoRung
-import pianoanchor.engine.session.PassageHistory
+import pianoanchor.engine.session.passageHistories
 
 /**
  * Songs: lists every piece of the curriculum with its status and tempo-ladder progress, from the skill states in
@@ -66,17 +66,7 @@ public class SongsViewModel(
         try {
             val states = learner.states()
             val history =
-                Curriculum.units
-                    .flatMap { it.passages }
-                    .filter { it.piece }
-                    .associate {
-                        it.id to
-                            PassageHistory(
-                                attempts.lastPlayed(it.id),
-                                attempts.cleanTempos(it.id),
-                                attempts.hasCleanWaitRun(it.id),
-                            )
-                    }
+                attempts.passageHistories(Curriculum.units.flatMap { it.passages }.filter { it.piece })
             val pieces = Pieces.list(Curriculum, Curriculum.graph, states, history)
             mutableState.update { it.copy(pieces = pieces, storageFailed = false) }
         } catch (_: StorageUnavailableException) {
