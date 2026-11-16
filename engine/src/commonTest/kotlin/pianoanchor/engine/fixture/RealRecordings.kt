@@ -1,0 +1,22 @@
+package pianoanchor.engine.fixture
+
+/**
+ * `fixtures/cde-frp-nuvola-ble.jsonl`, copied verbatim (common tests can't read files): the owner playing C-D-E twice
+ * on an FRP-NUVOLA EX over BLE, exported from the note monitor on 2026-11-16. Each key is held about 0.3 s.
+ */
+internal val CDE_FRP_NUVOLA_BLE: String =
+    """
+    {"schema":1,"device":"FRP-NUVOLA EX MIDI","recordedAt":"2026-11-16T02:56:09Z","clock":"monotonic-ns"}
+    {"t":0,"bytes":"903c20"}
+    {"t":344872262,"bytes":"803c58"}
+    {"t":673134445,"bytes":"903e28"}
+    {"t":985765248,"bytes":"803e7f"}
+    {"t":1375765248,"bytes":"904046"}
+    {"t":1695240344,"bytes":"804058"}
+    {"t":6535240344,"bytes":"903c3f"}
+    {"t":6800240344,"bytes":"803c58"}
+    {"t":7185240344,"bytes":"903e24"}
+    {"t":7480228931,"bytes":"803e6d"}
+    {"t":7845228931,"bytes":"904036"}
+    {"t":8155228931,"bytes":"80407f"}
+    """.trimIndent() + "\n"
