@@ -11,6 +11,7 @@ import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.WrongNote
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.fixture.CDE_FRP_NUVOLA_BLE
 import pianoanchor.engine.fixture.FixtureCodec
 import pianoanchor.engine.midi.MidiParser
 import kotlin.test.Test
@@ -88,6 +89,23 @@ class MatchWaitModeFlowTest {
                     StepCorrect(500 * MS, 1),
                     StepCorrect(900 * MS, 2),
                     PassageComplete(900 * MS, 2),
+                ),
+                midi.asFlow().matchWaitMode(Passages.CDE).toList(),
+            )
+        }
+
+    @Test
+    fun realRecordingCompletesOnTheFirstTake() =
+        runTest {
+            val parser = MidiParser()
+            val midi = FixtureCodec.decode(CDE_FRP_NUVOLA_BLE).messages.flatMap { parser.feed(it.bytes, it.t) }
+
+            assertEquals(
+                listOf(
+                    StepCorrect(0, 0),
+                    StepCorrect(673_134_445, 1),
+                    StepCorrect(1_375_765_248, 2),
+                    PassageComplete(1_375_765_248, 2),
                 ),
                 midi.asFlow().matchWaitMode(Passages.CDE).toList(),
             )
