@@ -382,7 +382,8 @@ private fun ResultsRoute(
 /**
  * The first-launch onboarding. Its ViewModel lives as long as the route. The calibration step hosts the calibration
  * screen on the connected piano (the onboarding has closed it first); Done or leaving it moves on, after closing the
- * piano again. Leaving for the piano list closes the piano too (one reader per input).
+ * piano again. Leaving for the piano list closes the piano too (one reader per input) and leaves the Bluetooth pianos
+ * the search connected connected, so the list shows them without a new scan.
  */
 @Composable
 private fun OnboardingRoute(
@@ -402,7 +403,7 @@ private fun OnboardingRoute(
     OnboardingScreen(
         state,
         OnboardingActions(
-            onOpenPianoList = { scope.launch { viewModel.close() }.invokeOnCompletion { onPianos() } },
+            onOpenPianoList = { scope.launch { viewModel.handOverToPianoList() }.invokeOnCompletion { onPianos() } },
             onReplay = viewModel::replay,
             onContinue = viewModel::continueToCalibration,
             onStart = viewModel::start,
@@ -592,6 +593,7 @@ private fun MonitorRoute(
                 },
                 onEnableBluetooth = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
                 onDismissError = viewModel::dismissError,
+                onBack = { scope.handOverPiano(viewModel, onBack) },
                 // An input has one reader: the next screen opens the piano once the monitor has closed it.
                 onPractice = onPractice?.let { go -> { device -> scope.handOverPiano(viewModel) { go(device) } } },
                 onCalibrate = onCalibrate?.let { go -> { device -> scope.handOverPiano(viewModel) { go(device) } } },

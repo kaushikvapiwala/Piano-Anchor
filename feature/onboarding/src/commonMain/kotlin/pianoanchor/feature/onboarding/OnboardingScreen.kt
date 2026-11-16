@@ -167,7 +167,7 @@ private fun Connect(
     actions: OnboardingActions,
 ) {
     Title(Res.string.onboarding_connect_title)
-    ConnectionLine(state.device)
+    ConnectionLine(state.device ?: state.listed)
     if (state.pianoListHint) {
         TextButton(onClick = actions.onOpenPianoList, modifier = Modifier.heightIn(min = TouchTarget)) {
             Text(stringResource(Res.string.onboarding_connect_not_found))
