@@ -40,10 +40,10 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Automatic link latency** [#172] (owner's hardware check; ADR 0025): timed runs measure the piano's link delay with
+1. **Automatic link latency** (spec #172; owner's hardware check; ADR 0025): timed runs measure the piano's link delay with
     Identity Request round trips; calibration leaves the onboarding and the first-run card; tap calibration becomes
     the optional "Fine-tune timing" with a 45 ms spread limit.
-2. **Song card picks unlocked pieces** (follow-up of #129; needs an owner decision): Today's song card still picks any
+2. **Song card picks unlocked pieces** (spec #176; follow-up of #129): Today's song card still picks any
     passage of the newest unit with a learned skill, so it can offer a chord exercise, or a piece that Songs shows
     as locked; decide whether it should pick only unlocked pieces (as `Pieces.list` judges them).
 3. **M4 cleanup** (end of M4; mechanical): run `/simplify` on the whole M4 diff (#151–#153 and the contribute-a-piano kit) as
@@ -51,10 +51,10 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 4. **No hint flash before the level loads** (follow-up of #132; mechanical): `PracticeViewModel` shows the band
     (FULL) until the passage's attempts are read, so a DELAYED or OFF run can flash it for a moment on a slow store;
     hide the keys' band until `loadHints` finishes.
-5. **Perform cursor colour** (follow-up of #133; needs an owner decision): a perform take still draws the staff's
+5. **Perform cursor colour** (spec #177; follow-up of #133): a perform take still draws the staff's
     waiting note in the amber "waiting" colour, which marks the step the matcher waits for; decide whether perform
     should draw it neutrally like the keys.
-6. **Spot-loop hints and clean offers** (follow-up of #134; needs an owner decision): a spot loop always runs at the
+6. **Spot-loop hints and clean offers** (spec #178; follow-up of #134): a spot loop always runs at the
     FULL hint level (its attempts sit under the slice's id, and `HintFading` skips them), and Results offer a loop
     after a CLEAN timed run whenever the analyser found any timing finding; decide whether loops should use the
     passage's level and whether CLEAN runs should offer a loop at all.
@@ -74,7 +74,7 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 12. **Landscape everywhere** (owner decision 2026-11-15; needs a spec): the app runs in landscape only, like practice
     already does (the phone sits on the music rest). Today, Songs, Settings, the onboarding, Pianos and Ear need
     landscape layouts in `docs/ui/living-studio.md`, then the code and screenshot goldens.
-13. **Ride out brief Bluetooth drops** (owner's hardware check; needs a spec): Android's Bluetooth MIDI link to some
+13. **Ride out brief Bluetooth drops** (spec #180; owner's hardware check): Android's Bluetooth MIDI link to some
     pianos times out about 2 s after Android tightens the connection interval, and the adapter reopens it within
     seconds. The onboarding's connect line waits `Tunables.ONBOARDING_LISTED_GRACE_MS` before saying a piano is
     gone, but its echo step, the monitor and Practice still see the drop: the echo returns to step 1 and a run is
@@ -83,16 +83,16 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     Pianos screen each copy a TextButton with a "←" glyph and their own back strings. Move it to `ui/shell` with one
     string, hide the glyph from TalkBack (it now reads "Back" and the arrow), mirror it in right-to-left layouts and
     let it grow with the font scale instead of a fixed 44 dp width.
-15. **Connect step says what to do and why a piano may be missing** (owner's hardware check; needs an owner decision on
-    wording): the step has no button, and the owner looked for one; say under the connected line that a key press
-    continues (e.g. "Press any key to continue"). A piano left idle turns its Bluetooth off (the owner's went quiet
-    after about 15 minutes and only a power cycle brought it back), so the "Not found?" hint, and the Pianos screen
-    when a scan finds nothing, should say a piano may have gone to sleep: turn it off and on again.
-16. **Beginner course: concept cards** (design in `docs/course/beginner-course.md`, ADR 0026; needs a spec): a typed
+15. **Connect step says what to do and why a piano may be missing** (spec #179; owner's hardware check): the step has no
+    button, and the owner looked for one; say under the connected line that a key press continues (e.g. "Press any
+    key to continue"). A piano left idle turns its Bluetooth off (the owner's went quiet after about 15 minutes and
+    only a power cycle brought it back), so the "Not found?" hint, and the Pianos screen when a scan finds nothing,
+    should say a piano may have gone to sleep: turn it off and on again.
+16. **Beginner course: the new map** (spec #181): rebuild Units 0–3 to the course map (23 concepts), moving,
+    keeping or dropping each existing passage; skill prerequisites suggest the next lesson but lock nothing.
+17. **Beginner course: concept cards** (spec #182; design in `docs/course/beginner-course.md`, ADR 0026) [#181]: a typed
     concept card (what, why, how, when) per concept in the curriculum, a content test that fails on an empty field,
     and the cards for all 23 concepts of the map.
-17. **Beginner course: the new map** (needs a spec): rebuild Units 0–3 to the course map (23 concepts), moving,
-    keeping or dropping each existing passage; skill prerequisites suggest the next lesson but lock nothing.
 18. **Beginner course: five-step lesson screen** (needs a spec): Why → See → Try → Use → Recap in the landscape
     layout (card left, task right, keyboard strip below), play-before-try, the gentle wrong-key hint, a visible
     "3, 2, 1, play" count-in, and the Compose-drawn card animations; Today's "Next" card and the course map ticks.
