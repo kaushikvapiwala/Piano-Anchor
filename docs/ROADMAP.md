@@ -77,7 +77,11 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 13. **Lessons that teach** (owner's hardware check; needs an owner design session, e.g. `/grilling`): a unit tests
     the learner but doesn't explain what they are playing (the black keys unit says nothing about what black keys
     are). Decide what each unit teaches and how (a short explainer, a demo played on the piano, then the exercise),
-    then respec the content and the practice flow.
+    then respec the content and the practice flow. The owner's first timed run (C-D-E at 48 BPM) showed the same gap:
+    they played D-E-F through the count-in, started C-D-E 1.7 s late and let every key go after 0.3 s (a quarter
+    note is 1.25 s here), and afterwards weren't sure what they had played. Results said "±1345 ms" and "0%" without
+    saying why. So: a visible count-in ("3, 2, 1, play"), a cue for when to start, note lengths explained before a
+    timed run, and Results that say what happened in words (started late, notes held short, extra notes).
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
