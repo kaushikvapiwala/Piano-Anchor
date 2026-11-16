@@ -45,7 +45,8 @@ private const val NANOS_PER_MILLI = 1_000_000.0
 /**
  * Today: composes the day's session from [learner]'s plan and the budget in [settings], with each passage's history
  * from [attempts], and follows the connected piano (the first of [input]'s devices, with its latency offset from
- * [calibration]). Counts the practice days for the weekly goal and the 16-day exit-check line from local attempts.
+ * [calibration]). Counts the practice days for the weekly goal and the 16-day exit-check line from local attempts
+ * and ear reviews.
  * The day and the greeting follow [clock] in [zone]. A store that can't be read leaves [TodayState.storageFailed]
  * until [refresh].
  *
@@ -133,7 +134,8 @@ public class TodayViewModel(
                     }
             val weekStart = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
-            val days = attempts.practiceDays(minOf(weekStart, windowStart), zone)
+            val from = minOf(weekStart, windowStart)
+            val days = attempts.practiceDays(from, zone) + learner.earDays(from)
             val session =
                 SessionComposer.compose(
                     plan,

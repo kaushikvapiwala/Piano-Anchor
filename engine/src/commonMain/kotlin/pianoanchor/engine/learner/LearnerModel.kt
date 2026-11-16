@@ -28,6 +28,9 @@ public data class DailyPlan(
 /** The attempt id of a placement review: the skill was placed as already learned, not played in a run. */
 public const val PLACEMENT_ATTEMPT_ID: String = "placement"
 
+/** The prefix of the attempt id of a review recorded from an ear set. */
+public const val EAR_ATTEMPT_ID_PREFIX: String = "ear:"
+
 /** The rating of a cold check from the band of the run: never EASY (`docs/algorithms/learner-model.md`). */
 public fun Band.toRating(): Rating =
     when (this) {
@@ -50,6 +53,7 @@ public fun Attempt.rating(): Rating {
  * plans each day's due and new skills. Reads and writes through [repository]; rules in
  * `docs/algorithms/learner-model.md`.
  */
+@Suppress("TooManyFunctions") // One small function per learner-model operation, with its private helpers.
 public class LearnerModel(
     private val graph: SkillGraph,
     private val repository: LearnerRepositoryPort,
@@ -93,6 +97,18 @@ public class LearnerModel(
             Review(skillId, day, band.toRating(), attemptId, unaided = true),
         )
     }
+
+    /**
+     * The learner days from [from] on (inclusive) with at least one ear-set review (attempt id starting with
+     * [EAR_ATTEMPT_ID_PREFIX]); empty when none. Throws StorageUnavailableException like the repository.
+     */
+    public suspend fun earDays(from: LocalDate): Set<LocalDate> =
+        repository
+            .states()
+            .keys
+            .flatMap { repository.reviews(it) }
+            .filter { it.attemptId.startsWith(EAR_ATTEMPT_ID_PREFIX) && it.day >= from }
+            .mapTo(HashSet()) { it.day }
 
     /** Stores [review] unless the skill ([before] is its state) has a review that day already: the first one counts. */
     private suspend fun recordColdCheck(
