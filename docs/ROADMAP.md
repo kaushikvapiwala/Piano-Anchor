@@ -40,11 +40,12 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Song card picks unlocked pieces** (follow-up of #129; needs an owner decision): Today's song card still picks any
+1. **Automatic link latency** [#172] (owner's hardware check; ADR 0025): timed runs measure the piano's link delay with
+    Identity Request round trips; calibration leaves the onboarding and the first-run card; tap calibration becomes
+    the optional "Fine-tune timing" with a 45 ms spread limit.
+2. **Song card picks unlocked pieces** (follow-up of #129; needs an owner decision): Today's song card still picks any
     passage of the newest unit with a learned skill, so it can offer a chord exercise, or a piece that Songs shows
     as locked; decide whether it should pick only unlocked pieces (as `Pieces.list` judges them).
-2. **One passage-history loader** (follow-up of #129; mechanical): `TodayViewModel` and `SongsViewModel` both build
-    each passage's `PassageHistory` from three `AttemptRepositoryPort` reads; share one loader.
 3. **M4 cleanup** (end of M4; mechanical): run `/simplify` on the whole M4 diff (#151–#153 and the contribute-a-piano kit) as
     its own small cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
 4. **No hint flash before the level loads** (follow-up of #132; mechanical): `PracticeViewModel` shows the band
@@ -65,31 +66,39 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     disagree with its stored band; store the strictness on the attempt (or read the setting) and analyse with it.
 9. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
     cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
-10. **Ride out brief Bluetooth drops** (owner's hardware check; needs a spec): Android's Bluetooth MIDI link to some
+10. **Keep the screen on** (owner's hardware check; mechanical): the phone sleeps on the music rest mid-session. Keep
+    the screen on while the app is in the foreground (all screens: the phone sits on the music rest throughout).
+11. **Reconnect the last piano on start** (owner's hardware check; needs a spec): killing the app closes Android's
+    Bluetooth MIDI link, and Today shows "No piano" until the learner opens Pianos and scans. Remember the last piano
+    and reconnect it in the background when the app starts, so Today's chip names it.
+12. **Landscape everywhere** (owner decision 2026-11-15; needs a spec): the app runs in landscape only, like practice
+    already does (the phone sits on the music rest). Today, Songs, Settings, the onboarding, Pianos and Ear need
+    landscape layouts in `docs/ui/living-studio.md`, then the code and screenshot goldens.
+13. **Ride out brief Bluetooth drops** (owner's hardware check; needs a spec): Android's Bluetooth MIDI link to some
     pianos times out about 2 s after Android tightens the connection interval, and the adapter reopens it within
     seconds. The onboarding's connect line waits `Tunables.ONBOARDING_LISTED_GRACE_MS` before saying a piano is
     gone, but its echo step, the monitor and Practice still see the drop: the echo returns to step 1 and a run is
     discarded. Debounce removals once (in `AndroidMidiAdapter` or a shared flow), so every reader rides out a drop.
-11. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
+14. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
     Pianos screen each copy a TextButton with a "←" glyph and their own back strings. Move it to `ui/shell` with one
     string, hide the glyph from TalkBack (it now reads "Back" and the arrow), mirror it in right-to-left layouts and
     let it grow with the font scale instead of a fixed 44 dp width.
-12. **Connect step says what to do and why a piano may be missing** (owner's hardware check; needs an owner decision on
+15. **Connect step says what to do and why a piano may be missing** (owner's hardware check; needs an owner decision on
     wording): the step has no button, and the owner looked for one; say under the connected line that a key press
     continues (e.g. "Press any key to continue"). A piano left idle turns its Bluetooth off (the owner's went quiet
     after about 15 minutes and only a power cycle brought it back), so the "Not found?" hint, and the Pianos screen
     when a scan finds nothing, should say a piano may have gone to sleep: turn it off and on again.
-13. **Beginner course: concept cards** (design in `docs/course/beginner-course.md`, ADR 0026; needs a spec): a typed
+16. **Beginner course: concept cards** (design in `docs/course/beginner-course.md`, ADR 0026; needs a spec): a typed
     concept card (what, why, how, when) per concept in the curriculum, a content test that fails on an empty field,
     and the cards for all 23 concepts of the map.
-14. **Beginner course: the new map** (needs a spec): rebuild Units 0–3 to the course map (23 concepts), moving,
+17. **Beginner course: the new map** (needs a spec): rebuild Units 0–3 to the course map (23 concepts), moving,
     keeping or dropping each existing passage; skill prerequisites suggest the next lesson but lock nothing.
-15. **Beginner course: five-step lesson screen** (needs a spec): Why → See → Try → Use → Recap in the landscape
+18. **Beginner course: five-step lesson screen** (needs a spec): Why → See → Try → Use → Recap in the landscape
     layout (card left, task right, keyboard strip below), play-before-try, the gentle wrong-key hint, a visible
     "3, 2, 1, play" count-in, and the Compose-drawn card animations; Today's "Next" card and the course map ticks.
-16. **Beginner course: Results in words** (needs a spec): say what happened (started late, notes held short, extra
+19. **Beginner course: Results in words** (needs a spec): say what happened (started late, notes held short, extra
     notes) and one tip; the numbers move behind "Details".
-17. **Beginner course: review quizzes** (needs a spec): 10–20 s piano-checked quizzes per learned concept, scheduled
+20. **Beginner course: review quizzes** (needs a spec): 10–20 s piano-checked quizzes per learned concept, scheduled
     into the warm-up by the existing review planner.
 
 ## Owner device checks
