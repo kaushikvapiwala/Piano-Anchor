@@ -180,8 +180,10 @@ Shown once, on first launch, until `onboarded` is stored; then the app opens on 
 a time under "Step n of 4" (no accounts, no sign-in line).
 
 1. **Press any key on your piano**: the line "Searching for your piano…" becomes "Connected · FP-30X" (polite live
-   region) when the first note arrives on any listed input. Bluetooth pianos are scanned and connected meanwhile. After
-   30 s without a note, the button "Not found? Open the piano list" opens Pianos; back returns here.
+   region) as soon as a piano is listed (a Bluetooth piano once the scan has connected it), and the first note on any
+   listed input picks that piano. A listed piano that drops keeps the line for 5 s, since a Bluetooth link often
+   comes back by itself. After 30 s without a note, the button "Not found? Open the piano list" opens Pianos,
+   with the Bluetooth pianos the search connected still connected; the back button or gesture returns here.
 2. **Hear it, then play it back**: a card with five keys (C to G, C, E and G in the primary container colour). The piano
    plays C4, E4, G4 (500 ms apart, velocity 80), the card says "Play C, E, G" and any octave counts. A piano with no MIDI
    output skips the playing; the keys are then read as "C, play this key". A match says "You just played your first chord

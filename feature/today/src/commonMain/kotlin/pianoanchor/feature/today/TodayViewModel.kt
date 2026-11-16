@@ -31,8 +31,8 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.session.Card
-import pianoanchor.engine.session.PassageHistory
 import pianoanchor.engine.session.SessionComposer
+import pianoanchor.engine.session.passageHistories
 import pianoanchor.engine.update.isNewer
 import kotlin.math.roundToInt
 import kotlin.time.Clock
@@ -122,16 +122,7 @@ public class TodayViewModel(
             val today = local.date
             val stored = settings.settings.first()
             val history =
-                Curriculum.units
-                    .flatMap { it.passages }
-                    .associate {
-                        it.id to
-                            PassageHistory(
-                                attempts.lastPlayed(it.id),
-                                attempts.cleanTempos(it.id),
-                                attempts.hasCleanWaitRun(it.id),
-                            )
-                    }
+                attempts.passageHistories(Curriculum.units.flatMap { it.passages })
             val weekStart = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
             val from = minOf(weekStart, windowStart)

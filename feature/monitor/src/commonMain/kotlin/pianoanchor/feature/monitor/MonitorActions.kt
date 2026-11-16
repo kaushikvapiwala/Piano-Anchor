@@ -4,7 +4,8 @@ import pianoanchor.core.model.MidiDevice
 
 /**
  * What the user can do on the [MonitorScreen]; the composition root wires these to the ViewModel and platform.
- * A null [onPractice] or [onCalibrate] hides its button (e.g. while the onboarding is open).
+ * A null [onPractice] or [onCalibrate] hides its button (e.g. while the onboarding is open); a null [onBack] hides the
+ * back button.
  */
 public data class MonitorActions(
     val onSelect: (MidiDevice) -> Unit = {},
@@ -17,6 +18,7 @@ public data class MonitorActions(
     val onOpenSettings: () -> Unit = {},
     val onEnableBluetooth: () -> Unit = {},
     val onDismissError: () -> Unit = {},
+    val onBack: (() -> Unit)? = null,
     val onPractice: ((MidiDevice) -> Unit)? = {},
     val onCalibrate: ((MidiDevice) -> Unit)? = {},
 )
