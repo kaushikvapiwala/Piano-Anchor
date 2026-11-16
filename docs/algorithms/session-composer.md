@@ -2,8 +2,8 @@
 
 `SessionComposer` (in `:engine`, `session/SessionComposer.kt`) turns the learner model's `DailyPlan`, the daily
 budget and each passage's history into Today's `Session`: up to four cards and the minutes of the Review, Lesson,
-Song and Ear segments. It is pure; the Today screen supplies the history from `AttemptRepositoryPort`.
-Today's history comes from the `passageHistories` loader, which Songs shares.
+Song and Ear segments. It is pure; the Today screen supplies the history from `AttemptRepositoryPort`
+through `passageHistories` (beside `PassageHistory`), the loader Songs shares.
 
 ## Cards
 - **Cold open.** The first due skill of the plan that is not an ear skill (the plan lists them lowest retrievability first). Of the passages
