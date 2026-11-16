@@ -26,9 +26,9 @@ import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiNote
-import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.Tone
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
@@ -37,7 +37,7 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
-import pianoanchor.engine.midi.MidiEncoder
+import pianoanchor.engine.midi.playTones
 import pianoanchor.engine.onboarding.echoCanStillMatch
 import pianoanchor.engine.onboarding.echoMatches
 import kotlin.time.Clock
@@ -278,19 +278,13 @@ public class OnboardingViewModel(
  */
 private suspend fun MidiOutputPort.playChord(device: MidiDevice): Boolean =
     try {
-        CHORD.forEachIndexed { i, note ->
-            if (i > 0) delay(Tunables.PLAYBACK_NOTE_GAP_MS - Tunables.PLAYBACK_NOTE_LENGTH_MS)
-            send(device, MidiEncoder.encode(NoteOn(0, CHANNEL, note, Tunables.PLAYBACK_VELOCITY)))
-            try {
-                delay(Tunables.PLAYBACK_NOTE_LENGTH_MS)
-            } finally {
-                // A replay or leaving mid-note must not leave the key sounding.
-                withContext(NonCancellable) { send(device, MidiEncoder.encode(NoteOff(0, CHANNEL, note, 0))) }
-            }
-        }
+        playTones(
+            device,
+            CHORD.mapIndexed { i, note ->
+                Tone(note, i * Tunables.PLAYBACK_NOTE_GAP_MS, Tunables.PLAYBACK_NOTE_LENGTH_MS)
+            },
+        )
         true
     } catch (_: MidiDeviceUnavailableException) {
         false
     }
-
-private const val CHANNEL = 0

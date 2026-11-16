@@ -63,7 +63,7 @@ private val DarkColors =
  * Feedback colours on top of the Material scheme: [correct] (played right), [waiting] (the note the app waits for),
  * [timing] (timing off, unused until timing exists), [wrongKey] (a wrong key), plus the staff's [staffLine] and
  * [upcomingNote], the key strip's [targetBand], [whiteKey], [blackKey] and [keyBorder], and the results screen's
- * [page] and its [tile]s.
+ * [page] and its [tile]s, the Ear card's [earAccent] and the text on it, [onEarAccent].
  */
 @Immutable
 data class PianoAnchorColors(
@@ -79,6 +79,8 @@ data class PianoAnchorColors(
     val keyBorder: Color,
     val page: Color,
     val tile: Color,
+    val earAccent: Color,
+    val onEarAccent: Color,
 )
 
 private val LightFeedback =
@@ -95,6 +97,8 @@ private val LightFeedback =
         keyBorder = Mist,
         page = PaperDark,
         tile = Color.White,
+        earAccent = Color(0xFF8A5300),
+        onEarAccent = Color.White,
     )
 private val DarkFeedback =
     PianoAnchorColors(
@@ -110,6 +114,8 @@ private val DarkFeedback =
         keyBorder = InkSecondary,
         page = Ink,
         tile = Graphite,
+        earAccent = Color(0xFFFFC857),
+        onEarAccent = Ink,
     )
 
 private val LocalPianoAnchorColors = staticCompositionLocalOf { LightFeedback }
