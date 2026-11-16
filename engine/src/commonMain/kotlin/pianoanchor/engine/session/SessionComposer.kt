@@ -11,6 +11,7 @@ import pianoanchor.core.model.Track
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
+import pianoanchor.engine.content.Pieces
 import pianoanchor.engine.learner.DailyPlan
 import pianoanchor.engine.matcher.TempoRung
 import kotlin.time.Instant
@@ -212,17 +213,20 @@ public object SessionComposer {
         history: Map<String, PassageHistory>,
         learned: Set<String>,
         used: List<String>,
-    ): Card.Song? =
-        curriculum.units.asReversed().firstNotNullOfOrNull { unit ->
-            val open =
-                unit.passages
-                    .filter { it.id !in used }
-                    .mapNotNull { passage ->
-                        nextRung(highestClean(passage, history[passage.id]))?.let { passage to it }
-                    }
-            val pick = open.firstOrNull { it.first.rights.status == RightsStatus.PUBLIC_DOMAIN } ?: open.firstOrNull()
-            if (pick == null || unit.skills.none { it in learned }) null else Card.Song(pick.first, pick.second, 0)
-        }
+    ): Card.Song? {
+        if (learned.isEmpty()) return null
+        return curriculum.units
+            .flatMap { it.passages }
+            .filter { it.piece && it.id !in used && Pieces.waitingFor(it, curriculum.graph, learned) == null }
+            .mapNotNull { passage -> nextRung(highestClean(passage, history[passage.id]))?.let { passage to it } }
+            .sortedWith(
+                compareBy(
+                    { history[it.first.id]?.lastPlayed == null },
+                    { it.first.rights.status != RightsStatus.PUBLIC_DOMAIN },
+                ),
+            ).firstOrNull()
+            ?.let { (passage, rung) -> Card.Song(passage, rung, 0) }
+    }
 
     private fun passagesOf(curriculum: Curriculum): List<Passage> = curriculum.units.flatMap { it.passages }
 

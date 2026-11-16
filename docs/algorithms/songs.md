@@ -13,7 +13,8 @@ unit.
 ## Status
 
 - **Locked** when any skill of the piece has a prerequisite that is not learned. `waitingFor` is the first such skill
-  in graph order, and the row says "Needs: <that skill's title>".
+  in graph order, and the row says "Needs: <that skill's title>". `Pieces.waitingFor` holds this rule; Today's Song card
+  uses it too, so it offers only pieces that are not locked.
 - Otherwise **new** when the piece was never played, **mastered** when its top tempo rung has a CLEAN run, else **in
   progress**.
 
