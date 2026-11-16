@@ -103,7 +103,7 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
-pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md`.
+pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md` (`scripts/capture_session.sh` records a session).
 
 - **First release and dogfood (M3 exit):** cut v0.1.0 by following `docs/RELEASING.md` (keystore, secrets, the
   `dogfood` and `blocker` labels, then the tag; the first run also proves the untested emulator smoke job), then use
