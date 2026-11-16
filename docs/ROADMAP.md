@@ -66,6 +66,18 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     disagree with its stored band; store the strictness on the attempt (or read the setting) and analyse with it.
 9. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
     cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
+10. **Keep the screen on** (owner's hardware check; mechanical): the phone sleeps on the music rest mid-session. Keep
+    the screen on while the app is in the foreground (all screens: the phone sits on the music rest throughout).
+11. **Reconnect the last piano on start** (owner's hardware check; needs a spec): killing the app closes Android's
+    Bluetooth MIDI link, and Today shows "No piano" until the learner opens Pianos and scans. Remember the last piano
+    and reconnect it in the background when the app starts, so Today's chip names it.
+12. **Landscape everywhere** (owner decision 2026-11-15; needs a spec): the app runs in landscape only, like practice
+    already does (the phone sits on the music rest). Today, Songs, Settings, the onboarding, Pianos and Ear need
+    landscape layouts in `docs/ui/living-studio.md`, then the code and screenshot goldens.
+13. **Lessons that teach** (owner's hardware check; needs an owner design session, e.g. `/grilling`): a unit tests
+    the learner but doesn't explain what they are playing (the black keys unit says nothing about what black keys
+    are). Decide what each unit teaches and how (a short explainer, a demo played on the piano, then the exercise),
+    then respec the content and the practice flow.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
