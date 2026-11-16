@@ -88,6 +88,18 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     continues (e.g. "Press any key to continue"). A piano left idle turns its Bluetooth off (the owner's went quiet
     after about 15 minutes and only a power cycle brought it back), so the "Not found?" hint, and the Pianos screen
     when a scan finds nothing, should say a piano may have gone to sleep: turn it off and on again.
+12. **Beginner course: concept cards** (design in `docs/course/beginner-course.md`, ADR 0026; needs a spec): a typed
+    concept card (what, why, how, when) per concept in the curriculum, a content test that fails on an empty field,
+    and the cards for all 23 concepts of the map.
+13. **Beginner course: the new map** (needs a spec): rebuild Units 0–3 to the course map (23 concepts), moving,
+    keeping or dropping each existing passage; skill prerequisites suggest the next lesson but lock nothing.
+14. **Beginner course: five-step lesson screen** (needs a spec): Why → See → Try → Use → Recap in the landscape
+    layout (card left, task right, keyboard strip below), play-before-try, the gentle wrong-key hint, a visible
+    "3, 2, 1, play" count-in, and the Compose-drawn card animations; Today's "Next" card and the course map ticks.
+15. **Beginner course: Results in words** (needs a spec): say what happened (started late, notes held short, extra
+    notes) and one tip; the numbers move behind "Details".
+16. **Beginner course: review quizzes** (needs a spec): 10–20 s piano-checked quizzes per learned concept, scheduled
+    into the warm-up by the existing review planner.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never

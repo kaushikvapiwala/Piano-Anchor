@@ -14,6 +14,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | BLE MIDI | MIDI over Bluetooth Low Energy. A BLE MIDI piano is found by a scan and must be connected from the app (`MidiDiscoveryPort`); pairing in the system settings pairs only Bluetooth audio. |
 | Chord window | The `CHORD_CLUSTER_MS` span from a step's first pressed note in which its other notes must follow; the matcher reports an incomplete chord when it runs out. |
 | Cold check | The first saved attempt on a learner day that exercises a skill, in any mode and at any tempo; it becomes the skill's review for that day, rated from its band (`docs/algorithms/learner-model.md`). Later attempts that day change nothing. |
+| Concept card | A concept's four required lines in the beginner course: what it is, why it exists, how it's used and when you meet it (`docs/course/beginner-course.md`). |
 | Contract test | Abstract test in `testing/` that every implementation of a port must pass. |
 | Daily budget | The minutes of practice the learner wants per day: 15, 20 (default) or 30 (`DailyBudget` in `Settings`). |
 | Difficulty | FSRS: how hard an item is for this learner, 1 (easy) to 10 (hard); part of `MemoryState` (`docs/algorithms/scheduler.md`). |
@@ -27,6 +28,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Contribution kit | One `.json` file saved from the note monitor (`docs/contribute-a-piano.md`): the app version, the piano's Identity Reply and a short fixture. Attached to a "Support for my piano" issue. |
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hint level | How much help a run of a passage starts with: Full (amber key band at once), Delayed (after the learner's usual pause) or Off (only on the Hint button). Faded by clean runs, restored by keep-practising runs (`HintFading`, `docs/algorithms/guidance.md`). |
+| Lesson step | One of a beginner lesson's five steps: Why (the concept card), See (the app plays it), Try (one action the piano checks), Use (a tiny piece), Recap. |
 | Perform run | An attempt played in perform mode: one take at a timed rung with no hints and no live verdicts (`mode` PERFORM). |
 | Unaided run | A perform run with no hint shown (`Attempt.unaided`); always the case for a perform run. `Review.unaided` also holds for ear sets and placement. A skill needs one unaided recalled check before it counts as learned (`docs/algorithms/learner-model.md`). |
 | Aided run | An attempt with `hintShown` true: the key band showed at some point (Full level, a Delayed hint that fired, or the Hint button). |
