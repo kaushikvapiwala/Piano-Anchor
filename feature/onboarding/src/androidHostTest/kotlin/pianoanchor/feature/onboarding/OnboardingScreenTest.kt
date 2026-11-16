@@ -50,6 +50,16 @@ class OnboardingScreenTest {
         }
 
     @Test
+    fun aListedPianoIsNamedWhileWaitingForAKey() =
+        runComposeUiTest {
+            show(OnboardingState(listed = piano))
+
+            onNodeWithText("Press any key on your piano").assertExists()
+            onNodeWithText("Connected · FP-30X").assertExists()
+            onNodeWithText("Searching for your piano…").assertDoesNotExist()
+        }
+
+    @Test
     fun theConnectedPianoIsNamed() =
         runComposeUiTest {
             show(OnboardingState(OnboardingStep.ECHO, piano, echo = EchoPhase.LISTENING, keysHighlighted = true))

@@ -152,6 +152,38 @@ class OnboardingViewModelTest {
         }
 
     @Test
+    fun `a listed piano shows as connected while waiting for its first note`() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+
+            assertEquals(piano.device, vm.state.value.listed)
+            assertNull(vm.state.value.device)
+
+            piano.unplug()
+            runCurrent()
+            assertEquals(piano.device, vm.state.value.listed) // a drop may be brief
+            advanceTimeBy(Tunables.ONBOARDING_LISTED_GRACE_MS + 1)
+
+            assertNull(vm.state.value.listed)
+        }
+
+    @Test
+    fun `a piano that drops and comes back stays shown as connected`() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+
+            piano.unplug()
+            runCurrent()
+            advanceTimeBy(Tunables.ONBOARDING_LISTED_GRACE_MS - 1)
+            assertEquals(piano.device, vm.state.value.listed)
+            piano.plugIn()
+            runCurrent()
+            advanceTimeBy(Tunables.ONBOARDING_LISTED_GRACE_MS)
+
+            assertEquals(piano.device, vm.state.value.listed)
+        }
+
+    @Test
     fun `the piano list is offered after the hint delay without a note`() =
         runTest(dispatcher) {
             val vm = viewModel()
@@ -321,6 +353,7 @@ class OnboardingViewModelTest {
 
             piano.unplug()
             runCurrent()
+            advanceTimeBy(Tunables.ONBOARDING_LISTED_GRACE_MS + 1)
 
             assertEquals(OnboardingState(), vm.state.value)
             piano.plugIn()
@@ -427,7 +460,7 @@ class OnboardingViewModelTest {
             vm.calibrationFinished()
             vm.start(StartPoint.UNIT_2)
             runCurrent()
-            assertEquals(OnboardingState(), vm.state.value)
+            assertEquals(OnboardingState(listed = piano.device), vm.state.value)
 
             play(C4)
             advanceToMs(PLAYBACK_MS)
@@ -554,6 +587,22 @@ class OnboardingViewModelTest {
 
             assertFalse(ble in piano.inputDevices.first())
             assertTrue(piano.device in piano.inputDevices.first())
+        }
+
+    @Test
+    fun `leaving for the piano list keeps the scanned pianos connected`() =
+        runTest(dispatcher) {
+            val ble = MidiDevice("ble:AA", "Bluetooth Piano")
+            piano.advertised = listOf(ble)
+            val vm = viewModel()
+            vm.scanBluetooth()
+            runCurrent()
+
+            vm.handOverToPianoList()
+            vm.release() // what clearing the ViewModel runs
+
+            assertEquals(0, input.open)
+            assertTrue(ble in piano.inputDevices.first())
         }
 
     @Test

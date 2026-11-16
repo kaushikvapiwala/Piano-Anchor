@@ -7,6 +7,9 @@ import pianoanchor.core.model.StorageUnavailableException
 /** Whether this is the platform driver's own database exception (disk full, corrupt or locked file, …). */
 internal expect fun Throwable.isStorageFailure(): Boolean
 
+/** Records [failure] where a developer can read it (logcat on Android); the screens only show that storage failed. */
+internal expect fun logStorageFailure(failure: StorageUnavailableException)
+
 /**
  * Runs [block], rethrowing a driver failure as [StorageUnavailableException] ("[operation] failed") and anything else
  * (cancellation, the duplicate-id [IllegalArgumentException], bugs) unchanged. Common code can't name the platform's
@@ -27,4 +30,4 @@ internal inline fun <T> storage(
 internal fun <T> Flow<T>.storage(operation: String): Flow<T> = catch { throw it.asStorageUnavailable(operation) }
 
 private fun Throwable.asStorageUnavailable(operation: String): Throwable =
-    if (isStorageFailure()) StorageUnavailableException("$operation failed", this) else this
+    if (isStorageFailure()) StorageUnavailableException("$operation failed", this).also(::logStorageFailure) else this
