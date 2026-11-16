@@ -231,7 +231,7 @@ and the weekly goal dots (one per goal day, plum for each day practised since Mo
   "n more to review". **New lesson**: surface with a border, "Begin" and the "why now" line. **Song**: "♩ = 72 · rung 3
   of 5" (wait mode reads "Wait mode · rung 1 of 5") and "Continue". Each opens Practice on the card's passage and
   rung; with no piano connected a card opens Pianos.
-- **Ear** card: surface with a 2 dp amber border (`#8A5300` light, `#FFC857` dark), the label "EAR · 3 MIN" in amber,
+- **Ear** card: surface with a 2 dp border in the ear accent (above), the label "EAR · 3 MIN" in amber,
   the first skill's title, "3 skills today" and an amber "Start ear" button. It opens the Ear screen with its skills.
 - **Session bar**: Review, Lesson, Song and (amber) Ear segments with widths proportional to their minutes (a zero
   segment is left out), decorative; the caption under it, "Today's 20 minutes: review 4, lesson 7, song 6, ear 3", is

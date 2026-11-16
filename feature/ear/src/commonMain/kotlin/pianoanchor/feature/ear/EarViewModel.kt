@@ -277,16 +277,17 @@ public class EarViewModel(
 
     private suspend fun play(exercise: EarExercise) {
         mutableState.update { it.copy(playing = true) }
+        val tones = exercise.tones()
         try {
             if (!speakerOnly && output.outputDevices.first().any { it.id == device.id }) {
                 try {
-                    output.playTones(device, exercise.tones())
+                    output.playTones(device, tones)
                     return
                 } catch (_: MidiDeviceUnavailableException) {
                     speakerOnly = true
                 }
             }
-            tone.play(exercise.tones())
+            tone.play(tones)
         } finally {
             mutableState.update { it.copy(playing = false) }
         }

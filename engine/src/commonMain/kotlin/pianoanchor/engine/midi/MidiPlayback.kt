@@ -25,8 +25,8 @@ private class Action(
  * Plays [tones] on [device]: a NoteOn (velocity `Tunables.PLAYBACK_VELOCITY`, channel 0) at each tone's startMs and a
  * NoteOff at startMs + lengthMs, timed with delay() from the call. Returns when the last NoteOff is sent.
  * At the same time a NoteOff goes before a NoteOn, so a repeated note is struck again cleanly.
- * Cancelled or failed midway, it sends a NoteOff (in NonCancellable) for every key still down, ignoring
- * [MidiDeviceUnavailableException] during that release, then rethrows.
+ * Cancelled or failed midway, it sends a NoteOff (in NonCancellable) for every key still down, stopping quietly at
+ * the first [MidiDeviceUnavailableException], then rethrows.
  * @throws MidiDeviceUnavailableException when the device goes away while sending.
  */
 public suspend fun MidiOutputPort.playTones(
@@ -55,12 +55,10 @@ public suspend fun MidiOutputPort.playTones(
         }
     } finally {
         withContext(NonCancellable) {
-            for (note in down) {
-                try {
-                    send(device, MidiEncoder.encode(NoteOff(0, CHANNEL, note, 0)))
-                } catch (_: MidiDeviceUnavailableException) {
-                    // Already gone: nothing is sounding.
-                }
+            try {
+                for (note in down) send(device, MidiEncoder.encode(NoteOff(0, CHANNEL, note, 0)))
+            } catch (_: MidiDeviceUnavailableException) {
+                // Gone: nothing is sounding, and the other keys need no release either.
             }
         }
     }
