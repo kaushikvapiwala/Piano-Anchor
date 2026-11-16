@@ -43,29 +43,27 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 1. **Song card picks unlocked pieces** (follow-up of #129; needs an owner decision): Today's song card still picks any
     passage of the newest unit with a learned skill, so it can offer a chord exercise, or a piece that Songs shows
     as locked; decide whether it should pick only unlocked pieces (as `Pieces.list` judges them).
-2. **Back returns to the opening screen** (follow-up of #129; mechanical): Settings and Pianos opened from the Songs
-    rail go back to Today; remember where they were opened from, as Practice does with `from`.
-3. **One passage-history loader** (follow-up of #129; mechanical): `TodayViewModel` and `SongsViewModel` both build
+2. **One passage-history loader** (follow-up of #129; mechanical): `TodayViewModel` and `SongsViewModel` both build
     each passage's `PassageHistory` from three `AttemptRepositoryPort` reads; share one loader.
-4. **M4 cleanup** (end of M4; mechanical): run `/simplify` on the whole M4 diff (#151–#153 and the contribute-a-piano kit) as
+3. **M4 cleanup** (end of M4; mechanical): run `/simplify` on the whole M4 diff (#151–#153 and the contribute-a-piano kit) as
     its own small cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
-5. **No hint flash before the level loads** (follow-up of #132; mechanical): `PracticeViewModel` shows the band
+4. **No hint flash before the level loads** (follow-up of #132; mechanical): `PracticeViewModel` shows the band
     (FULL) until the passage's attempts are read, so a DELAYED or OFF run can flash it for a moment on a slow store;
     hide the keys' band until `loadHints` finishes.
-6. **Perform cursor colour** (follow-up of #133; needs an owner decision): a perform take still draws the staff's
+5. **Perform cursor colour** (follow-up of #133; needs an owner decision): a perform take still draws the staff's
     waiting note in the amber "waiting" colour, which marks the step the matcher waits for; decide whether perform
     should draw it neutrally like the keys.
-7. **Spot-loop hints and clean offers** (follow-up of #134; needs an owner decision): a spot loop always runs at the
+6. **Spot-loop hints and clean offers** (follow-up of #134; needs an owner decision): a spot loop always runs at the
     FULL hint level (its attempts sit under the slice's id, and `HintFading` skips them), and Results offer a loop
     after a CLEAN timed run whenever the analyser found any timing finding; decide whether loops should use the
     passage's level and whether CLEAN runs should offer a loop at all.
-8. **Results know the run's rung** (follow-up of #134; mechanical): `ResultsViewModel` infers the rung from the
+7. **Results know the run's rung** (follow-up of #134; mechanical): `ResultsViewModel` infers the rung from the
     attempt's tempo, so rungs that clamp to the same BPM resolve to the lowest; store or pass the rung the run was
     played on, so "Loop bars" and "Play it" use it exactly.
-9. **Results grade timing with the run's strictness** (follow-up of #135; mechanical): `ResultsViewModel` re-analyses
+8. **Results grade timing with the run's strictness** (follow-up of #135; mechanical): `ResultsViewModel` re-analyses
     the take with the Standard timing tolerance, so a run played on Gentle or Strict can show timing findings that
     disagree with its stored band; store the strictness on the attempt (or read the setting) and analyse with it.
-10. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
+9. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
     cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
 
 ## Owner device checks

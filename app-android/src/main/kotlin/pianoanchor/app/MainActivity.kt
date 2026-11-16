@@ -94,7 +94,10 @@ private sealed interface Destination {
     /** The start screen. */
     data object Today : Destination
 
-    data object Monitor : Destination
+    /** The pianos (the note monitor), opened from a rail; back returns to the screen that opened it ([from]). */
+    data class Monitor(
+        val from: Destination,
+    ) : Destination
 
     /** The Songs screen, opened from the rail; back returns to Today. */
     data object Songs : Destination
@@ -105,8 +108,10 @@ private sealed interface Destination {
     /** The piano list opened from the onboarding; back returns to the onboarding. */
     data object OnboardingPianos : Destination
 
-    /** The settings, opened from Today's rail; back returns to Today. */
-    data object Settings : Destination
+    /** The settings, opened from a rail; back returns to the screen that opened them ([from]). */
+    data class Settings(
+        val from: Destination,
+    ) : Destination
 
     /**
      * Practising [passageId] on [device], starting on [rung] (a card's, or the one picked before a calibration);
@@ -117,7 +122,7 @@ private sealed interface Destination {
         val device: MidiDevice,
         val passageId: String = Passages.CDE.id,
         val rung: TempoRung = TempoRung.WAIT,
-        val from: Destination = Monitor,
+        val from: Destination,
         val mode: RunMode = RunMode.PRACTICE,
         val spot: BarRange? = null,
     ) : Destination
@@ -128,10 +133,10 @@ private sealed interface Destination {
         val skills: List<Skill>,
     ) : Destination
 
-    /** Calibrating [device]'s latency; [practice] is the Practice to return to, null for the monitor. */
+    /** Calibrating [device]'s latency; [returnTo] is the Practice or the monitor to return to. */
     data class Calibrate(
         val device: MidiDevice,
-        val practice: Practice?,
+        val returnTo: Destination,
     ) : Destination
 
     /** The results of the run saved as [attemptId], which [practice] started; "Try again" returns to it. */
@@ -156,8 +161,8 @@ private fun AppNavigation() {
                 onPractice = { destination = it },
                 onEar = { destination = it },
                 onSongs = { destination = Destination.Songs },
-                onPianos = { destination = Destination.Monitor },
-                onSettings = { destination = Destination.Settings },
+                onPianos = { destination = Destination.Monitor(from = current) },
+                onSettings = { destination = Destination.Settings(from = current) },
             )
         }
 
@@ -165,21 +170,21 @@ private fun AppNavigation() {
             SongsRoute(
                 onPractice = { destination = it },
                 onToday = back,
-                onPianos = { destination = Destination.Monitor },
-                onSettings = { destination = Destination.Settings },
+                onPianos = { destination = Destination.Monitor(from = current) },
+                onSettings = { destination = Destination.Settings(from = current) },
             )
         }
 
-        Destination.Monitor -> {
+        is Destination.Monitor -> {
             MonitorRoute(
-                onBack = back,
-                onPractice = { destination = Destination.Practice(it) },
-                onCalibrate = { destination = Destination.Calibrate(it, practice = null) },
+                onBack = { destination = current.from },
+                onPractice = { destination = Destination.Practice(it, from = current) },
+                onCalibrate = { destination = Destination.Calibrate(it, returnTo = current) },
             )
         }
 
-        Destination.Settings -> {
-            SettingsRoute(onBack = back)
+        is Destination.Settings -> {
+            SettingsRoute(onBack = { destination = current.from })
         }
 
         is Destination.Practice -> {
@@ -202,7 +207,7 @@ private fun AppNavigation() {
         }
 
         is Destination.Calibrate -> {
-            CalibrationRoute(current.device, onLeave = { destination = current.practice ?: Destination.Monitor })
+            CalibrationRoute(current.device, onLeave = { destination = current.returnTo })
         }
 
         is Destination.Results -> {
