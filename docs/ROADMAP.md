@@ -43,56 +43,58 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 1. **Song card picks unlocked pieces** (follow-up of #129; needs an owner decision): Today's song card still picks any
     passage of the newest unit with a learned skill, so it can offer a chord exercise, or a piece that Songs shows
     as locked; decide whether it should pick only unlocked pieces (as `Pieces.list` judges them).
-2. **M4 cleanup** (end of M4; mechanical): run `/simplify` on the whole M4 diff (#151–#153 and the contribute-a-piano kit) as
+2. **One passage-history loader** (follow-up of #129; mechanical): `TodayViewModel` and `SongsViewModel` both build
+    each passage's `PassageHistory` from three `AttemptRepositoryPort` reads; share one loader.
+3. **M4 cleanup** (end of M4; mechanical): run `/simplify` on the whole M4 diff (#151–#153 and the contribute-a-piano kit) as
     its own small cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
-3. **No hint flash before the level loads** (follow-up of #132; mechanical): `PracticeViewModel` shows the band
+4. **No hint flash before the level loads** (follow-up of #132; mechanical): `PracticeViewModel` shows the band
     (FULL) until the passage's attempts are read, so a DELAYED or OFF run can flash it for a moment on a slow store;
     hide the keys' band until `loadHints` finishes.
-4. **Perform cursor colour** (follow-up of #133; needs an owner decision): a perform take still draws the staff's
+5. **Perform cursor colour** (follow-up of #133; needs an owner decision): a perform take still draws the staff's
     waiting note in the amber "waiting" colour, which marks the step the matcher waits for; decide whether perform
     should draw it neutrally like the keys.
-5. **Spot-loop hints and clean offers** (follow-up of #134; needs an owner decision): a spot loop always runs at the
+6. **Spot-loop hints and clean offers** (follow-up of #134; needs an owner decision): a spot loop always runs at the
     FULL hint level (its attempts sit under the slice's id, and `HintFading` skips them), and Results offer a loop
     after a CLEAN timed run whenever the analyser found any timing finding; decide whether loops should use the
     passage's level and whether CLEAN runs should offer a loop at all.
-6. **Results know the run's rung** (follow-up of #134; mechanical): `ResultsViewModel` infers the rung from the
+7. **Results know the run's rung** (follow-up of #134; mechanical): `ResultsViewModel` infers the rung from the
     attempt's tempo, so rungs that clamp to the same BPM resolve to the lowest; store or pass the rung the run was
     played on, so "Loop bars" and "Play it" use it exactly.
-7. **Results grade timing with the run's strictness** (follow-up of #135; mechanical): `ResultsViewModel` re-analyses
+8. **Results grade timing with the run's strictness** (follow-up of #135; mechanical): `ResultsViewModel` re-analyses
     the take with the Standard timing tolerance, so a run played on Gentle or Strict can show timing findings that
     disagree with its stored band; store the strictness on the attempt (or read the setting) and analyse with it.
-8. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
+9. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
     cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
-9. **Ride out brief Bluetooth drops** (owner's hardware check; needs a spec): Android's Bluetooth MIDI link to some
+10. **Ride out brief Bluetooth drops** (owner's hardware check; needs a spec): Android's Bluetooth MIDI link to some
     pianos times out about 2 s after Android tightens the connection interval, and the adapter reopens it within
     seconds. The onboarding's connect line waits `Tunables.ONBOARDING_LISTED_GRACE_MS` before saying a piano is
     gone, but its echo step, the monitor and Practice still see the drop: the echo returns to step 1 and a run is
     discarded. Debounce removals once (in `AndroidMidiAdapter` or a shared flow), so every reader rides out a drop.
-10. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
+11. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
     Pianos screen each copy a TextButton with a "←" glyph and their own back strings. Move it to `ui/shell` with one
     string, hide the glyph from TalkBack (it now reads "Back" and the arrow), mirror it in right-to-left layouts and
     let it grow with the font scale instead of a fixed 44 dp width.
-11. **Connect step says what to do and why a piano may be missing** (owner's hardware check; needs an owner decision on
+12. **Connect step says what to do and why a piano may be missing** (owner's hardware check; needs an owner decision on
     wording): the step has no button, and the owner looked for one; say under the connected line that a key press
     continues (e.g. "Press any key to continue"). A piano left idle turns its Bluetooth off (the owner's went quiet
     after about 15 minutes and only a power cycle brought it back), so the "Not found?" hint, and the Pianos screen
     when a scan finds nothing, should say a piano may have gone to sleep: turn it off and on again.
-12. **Beginner course: concept cards** (design in `docs/course/beginner-course.md`, ADR 0026; needs a spec): a typed
+13. **Beginner course: concept cards** (design in `docs/course/beginner-course.md`, ADR 0026; needs a spec): a typed
     concept card (what, why, how, when) per concept in the curriculum, a content test that fails on an empty field,
     and the cards for all 23 concepts of the map.
-13. **Beginner course: the new map** (needs a spec): rebuild Units 0–3 to the course map (23 concepts), moving,
+14. **Beginner course: the new map** (needs a spec): rebuild Units 0–3 to the course map (23 concepts), moving,
     keeping or dropping each existing passage; skill prerequisites suggest the next lesson but lock nothing.
-14. **Beginner course: five-step lesson screen** (needs a spec): Why → See → Try → Use → Recap in the landscape
+15. **Beginner course: five-step lesson screen** (needs a spec): Why → See → Try → Use → Recap in the landscape
     layout (card left, task right, keyboard strip below), play-before-try, the gentle wrong-key hint, a visible
     "3, 2, 1, play" count-in, and the Compose-drawn card animations; Today's "Next" card and the course map ticks.
-15. **Beginner course: Results in words** (needs a spec): say what happened (started late, notes held short, extra
+16. **Beginner course: Results in words** (needs a spec): say what happened (started late, notes held short, extra
     notes) and one tip; the numbers move behind "Details".
-16. **Beginner course: review quizzes** (needs a spec): 10–20 s piano-checked quizzes per learned concept, scheduled
+17. **Beginner course: review quizzes** (needs a spec): 10–20 s piano-checked quizzes per learned concept, scheduled
     into the warm-up by the existing review planner.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
-pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md`.
+pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md` (`scripts/capture_session.sh` records a session).
 
 - **First release and dogfood (M3 exit):** cut v0.1.0 by following `docs/RELEASING.md` (keystore, secrets, the
   `dogfood` and `blocker` labels, then the tag; the first run also proves the untested emulator smoke job), then use
