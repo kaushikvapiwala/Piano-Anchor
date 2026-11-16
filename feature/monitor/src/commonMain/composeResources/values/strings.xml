@@ -1,5 +1,7 @@
 <resources>
     <string name="monitor_title">Note monitor</string>
+    <string name="monitor_back">Back</string>
+    <string name="monitor_back_glyph">←</string>
     <string name="monitor_devices">Pianos</string>
     <string name="monitor_no_devices">No piano found. Connect one with a USB cable, or scan for a Bluetooth piano.</string>
     <string name="monitor_select_device">Show notes from %1$s</string>

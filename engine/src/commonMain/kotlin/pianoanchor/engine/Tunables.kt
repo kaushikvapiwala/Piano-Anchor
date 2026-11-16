@@ -639,6 +639,19 @@ public object Tunables {
     public const val ONBOARDING_CONNECT_HINT_MS: Long = 30_000
 
     /**
+     * How long, in milliseconds, the onboarding keeps saying a piano is connected after it drops from the device list,
+     * before it says it is searching again.
+     *
+     * Why: Android's Bluetooth MIDI link to some pianos times out about 2 s after Android tightens its connection
+     * interval, and the adapter reopens it within a few seconds; without a grace period the line flickers between
+     * "Connected" and "Searching" while nothing is wrong.
+     *
+     * Source: owner's hardware check (Pixel, Android 17, FRP-NUVOLA EX MIDI): drop to reopen took 1 to 3 s; starting
+     * value with headroom over [BLE_RECONNECT_INITIAL_MS] plus the reopen.
+     */
+    public const val ONBOARDING_LISTED_GRACE_MS: Long = 5_000
+
+    /**
      * How many missed echo attempts the onboarding allows before it offers Skip.
      *
      * Why: three tries are fair for a first chord, and a learner who can't get it (or whose piano doesn't answer
