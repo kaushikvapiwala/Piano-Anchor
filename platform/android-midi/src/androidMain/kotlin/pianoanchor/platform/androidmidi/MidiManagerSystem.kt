@@ -77,12 +77,12 @@ internal class MidiManagerSystem(
                 manager,
                 object : MidiManager.DeviceCallback() {
                     override fun onDeviceAdded(device: MidiDeviceInfo) {
-                        Log.i(TAG, "device added: ${toSystemDevice(device)}")
+                        Log.i(TAG, "device ${device.id} added")
                         refresh(manager)
                     }
 
                     override fun onDeviceRemoved(device: MidiDeviceInfo) {
-                        Log.i(TAG, "device removed: ${toSystemDevice(device)}")
+                        Log.i(TAG, "device ${device.id} removed")
                         refresh(manager)
                     }
                 },
@@ -159,9 +159,6 @@ internal class MidiManagerSystem(
     }
 
     override fun bluetoothProblem(): Reason? =
-        bluetoothProblemNow().also { if (it != null) Log.d(TAG, "Bluetooth LE unavailable: $it") }
-
-    private fun bluetoothProblemNow(): Reason? =
         when {
             listOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT).any {
                 context.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
@@ -216,8 +213,11 @@ internal class MidiManagerSystem(
                 throw BluetoothUnavailableException(Reason.BLUETOOTH_OFF).apply { initCause(e) }
             }
             awaitClose {
-                Log.d(TAG, "Bluetooth LE scan stopped")
                 if (bluetooth.isEnabled) scanner.stopScan(callback)
+                Log.d(
+                    TAG,
+                    if (bluetooth.isEnabled) "Bluetooth LE scan stopped" else "Bluetooth LE scan ended: Bluetooth off",
+                )
             }
         }
 
@@ -227,29 +227,34 @@ internal class MidiManagerSystem(
         val manager = manager
         val device = bluetooth?.takeIf { BluetoothAdapter.checkBluetoothAddress(address) }?.getRemoteDevice(address)
         if (manager == null || device == null) {
-            Log.w(TAG, "cannot open Bluetooth device $address: no MIDI service, adapter or valid address")
+            // Warnings reach release logs: no Bluetooth address in them (docs/adr/0024-glue-logging.md).
+            Log.w(TAG, "cannot open a Bluetooth device: no MIDI service, no adapter or an invalid address")
             return null
         }
         Log.i(TAG, "opening Bluetooth device $address")
-        return suspendCancellableCoroutine<MidiDevice?> { continuation ->
-            manager.openBluetoothDevice(
-                device,
-                { opened -> continuation.resume(opened) { _, value, _ -> value?.close() } },
-                handler,
-            )
-        }.also {
-            if (it ==
-                null
-            ) {
-                Log.w(TAG, "Bluetooth device $address did not open")
-            } else {
-                Log.i(TAG, "Bluetooth device $address open")
+        val opened =
+            suspendCancellableCoroutine<MidiDevice?> { continuation ->
+                manager.openBluetoothDevice(
+                    device,
+                    { opened -> continuation.resume(opened) { _, value, _ -> value?.close() } },
+                    handler,
+                )
             }
+        if (opened ==
+            null
+        ) {
+            Log.w(TAG, "a Bluetooth device did not open")
+        } else {
+            Log.i(TAG, "Bluetooth device $address open")
         }
+        return opened
     }
 
     private fun refresh(manager: MidiManager) =
-        synchronized(list) { list.value = currentInfos(manager).map(::toSystemDevice) }
+        synchronized(list) {
+            list.value = currentInfos(manager).map(::toSystemDevice)
+            Log.d(TAG, "devices: ${list.value}")
+        }
 
     /** Opens [device] and one of its ports with [openPort]; null, with nothing left open, if either fails. */
     private suspend fun <P : Any> openPort(
@@ -258,7 +263,12 @@ internal class MidiManagerSystem(
         openPort: (MidiDevice) -> P?,
     ): Pair<MidiDevice, P>? {
         val opened = open(manager, device) ?: return null
-        val port = runCatching { openPort(opened) }.onFailure { opened.close() }.getOrThrow()
+        val port =
+            runCatching { openPort(opened) }
+                .onFailure {
+                    Log.w(TAG, "opening a port of device ${device.systemId} failed", it)
+                    opened.close()
+                }.getOrThrow()
         if (port == null) opened.close()
         return port?.let { opened to it }
     }
@@ -270,7 +280,7 @@ internal class MidiManagerSystem(
     ): MidiDevice? {
         val info = currentInfos(manager).firstOrNull { it.id == device.systemId }
         if (info == null) {
-            Log.w(TAG, "device ${device.systemId} is no longer listed")
+            Log.d(TAG, "device ${device.systemId} is no longer listed") // the caller warns
             return null
         }
         return suspendCancellableCoroutine { continuation ->
