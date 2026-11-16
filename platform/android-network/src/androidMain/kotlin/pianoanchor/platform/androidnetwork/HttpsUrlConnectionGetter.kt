@@ -44,7 +44,13 @@ internal class HttpsUrlConnectionGetter : HttpGetter {
                 connection.useCaches = false
                 headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
                 val status = connection.responseCode
-                Log.i(TAG, "GET $url: HTTP $status")
+                if (status <
+                    HTTP_BAD_REQUEST
+                ) {
+                    Log.i(TAG, "GET $url: HTTP $status")
+                } else {
+                    Log.w(TAG, "GET $url: HTTP $status")
+                }
                 val stream = if (status < HTTP_BAD_REQUEST) connection.inputStream else connection.errorStream
                 HttpResponse(status, stream?.bufferedReader()?.use { it.readText() }.orEmpty())
             } catch (e: IOException) {

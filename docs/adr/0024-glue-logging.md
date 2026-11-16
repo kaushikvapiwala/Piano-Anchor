@@ -15,10 +15,14 @@ show it, so storage failures left no trace at all.
   `PianoAnchor` (`PianoAnchorMidi`, `PianoAnchorNet`, `PianoAnchorDb`, `PianoAnchorAudio`). The glue sees every
   platform event (device list changes, opens and closes, scans, Bluetooth opens, HTTP status, SQL exceptions), and
   each reconnect attempt shows as one more Bluetooth open.
-- Levels: `i` for lifecycle events, `d` for detail (scan results, Bluetooth LE unavailable), `w` for failures.
+- Levels: `i` for lifecycle events, `d` for detail (the device list, scan results), `w` for failures (HTTP errors
+  included). Warnings name no Bluetooth address, since they reach release logs.
 - The release build's R8 rules (`app-android/proguard-rules.pro`) remove `Log.v`, `Log.d` and `Log.i`, so a release
   logs warnings only. Detail lines with Bluetooth addresses and device serials stay in debug builds.
-- The domain and the adapters' `commonMain` logic stay free of logging. No logging port and no library.
+- Storage failures are logged where common code wraps them in `StorageUnavailableException`, through an
+  `expect fun logStorageFailure` (logcat on Android, nothing on the desktop developer app), so the line names the
+  operation that failed.
+- The domain and the adapters' other `commonMain` logic stay free of logging. No logging port and no library.
 - Never log MIDI note bytes (one line per key press floods logcat; the monitor's fixture export records them).
 
 Rejected: a logging port in `core/ports` (a contract test, fakes and wiring in every view model, for lines that only a
