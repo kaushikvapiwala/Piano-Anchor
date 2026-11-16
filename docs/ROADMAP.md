@@ -72,6 +72,11 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     Pianos screen each copy a TextButton with a "←" glyph and their own back strings. Move it to `ui/shell` with one
     string, hide the glyph from TalkBack (it now reads "Back" and the arrow), mirror it in right-to-left layouts and
     let it grow with the font scale instead of a fixed 44 dp width.
+11. **Connect step says what to do and why a piano may be missing** (owner's hardware check; needs an owner decision on
+    wording): the step has no button, and the owner looked for one; say under the connected line that a key press
+    continues (e.g. "Press any key to continue"). A piano left idle turns its Bluetooth off (the owner's went quiet
+    after about 15 minutes and only a power cycle brought it back), so the "Not found?" hint, and the Pianos screen
+    when a scan finds nothing, should say a piano may have gone to sleep: turn it off and on again.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
