@@ -20,6 +20,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelUuid
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,6 +37,9 @@ import kotlin.coroutines.resume
 
 private const val GLUE = "thin android.media.midi glue; verified by the 1.4m owner test on a Pixel"
 
+/** Logcat tag of the MIDI and Bluetooth LE glue (docs/debugging.md); debug and info lines are stripped from release. */
+private const val TAG = "PianoAnchorMidi"
+
 /** Service UUID that Bluetooth LE MIDI devices advertise (BLE MIDI specification). */
 private const val BLE_MIDI_SERVICE_UUID = "03B80E5A-EDE8-4B33-A751-6CE34EC4C700"
 
@@ -51,7 +55,7 @@ public fun AndroidMidiAdapter(context: Context): AndroidMidiAdapter =
  * [MidiSystem] over `MidiManager`. Lists byte-stream (MIDI 1.0) devices only. One device callback, registered for
  * the life of this object (the adapter is app-scoped), keeps [devices] current, so reading it costs nothing.
  * Callbacks run on the main looper; received bytes arrive on Android's binder threads. On a device without the
- * MIDI feature it lists nothing.
+ * MIDI feature it lists nothing. Logs device changes, opens and Bluetooth LE activity under [TAG].
  */
 @ExcludeFromCoverage(GLUE)
 internal class MidiManagerSystem(
@@ -67,13 +71,20 @@ internal class MidiManagerSystem(
     override val devices: StateFlow<List<SystemDevice>> = list
 
     init {
+        if (manager == null) Log.w(TAG, "no MidiManager: this device lacks the MIDI feature")
         manager?.let { manager ->
             register(
                 manager,
                 object : MidiManager.DeviceCallback() {
-                    override fun onDeviceAdded(device: MidiDeviceInfo) = refresh(manager)
+                    override fun onDeviceAdded(device: MidiDeviceInfo) {
+                        Log.i(TAG, "device added: ${toSystemDevice(device)}")
+                        refresh(manager)
+                    }
 
-                    override fun onDeviceRemoved(device: MidiDeviceInfo) = refresh(manager)
+                    override fun onDeviceRemoved(device: MidiDeviceInfo) {
+                        Log.i(TAG, "device removed: ${toSystemDevice(device)}")
+                        refresh(manager)
+                    }
                 },
             )
             refresh(manager) // after registering, so no change between the snapshot and the callback is missed
@@ -99,25 +110,38 @@ internal class MidiManagerSystem(
         val removal =
             object : MidiManager.DeviceCallback() {
                 override fun onDeviceRemoved(info: MidiDeviceInfo) {
-                    if (info.id == device.systemId) onClosed()
+                    if (info.id == device.systemId) {
+                        Log.i(TAG, "input of device ${device.systemId} closed: the device went away")
+                        onClosed()
+                    }
                 }
             }
         register(manager, removal)
         return openPort(manager, device) { it.openOutputPort(0) }
             ?.let { (opened, port) ->
                 port.connect(receiver)
+                Log.i(TAG, "input of device ${device.systemId} open")
                 AutoCloseable {
+                    Log.i(TAG, "input of device ${device.systemId} closing")
                     manager.unregisterDeviceCallback(removal)
                     port.disconnect(receiver)
                     port.close()
                     opened.close()
                 }
-            }.also { if (it == null) manager.unregisterDeviceCallback(removal) }
+            }.also {
+                if (it == null) {
+                    Log.w(TAG, "could not open the input of device ${device.systemId}")
+                    manager.unregisterDeviceCallback(removal)
+                }
+            }
     }
 
     override suspend fun openOutput(device: SystemDevice): SystemSender? {
         val manager = manager ?: return null
-        return openPort(manager, device) { it.openInputPort(0) }?.let { (opened, port) ->
+        val ports = openPort(manager, device) { it.openInputPort(0) }
+        if (ports == null) Log.w(TAG, "could not open the output to device ${device.systemId}")
+        return ports?.let { (opened, port) ->
+            Log.i(TAG, "output to device ${device.systemId} open")
             object : SystemSender {
                 override fun send(
                     bytes: ByteArray,
@@ -126,6 +150,7 @@ internal class MidiManagerSystem(
                 ) = port.send(bytes, offset, count)
 
                 override fun close() {
+                    Log.i(TAG, "output to device ${device.systemId} closing")
                     port.close()
                     opened.close()
                 }
@@ -134,6 +159,9 @@ internal class MidiManagerSystem(
     }
 
     override fun bluetoothProblem(): Reason? =
+        bluetoothProblemNow().also { if (it != null) Log.d(TAG, "Bluetooth LE unavailable: $it") }
+
+    private fun bluetoothProblemNow(): Reason? =
         when {
             listOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT).any {
                 context.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
@@ -155,18 +183,22 @@ internal class MidiManagerSystem(
     override fun scanBluetooth(): Flow<BluetoothAdvertisement> =
         callbackFlow {
             val scanner = bluetooth?.bluetoothLeScanner ?: throw BluetoothUnavailableException(Reason.BLUETOOTH_OFF)
+            val seen = mutableSetOf<String>() // addresses logged so far; touched on the main looper only
             val callback =
                 object : ScanCallback() {
                     override fun onScanResult(
                         callbackType: Int,
                         result: ScanResult,
                     ) {
-                        trySend(BluetoothAdvertisement(result.device.address, result.scanRecord?.deviceName))
+                        val advertisement = BluetoothAdvertisement(result.device.address, result.scanRecord?.deviceName)
+                        if (seen.add(advertisement.address)) Log.d(TAG, "scan found $advertisement")
+                        trySend(advertisement)
                     }
 
                     override fun onBatchScanResults(results: List<ScanResult>) = results.forEach { onScanResult(0, it) }
 
                     override fun onScanFailed(errorCode: Int) {
+                        Log.w(TAG, "Bluetooth LE scan failed: error $errorCode (ScanCallback.SCAN_FAILED_*)")
                         close(BluetoothUnavailableException(Reason.BLUETOOTH_OFF))
                     }
                 }
@@ -174,13 +206,19 @@ internal class MidiManagerSystem(
             val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
             try {
                 scanner.startScan(listOf(filter), settings, callback)
+                Log.d(TAG, "Bluetooth LE scan started")
             } catch (e: SecurityException) {
+                Log.w(TAG, "Bluetooth LE scan refused", e)
                 throw BluetoothUnavailableException(Reason.PERMISSION_DENIED).apply { initCause(e) }
             } catch (e: IllegalStateException) {
                 // Bluetooth was switched off just now
+                Log.w(TAG, "Bluetooth LE scan failed to start", e)
                 throw BluetoothUnavailableException(Reason.BLUETOOTH_OFF).apply { initCause(e) }
             }
-            awaitClose { if (bluetooth.isEnabled) scanner.stopScan(callback) }
+            awaitClose {
+                Log.d(TAG, "Bluetooth LE scan stopped")
+                if (bluetooth.isEnabled) scanner.stopScan(callback)
+            }
         }
 
     // Called only when bluetoothProblem() is null (permissions granted).
@@ -188,13 +226,25 @@ internal class MidiManagerSystem(
     override suspend fun openBluetooth(address: String): AutoCloseable? {
         val manager = manager
         val device = bluetooth?.takeIf { BluetoothAdapter.checkBluetoothAddress(address) }?.getRemoteDevice(address)
-        if (manager == null || device == null) return null
+        if (manager == null || device == null) {
+            Log.w(TAG, "cannot open Bluetooth device $address: no MIDI service, adapter or valid address")
+            return null
+        }
+        Log.i(TAG, "opening Bluetooth device $address")
         return suspendCancellableCoroutine<MidiDevice?> { continuation ->
             manager.openBluetoothDevice(
                 device,
                 { opened -> continuation.resume(opened) { _, value, _ -> value?.close() } },
                 handler,
             )
+        }.also {
+            if (it ==
+                null
+            ) {
+                Log.w(TAG, "Bluetooth device $address did not open")
+            } else {
+                Log.i(TAG, "Bluetooth device $address open")
+            }
         }
     }
 
@@ -218,7 +268,11 @@ internal class MidiManagerSystem(
         manager: MidiManager,
         device: SystemDevice,
     ): MidiDevice? {
-        val info = currentInfos(manager).firstOrNull { it.id == device.systemId } ?: return null
+        val info = currentInfos(manager).firstOrNull { it.id == device.systemId }
+        if (info == null) {
+            Log.w(TAG, "device ${device.systemId} is no longer listed")
+            return null
+        }
         return suspendCancellableCoroutine { continuation ->
             manager.openDevice(
                 info,
