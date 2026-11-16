@@ -190,6 +190,50 @@ class TodayViewModelTest {
             assertEquals(4, vm.state.value.weeklyGoalDays)
         }
 
+    private suspend fun earReviewOn(date: LocalDate) =
+        LearnerModel(Curriculum.graph, learnerRepository)
+            .recordSkill(EarSkills.ECHO_NOTE.id, Band.GOOD, date, "ear:$date")
+
+    @Test
+    fun aDayWithOnlyAnEarReviewCountsAsAPracticeDay() =
+        runTest(dispatcher) {
+            earReviewOn(today)
+            val vm = viewModel()
+
+            assertEquals(1, vm.state.value.daysThisWeek)
+            assertEquals(1, vm.state.value.practicedDays)
+        }
+
+    @Test
+    fun aDayWithAnAttemptAndAnEarReviewCountsOnce() =
+        runTest(dispatcher) {
+            playedOn("2026-11-18")
+            earReviewOn(today)
+            val vm = viewModel()
+
+            assertEquals(1, vm.state.value.daysThisWeek)
+            assertEquals(1, vm.state.value.practicedDays)
+        }
+
+    @Test
+    fun anEarReviewOlderThanTheWindowAndTheWeekIsNotCounted() =
+        runTest(dispatcher) {
+            earReviewOn(LocalDate(2026, 11, 1))
+            val vm = viewModel()
+
+            assertEquals(0, vm.state.value.daysThisWeek)
+            assertEquals(0, vm.state.value.practicedDays)
+        }
+
+    @Test
+    fun aLearnerStoreThatFailsShowsTheError() =
+        runTest(dispatcher) {
+            learnerRepository.failing = true
+            val vm = viewModel()
+
+            assertTrue(vm.state.value.storageFailed)
+        }
+
     @Test
     fun practiceDayLineCountsTheLast16Days() =
         runTest(dispatcher) {

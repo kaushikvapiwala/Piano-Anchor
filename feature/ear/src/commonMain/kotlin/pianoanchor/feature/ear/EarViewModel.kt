@@ -35,6 +35,7 @@ import pianoanchor.engine.ear.EarEcho
 import pianoanchor.engine.ear.EarGenerator
 import pianoanchor.engine.ear.EarGrading
 import pianoanchor.engine.ear.tones
+import pianoanchor.engine.learner.EAR_ATTEMPT_ID_PREFIX
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.midi.MidiEncoder
@@ -244,7 +245,12 @@ public class EarViewModel(
         itemsDone += outcomes.size
         outcomes.clear()
         try {
-            learner.recordSkill(skills[skillIndex].id, band, learnerDay(clock.now(), zone), "ear:${newId()}")
+            learner.recordSkill(
+                skills[skillIndex].id,
+                band,
+                learnerDay(clock.now(), zone),
+                "$EAR_ATTEMPT_ID_PREFIX${newId()}",
+            )
         } catch (_: StorageUnavailableException) {
             storageFailed = true
         }

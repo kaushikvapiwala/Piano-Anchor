@@ -484,4 +484,27 @@ class LearnerModelTest {
 
             assertEquals(before, repository.states())
         }
+
+    @Test
+    fun earDaysListsTheDaysOfEarReviewsFromTheGivenDayOn() =
+        runTest {
+            model.recordSkill("a", Band.CLEAN, LocalDate(2026, 11, 10), "ear:1")
+            model.recordSkill("b", Band.CLEAN, LocalDate(2026, 11, 13), "ear:2")
+
+            assertEquals(setOf(LocalDate(2026, 11, 13)), model.earDays(LocalDate(2026, 11, 12)))
+            assertEquals(emptySet(), model.earDays(LocalDate(2026, 11, 14)))
+        }
+
+    @Test
+    fun earDaysIgnoresPassageAndPlacementReviews() =
+        runTest {
+            val thirteenth = LocalDate(2026, 11, 13)
+            model.place(setOf("d"), thirteenth)
+            model.record(passage("a"), attempt(Band.CLEAN), thirteenth)
+
+            assertEquals(emptySet(), model.earDays(LocalDate(2026, 11, 1)))
+        }
+
+    @Test
+    fun earDaysIsEmptyWithNoReviews() = runTest { assertEquals(emptySet(), model.earDays(LocalDate(2026, 11, 1))) }
 }

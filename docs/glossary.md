@@ -58,6 +58,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Performance analyser | `PerformanceAnalyser` in `:engine`: aligns a take's played notes to the passage, fits its tempo and reports findings of every error kind (`docs/algorithms/performance-analysis.md`). |
 | Played note | One key as played (`PlayedNote` in `:core:model`): pitch, onset velocity, key down, key up and when it stopped sounding, paired from MIDI events by `PlayedNotes.from`. |
 | Port | Interface through which the domain uses the outside world. Named `*Port`, lives in `core/ports`. |
+| Practice day | A calendar day with at least one attempt, or a learner day with an ear-set review (`LearnerModel.earDays`); Today's weekly goal and its 16-day line count them. Placement reviews do not count. |
 | Practice screen | The wait-mode screen (`:feature:practice`): the passage on a treble staff with a cursor on the waiting note, and a live key strip. A completed run is graded and saved; a run that ends early is discarded. |
 | Prerequisite | A skill that must be learned before another one is introduced (`Skill.prerequisites`, by id). |
 | Rating | How a review went for the memory model: `AGAIN`, `HARD`, `GOOD` or `EASY` (`Rating` in `:core:model`). |
