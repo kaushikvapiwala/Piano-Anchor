@@ -1,8 +1,10 @@
 package pianoanchor.platform.androidnetwork
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import pianoanchor.core.model.ExcludeFromCoverage
+import java.io.IOException
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -10,6 +12,9 @@ private const val GLUE = "thin HttpsURLConnection glue; checked on a device agai
 
 /** Time allowed to connect, and then to wait for data: the update check must never hold anything up for long. */
 private const val TIMEOUT_MS = 10_000
+
+/** Logcat tag of the network glue (docs/debugging.md); debug and info lines are stripped from release. */
+private const val TAG = "PianoAnchorNet"
 
 /**
  * Creates the update check for [repository] (`owner/name`), identifying the app as `PianoAnchor/[appVersion]`. It
@@ -23,7 +28,7 @@ public fun GitHubUpdateCheckAdapter(
 
 /**
  * [HttpGetter] over `HttpsURLConnection`: [TIMEOUT_MS] to connect and to read, no cache, no cookies and no request
- * body. Blocks a `Dispatchers.IO` thread for at most the timeouts.
+ * body. Blocks a `Dispatchers.IO` thread for at most the timeouts. Logs each request's status or failure under [TAG].
  */
 @ExcludeFromCoverage(GLUE)
 internal class HttpsUrlConnectionGetter : HttpGetter {
@@ -39,8 +44,12 @@ internal class HttpsUrlConnectionGetter : HttpGetter {
                 connection.useCaches = false
                 headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
                 val status = connection.responseCode
+                Log.i(TAG, "GET $url: HTTP $status")
                 val stream = if (status < HTTP_BAD_REQUEST) connection.inputStream else connection.errorStream
                 HttpResponse(status, stream?.bufferedReader()?.use { it.readText() }.orEmpty())
+            } catch (e: IOException) {
+                Log.w(TAG, "GET $url failed", e)
+                throw e
             } finally {
                 connection.disconnect()
             }
