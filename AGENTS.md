@@ -11,6 +11,8 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 - `./gradlew generateDocs` — regenerate `docs/generated/` from the code. Generated docs are regenerated, never hand-edited (`GeneratedDocsTest` fails when they are stale)
 - `./gradlew spotlessApply` — auto-format (ktlint official style). Never hand-format.
   Neither ktlint 1.8 nor plain `detekt` flags unused imports: remove them yourself when you move code.
+  Spotless targets are files or a narrow `fileTree`, never a string glob: that walks the whole project directory, `build/`
+  included, and fails when a parallel compile rewrites it.
 - `./gradlew ciBuild` — everything CI's build job runs (`fastCheck` and `check` in every module, both apps); `./gradlew :app-android:assembleDebug`, `./gradlew :app-desktop:run`
 - One module: `./gradlew :engine:desktopTest`, `./gradlew :architecture-tests:test`
 - `./gradlew :app-android:atdPixelDebugAndroidTest` — the emulator end-to-end test (needs KVM; CI runs it in `.github/workflows/e2e.yml`, not `fastCheck`)

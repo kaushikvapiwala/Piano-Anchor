@@ -13,7 +13,9 @@ spotless {
         ktlint(catalog.findVersion("ktlint").get().requiredVersion)
     }
     kotlinGradle {
-        target("*.gradle.kts")
+        // A file, not the "*.gradle.kts" glob: Spotless would walk the whole module directory, build/ included, while
+        // parallel compiles rewrite it.
+        target(files("build.gradle.kts"))
         ktlint(catalog.findVersion("ktlint").get().requiredVersion)
     }
 }

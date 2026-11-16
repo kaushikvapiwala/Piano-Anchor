@@ -12,15 +12,21 @@ plugins {
     alias(libs.plugins.spotless)
 }
 
+// Spotless turns a string target into a file tree of the whole project directory, so "*.gradle.kts" here would walk
+// every module's build/ while parallel compiles rewrite it ("Could not read path …/dirty-sources.txt"). Name the root
+// scripts as files and walk only build-logic.
+val buildLogicSources = fileTree("build-logic") { exclude("**/build/**", "**/.gradle/**") }
+
 spotless {
     kotlinGradle {
-        target("*.gradle.kts", "build-logic/**/*.gradle.kts")
-        targetExclude("**/build/**")
+        target(
+            files("build.gradle.kts", "settings.gradle.kts"),
+            buildLogicSources.matching { include("**/*.gradle.kts") },
+        )
         ktlint(libs.versions.ktlint.get())
     }
     kotlin {
-        target("build-logic/**/src/**/*.kt")
-        targetExclude("**/build/**")
+        target(buildLogicSources.matching { include("**/src/**/*.kt") })
         ktlint(libs.versions.ktlint.get())
     }
 }
