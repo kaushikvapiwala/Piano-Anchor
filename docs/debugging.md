@@ -28,6 +28,25 @@ The platform glue logs to logcat (`docs/adr/0024-glue-logging.md`), one tag per 
 Debug builds log every level; release builds keep warnings and errors only (R8 removes the rest). MIDI note bytes are
 never logged: record them with the monitor's fixture export instead.
 
+### One command per session
+`scripts/capture_session.sh` captures a whole test session: start it, test on the phone, press Enter (or Ctrl-C) to
+stop. It writes `captures/session-<time>/` (git-ignored) with:
+
+| File | Contents |
+|---|---|
+| `device.txt` | Phone model, Android version, the app's version and install time |
+| `logcat.txt` | The full log since the start (the buffer is cleared first) |
+| `app.txt` | The `PianoAnchor*` lines and crashes, picked out of `logcat.txt` |
+| `crash.txt` | The crash buffer |
+| `midi.txt` | `dumpsys midi`: Android's view of MIDI devices and open ports at the end |
+| `piano-anchor-capture-<n>.mp4` | The screen recording, in 3-minute segments (`--no-video` skips it) |
+| `bugreport.zip` | With `--bugreport` only: a full bug report (slow; for Bluetooth trouble or an ANR) |
+
+`-s SERIAL` picks a phone when several are connected; `-h` lists the options. The script finds `adb` on `PATH`, in
+`ANDROID_HOME` or in Android Studio's default SDK folder (`ADB=/path/to/adb` overrides it). For note trouble, also copy
+the monitor's exported fixture into the session folder.
+
+### By hand
 ```sh
 adb logcat -c                                          # clear old lines first
 adb logcat -v threadtime > session.log                 # everything, to a file
@@ -43,6 +62,6 @@ Android's own Bluetooth and MIDI lines (`BluetoothGatt`, `MidiService`, `Bluetoo
 the app-only filter.
 
 ## Report
-File an issue from the "Bug report" template (the "Dogfood finding" template while dogfooding) with the steps, the
-log file, the screen recording and, for anything about notes, the exported fixture JSONL. Logs can hold Bluetooth
+File an issue from the "Bug report" template (the "Dogfood finding" template while dogfooding) with the steps,
+`app.txt` (or the full log when Bluetooth or MIDI misbehaves), the screen recording and, for anything about notes, the exported fixture JSONL. Logs can hold Bluetooth
 addresses and device serials: trim them before attaching if that matters to you.

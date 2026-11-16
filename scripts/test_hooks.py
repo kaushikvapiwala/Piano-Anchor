@@ -398,6 +398,84 @@ class CloudSetupTest(TempRepo):
         self.assertFalse((self.repo / "android-sdk" / "cmdline-tools" / "latest").exists())
 
 
+FAKE_ADB = """#!/bin/sh
+echo "$*" >> "$FAKE_ADB_CALLS"
+[ "$1" = "-s" ] && shift 2
+case "$*" in
+    get-state) echo "${FAKE_ADB_STATE:-device}" ;;
+    "shell getprop ro.product.model") echo "Pixel 9" ;;
+    "shell getprop"*) echo "x" ;;
+    "shell dumpsys package"*) printf '    versionCode=1 minSdk=29\r\n    versionName=0.0.0-dev\r\n' ;;
+    "shell dumpsys midi") echo "MIDI Manager State" ;;
+    "logcat -v threadtime")
+        echo "11-15 10:00:00.000  1  2 I PianoAnchorMidi: device added"
+        echo "11-15 10:00:00.001  1  2 D BluetoothGatt: connect"
+        echo "11-15 10:00:00.002  1  2 E AndroidRuntime: FATAL EXCEPTION: main"
+        exec sleep 30 ;;
+    "logcat -b crash -d") echo "crash line" ;;
+esac
+"""
+
+
+class CaptureSessionTest(unittest.TestCase):
+    script = str(ROOT / "scripts" / "capture_session.sh")
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        adb = self.dir / "adb"
+        adb.write_text(FAKE_ADB)
+        adb.chmod(0o755)
+        self.calls = self.dir / "calls.txt"
+        self.out = self.dir / "session"
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def capture(self, *args: str, **env: str) -> subprocess.CompletedProcess:
+        base = dict(os.environ, ADB=str(self.dir / "adb"), FAKE_ADB_CALLS=str(self.calls), **env)
+        return subprocess.run(
+            [self.script, "-o", str(self.out), *args], input="\n", env=base, capture_output=True, text=True, timeout=30
+        )
+
+    def test_collects_the_session_into_the_folder(self) -> None:
+        result = self.capture("--no-video")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            sorted(p.name for p in self.out.iterdir()),
+            ["app.txt", "crash.txt", "device.txt", "logcat.txt", "midi.txt"],
+        )
+        self.assertIn("BluetoothGatt", (self.out / "logcat.txt").read_text())
+        app = (self.out / "app.txt").read_text().splitlines()
+        self.assertEqual([line.split()[5] for line in app], ["PianoAnchorMidi:", "AndroidRuntime:"])
+        device = (self.out / "device.txt").read_text()
+        self.assertIn("Pixel 9", device)
+        self.assertIn("versionName=0.0.0-dev", device)
+        self.assertNotIn("\r", device)
+        self.assertEqual((self.out / "crash.txt").read_text(), "crash line\n")
+
+    def test_clears_logcat_before_capturing(self) -> None:
+        self.capture("--no-video")
+        calls = self.calls.read_text().splitlines()
+        self.assertLess(calls.index("logcat -c"), calls.index("logcat -v threadtime"))
+
+    def test_passes_the_serial_to_every_adb_call(self) -> None:
+        self.capture("--no-video", "-s", "R5CT")
+        self.assertTrue(all(c.startswith("-s R5CT ") for c in self.calls.read_text().splitlines()))
+
+    def test_stops_when_no_device_is_ready(self) -> None:
+        result = self.capture(FAKE_ADB_STATE="unauthorized")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("no device ready", result.stderr)
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_an_unknown_option(self) -> None:
+        self.assertEqual(self.capture("--nope").returncode, 2)
+
+    def test_writes_into_a_git_ignored_folder(self) -> None:
+        self.assertIn("captures/", (ROOT / ".gitignore").read_text().splitlines())
+
+
 class SettingsTest(unittest.TestCase):
     """The implementer subagent must face the same fastCheck gate as the main session; scouts must not."""
 
