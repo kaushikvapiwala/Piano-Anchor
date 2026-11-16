@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,12 +20,9 @@ import pianoanchor.core.model.EarExercise
 import pianoanchor.core.model.EarItemOutcome
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
-import pianoanchor.core.model.MidiNote
-import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.Skill
 import pianoanchor.core.model.StorageUnavailableException
-import pianoanchor.core.model.Tone
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.core.ports.TonePort
@@ -38,11 +34,9 @@ import pianoanchor.engine.ear.tones
 import pianoanchor.engine.learner.EAR_ATTEMPT_ID_PREFIX
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
-import pianoanchor.engine.midi.MidiEncoder
+import pianoanchor.engine.midi.playTones
 import kotlin.random.Random
 import kotlin.time.Clock
-
-private const val CHANNEL = 0
 
 /** How many times a draw is repeated to get an item not yet in the set, before an equal one is accepted. */
 private const val MAX_REDRAWS = 20
@@ -56,13 +50,6 @@ private class ItemRun(
     var outcome: EarItemOutcome? = null
     var leaving = false
 }
-
-/** A NoteOn or NoteOff of the MIDI playback, [atMs] after it started. */
-private class MidiAction(
-    val atMs: Long,
-    val note: MidiNote,
-    val on: Boolean,
-)
 
 /**
  * The ear-training session (`docs/algorithms/ear-training.md`): runs [skills] in order, each a set of
@@ -290,59 +277,19 @@ public class EarViewModel(
 
     private suspend fun play(exercise: EarExercise) {
         mutableState.update { it.copy(playing = true) }
+        val tones = exercise.tones()
         try {
             if (!speakerOnly && output.outputDevices.first().any { it.id == device.id }) {
                 try {
-                    playOnPiano(exercise.tones())
+                    output.playTones(device, tones)
                     return
                 } catch (_: MidiDeviceUnavailableException) {
                     speakerOnly = true
                 }
             }
-            tone.play(exercise.tones())
+            tone.play(tones)
         } finally {
             mutableState.update { it.copy(playing = false) }
         }
-    }
-
-    /** NoteOn and NoteOff for each tone, at their times; a cancelled playback releases the keys still down. */
-    private suspend fun playOnPiano(tones: List<Tone>) {
-        val actions =
-            tones
-                .flatMap {
-                    listOf(
-                        MidiAction(it.startMs, it.note, true),
-                        MidiAction(it.startMs + it.lengthMs, it.note, false),
-                    )
-                }.sortedWith(compareBy({ it.atMs }, { it.on }))
-        val down = HashSet<MidiNote>()
-        var at = 0L
-        try {
-            for (action in actions) {
-                delay(action.atMs - at)
-                at = action.atMs
-                send(action.note, action.on)
-                if (action.on) down += action.note else down -= action.note
-            }
-        } finally {
-            withContext(NonCancellable) {
-                for (note in down) {
-                    try {
-                        send(note, on = false)
-                    } catch (_: MidiDeviceUnavailableException) {
-                        // Already gone: nothing is sounding.
-                    }
-                }
-            }
-        }
-    }
-
-    private suspend fun send(
-        note: MidiNote,
-        on: Boolean,
-    ) {
-        val message =
-            if (on) NoteOn(0, CHANNEL, note, Tunables.PLAYBACK_VELOCITY) else NoteOff(0, CHANNEL, note, 0)
-        output.send(device, MidiEncoder.encode(message))
     }
 }

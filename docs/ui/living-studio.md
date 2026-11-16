@@ -17,7 +17,7 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
 - **Feedback tokens** (`MaterialTheme.pianoAnchorColors`): correct `#1F5F8B` (dark `#8CC4E8`), waiting `#E69F00`
   (dark `#F2B84B`), wrong key `#B86FA3` (dark `#E3A6D0`), timing `#D55E00` (dark `#F08A4B`, our choice: the mock
   has none; the hollow mark of a timing-off note). Staff lines `#3F3B45` (dark `#CFC8D3`), upcoming notes `#1B1B1F`
-  (dark `#F7F5F2`), target-key band `#FBE3B0`.
+  (dark `#F7F5F2`), target-key band `#FBE3B0`. Ear card accent `#8A5300` with white text (dark `#FFC857` with `#1B1B1F`).
 - **Contrast** (WCAG, against the background): all text ≥ 4.5:1 in both themes; dark marks all ≥ 8:1. In light, the
   waiting amber `#E69F00` is 2.2:1, under the 3:1 for marks, and the target band is decorative (1.3:1 on a white
   key). Kept as in the mock because the waiting note is never told by colour alone (the cursor stands beside it,
@@ -231,7 +231,7 @@ and the weekly goal dots (one per goal day, plum for each day practised since Mo
   "n more to review". **New lesson**: surface with a border, "Begin" and the "why now" line. **Song**: "♩ = 72 · rung 3
   of 5" (wait mode reads "Wait mode · rung 1 of 5") and "Continue". Each opens Practice on the card's passage and
   rung; with no piano connected a card opens Pianos.
-- **Ear** card: surface with a 2 dp amber border (`#8A5300` light, `#FFC857` dark), the label "EAR · 3 MIN" in amber,
+- **Ear** card: surface with a 2 dp border in the ear accent (above), the label "EAR · 3 MIN" in amber,
   the first skill's title, "3 skills today" and an amber "Start ear" button. It opens the Ear screen with its skills.
 - **Session bar**: Review, Lesson, Song and (amber) Ear segments with widths proportional to their minutes (a zero
   segment is left out), decorative; the caption under it, "Today's 20 minutes: review 4, lesson 7, song 6, ear 3", is

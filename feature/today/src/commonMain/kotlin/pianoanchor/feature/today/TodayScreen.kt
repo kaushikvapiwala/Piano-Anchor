@@ -61,6 +61,7 @@ import pianoanchor.feature.today.resources.today_update_dismiss
 import pianoanchor.feature.today.resources.today_update_see
 import pianoanchor.ui.shell.AppNavRail
 import pianoanchor.ui.shell.RailDestination
+import pianoanchor.ui.shell.pianoAnchorColors
 import androidx.compose.material3.Card as MaterialCard
 
 private val TouchTarget = 44.dp
@@ -282,7 +283,7 @@ private fun SessionBar(session: Session) {
                     session.reviewMinutes to ColdOpenBackground,
                     session.lessonMinutes to MaterialTheme.colorScheme.primary,
                     session.songMinutes to MaterialTheme.colorScheme.outline,
-                    session.earMinutes to amberAccent(),
+                    session.earMinutes to MaterialTheme.pianoAnchorColors.earAccent,
                 )
             for ((minutes, color) in segments) {
                 if (minutes > 0) {
