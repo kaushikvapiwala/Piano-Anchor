@@ -127,4 +127,20 @@ class PiecesTest {
         )
         assertEquals(views.size, views.map { it.passage.id }.toSet().size)
     }
+
+    @Test
+    fun waitingForAgreesWithThePieceViewForTheSameLearnedSet() {
+        val learnedSets =
+            listOf(
+                emptySet(),
+                setOf("rh-c-position", "rhythm-quarter"),
+                Curriculum.graph.skills.mapTo(HashSet()) { it.id },
+            )
+        for (ids in learnedSets) {
+            val states = ids.associateWith { learned(it) }
+            for (view in list(states)) {
+                assertEquals(view.waitingFor, Pieces.waitingFor(view.passage, Curriculum.graph, ids))
+            }
+        }
+    }
 }

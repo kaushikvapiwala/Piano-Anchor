@@ -136,6 +136,8 @@ class TodayViewModelTest {
             givenStates(
                 skillState(Skills.KB_MIDDLE_C.id),
                 skillState(Skills.RH_TUNES.id, dueDay = LocalDate(2026, 12, 1), learned = true),
+                skillState(Skills.RH_C_POSITION.id, dueDay = LocalDate(2026, 12, 1), learned = true),
+                skillState(Skills.RHYTHM_QUARTER.id, dueDay = LocalDate(2026, 12, 1), learned = true),
             )
             val march = checkNotNull(Curriculum.passage("builtin:middle-c-march"))
             playedOn("2026-11-10", tempoBpm = TempoRung.P60.bpm(march), band = Band.CLEAN)
@@ -404,7 +406,11 @@ class TodayViewModelTest {
     @Test
     fun aCleanWaitRunMovesTheSongToTheNextRung() =
         runTest(dispatcher) {
-            givenStates(skillState(Skills.RH_TUNES.id, dueDay = LocalDate(2026, 12, 1), learned = true))
+            givenStates(
+                skillState(Skills.RH_TUNES.id, dueDay = LocalDate(2026, 12, 1), learned = true),
+                skillState(Skills.RH_C_POSITION.id, dueDay = LocalDate(2026, 12, 1), learned = true),
+                skillState(Skills.RHYTHM_QUARTER.id, dueDay = LocalDate(2026, 12, 1), learned = true),
+            )
             val first =
                 assertIs<Card.Song>(
                     assertNotNull(viewModel().state.value.session).cards.filterIsInstance<Card.Song>().single(),

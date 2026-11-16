@@ -12,10 +12,13 @@ through `passageHistories` (beside `PassageHistory`), the loader Songs shares.
   know, or with no passage, is skipped for the next one. Nothing due means no card.
 - **Lesson.** The first new skill of the plan that is not an ear skill, on the first passage that exercises it, at WAIT. "Why now" lists the
   skill's prerequisites. No new skill means no card.
-- **Song.** The latest unit with a learned skill that still has a passage not CLEAN at 100% and not already used by
-  the cold open or the lesson; there, a public-domain piece is preferred over an original exercise, then curriculum
-  order. The rung is the first above the passage's highest CLEAN rung, where a clean wait-mode run counts as a clean
-  WAIT (so the song starts at WAIT only when nothing is clean). If no passage qualifies there is no card. The set of
+- **Song.** Only a piece Songs shows as open: a passage marked as a piece whose skills' prerequisites are all learned
+  (`Pieces.waitingFor` is null, the same lock rule as Songs), not already used by the cold open or the lesson and not
+  yet CLEAN at 100%. Chord exercises and locked pieces are never offered. Among the candidates of every unit: pieces
+  already played before new ones, then public domain before original, then curriculum order (unit, then content
+  order). The rung is the first above the passage's highest CLEAN rung, where a clean wait-mode run counts as a clean
+  WAIT (so the song starts at WAIT only when nothing is clean). No candidate, or no learned skill at all, means no
+  card. The set of
   learned skills is an input (`LearnerModel.learnedSkills`): the plan lists only due and new skills, so a day with
   nothing due or new still offers a song.
 

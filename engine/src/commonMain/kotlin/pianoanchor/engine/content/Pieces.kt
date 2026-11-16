@@ -47,6 +47,17 @@ public object Pieces {
                 .map { view(it, unit.title, graph, states, history[it.id]) }
         }
 
+    /**
+     * The first skill (graph order) of [passage] whose prerequisites are not all in [learned]; null when the passage
+     * is open.
+     */
+    public fun waitingFor(
+        passage: Passage,
+        graph: SkillGraph,
+        learned: Set<String>,
+    ): Skill? =
+        graph.skills.firstOrNull { skill -> skill.id in passage.skills && !learned.containsAll(skill.prerequisites) }
+
     private fun view(
         passage: Passage,
         unitTitle: String,
@@ -54,10 +65,7 @@ public object Pieces {
         states: Map<String, SkillState>,
         history: PassageHistory?,
     ): PieceView {
-        val waitingFor =
-            graph.skills.firstOrNull { skill ->
-                skill.id in passage.skills && !skill.prerequisites.all { states[it]?.learned == true }
-            }
+        val waitingFor = waitingFor(passage, graph, states.filterValues { it.learned }.keys)
         val clean = TempoRung.entries.count { isClean(passage, history, it) }
         val highest = highestClean(passage, history)
         val status =
