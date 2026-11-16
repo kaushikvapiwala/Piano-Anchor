@@ -48,15 +48,18 @@ public enum class StartPoint(
 }
 
 /**
- * What the onboarding shows. [device] is the piano that sent the first note (null while searching);
- * [pianoListHint] is true once nothing has come for `Tunables.ONBOARDING_CONNECT_HINT_MS`. In the echo step [echo] is
- * where it is, [keysHighlighted] is true when the piano can't play C-E-G itself (no MIDI output) so the screen shows
- * the keys instead, and [misses] counts the attempts that didn't match. [storageFailed] is true when the start point
- * could not be saved; [finished] is true once it was and the app can open Today.
+ * What the onboarding shows. [device] is the piano that sent the first note (null while searching); while searching,
+ * [listed] is a connected piano that hasn't sent a note yet (null when none is listed), so the screen can say it is
+ * connected and only waits for a key; [pianoListHint] is true once nothing has come for
+ * `Tunables.ONBOARDING_CONNECT_HINT_MS`. In the echo step [echo] is where it is, [keysHighlighted] is true when the
+ * piano can't play C-E-G itself (no MIDI output) so the screen shows the keys instead, and [misses] counts the attempts
+ * that didn't match. [storageFailed] is true when the start point could not be saved; [finished] is true once it was
+ * and the app can open Today.
  */
 public data class OnboardingState(
     val step: OnboardingStep = OnboardingStep.CONNECT,
     val device: MidiDevice? = null,
+    val listed: MidiDevice? = null,
     val pianoListHint: Boolean = false,
     val echo: EchoPhase = EchoPhase.PLAYING,
     val keysHighlighted: Boolean = false,

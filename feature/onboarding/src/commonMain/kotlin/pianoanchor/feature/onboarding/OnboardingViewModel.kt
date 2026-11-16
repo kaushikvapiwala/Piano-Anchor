@@ -75,6 +75,9 @@ public class OnboardingViewModel(
     private var starting: Job? = null
     private val connectedByScan = HashSet<MidiDevice>()
 
+    /** True once the piano list took over: the Bluetooth pianos the search connected stay connected for it. */
+    private var handedOver = false
+
     init {
         session = viewModelScope.launch { run(null) }
     }
@@ -148,10 +151,23 @@ public class OnboardingViewModel(
         withContext(NonCancellable) { session?.cancelAndJoin() }
     }
 
-    /** Disconnects every Bluetooth piano the search connected except the chosen one (all of them if none was). */
+    /**
+     * Stops reading the piano before the piano list opens it, like [close], and leaves the Bluetooth pianos the search
+     * connected connected, so the list shows them without a new scan: [release] then only stops the scan.
+     */
+    public suspend fun handOverToPianoList() {
+        handedOver = true
+        close()
+    }
+
+    /**
+     * Disconnects every Bluetooth piano the search connected except the chosen one (all of them if none was), unless
+     * [handOverToPianoList] gave them to the piano list.
+     */
     public suspend fun release() {
         val chosen = state.value.device
         scan?.cancelAndJoin()
+        if (handedOver) return
         for (other in connectedByScan.filter { it.id != chosen?.id }) discovery.disconnect(other)
         connectedByScan.removeAll { it.id != chosen?.id }
     }
@@ -195,7 +211,20 @@ public class OnboardingViewModel(
                     mutableState.update { it.copy(pianoListHint = true) }
                 }
                 launch {
+                    var forget: Job? = null
                     input.inputDevices.collect { devices ->
+                        forget?.cancel()
+                        val listed = devices.firstOrNull()
+                        if (listed != null) {
+                            mutableState.update { it.copy(listed = listed) }
+                        } else {
+                            // A Bluetooth link often drops and comes back by itself: wait before saying it's gone.
+                            forget =
+                                launch {
+                                    delay(Tunables.ONBOARDING_LISTED_GRACE_MS)
+                                    mutableState.update { it.copy(listed = null) }
+                                }
+                        }
                         for (device in devices.filter { reading.add(it.id) }) {
                             launch {
                                 try {
@@ -214,7 +243,7 @@ public class OnboardingViewModel(
                 }
                 first.await().also { coroutineContext.cancelChildren() }
             }
-        mutableState.update { it.copy(device = picked, pianoListHint = false) }
+        mutableState.update { it.copy(device = picked, listed = null, pianoListHint = false) }
         // The search is over: stop scanning, and let go of the Bluetooth pianos connected for it but not chosen.
         release()
         return picked

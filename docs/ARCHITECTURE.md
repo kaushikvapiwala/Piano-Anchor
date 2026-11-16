@@ -100,7 +100,8 @@ Developer hooks (`.githooks/`, `.claude/hooks/`) run the same checks locally; se
   platform API in `androidMain`, does no decisions of its own and is `@ExcludeFromCoverage`; it is verified on a
   device: by the emulator end-to-end test over a virtual MIDI device, by the owner's hardware check for the USB and
   Bluetooth LE specifics.
-  See `docs/adr/0014-platform-adapter-modules.md`.
+  See `docs/adr/0014-platform-adapter-modules.md`. The glue logs to logcat under `PianoAnchor*` tags; release builds
+  keep warnings only (`docs/adr/0024-glue-logging.md`, `docs/debugging.md`).
 - An adapter that works in the background (e.g. reopening a dropped Bluetooth LE device) takes a `CoroutineScope`
   in its internal constructor; the Android factory gives it an app-lived scope and tests pass `backgroundScope`, so
   timing runs in virtual time (`docs/adr/0015-adapter-background-scope.md`).

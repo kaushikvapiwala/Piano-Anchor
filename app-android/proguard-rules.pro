@@ -22,3 +22,10 @@
 # SQLDelight (Android driver): the schema and generated queries are plain classes, the driver uses AndroidX SQLite.
 -keep class app.cash.sqldelight.** { *; }
 -dontwarn app.cash.sqldelight.**
+
+# Logging (docs/debugging.md): release builds keep warnings and errors only; debug, verbose and info calls are removed.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}

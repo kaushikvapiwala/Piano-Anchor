@@ -74,10 +74,24 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 12. **Landscape everywhere** (owner decision 2026-11-15; needs a spec): the app runs in landscape only, like practice
     already does (the phone sits on the music rest). Today, Songs, Settings, the onboarding, Pianos and Ear need
     landscape layouts in `docs/ui/living-studio.md`, then the code and screenshot goldens.
+13. **Ride out brief Bluetooth drops** (owner's hardware check; needs a spec): Android's Bluetooth MIDI link to some
+    pianos times out about 2 s after Android tightens the connection interval, and the adapter reopens it within
+    seconds. The onboarding's connect line waits `Tunables.ONBOARDING_LISTED_GRACE_MS` before saying a piano is
+    gone, but its echo step, the monitor and Practice still see the drop: the echo returns to step 1 and a run is
+    discarded. Debounce removals once (in `AndroidMidiAdapter` or a shared flow), so every reader rides out a drop.
+14. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
+    Pianos screen each copy a TextButton with a "←" glyph and their own back strings. Move it to `ui/shell` with one
+    string, hide the glyph from TalkBack (it now reads "Back" and the arrow), mirror it in right-to-left layouts and
+    let it grow with the font scale instead of a fixed 44 dp width.
+15. **Connect step says what to do and why a piano may be missing** (owner's hardware check; needs an owner decision on
+    wording): the step has no button, and the owner looked for one; say under the connected line that a key press
+    continues (e.g. "Press any key to continue"). A piano left idle turns its Bluetooth off (the owner's went quiet
+    after about 15 minutes and only a power cycle brought it back), so the "Not found?" hint, and the Pianos screen
+    when a scan finds nothing, should say a piano may have gone to sleep: turn it off and on again.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
-pick these; nothing in "Next up" waits for them.
+pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md`.
 
 - **First release and dogfood (M3 exit):** cut v0.1.0 by following `docs/RELEASING.md` (keystore, secrets, the
   `dogfood` and `blocker` labels, then the tag; the first run also proves the untested emulator smoke job), then use
