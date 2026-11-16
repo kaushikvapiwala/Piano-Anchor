@@ -94,13 +94,21 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 18. **Beginner course: concept cards** (spec #182; design in `docs/course/beginner-course.md`, ADR 0026) [#181]: a typed
     concept card (what, why, how, when) per concept in the curriculum, a content test that fails on an empty field,
     and the cards for all 23 concepts of the map.
-19. **Beginner course: five-step lesson screen** (needs a spec): Why → See → Try → Use → Recap in the landscape
-    layout (card left, task right, keyboard strip below), play-before-try, the gentle wrong-key hint, a visible
-    "3, 2, 1, play" count-in, and the Compose-drawn card animations; Today's "Next" card and the course map ticks.
-20. **Beginner course: Results in words** (spec #187): say what happened (started late, notes held short, extra
+19. **Beginner course: Try checks** (spec #188) [#181]: one small piano-checked task per course concept and a pure
+    evaluator, for the lesson's Try step and the review quizzes.
+20. **Beginner course: five-step lesson screen** (spec #189) [#188]: Why → See → Try → Use → Recap in the landscape
+    layout, resuming at the last step; Today's "Next" card and the course map ticks.
+21. **Beginner course: gentle practice feedback** (spec #190): grey wrong key with the right key glowing and one
+    landmark line, a visible "3, 2, 1, Play!", hear it first, and Unit 0 without the staff.
+22. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
+    every card's animation consistent, and the Unit 0 scenes.
+23. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
+24. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
+25. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
+26. **Beginner course: Results in words** (spec #187): say what happened (started late, notes held short, extra
     notes) and one tip; the numbers move behind "Details".
-21. **Beginner course: review quizzes** (needs a spec): 10–20 s piano-checked quizzes per learned concept, scheduled
-    into the warm-up by the existing review planner.
+27. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
+    Today's warm-up, rated by mistakes into the review planner.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
