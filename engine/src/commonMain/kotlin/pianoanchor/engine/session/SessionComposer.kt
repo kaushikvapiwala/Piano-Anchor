@@ -8,6 +8,7 @@ import pianoanchor.core.model.Skill
 import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.SkillState
 import pianoanchor.core.model.Track
+import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.DailyPlan
@@ -23,6 +24,16 @@ public data class PassageHistory(
     val cleanTempos: Set<Int>,
     val cleanWait: Boolean = false,
 )
+
+/**
+ * The [PassageHistory] of each of [passages], keyed by passage id: the one loader Today and Songs share.
+ *
+ * @throws pianoanchor.core.model.StorageUnavailableException when the store can't be read.
+ */
+public suspend fun AttemptRepositoryPort.passageHistories(passages: Iterable<Passage>): Map<String, PassageHistory> =
+    passages.associate {
+        it.id to PassageHistory(lastPlayed(it.id), cleanTempos(it.id), hasCleanWaitRun(it.id))
+    }
 
 /** Whether [history] has a CLEAN run of [passage] at [rung] (a CLEAN wait-mode run for [TempoRung.WAIT]). */
 internal fun isClean(
