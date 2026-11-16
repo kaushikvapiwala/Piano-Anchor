@@ -63,6 +63,15 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     disagree with its stored band; store the strictness on the attempt (or read the setting) and analyse with it.
 8. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
     cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
+9. **Ride out brief Bluetooth drops** (owner's hardware check; needs a spec): Android's Bluetooth MIDI link to some
+    pianos times out about 2 s after Android tightens the connection interval, and the adapter reopens it within
+    seconds. The onboarding's connect line waits `Tunables.ONBOARDING_LISTED_GRACE_MS` before saying a piano is
+    gone, but its echo step, the monitor and Practice still see the drop: the echo returns to step 1 and a run is
+    discarded. Debounce removals once (in `AndroidMidiAdapter` or a shared flow), so every reader rides out a drop.
+10. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
+    Pianos screen each copy a TextButton with a "←" glyph and their own back strings. Move it to `ui/shell` with one
+    string, hide the glyph from TalkBack (it now reads "Back" and the arrow), mirror it in right-to-left layouts and
+    let it grow with the font scale instead of a fixed 44 dp width.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
