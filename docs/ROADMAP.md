@@ -101,8 +101,9 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
   the released APK daily as the M3 exit check says.
 - **Hardware check:** install the debug app (the `app-android-debug-<sha>` artifact of the latest CI run
   on main, or `./gradlew :app-android:assembleDebug`), connect a piano over BLE, play keys, survive a disconnect
-  and export a C-D-E fixture into `fixtures/` (the 1.4b BLE scan/connect glue and the 1.4a USB transport on real
-  hardware; the emulator end-to-end test, `.github/workflows/e2e.yml`, covers the 1.4a `MidiManager` glue and the
+  and export a C-D-E fixture into `fixtures/` (done 2026-11-16: `fixtures/cde-frp-nuvola-ble.jsonl`, replayed by
+  `MatchWaitModeFlowTest` and `RealRecordingAnalysisTest`; the 1.4b BLE scan/connect glue and the 1.4a USB
+  transport on real hardware; the emulator end-to-end test, `.github/workflows/e2e.yml`, covers the 1.4a `MidiManager` glue and the
   1.4m Android wiring over a virtual MIDI device); note whether the piano answers the 1.5 Identity Request (the
   monitor shows "model …") and that the piano is still known after an app restart (1.8 storage). If a piano known
   to answer shows none, the request may race the input port's open: `MidiInputPort` would then need an
@@ -116,8 +117,6 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
   `./gradlew :app-android:assembleDebug -PpianoanchorVersion=0.0.9`): the banner names the newer version, "See
   release" opens its page, "Not now" hides it; with the
   switch off, no request (the `HttpsURLConnection` glue runs only on a device).
-- **Real recording:** once the hardware check lands its C-D-E fixture, add a replay test of it to
-  `MatchWaitModeFlowTest` and run the performance analyser on it (the M1 exit check on a real recording).
 
 ## Phase 2+ — Features
 | Milestone | Scope | Exit check |
