@@ -11,6 +11,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -399,22 +400,42 @@ class CloudSetupTest(TempRepo):
 
 
 FAKE_ADB = """#!/bin/sh
-echo "$*" >> "$FAKE_ADB_CALLS"
+echo "$*" >> "$FAKE_ADB_DIR/calls.txt"
 [ "$1" = "-s" ] && shift 2
 case "$*" in
     get-state) echo "${FAKE_ADB_STATE:-device}" ;;
     "shell getprop ro.product.model") echo "Pixel 9" ;;
     "shell getprop"*) echo "x" ;;
-    "shell dumpsys package"*) printf '    versionCode=1 minSdk=29\r\n    versionName=0.0.0-dev\r\n' ;;
+    "shell dumpsys package"*) printf '    versionCode=1 minSdk=29\\r\\n    versionName=0.0.0-dev\\r\\n' ;;
     "shell dumpsys midi") echo "MIDI Manager State" ;;
+    "shell pidof"*) printf '100\\r\\n' ;;
     "logcat -v threadtime")
-        echo "11-15 10:00:00.000  1  2 I PianoAnchorMidi: device added"
-        echo "11-15 10:00:00.001  1  2 D BluetoothGatt: connect"
-        echo "11-15 10:00:00.002  1  2 E AndroidRuntime: FATAL EXCEPTION: main"
+        echo $$ > "$FAKE_ADB_DIR/logcat.pid"
+        echo "11-15 10:00:00.000   100   101 I PianoAnchorMidi: device added"
+        echo "11-15 10:00:00.001   200   201 D BluetoothGatt: connect"
+        echo "11-15 10:00:00.002   300   301 E AndroidRuntime: FATAL EXCEPTION: main (another app)"
+        echo "11-15 10:00:00.003  1000  1001 I ActivityManager: Start proc 400:io.github.kaushikvapiwala.pianoanchor/u0a1 for x"
+        echo "11-15 10:00:00.004   400   400 E AndroidRuntime: FATAL EXCEPTION: main"
         exec sleep 30 ;;
     "logcat -b crash -d") echo "crash line" ;;
+    "shell screenrecord"*)
+        [ -n "$FAKE_SCREENRECORD_FAILS" ] && exit 1
+        touch "$FAKE_ADB_DIR/recorded"
+        echo $$ > "$FAKE_ADB_DIR/screenrecord.pid"
+        exec sleep 30 ;;
+    "shell pkill -INT screenrecord") [ -f "$FAKE_ADB_DIR/screenrecord.pid" ] && kill "$(cat "$FAKE_ADB_DIR/screenrecord.pid")" ;;
+    "shell ls "*) [ -f "$FAKE_ADB_DIR/recorded" ] && printf '/sdcard/piano-anchor-capture-1.mp4\\r\\n' ;;
+    "pull "*) set -- $*; touch "$3/$(basename "$2")" ;;
 esac
 """
+
+
+def alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True
 
 
 class CaptureSessionTest(unittest.TestCase):
@@ -433,10 +454,18 @@ class CaptureSessionTest(unittest.TestCase):
         self.tmp.cleanup()
 
     def capture(self, *args: str, **env: str) -> subprocess.CompletedProcess:
-        base = dict(os.environ, ADB=str(self.dir / "adb"), FAKE_ADB_CALLS=str(self.calls), **env)
-        return subprocess.run(
-            [self.script, "-o", str(self.out), *args], input="\n", env=base, capture_output=True, text=True, timeout=30
-        )
+        """Runs a session and presses Enter once the fake logcat has written its lines (or the script has ended)."""
+        base = dict(os.environ, ADB=str(self.dir / "adb"), FAKE_ADB_DIR=str(self.dir), **env)
+        command = [self.script, "-o", str(self.out), *args]
+        pipes = {"stdin": subprocess.PIPE, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE}
+        with subprocess.Popen(command, env=base, text=True, **pipes) as process:
+            log = self.out / "logcat.txt"
+            for _ in range(200):
+                if process.poll() is not None or (log.exists() and "FATAL EXCEPTION: main\n" in log.read_text()):
+                    break
+                time.sleep(0.05)
+            stdout, stderr = process.communicate("\n", timeout=60)
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
     def test_collects_the_session_into_the_folder(self) -> None:
         result = self.capture("--no-video")
@@ -446,13 +475,21 @@ class CaptureSessionTest(unittest.TestCase):
             ["app.txt", "crash.txt", "device.txt", "logcat.txt", "midi.txt"],
         )
         self.assertIn("BluetoothGatt", (self.out / "logcat.txt").read_text())
-        app = (self.out / "app.txt").read_text().splitlines()
-        self.assertEqual([line.split()[5] for line in app], ["PianoAnchorMidi:", "AndroidRuntime:"])
         device = (self.out / "device.txt").read_text()
         self.assertIn("Pixel 9", device)
         self.assertIn("versionName=0.0.0-dev", device)
         self.assertNotIn("\r", device)
         self.assertEqual((self.out / "crash.txt").read_text(), "crash line\n")
+
+    def test_app_lines_are_the_apps_processes_and_tags(self) -> None:
+        self.capture("--no-video")
+        app = (self.out / "app.txt").read_text().splitlines()
+        # pid 100 runs at the start, pid 400 was started during the session; pids 200 and 300 are other processes.
+        self.assertEqual([line.split()[2] for line in app], ["100", "400"])
+
+    def test_stops_logcat_when_done(self) -> None:
+        self.capture("--no-video")
+        self.assertFalse(alive(int((self.dir / "logcat.pid").read_text())))
 
     def test_clears_logcat_before_capturing(self) -> None:
         self.capture("--no-video")
@@ -462,6 +499,24 @@ class CaptureSessionTest(unittest.TestCase):
     def test_passes_the_serial_to_every_adb_call(self) -> None:
         self.capture("--no-video", "-s", "R5CT")
         self.assertTrue(all(c.startswith("-s R5CT ") for c in self.calls.read_text().splitlines()))
+
+    def test_stops_and_pulls_the_screen_recording(self) -> None:
+        result = self.capture()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.out / "piano-anchor-capture-1.mp4").exists())
+        self.assertFalse(alive(int((self.dir / "screenrecord.pid").read_text())))
+        self.assertIn("shell rm -f /sdcard/piano-anchor-capture-1.mp4", self.calls.read_text())
+
+    def test_gives_up_on_a_screen_recording_that_keeps_failing(self) -> None:
+        base = dict(os.environ, ADB=str(self.dir / "adb"), FAKE_ADB_DIR=str(self.dir), FAKE_SCREENRECORD_FAILS="1")
+        # Stdin stays open (no Enter yet), so only the give-up rule can end the loop.
+        with subprocess.Popen(
+            [self.script, "-o", str(self.out)], stdin=subprocess.PIPE, stderr=subprocess.PIPE, env=base, text=True
+        ) as process:
+            assert process.stderr is not None
+            self.assertIn("keeps failing", process.stderr.readline())
+            process.communicate("\n", timeout=30)
+        self.assertEqual(self.calls.read_text().count("shell screenrecord"), 3)
 
     def test_stops_when_no_device_is_ready(self) -> None:
         result = self.capture(FAKE_ADB_STATE="unauthorized")

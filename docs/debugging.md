@@ -30,14 +30,14 @@ never logged: record them with the monitor's fixture export instead.
 
 ### One command per session
 `scripts/capture_session.sh` captures a whole test session: start it, test on the phone, press Enter (or Ctrl-C) to
-stop. It writes `captures/session-<time>/` (git-ignored) with:
+stop (it also stops cleanly when the terminal closes). It writes `captures/session-<time>/` (git-ignored) with:
 
 | File | Contents |
 |---|---|
 | `device.txt` | Phone model, Android version, the app's version and install time |
 | `logcat.txt` | The full log since the start (the buffer is cleared first) |
-| `app.txt` | The `PianoAnchor*` lines and crashes, picked out of `logcat.txt` |
-| `crash.txt` | The crash buffer |
+| `app.txt` | Every line of the app's own processes (its crashes included) and every `PianoAnchor*` line, picked out of `logcat.txt` |
+| `crash.txt` | The crash buffer: crashes of any app, native crashes included |
 | `midi.txt` | `dumpsys midi`: Android's view of MIDI devices and open ports at the end |
 | `piano-anchor-capture-<n>.mp4` | The screen recording, in 3-minute segments (`--no-video` skips it) |
 | `bugreport.zip` | With `--bugreport` only: a full bug report (slow; for Bluetooth trouble or an ANR) |
