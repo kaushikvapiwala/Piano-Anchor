@@ -17,8 +17,8 @@ kotlinx-serialization = "1.13.0"
 kotlinx-datetime = "0.8.0"
 koin = "4.2.2"
 androidx-lifecycle = "2.11.0"
-roborazzi = "1.78.0"
-robolectric = "4.17"
+roborazzi = "1.79.0"
+robolectric = "4.18"
 junit4 = "4.13.2"
 sqldelight = "2.4.1"
 androidx-test = "1.7.0"
@@ -51,7 +51,7 @@ roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = 
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 # Android framework jar Robolectric runs on: the SDK level of the screenshot tests; the suffix matches the robolectric version.
-robolectric-android-all = { module = "org.robolectric:android-all-instrumented", version = "16-robolectric-13921718-i7" }
+robolectric-android-all = { module = "org.robolectric:android-all-instrumented", version = "17-robolectric-16653203-i7" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 # Compose UI tests (runComposeUiTest); the manifest artefact registers the activity they host content in.
 compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose-multiplatform" }
