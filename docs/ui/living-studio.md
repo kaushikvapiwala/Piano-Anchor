@@ -5,8 +5,8 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
 
 - **Landscape only**: the Android app is locked to landscape, either way up (the manifest's `sensorLandscape`),
   because the phone sits on the music rest. Reference layout 915×412 dp; content scrolls instead of clipping (also at
-  font scale 2.0). Onboarding, Pianos and Ear still use portrait layouts until their landscape pass; the desktop
-  window keeps its own size.
+  font scale 2.0). Every Android screen has a landscape layout; the desktop window keeps its own size. The
+  two-pane screens (onboarding, Ear, Pianos) split about 45/55, left to right, and TalkBack reads the left pane first.
 - **Material 3**, light and dark, following the system setting. Every screen is checked in both (screenshots).
 - **Palette** (the studio teal of the first screens is gone):
 
@@ -182,8 +182,10 @@ Grouped rows under plum group titles, every target at least 44 dp, every change 
 
 ## Onboarding screen
 
-Shown once, on first launch, until `onboarded` is stored; then the app opens on Today. Portrait, page colour, one step at
-a time under "Step n of 4" (no accounts, no sign-in line).
+Shown once, on first launch, until `onboarded` is stored; then the app opens on Today. Landscape, page colour, one step at
+a time (no accounts, no sign-in line). Every step splits into a left pane (about 45%: the step title, the explanation
+and the picture or key strip, with four step dots and "Step n of 4" under it) and a right pane (about 55%: the controls,
+that is the connection line and buttons, the "Not found?" hint or the start-point cards). Each pane scrolls on its own.
 
 1. **Press any key on your piano**: the line "Searching for your piano…" becomes "Connected · FP-30X" (polite live
    region) as soon as a piano is listed (a Bluetooth piano once the scan has connected it), and the first note on any
@@ -202,11 +204,12 @@ a time under "Step n of 4" (no accounts, no sign-in line).
 
 ## Ear screen
 
-Portrait, opened by Today's Ear card; back (or Done) returns to Today after the piano is closed. Layout after the mock's
-Flashcards artboard: a back arrow (TalkBack "Back"), the skill title and "Skill 1 of 3", the counter "Item 2 of 4"
-(read out) with a progress bar, then a card.
-- **Identify** item: "Listen, then choose what you heard." and two outlined buttons of at least 48 dp with the choice
-  names. **Echo** item: "Listen, then play it back on your piano." and a strip of five keys (C4 to G4).
+Landscape, opened by Today's Ear card; back (or Done) returns to Today after the piano is closed. Two panes. Left
+(about 45%): a back arrow (TalkBack "Back"), the skill title and "Skill 1 of 3", the counter "Item 2 of 4" (read out)
+with a progress bar, the prompt, the feedback line and the Replay, Show me or Next buttons. Right (about 55%): the answer
+buttons or key strip. Each pane scrolls on its own; the summary is one scrolling column.
+- **Identify** item: "Listen, then choose what you heard." and the choices as outlined buttons of at least 48 dp, stacked in the
+  right pane. **Echo** item: "Listen, then play it back on your piano." and a strip of five keys (C4 to G4).
 - The prompt reads "Listening…" while the item sounds. **Replay (2 left)** plays it again (disabled when none are left).
 - A wrong answer says "Not quite. Listen again." (polite live region) and offers **Show me**. After a second wrong answer
   or Show me, the answer is shown: for identify the answer button is filled and carries a check mark, for echo the keys
@@ -228,6 +231,11 @@ per piece in content order. Cards are at least 56 dp high; the grid scrolls and 
 - **Storage error**: an `errorContainer` card with Retry. The list reloads when the screen is opened again after a run.
 
 ## Pianos screen
+
+Landscape: a header across the top (back arrow when it was opened from another screen, and the title; the settings gear
+lives on Today), then two panes. The left pane (about 45%) holds the error card, the devices list, the Scan button,
+the scanned pianos, the connection status, the practice, calibrate and record buttons and the contribution kit; the
+right pane (the rest) is the note log. Each pane scrolls on its own.
 
 The piano connected last through onboarding or Pianos is remembered. Its row on Pianos (when it is listed) has a
 "Forget" text button (TalkBack: "Forget FP-30X"): it disconnects the piano and stops Today reconnecting it.

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,7 +22,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -46,21 +45,6 @@ import pianoanchor.feature.onboarding.resources.onboarding_connect_connected
 import pianoanchor.feature.onboarding.resources.onboarding_connect_not_found
 import pianoanchor.feature.onboarding.resources.onboarding_connect_searching
 import pianoanchor.feature.onboarding.resources.onboarding_connect_title
-import pianoanchor.feature.onboarding.resources.onboarding_continue
-import pianoanchor.feature.onboarding.resources.onboarding_echo_any_octave
-import pianoanchor.feature.onboarding.resources.onboarding_echo_listen
-import pianoanchor.feature.onboarding.resources.onboarding_echo_miss
-import pianoanchor.feature.onboarding.resources.onboarding_echo_play
-import pianoanchor.feature.onboarding.resources.onboarding_echo_replay
-import pianoanchor.feature.onboarding.resources.onboarding_echo_skip
-import pianoanchor.feature.onboarding.resources.onboarding_echo_success
-import pianoanchor.feature.onboarding.resources.onboarding_echo_title
-import pianoanchor.feature.onboarding.resources.onboarding_key_c
-import pianoanchor.feature.onboarding.resources.onboarding_key_d
-import pianoanchor.feature.onboarding.resources.onboarding_key_e
-import pianoanchor.feature.onboarding.resources.onboarding_key_f
-import pianoanchor.feature.onboarding.resources.onboarding_key_g
-import pianoanchor.feature.onboarding.resources.onboarding_key_highlighted
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning_summary
 import pianoanchor.feature.onboarding.resources.onboarding_start_can_play
@@ -73,24 +57,20 @@ import pianoanchor.feature.onboarding.resources.onboarding_step
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
-private val TouchTarget = 44.dp
-private val PillShape = RoundedCornerShape(22.dp)
+internal val TouchTarget = 44.dp
+internal val PillShape = RoundedCornerShape(22.dp)
 private const val STEP_COUNT = 4
 
-/** The keys the echo strip draws: C to G, with the chord's three (C, E, G) highlighted. */
-private val KEYS =
-    listOf(
-        Res.string.onboarding_key_c to true,
-        Res.string.onboarding_key_d to false,
-        Res.string.onboarding_key_e to true,
-        Res.string.onboarding_key_f to false,
-        Res.string.onboarding_key_g to true,
-    )
+/** The panes split the width about 45/55, left to right. */
+private const val LEFT_PANE_WEIGHT = 0.45f
+private const val RIGHT_PANE_WEIGHT = 0.55f
+private val PaneGap = 24.dp
 
 /**
- * First-launch onboarding (Living Studio, `docs/ui/living-studio.md`): one step at a time, as [state] says: press a
- * key, echo C-E-G, calibrate (the [calibration] slot hosts the calibration screen for the connected piano) and choose
- * the start point. Stateless: see [OnboardingViewModel].
+ * First-launch onboarding (Living Studio, `docs/ui/living-studio.md`): one step at a time in landscape
+ * (explanation left, controls right), as [state] says: press a key, echo C-E-G, calibrate (the [calibration] slot
+ * hosts the calibration screen for the connected piano) and choose the start point. Stateless: see
+ * [OnboardingViewModel].
  */
 @Composable
 public fun OnboardingScreen(
@@ -105,31 +85,68 @@ public fun OnboardingScreen(
         return
     }
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
-        Column(
-            modifier =
-                Modifier
-                    .safeDrawingPadding()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+        // Landscape: the left pane (title, explanation, picture, step dots) reads first, then the controls.
+        Row(
+            modifier = Modifier.safeDrawingPadding().padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(PaneGap),
         ) {
-            Text(
-                stringResource(Res.string.onboarding_step, (state.step.ordinal + 1).toString(), STEP_COUNT.toString()),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            when (state.step) {
-                OnboardingStep.CONNECT -> Connect(state, actions)
-                OnboardingStep.ECHO -> Echo(state, actions)
-                OnboardingStep.START_POINT -> StartPoint(state, actions)
-                OnboardingStep.CALIBRATE -> Unit // Calibrating without a piano can't happen: the slot shows it.
+            Column(modifier = Modifier.weight(LEFT_PANE_WEIGHT).fillMaxHeight()) {
+                Column(
+                    modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    when (state.step) {
+                        OnboardingStep.CONNECT -> ConnectLeft(state)
+                        OnboardingStep.ECHO -> EchoLeft(state)
+                        OnboardingStep.START_POINT -> Title(Res.string.onboarding_start_title)
+                        OnboardingStep.CALIBRATE -> Unit // Calibrating without a piano can't happen: the slot shows it.
+                    }
+                }
+                StepDots(state.step.ordinal)
+            }
+            Column(
+                modifier = Modifier.weight(RIGHT_PANE_WEIGHT).fillMaxHeight().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                when (state.step) {
+                    OnboardingStep.CONNECT -> ConnectRight(state, actions)
+                    OnboardingStep.ECHO -> EchoRight(state, actions)
+                    OnboardingStep.START_POINT -> StartPointRight(state, actions)
+                    OnboardingStep.CALIBRATE -> Unit
+                }
             }
         }
     }
 }
 
+/** Four dots, the current one filled, with the "Step n of 4" text that screen readers get. */
 @Composable
-private fun Title(text: StringResource) {
+private fun StepDots(current: Int) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(top = 8.dp),
+    ) {
+        val colors = MaterialTheme.colorScheme
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.clearAndSetSemantics {}) {
+            repeat(STEP_COUNT) { index ->
+                Box(
+                    Modifier
+                        .size(8.dp)
+                        .background(if (index == current) colors.primary else colors.outlineVariant, CircleShape),
+                )
+            }
+        }
+        Text(
+            stringResource(Res.string.onboarding_step, (current + 1).toString(), STEP_COUNT.toString()),
+            style = MaterialTheme.typography.labelMedium,
+            color = colors.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+internal fun Title(text: StringResource) {
     Text(
         stringResource(text),
         fontFamily = displayFontFamily,
@@ -141,7 +158,7 @@ private fun Title(text: StringResource) {
 
 /** "Searching for your piano…" or "Connected · name", read out when it changes. */
 @Composable
-private fun ConnectionLine(device: MidiDevice?) {
+internal fun ConnectionLine(device: MidiDevice?) {
     val connected = device != null
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -162,12 +179,16 @@ private fun ConnectionLine(device: MidiDevice?) {
 }
 
 @Composable
-private fun Connect(
+private fun ConnectLeft(state: OnboardingState) {
+    Title(Res.string.onboarding_connect_title)
+    ConnectionLine(state.device ?: state.listed)
+}
+
+@Composable
+private fun ConnectRight(
     state: OnboardingState,
     actions: OnboardingActions,
 ) {
-    Title(Res.string.onboarding_connect_title)
-    ConnectionLine(state.device ?: state.listed)
     if (state.pianoListHint) {
         TextButton(onClick = actions.onOpenPianoList, modifier = Modifier.heightIn(min = TouchTarget)) {
             Text(stringResource(Res.string.onboarding_connect_not_found))
@@ -176,110 +197,10 @@ private fun Connect(
 }
 
 @Composable
-private fun Echo(
+private fun StartPointRight(
     state: OnboardingState,
     actions: OnboardingActions,
 ) {
-    Title(Res.string.onboarding_echo_title)
-    ConnectionLine(state.device)
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            KeyStrip(state.keysHighlighted)
-            Text(
-                stringResource(echoMessage(state)),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            )
-            if (state.echo == EchoPhase.LISTENING) {
-                Text(
-                    stringResource(Res.string.onboarding_echo_any_octave),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            EchoButtons(state, actions)
-        }
-    }
-}
-
-private fun echoMessage(state: OnboardingState): StringResource =
-    when (state.echo) {
-        EchoPhase.PLAYING -> Res.string.onboarding_echo_listen
-        EchoPhase.LISTENING -> Res.string.onboarding_echo_play
-        EchoPhase.MISSED -> Res.string.onboarding_echo_miss
-        EchoPhase.PASSED -> Res.string.onboarding_echo_success
-    }
-
-@Composable
-private fun EchoButtons(
-    state: OnboardingState,
-    actions: OnboardingActions,
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        if (state.echo == EchoPhase.PASSED) {
-            PillButton(stringResource(Res.string.onboarding_continue), actions.onContinue)
-        }
-        if (state.echo == EchoPhase.MISSED) {
-            PillButton(stringResource(Res.string.onboarding_echo_replay), actions.onReplay)
-        }
-        if (state.canSkipEcho && state.echo != EchoPhase.PASSED) {
-            OutlinedButton(
-                onClick = actions.onContinue,
-                modifier = Modifier.height(TouchTarget),
-                shape = PillShape,
-            ) {
-                Text(
-                    stringResource(Res.string.onboarding_echo_skip),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
-    }
-}
-
-/** Five keys, C to G, with C, E and G in the primary colour; read as prompts when the piano can't play them. */
-@Composable
-private fun KeyStrip(promptKeys: Boolean) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        for ((label, inChord) in KEYS) {
-            val name = stringResource(label)
-            val colors = MaterialTheme.colorScheme
-            val described =
-                if (inChord && promptKeys) stringResource(Res.string.onboarding_key_highlighted, name) else name
-            Box(
-                contentAlignment = Alignment.BottomCenter,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .height(88.dp)
-                        .background(
-                            if (inChord) colors.primaryContainer else colors.surfaceVariant,
-                            RoundedCornerShape(8.dp),
-                        ).padding(bottom = 8.dp)
-                        .semantics { contentDescription = described },
-            ) {
-                Text(
-                    name,
-                    fontWeight = FontWeight.Bold,
-                    color = if (inChord) colors.onPrimaryContainer else colors.onSurfaceVariant,
-                    modifier = Modifier.clearAndSetSemantics {},
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun StartPoint(
-    state: OnboardingState,
-    actions: OnboardingActions,
-) {
-    Title(Res.string.onboarding_start_title)
     if (state.storageFailed) {
         Card(
             colors =
@@ -350,7 +271,7 @@ private fun ChoiceCard(
 }
 
 @Composable
-private fun PillButton(
+internal fun PillButton(
     label: String,
     onClick: () -> Unit,
 ) {

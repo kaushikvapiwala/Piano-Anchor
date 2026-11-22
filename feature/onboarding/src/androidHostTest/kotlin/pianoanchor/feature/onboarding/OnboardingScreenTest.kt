@@ -1,11 +1,16 @@
 package pianoanchor.feature.onboarding
 
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.Density
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -17,7 +22,7 @@ import kotlin.test.assertEquals
 /** The onboarding screen's texts and buttons, on Robolectric. */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [SDK], qualifiers = "w411dp-h891dp-xxhdpi")
+@Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
 class OnboardingScreenTest {
     private val piano = MidiDevice("usb:Roland/FP-30X", "FP-30X")
     private val calls = mutableListOf<String>()
@@ -115,9 +120,9 @@ class OnboardingScreenTest {
         runComposeUiTest {
             show(OnboardingState(OnboardingStep.START_POINT, piano))
 
-            onNodeWithText("Start at the beginning").performClick()
-            onNodeWithText("Unit 1 · Five-finger tunes").performClick()
-            onNodeWithText("Unit 2 · Both hands").performClick()
+            onNodeWithText("Start at the beginning").performScrollTo().performClick()
+            onNodeWithText("Unit 1 · Five-finger tunes").performScrollTo().performClick()
+            onNodeWithText("Unit 2 · Both hands").performScrollTo().performClick()
 
             assertEquals(listOf("start BEGINNING", "start UNIT_1", "start UNIT_2"), calls)
         }
@@ -129,6 +134,27 @@ class OnboardingScreenTest {
 
             onNodeWithText("Couldn't save your start point. Tap one to try again.").assertExists()
         }
+
+    @Test
+    fun atDoubleFontScaleTheLastStartPointScrollsIntoView() =
+        runComposeUiTest {
+            setContent {
+                val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = LARGE_FONT_SCALE)) {
+                    PianoAnchorTheme {
+                        OnboardingScreen(
+                            OnboardingState(OnboardingStep.START_POINT, piano, storageFailed = true),
+                            actions,
+                            calibration = {},
+                        )
+                    }
+                }
+            }
+
+            onNodeWithText("Unit 2 · Both hands").performScrollTo().assertIsDisplayed()
+        }
 }
+
+private const val LARGE_FONT_SCALE = 2f
 
 private const val SDK = 36
