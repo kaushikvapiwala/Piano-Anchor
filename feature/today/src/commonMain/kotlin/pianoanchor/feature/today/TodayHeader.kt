@@ -39,12 +39,9 @@ import pianoanchor.feature.today.resources.today_week_goal
 
 private val DotSize = 12.dp
 
-/** The greeting, the line naming the cold-open skill, the piano chip and the weekly goal dots. */
+/** The greeting and the line naming the cold-open skill: the head of the plan pane. */
 @Composable
-internal fun Header(
-    state: TodayState,
-    onPianos: () -> Unit,
-) {
+internal fun Header(state: TodayState) {
     val greeting =
         when (state.greeting) {
             Greeting.MORNING -> Res.string.today_greeting_morning
@@ -63,10 +60,18 @@ internal fun Header(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            PianoChipView(state.piano, state.connecting, onPianos)
-            WeekDots(state.daysThisWeek, state.weeklyGoalDays)
-        }
+    }
+}
+
+/** The piano chip and the weekly goal dots: the top of the side pane. */
+@Composable
+internal fun PianoStatus(
+    state: TodayState,
+    onPianos: () -> Unit,
+) {
+    Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        PianoChipView(state.piano, state.connecting, onPianos)
+        WeekDots(state.daysThisWeek, state.weeklyGoalDays)
     }
 }
 
