@@ -80,7 +80,7 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
   starts without it again at Delayed and Off.
 - **Mode switch**: a two-segment "Practice | Perform" control right of the tempo ladder. Perform is disabled on Wait
   (its description reads "Pick a tempo to perform"), and picking Wait switches to Practice; changing mode discards a
-  run in progress. In Perform the band, Hint button, blue and orange note colours, timing tags, the legend and the key
+  run in progress. In Perform the band, Hint button, the waiting note's amber, blue and orange note colours, timing tags, the legend and the key
   strip's verdict text are hidden; the staff, cursor, count-in and click stay and pressed keys light in a neutral
   colour. Results label the run "Performed" beside "run N". Today's cold open card reads "Perform cold open" at a
   timed rung.
