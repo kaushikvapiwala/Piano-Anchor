@@ -35,7 +35,7 @@ into the playback schedule shared by MIDI and speaker output: one group every `P
 ## Outcome and band
 An item ends FIRST_TRY (right at the first answer without a replay), RECOVERED (right, otherwise) or MISSED (two wrong
 answers or Show me). `EarGrading.band`: every item FIRST_TRY is CLEAN; at least `EAR_GOOD_MIN_RIGHT` right in the end is
-GOOD; else KEEP_PRACTISING. `LearnerModel.recordSkill` then records it like a played cold check: the first review of
+GOOD; else KEEP_PRACTISING. `LearnerModel.recordEarSet` then records it like a played cold check: the first review of
 the learner day counts and the band maps to the rating as for passages (never EASY).
 
 ## Sound

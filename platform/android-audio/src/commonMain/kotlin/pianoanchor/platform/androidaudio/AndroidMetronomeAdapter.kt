@@ -12,7 +12,6 @@ import pianoanchor.core.ports.ClockPort
 import pianoanchor.core.ports.MetronomePort
 import pianoanchor.engine.Tunables
 
-private const val MS_PER_SECOND = 1_000
 private const val NANOS_PER_SECOND = 1_000_000_000L
 
 /**
@@ -47,7 +46,7 @@ public class AndroidMetronomeAdapter internal constructor(
     )
 
     private val renderer = ClickRenderer(sink.sampleRate)
-    private val chunkFrames = (sink.sampleRate * Tunables.METRONOME_CHUNK_MS / MS_PER_SECOND).toInt()
+    private val chunkFrames = framesOf(sink.sampleRate, Tunables.METRONOME_CHUNK_MS)
     private val lock = Mutex()
     private var writer: Writer? = null // guarded by lock
 
