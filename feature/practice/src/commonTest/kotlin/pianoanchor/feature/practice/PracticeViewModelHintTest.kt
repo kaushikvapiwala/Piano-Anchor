@@ -1,7 +1,11 @@
 package pianoanchor.feature.practice
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -16,6 +20,7 @@ import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.StepCorrect
+import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
@@ -86,12 +91,12 @@ class PracticeViewModelHintTest {
         }
     }
 
-    private fun TestScope.practice(): PracticeViewModel =
+    private fun TestScope.practice(store: AttemptRepositoryPort = attempts): PracticeViewModel =
         PracticeViewModel(
             piano.device,
             Passages.CDE,
             piano,
-            attempts,
+            store,
             FakeCalibrationRepository(),
             FakeMetronome(clock),
             clock,
@@ -281,5 +286,64 @@ class PracticeViewModelHintTest {
 
             assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
             assertTrue(vm.state.value.hintVisible)
+        }
+
+    /** [attempts] behind a slow store: each `recent` answers only once the gate [opened] returns completes. */
+    private fun slowStore(opened: () -> CompletableDeferred<Unit>): AttemptRepositoryPort =
+        object : AttemptRepositoryPort by attempts {
+            override fun recent(
+                passageId: String,
+                limit: Int,
+            ): Flow<List<Attempt>> =
+                flow {
+                    opened().await()
+                    emitAll(attempts.recent(passageId, limit))
+                }
+        }
+
+    @Test
+    fun theBandStaysHiddenUntilADelayedLevelIsRead() =
+        runTest(dispatcher) {
+            store(*delayedHistory)
+            val opened = CompletableDeferred<Unit>()
+            val vm = practice(slowStore { opened })
+
+            assertFalse(vm.state.value.hintVisible) // no FULL flash while the store is slow
+
+            opened.complete(Unit)
+            runCurrent()
+            assertEquals(HintLevel.DELAYED, vm.state.value.hintLevel)
+            assertFalse(vm.state.value.hintVisible)
+        }
+
+    @Test
+    fun theBandShowsOnceAFullLevelIsRead() =
+        runTest(dispatcher) {
+            val opened = CompletableDeferred<Unit>()
+            val vm = practice(slowStore { opened })
+
+            assertFalse(vm.state.value.hintVisible)
+
+            opened.complete(Unit)
+            runCurrent()
+            assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
+            assertTrue(vm.state.value.hintVisible)
+        }
+
+    @Test
+    fun aRestartHidesTheBandUntilTheLevelIsReadAgain() =
+        runTest(dispatcher) {
+            store(*delayedHistory)
+            var gate = CompletableDeferred(Unit)
+            val vm = practice(slowStore { gate })
+            assertEquals(HintLevel.DELAYED, vm.state.value.hintLevel)
+            wait(800)
+            assertTrue(vm.state.value.hintVisible) // the delayed band is up
+
+            gate = CompletableDeferred()
+            vm.restart()
+            runCurrent()
+
+            assertFalse(vm.state.value.hintVisible)
         }
 }

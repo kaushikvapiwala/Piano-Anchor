@@ -104,8 +104,14 @@ public class PracticeViewModel(
     private val spot: BarRange? = null,
     private val newId: () -> String,
 ) : ViewModel() {
+    // The band stays hidden until `loadHints` reads the run's level, so a slow store can't flash it at FULL.
     private val mutableState =
-        MutableStateFlow(PracticeState.start(passage).copy(spotLoop = spot?.let { SpotLoopState(it, initialRung) }))
+        MutableStateFlow(
+            PracticeState.start(passage).copy(
+                spotLoop = spot?.let { SpotLoopState(it, initialRung) },
+                hintVisible = false,
+            ),
+        )
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
 
     private var run: Job? = null
@@ -179,6 +185,7 @@ public class PracticeViewModel(
                     doneRungs = it.doneRungs,
                     clickOn = it.clickOn,
                     spotLoop = it.spotLoop,
+                    hintVisible = false,
                 )
         }
         val previous = run
