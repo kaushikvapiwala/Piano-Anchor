@@ -1,16 +1,21 @@
 package pianoanchor.feature.ear
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,7 +28,7 @@ import kotlin.test.assertEquals
 /** The ear screen's texts and buttons, on Robolectric. */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [SDK], qualifiers = "w411dp-h891dp-xxhdpi")
+@Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
 class EarScreenTest {
     private val calls = mutableListOf<String>()
     private val actions =
@@ -52,6 +57,16 @@ class EarScreenTest {
             onNodeWithText("Lower").assertHeightIsAtLeast(48.dp).performClick()
 
             assertEquals(listOf("answer ${EarChoice.HIGHER}", "answer ${EarChoice.LOWER}"), calls)
+        }
+
+    @Test
+    fun beforeTheFirstItemLoadsBackStillWorks() =
+        runComposeUiTest {
+            show(IDENTIFY_STATE.copy(exercise = null))
+
+            onNodeWithContentDescription("Back").performClick()
+
+            assertEquals(listOf("back"), calls)
         }
 
     @Test
@@ -175,6 +190,22 @@ class EarScreenTest {
                 onNodeWithText(name).assertExists()
             }
         }
+
+    @Test
+    fun atDoubleFontScaleTheLastControlsScrollIntoView() =
+        runComposeUiTest {
+            setContent {
+                val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = LARGE_FONT_SCALE)) {
+                    PianoAnchorTheme { EarScreen(IDENTIFY_STATE.copy(feedback = EarFeedback.TRY_AGAIN), actions) }
+                }
+            }
+
+            onNodeWithText("Show me").performScrollTo().assertIsDisplayed()
+            onNodeWithText("Lower").performScrollTo().assertIsDisplayed()
+        }
 }
+
+private const val LARGE_FONT_SCALE = 2f
 
 private const val SDK = 36

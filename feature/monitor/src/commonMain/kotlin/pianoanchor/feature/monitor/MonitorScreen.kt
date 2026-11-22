@@ -2,8 +2,8 @@ package pianoanchor.feature.monitor
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -71,7 +71,15 @@ import pianoanchor.feature.monitor.resources.monitor_status_none
 import pianoanchor.feature.monitor.resources.monitor_status_reconnecting
 import pianoanchor.feature.monitor.resources.monitor_title
 
-/** The note monitor: pick a piano, watch live notes, record and export a fixture. Stateless: see [MonitorViewModel]. */
+/** The panes split the width about 45/55, left to right. */
+private const val LEFT_PANE_WEIGHT = 0.45f
+private const val RIGHT_PANE_WEIGHT = 0.55f
+private val PaneGap = 16.dp
+
+/**
+ * The note monitor, landscape: pick a piano, watch live notes, record and export a fixture.
+ * Stateless: see [MonitorViewModel].
+ */
 @Composable
 public fun MonitorScreen(
     state: MonitorState,
@@ -79,36 +87,29 @@ public fun MonitorScreen(
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.safeDrawingPadding(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            item { Header(actions.onBack) }
-            state.error?.let { error -> item { ErrorCard(error, actions) } }
-            devices(state, actions)
-            item { StatusText(state) }
-            state.instrument?.let { instrument -> item { InstrumentText(instrument) } }
-            item {
-                // Wait-mode practice and latency calibration of the selected piano, while it is connected.
-                val device = state.selected
-                val enabled = device != null && state.connection == Connection.CONNECTED
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    actions.onPractice?.let { onPractice ->
-                        Button(onClick = { device?.let(onPractice) }, enabled = enabled) {
-                            Text(stringResource(Res.string.monitor_practice))
-                        }
-                    }
-                    actions.onCalibrate?.let { onCalibrate ->
-                        Button(onClick = { device?.let(onCalibrate) }, enabled = enabled) {
-                            Text(stringResource(Res.string.monitor_calibrate))
-                        }
-                    }
+        // Landscape: the header across the top, then devices and controls on the left, the note log on the right.
+        Column(modifier = Modifier.safeDrawingPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Header(actions.onBack)
+            Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(PaneGap)) {
+                LazyColumn(
+                    modifier = Modifier.weight(LEFT_PANE_WEIGHT).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    state.error?.let { error -> item { ErrorCard(error, actions) } }
+                    devices(state, actions)
+                    item { StatusText(state) }
+                    state.instrument?.let { instrument -> item { InstrumentText(instrument) } }
+                    item { PracticeButtons(state, actions) }
+                    item { RecordingControls(state, actions) }
+                    item { ContributeBlock(state, actions) }
+                }
+                LazyColumn(
+                    modifier = Modifier.weight(RIGHT_PANE_WEIGHT).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    log(state.log)
                 }
             }
-            item { RecordingControls(state, actions) }
-            item { ContributeBlock(state, actions) }
-            log(state.log)
         }
     }
 }
