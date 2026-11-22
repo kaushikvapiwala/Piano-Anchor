@@ -43,61 +43,58 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 1. **Automatic link latency** (spec #172; owner's hardware check; ADR 0025): timed runs measure the piano's link delay
     with Identity Request round trips; calibration leaves the onboarding and the first-run card; tap calibration becomes
     the optional "Fine-tune timing" with a 45 ms spread limit.
-2. **Results know the run's rung** (follow-up of #134; mechanical): `ResultsViewModel` infers the rung from the
-    attempt's tempo, so rungs that clamp to the same BPM resolve to the lowest; store or pass the rung the run was
-    played on, so "Loop bars" and "Play it" use it exactly.
-3. **Results grade timing with the run's strictness** (follow-up of #135; mechanical): `ResultsViewModel` re-analyses
+2. **Results grade timing with the run's strictness** (follow-up of #135; mechanical): `ResultsViewModel` re-analyses
     the take with the Standard timing tolerance, so a run played on Gentle or Strict can show timing findings that
     disagree with its stored band; store the strictness on the attempt (or read the setting) and analyse with it.
-4. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
+3. **M5 cleanup** (end of M5; mechanical): run `/simplify` on the whole M5 diff (#156–#158 and M5.4) as its own small
     cleanup PR, as `.claude/skills/next-task/SKILL.md` step 3 asks at a milestone's end.
-5. **Keep the screen on** (owner's hardware check; mechanical): the phone sleeps on the music rest mid-session. Keep
+4. **Keep the screen on** (owner's hardware check; mechanical): the phone sleeps on the music rest mid-session. Keep
     the screen on while the app is in the foreground (all screens: the phone sits on the music rest throughout).
-6. **Reconnect the last piano on start** (spec #184; owner's hardware check): killing the app closes Android's
+5. **Reconnect the last piano on start** (spec #184; owner's hardware check): killing the app closes Android's
     Bluetooth MIDI link, and Today shows "No piano" until the learner opens Pianos and scans. Remember the last piano
     and reconnect it in the background when the app starts, so Today's chip names it.
-7. **Landscape everywhere, part 1** (spec #185; owner decision 2026-11-15): the app runs in landscape only, like
+6. **Landscape everywhere, part 1** (spec #185; owner decision 2026-11-15): the app runs in landscape only, like
     practice already does (the phone sits on the music rest); lock it app-wide and give Today, Songs and Settings
     landscape layouts.
-8. **Landscape everywhere, part 2** (spec #186) [#185]: landscape layouts for the onboarding, Pianos and Ear.
-9. **Ride out brief Bluetooth drops** (spec #180; owner's hardware check): Android's Bluetooth MIDI link to some
+7. **Landscape everywhere, part 2** (spec #186) [#185]: landscape layouts for the onboarding, Pianos and Ear.
+8. **Ride out brief Bluetooth drops** (spec #180; owner's hardware check): Android's Bluetooth MIDI link to some
     pianos times out about 2 s after Android tightens the connection interval, and the adapter reopens it within
     seconds. The onboarding's connect line waits `Tunables.ONBOARDING_LISTED_GRACE_MS` before saying a piano is
     gone, but its echo step, the monitor and Practice still see the drop: the echo returns to step 1 and a run is
     discarded. Debounce removals once (in `AndroidMidiAdapter` or a shared flow), so every reader rides out a drop.
-10. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
+9. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
     Pianos screen each copy a TextButton with a "←" glyph and their own back strings. Move it to `ui/shell` with one
     string, hide the glyph from TalkBack (it now reads "Back" and the arrow), mirror it in right-to-left layouts and
     let it grow with the font scale instead of a fixed 44 dp width.
-11. **Connect step says what to do and why a piano may be missing** (spec #179; owner's hardware check): the step has no
+10. **Connect step says what to do and why a piano may be missing** (spec #179; owner's hardware check): the step has no
     button, and the owner looked for one; say under the connected line that a key press continues (e.g. "Press any
     key to continue"). A piano left idle turns its Bluetooth off (the owner's went quiet after about 15 minutes and
     only a power cycle brought it back), so the "Not found?" hint, and the Pianos screen when a scan finds nothing,
     should say a piano may have gone to sleep: turn it off and on again.
-12. **Beginner course: the new map** (spec #181): rebuild Units 0–3 to the course map (23 concepts), moving,
+11. **Beginner course: the new map** (spec #181): rebuild Units 0–3 to the course map (23 concepts), moving,
     keeping or dropping each existing passage; skill prerequisites suggest the next lesson but lock nothing.
-13. **Beginner course: concept cards** (spec #182; design in `docs/course/beginner-course.md`, ADR 0026) [#181]: a typed
+12. **Beginner course: concept cards** (spec #182; design in `docs/course/beginner-course.md`, ADR 0026) [#181]: a typed
     concept card (what, why, how, when) per concept in the curriculum, a content test that fails on an empty field,
     and the cards for all 23 concepts of the map.
-14. **Beginner course: Try checks** (spec #188) [#181]: one small piano-checked task per course concept and a pure
+13. **Beginner course: Try checks** (spec #188) [#181]: one small piano-checked task per course concept and a pure
     evaluator, for the lesson's Try step and the review quizzes.
-15. **Beginner course: five-step lesson screen** (spec #189) [#188]: Why → See → Try → Use → Recap in the landscape
+14. **Beginner course: five-step lesson screen** (spec #189) [#188]: Why → See → Try → Use → Recap in the landscape
     layout, resuming at the last step; Today's "Next" card and the course map ticks.
-16. **Beginner course: gentle practice feedback** (spec #190): grey wrong key with the right key glowing and one
+15. **Beginner course: gentle practice feedback** (spec #190): grey wrong key with the right key glowing and one
     landmark line, a visible "3, 2, 1, Play!", hear it first, and Unit 0 without the staff.
-17. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
+16. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
     every card's animation consistent, and the Unit 0 scenes.
-18. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
-19. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
-20. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
-21. **Beginner course: Results in words** (spec #187): say what happened (started late, notes held short, extra
+17. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
+18. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
+19. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
+20. **Beginner course: Results in words** (spec #187): say what happened (started late, notes held short, extra
     notes) and one tip; the numbers move behind "Details".
-22. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
+21. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
     Today's warm-up, rated by mistakes into the review planner.
-23. **Ear grading in the engine** (follow-up of the M4 cleanup; mechanical): `EarViewModel` decides an item's outcome
+22. **Ear grading in the engine** (follow-up of the M4 cleanup; mechanical): `EarViewModel` decides an item's outcome
     (first try, recovered, missed) and redraws repeated items with its own limit of 20; move both into `EarGrading` and
     `EarGenerator` (the limit into `Tunables`) so the rules sit under the engine's tests.
-24. **One Today start action** (follow-up of the M4 cleanup; mechanical): the Ear card has its own `target` overload and
+23. **One Today start action** (follow-up of the M4 cleanup; mechanical): the Ear card has its own `target` overload and
     `onStartEar` action, so `MainActivity` repeats the `when (TodayTarget)` with branches that can't happen; give
     `TodayViewModel` one `target(card)` and `TodayActions` one `onStart(card)`.
 

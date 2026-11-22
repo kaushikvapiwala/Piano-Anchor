@@ -22,6 +22,7 @@ import pianoanchor.core.ports.UpdateCheckPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.ear.EarViewModel
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.onboarding.OnboardingViewModel
@@ -107,7 +108,7 @@ val appModule =
             }
         }
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
-        viewModel { (attemptId: String) -> ResultsViewModel(attemptId, get()) }
+        viewModel { (attemptId: String, rung: TempoRung) -> ResultsViewModel(attemptId, rung, get()) }
         viewModel { SettingsViewModel(get()) }
         viewModel {
             OnboardingViewModel(
