@@ -57,7 +57,8 @@ After a run, Results can offer to loop the stretch that went worst.
 - **Window.** `SpotFinder.worst` slides a window of `SPOT_LOOP_BARS` bars over the passage and picks the one with the
   most findings; the earliest wins a tie. A passage shorter than the window gives its whole range. No findings, no
   window, and Results offer nothing. A perform take offers none either: loops are practice. A CLEAN run offers none:
-  only GOOD and KEEP_PRACTISING runs do.
+  only GOOD and KEEP_PRACTISING runs do. Timed findings use the learner's strictness (the timing band the run was
+  graded with), so the window agrees with the Results screen.
 - **Slice.** `Passage.slice` keeps the steps inside the bars, moves them so the first bar starts at tick 0 and keeps
   the time signature, tempo, rights and skills. Its id gets a `#bars5-6` suffix so attempts stay attributable.
 - **Loop run.** Practice opens on the slice in practice mode, one tempo rung below the run's (wait mode stays wait),

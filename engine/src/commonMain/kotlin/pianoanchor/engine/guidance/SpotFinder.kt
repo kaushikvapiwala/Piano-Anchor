@@ -4,11 +4,14 @@ import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.Strictness
+import pianoanchor.core.model.StrictnessProfile
 import pianoanchor.core.model.WrongNote
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.analysis.PerformanceAnalyser
 import pianoanchor.engine.analysis.TempoReference
 import pianoanchor.engine.calibration.LatencyCalibration
+import pianoanchor.engine.profile
 
 /** Which bars of a run to loop (`docs/algorithms/guidance.md`, spot loops). */
 public object SpotFinder {
@@ -16,13 +19,15 @@ public object SpotFinder {
      * The window of [Tunables.SPOT_LOOP_BARS] consecutive bars with the most findings in [attempt], or null when it
      * has none. Ties go to the earliest window. A passage shorter than the window gives its whole range. Findings of
      * a wait-mode run are its `WrongNote` and `ChordIncomplete` events, each counted at its step's bar; of a timed
-     * run, the performance analyser's findings, each counted at its score note's bar.
+     * run, the performance analyser's findings, each counted at its score note's bar,
+     * judged with the timing band of [strictness], the one the run was graded with.
      */
     public fun worst(
         passage: Passage,
         attempt: Attempt,
+        strictness: StrictnessProfile = Strictness.STANDARD.profile(),
     ): BarRange? {
-        val steps = findingSteps(passage, attempt)
+        val steps = findingSteps(passage, attempt, strictness)
         val perBar = IntArray(passage.barCount() + 1)
         steps.forEach { perBar[passage.barOf(it)]++ }
         val length = minOf(Tunables.SPOT_LOOP_BARS, passage.barCount())
@@ -40,12 +45,13 @@ public object SpotFinder {
     private fun findingSteps(
         passage: Passage,
         attempt: Attempt,
+        strictness: StrictnessProfile,
     ): List<Int> {
         val bpm =
             attempt.tempoBpm
                 ?: return attempt.events.filter { it is WrongNote || it is ChordIncomplete }.map { it.stepIndex }
         val notes = LatencyCalibration.corrected(attempt.playedNotes, attempt.latencyOffsetNanos)
         val tempo = TempoReference.Target(bpm, startNanos = 0)
-        return PerformanceAnalyser.analyse(passage, notes, tempo).findings.map { it.at.stepIndex }
+        return PerformanceAnalyser.analyse(passage, notes, tempo, strictness).findings.map { it.at.stepIndex }
     }
 }

@@ -34,6 +34,8 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
 - **Text** comes from Compose resources (`composeResources/values/strings.xml`), never hard-coded. Every control
   has a label TalkBack can read; rows that act on a device name the device in their content description.
 - No infinite animations on screens with screenshots (a spinner never lets the test go idle): show progress as text.
+- **Screen on**: the phone sits on the music rest throughout, so the app keeps the screen on while it is in the
+  foreground (`MainActivity` sets the window's keep-screen-on flag; the emulator end-to-end test checks it).
 
 ## Practice screen (wait mode)
 

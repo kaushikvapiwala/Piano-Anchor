@@ -32,7 +32,8 @@ the profile and default to Standard, which is the tunables above, so existing ca
 The analyser's early and late findings use the same tolerance; its hesitation, mistouch and note-length thresholds stay
 fixed, so strictness is about timing and slips, not about what counts as a mistake. `PracticeViewModel` reads the
 setting when a run starts and grades and judges that run with it; a changed setting applies to the next run. Stored
-bands are never regraded.
+bands are never regraded. `ResultsViewModel` reads the setting on each load (Standard when it can't be read) and
+analyses the run, and picks its loop bars, with it; so Results and loop offers use the learner's strictness.
 
 ## Building an attempt
 `Grader.attempt` counts `WrongNote` and `ChordIncomplete` in the run's events, takes the duration from the first
