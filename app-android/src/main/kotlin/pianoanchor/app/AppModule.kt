@@ -108,7 +108,7 @@ val appModule =
             }
         }
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
-        viewModel { (attemptId: String, rung: TempoRung) -> ResultsViewModel(attemptId, rung, get()) }
+        viewModel { (attemptId: String, rung: TempoRung) -> ResultsViewModel(attemptId, rung, get(), get()) }
         viewModel { SettingsViewModel(get()) }
         viewModel {
             OnboardingViewModel(

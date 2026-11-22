@@ -10,7 +10,9 @@ import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.StepCorrect
+import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WrongNote
+import pianoanchor.engine.profile
 import pianoanchor.testing.TEST_TEMPO_BPM
 import pianoanchor.testing.passageOf
 import kotlin.test.Test
@@ -97,5 +99,18 @@ class SpotFinderTest {
                 PlayedNote(c4, 80, down, down + NANOS_PER_BEAT / 2, down + NANOS_PER_BEAT / 2)
             }
         assertNull(SpotFinder.worst(passage(2), attempt(emptyList(), TEST_TEMPO_BPM, notes, latency = late)))
+    }
+
+    @Test
+    fun `notes late within Gentle's band give a window at Standard but none at Gentle`() {
+        val late = 150_000_000L // Standard's band at 60 BPM is 125 ms, Gentle's 187.5 ms
+        val notes =
+            (0 until 8).map {
+                val down = it * NANOS_PER_BEAT + late
+                PlayedNote(c4, 80, down, down + NANOS_PER_BEAT / 2, down + NANOS_PER_BEAT / 2)
+            }
+        val run = attempt(emptyList(), TEST_TEMPO_BPM, notes)
+        assertEquals(BarRange(1, 2), SpotFinder.worst(passage(2), run))
+        assertNull(SpotFinder.worst(passage(2), run, Strictness.GENTLE.profile()))
     }
 }
