@@ -34,11 +34,13 @@ import pianoanchor.engine.matcher.TempoRung
 /**
  * The results of the run saved as [attemptId] in [attempts]: [ResultsState.Loading] until it is read, then
  * [ResultsState.Ready] or [ResultsState.NotFound], or [ResultsState.Unavailable] when the store can't be read. The
- * run number is one more than the passage's runs started before this one. The run is analysed on
- * [analysisDispatcher], off the main thread, so a long passage doesn't stall the screen as it opens.
+ * run number is one more than the passage's runs started before this one. [rung] is the rung the run was played on
+ * (Practice passes it, so rungs that share a tempo stay distinct). The run is analysed on [analysisDispatcher], off
+ * the main thread, so a long passage doesn't stall the screen as it opens.
  */
 public class ResultsViewModel(
     private val attemptId: String,
+    private val rung: TempoRung,
     private val attempts: AttemptRepositoryPort,
     private val analysisDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
@@ -96,7 +98,7 @@ public class ResultsViewModel(
             hesitation = summary?.hesitation?.let { hesitationTile(it) },
             mode = attempt.mode,
             spot = analysed?.second,
-            rung = passage?.let { rungOf(it, attempt) } ?: TempoRung.WAIT,
+            rung = rung,
         )
     }
 
@@ -105,12 +107,6 @@ public class ResultsViewModel(
         passage: Passage,
         attempt: Attempt,
     ) = if (attempt.mode == RunMode.PRACTICE && attempt.band != Band.CLEAN) SpotFinder.worst(passage, attempt) else null
-
-    /** The rung whose tempo the run was played at; WAIT when none matches. */
-    private fun rungOf(
-        passage: Passage,
-        attempt: Attempt,
-    ) = TempoRung.entries.firstOrNull { it.bpm(passage) == attempt.tempoBpm } ?: TempoRung.WAIT
 
     /** The analysis of a timed run, or of a wait-mode run with played notes; null for older wait-mode runs. */
     private fun analyse(

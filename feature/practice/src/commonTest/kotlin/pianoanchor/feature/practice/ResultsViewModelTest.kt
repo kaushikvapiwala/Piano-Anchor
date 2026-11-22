@@ -105,9 +105,10 @@ class ResultsViewModelTest {
     private suspend fun TestScope.results(
         id: String,
         vararg saved: Attempt,
+        rung: TempoRung = TempoRung.WAIT,
     ): ResultsViewModel {
         saved.forEach { attempts.save(it) }
-        return ResultsViewModel(id, attempts, dispatcher).also { runCurrent() }
+        return ResultsViewModel(id, rung, attempts, dispatcher).also { runCurrent() }
     }
 
     @Test
@@ -152,7 +153,12 @@ class ResultsViewModelTest {
     fun `offers a loop of a timed run with the rung it was played on`() =
         runTest(dispatcher) {
             val notes = listOf(played(C4, 0, 600), played(D4, 750, 600), played(E4, 1700, 400))
-            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 80, playedNotes = notes, band = Band.GOOD))
+            val vm =
+                results(
+                    "a-1",
+                    attempt("a-1", 100, tempoBpm = 80, playedNotes = notes, band = Band.GOOD),
+                    rung = TempoRung.P100,
+                )
 
             val state = assertIs<ResultsState.Ready>(vm.state.value)
             assertEquals(BarRange(1, 1), state.spot)
@@ -171,11 +177,12 @@ class ResultsViewModelTest {
         }
 
     @Test
-    fun `a tempo that is on no rung reads as wait mode`() =
+    fun `reports the rung it was played on even when a lower rung has the same tempo`() =
         runTest(dispatcher) {
-            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 77))
+            // A tempo that clamps to the same BPM as a lower rung (here P70's 56) still reports the rung played.
+            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 56), rung = TempoRung.P85)
 
-            assertEquals(TempoRung.WAIT, assertIs<ResultsState.Ready>(vm.state.value).rung)
+            assertEquals(TempoRung.P85, assertIs<ResultsState.Ready>(vm.state.value).rung)
         }
 
     @Test
@@ -361,7 +368,7 @@ class ResultsViewModelTest {
                         limit: Int,
                     ) = error("recent must not be used")
                 }
-            val vm = ResultsViewModel("a-2", countOnly, dispatcher).also { runCurrent() }
+            val vm = ResultsViewModel("a-2", TempoRung.WAIT, countOnly, dispatcher).also { runCurrent() }
 
             assertEquals(2, (vm.state.value as ResultsState.Ready).runNumber)
         }
@@ -390,7 +397,7 @@ class ResultsViewModelTest {
                 object : AttemptRepositoryPort by attempts {
                     override suspend fun get(id: String): Attempt? = answer.await()
                 }
-            val vm = ResultsViewModel("a-1", slow, dispatcher).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", TempoRung.WAIT, slow, dispatcher).also { runCurrent() }
             assertEquals(ResultsState.Loading, vm.state.value)
 
             answer.complete(null)
@@ -404,7 +411,7 @@ class ResultsViewModelTest {
             attempts.save(attempt("a-1", 100))
             attempts.failing = true
 
-            val vm = ResultsViewModel("a-1", attempts, dispatcher).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", TempoRung.WAIT, attempts, dispatcher).also { runCurrent() }
 
             assertEquals(ResultsState.Unavailable, vm.state.value)
         }
@@ -421,7 +428,7 @@ class ResultsViewModelTest {
                     ): Int = throw StorageUnavailableException("countStartedBefore failed")
                 }
 
-            val vm = ResultsViewModel("a-1", countFails, dispatcher).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", TempoRung.WAIT, countFails, dispatcher).also { runCurrent() }
 
             assertEquals(ResultsState.Unavailable, vm.state.value)
         }
@@ -431,7 +438,7 @@ class ResultsViewModelTest {
         runTest(dispatcher) {
             attempts.save(attempt("a-1", 100))
             attempts.failing = true
-            val vm = ResultsViewModel("a-1", attempts, dispatcher).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", TempoRung.WAIT, attempts, dispatcher).also { runCurrent() }
 
             attempts.failing = false
             vm.retry()
@@ -452,7 +459,7 @@ class ResultsViewModelTest {
                     override suspend fun get(id: String): Attempt? =
                         if (++reads == 1) firstRead.await() else attempts.get(id)
                 }
-            val vm = ResultsViewModel("a-1", firstHangs, dispatcher).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", TempoRung.WAIT, firstHangs, dispatcher).also { runCurrent() }
 
             vm.retry()
             runCurrent()
@@ -469,7 +476,7 @@ class ResultsViewModelTest {
             attempts.save(attempt("a-1", 100, tempoBpm = 80, playedNotes = notes))
             val analysis = HeldDispatcher()
 
-            val vm = ResultsViewModel("a-1", attempts, analysis).also { runCurrent() }
+            val vm = ResultsViewModel("a-1", TempoRung.WAIT, attempts, analysis).also { runCurrent() }
             assertEquals(ResultsState.Loading, vm.state.value)
 
             analysis.runQueued()

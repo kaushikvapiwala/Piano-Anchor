@@ -139,9 +139,13 @@ private sealed interface Destination {
         val returnTo: Destination,
     ) : Destination
 
-    /** The results of the run saved as [attemptId], which [practice] started; "Try again" returns to it. */
+    /**
+     * The results of the run saved as [attemptId], played on [rung], which [practice] started; "Try again" returns
+     * to it.
+     */
     data class Results(
         val attemptId: String,
+        val rung: TempoRung,
         val practice: Practice,
     ) : Destination
 }
@@ -193,7 +197,7 @@ private fun AppNavigation() {
                 PracticeRoute(
                     current,
                     onBack = { destination = current.from },
-                    onFinished = { destination = Destination.Results(it, current) },
+                    onFinished = { id, rung -> destination = Destination.Results(id, rung, current) },
                     onCalibrate = { rung, mode ->
                         destination = Destination.Calibrate(current.device, current.copy(rung = rung, mode = mode))
                     },
@@ -261,7 +265,7 @@ private fun rememberRouteViewModelStoreOwner(): ViewModelStoreOwner {
 private fun PracticeRoute(
     practice: Destination.Practice,
     onBack: () -> Unit,
-    onFinished: (attemptId: String) -> Unit,
+    onFinished: (attemptId: String, rung: TempoRung) -> Unit,
     onCalibrate: (TempoRung, RunMode) -> Unit,
     onPlayWhole: (TempoRung) -> Unit,
 ) {
@@ -279,7 +283,12 @@ private fun PracticeRoute(
     // Leave only once the run has closed the piano, so the monitor can reopen it (one reader per input).
     val leave = { then: () -> Unit -> scope.launch { viewModel.close() }.invokeOnCompletion { then() } }
     BackHandler { leave(onBack) }
-    LaunchedEffect(state.finishedAttemptId) { state.finishedAttemptId?.let { id -> leave { onFinished(id) } } }
+    LaunchedEffect(state.finishedAttemptId) {
+        state.finishedAttemptId?.let { id ->
+            val rung = state.rung // the rung the run was played on, read before the screen closes
+            leave { onFinished(id, rung) }
+        }
+    }
     PracticeScreen(
         state,
         onBack = { leave(onBack) },
@@ -361,7 +370,9 @@ private fun ResultsRoute(
 ) {
     LandscapeEffect()
     val viewModel: ResultsViewModel =
-        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(results.attemptId) }
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) {
+            parametersOf(results.attemptId, results.rung)
+        }
     val state by viewModel.state.collectAsState()
     val onBack = { go(results.practice.from) }
     val onTryAgain = { go(results.practice) }
