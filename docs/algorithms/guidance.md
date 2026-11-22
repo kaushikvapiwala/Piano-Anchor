@@ -56,10 +56,12 @@ After a run, Results can offer to loop the stretch that went worst.
   timed run's findings are the performance analyser's, counted at their score note's step.
 - **Window.** `SpotFinder.worst` slides a window of `SPOT_LOOP_BARS` bars over the passage and picks the one with the
   most findings; the earliest wins a tie. A passage shorter than the window gives its whole range. No findings, no
-  window, and Results offer nothing. A perform take offers none either: loops are practice.
+  window, and Results offer nothing. A perform take offers none either: loops are practice. A CLEAN run offers none:
+  only GOOD and KEEP_PRACTISING runs do.
 - **Slice.** `Passage.slice` keeps the steps inside the bars, moves them so the first bar starts at tick 0 and keeps
   the time signature, tempo, rights and skills. Its id gets a `#bars5-6` suffix so attempts stay attributable.
-- **Loop run.** Practice opens on the slice in practice mode, one tempo rung below the run's (wait mode stays wait).
+- **Loop run.** Practice opens on the slice in practice mode, one tempo rung below the run's (wait mode stays wait),
+  at the key-hint level the piece has reached (read from the whole piece's attempts, not the loop's).
   Each finished loop is graded and saved as usual with `spot` set, then the next one starts at once; a short line
   says "Clean" or what went wrong. After `SPOT_LOOP_CLEAN_TARGET` CLEAN loops in a row the screen asks whether to play
   the whole piece ("Play it" opens the full passage at the original rung) or keep looping (the streak restarts). Any

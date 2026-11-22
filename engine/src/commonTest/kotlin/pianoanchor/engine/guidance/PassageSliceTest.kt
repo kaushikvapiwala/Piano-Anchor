@@ -37,6 +37,13 @@ class PassageSliceTest {
     }
 
     @Test
+    fun `sourcePassageId strips the bars suffix and leaves a whole id alone`() {
+        assertEquals("builtin:cde", sourcePassageId("builtin:cde#bars2-3"))
+        assertEquals("builtin:cde", sourcePassageId("builtin:cde"))
+        assertEquals(passage.id, sourcePassageId(passage.slice(BarRange(2, 3)).id))
+    }
+
+    @Test
     fun `slice outside the passage is rejected`() {
         assertFailsWith<IllegalArgumentException> { passage.slice(BarRange(4, 5)) }
     }
