@@ -177,6 +177,28 @@ class PracticeViewModelPerformTest {
         }
 
     @Test
+    fun performDrawsEveryNoteNeutrally() =
+        perform {
+            val vm = startTake()
+            val neutral = List(3) { StepStatus.UPCOMING }
+
+            assertEquals(RunPhase.PLAYING, vm.state.value.phase)
+            assertEquals(0, vm.state.value.currentStep)
+            assertEquals(
+                neutral,
+                vm.state.value.steps
+                    .map { it.status },
+            )
+            advance(beatMs)
+            assertEquals(1, vm.state.value.currentStep) // the cursor still moves with the clock
+            assertEquals(
+                neutral,
+                vm.state.value.steps
+                    .map { it.status },
+            )
+        }
+
+    @Test
     fun performIsUnavailableAtWait() =
         perform {
             val vm = practice()

@@ -741,7 +741,7 @@ public class PracticeViewModel(
                     phase = if (playing) RunPhase.PLAYING else RunPhase.COUNT_IN,
                     beat = beat,
                     currentStep = cursor,
-                    steps = it.steps.mapIndexed { i, step -> step.copy(status = cursorStatus(i, cursor)) },
+                    steps = it.steps.mapIndexed { i, step -> step.copy(status = cursorStatus(i, cursor, it.mode)) },
                 )
             }
         }
@@ -751,10 +751,12 @@ public class PracticeViewModel(
 /** The beat unit of a quarter note in a time signature (the 4 of 3/4). */
 private const val QUARTER_UNIT = 4
 
+/** A timed step's colour: the cursor step waits (amber) in practice; a perform take draws every note neutrally. */
 private fun cursorStatus(
     step: Int,
     cursor: Int,
-) = if (step == cursor) StepStatus.WAITING else StepStatus.UPCOMING
+    mode: RunMode,
+) = if (step == cursor && mode == RunMode.PRACTICE) StepStatus.WAITING else StepStatus.UPCOMING
 
 private fun statuses(
     steps: List<StepView>,
