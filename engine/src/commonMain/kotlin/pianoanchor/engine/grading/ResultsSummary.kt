@@ -7,12 +7,12 @@ import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.TICKS_PER_QUARTER
+import pianoanchor.engine.NANOS_PER_MILLI
 import pianoanchor.engine.analysis.NoteMatch
 import pianoanchor.engine.analysis.PerformanceAnalysis
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private const val NANOS_PER_MILLI = 1_000_000L
 private const val NANOS_PER_MINUTE = 60_000_000_000.0
 private const val PERCENT = 100
 

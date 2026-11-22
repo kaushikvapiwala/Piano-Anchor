@@ -6,6 +6,7 @@ import pianoanchor.testing.passageOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 class TempoRungTest {
@@ -47,5 +48,14 @@ class TempoRungTest {
         assertEquals(TempoRung.P60, TempoRung.P70.below())
         assertEquals(TempoRung.WAIT, TempoRung.P60.below())
         assertEquals(TempoRung.WAIT, TempoRung.WAIT.below())
+    }
+
+    @Test
+    fun onlyWaitCannotPerform() {
+        assertFalse(TempoRung.WAIT.canPerform)
+        assertEquals(
+            listOf(true, true, true, true),
+            listOf(TempoRung.P60, TempoRung.P70, TempoRung.P85, TempoRung.P100).map { it.canPerform },
+        )
     }
 }

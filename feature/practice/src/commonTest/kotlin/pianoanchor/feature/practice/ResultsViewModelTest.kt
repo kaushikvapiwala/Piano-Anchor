@@ -287,6 +287,19 @@ class ResultsViewModelTest {
         }
 
     @Test
+    fun theStoredLatencyOffsetIsSubtractedBeforePickingLoopBars() =
+        runTest(dispatcher) {
+            // Every key 200 ms late on the wire, from a piano that answers 200 ms late: in time, so nothing to loop.
+            val notes = listOf(played(C4, 200, 600), played(D4, 950, 600), played(E4, 1700, 1400))
+            val take = attempt("a-1", 100, band = Band.GOOD, tempoBpm = 80, playedNotes = notes)
+            val calibrated = results("a-1", take.copy(latencyOffsetNanos = 200 * MS))
+            assertNull((calibrated.state.value as ResultsState.Ready).spot)
+
+            val uncalibrated = results("a-2", take.copy(id = "a-2"))
+            assertNotNull((uncalibrated.state.value as ResultsState.Ready).spot)
+        }
+
+    @Test
     fun aTimedAttemptInTimeHasNoWorstNote() =
         runTest(dispatcher) {
             val notes = listOf(played(C4, 0, 600), played(D4, 750, 600), played(E4, 1500, 1400))

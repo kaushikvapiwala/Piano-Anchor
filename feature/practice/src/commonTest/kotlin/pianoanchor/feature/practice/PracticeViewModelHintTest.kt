@@ -404,4 +404,70 @@ class PracticeViewModelHintTest {
 
             assertFalse(vm.state.value.hintVisible)
         }
+
+    /** [attempts] that counts how often `recent` is collected. */
+    private fun countingStore(reads: () -> Unit): AttemptRepositoryPort =
+        object : AttemptRepositoryPort by attempts {
+            override fun recent(
+                passageId: String,
+                limit: Int,
+            ): Flow<List<Attempt>> =
+                flow {
+                    reads()
+                    emitAll(attempts.recent(passageId, limit))
+                }
+        }
+
+    @Test
+    fun restartsReuseTheHintLevelOfTheFirstRead() =
+        runTest(dispatcher) {
+            store(*delayedHistory)
+            var reads = 0
+            val vm = practice(countingStore { reads++ })
+            runCurrent()
+
+            vm.restart()
+            runCurrent()
+            vm.selectRung(TempoRung.P60)
+            runCurrent()
+
+            assertEquals(1, reads)
+            assertEquals(HintLevel.DELAYED, vm.state.value.hintLevel)
+        }
+
+    @Test
+    fun anUnreadableStoreIsReadAgainOnTheNextStart() =
+        runTest(dispatcher) {
+            store(*delayedHistory)
+            var reads = 0
+            attempts.failing = true
+            val vm = practice(countingStore { reads++ })
+            runCurrent()
+            assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
+
+            attempts.failing = false
+            vm.restart()
+            runCurrent()
+
+            assertEquals(2, reads)
+            assertEquals(HintLevel.DELAYED, vm.state.value.hintLevel)
+        }
+
+    @Test
+    fun aFailedSaveMakesTheNextStartReadTheHistoryAgain() =
+        runTest(dispatcher) {
+            var reads = 0
+            val vm = practice(countingStore { reads++ })
+            tap(c4)
+            tap(d4)
+            attempts.failing = true // the save fails, though a real store may have kept the run
+            tap(e4)
+            assertTrue(vm.state.value.saveFailed)
+
+            attempts.failing = false
+            vm.discardRun()
+            runCurrent()
+
+            assertEquals(2, reads)
+        }
 }

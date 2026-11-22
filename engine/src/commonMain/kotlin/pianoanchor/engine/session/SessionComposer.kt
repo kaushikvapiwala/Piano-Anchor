@@ -152,7 +152,7 @@ public object SessionComposer {
                     val skill = curriculum.graph.skills.first { it.id == state.skillId }
                     val played = history[passage.id]
                     val rung = highestClean(passage, played) ?: TempoRung.WAIT
-                    val mode = if (rung == TempoRung.WAIT) RunMode.PRACTICE else RunMode.PERFORM
+                    val mode = if (rung.canPerform) RunMode.PERFORM else RunMode.PRACTICE
                     Card.ColdOpen(passage, rung, 0, skill, played?.lastPlayed, mode)
                 }
         }
