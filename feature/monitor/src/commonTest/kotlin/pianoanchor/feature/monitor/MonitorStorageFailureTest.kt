@@ -17,6 +17,7 @@ import pianoanchor.engine.identity.IdentityCodec
 import pianoanchor.testing.FakeClock
 import pianoanchor.testing.FakeInstrumentRepository
 import pianoanchor.testing.FakePiano
+import pianoanchor.testing.FakeSettingsRepository
 import pianoanchor.testing.FakeWallClock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -54,7 +55,16 @@ class MonitorStorageFailureTest {
     private fun unidentified() = Instrument("fake-piano", "Fake Piano", null, connectedAt, connectedAt)
 
     private fun TestScope.selected(repository: InstrumentRepositoryPort = instruments): MonitorViewModel =
-        MonitorViewModel(piano, piano, piano, repository, clock, wallClock, APP_VERSION).also {
+        MonitorViewModel(
+            piano,
+            piano,
+            piano,
+            repository,
+            FakeSettingsRepository(),
+            clock,
+            wallClock,
+            APP_VERSION,
+        ).also {
             runCurrent()
             it.select(piano.device)
             runCurrent()

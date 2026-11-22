@@ -4,8 +4,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -14,6 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import pianoanchor.core.model.MidiDevice
 import pianoanchor.ui.shell.PianoAnchorTheme
 import kotlin.test.assertEquals
 
@@ -56,6 +59,38 @@ class MonitorScreenTest {
             onNodeWithContentDescription("Back").performClick()
 
             assertEquals(1, back)
+        }
+
+    @Test
+    fun forgetIsOnlyOnTheRememberedPianosRowAndForgets() =
+        runComposeUiTest {
+            val remembered = MidiDevice("ble:AA", "FP-30X")
+            val other = MidiDevice("usb:1", "Digital Piano")
+            var forgotten = 0
+            setContent {
+                PianoAnchorTheme {
+                    MonitorScreen(
+                        MonitorState(devices = listOf(other, remembered), lastPiano = remembered),
+                        MonitorActions(onForget = { forgotten++ }),
+                    )
+                }
+            }
+            onAllNodesWithText("Forget").assertCountEquals(1)
+
+            onNodeWithContentDescription("Forget FP-30X").performClick()
+
+            assertEquals(1, forgotten)
+        }
+
+    @Test
+    fun forgetIsHiddenWhenTheRememberedPianoIsNotListed() =
+        runComposeUiTest {
+            setContent {
+                PianoAnchorTheme {
+                    MonitorScreen(MonitorState(lastPiano = MidiDevice("ble:AA", "FP-30X")), MonitorActions())
+                }
+            }
+            onNodeWithText("Forget").assertDoesNotExist()
         }
 
     @Test

@@ -57,6 +57,13 @@ class MonitorScreenScreenshotTest {
         )
 
     @Test
+    fun rememberedPianoWithForget() =
+        capture(
+            "forget",
+            MonitorState(devices = listOf(usbPiano, blePiano), lastPiano = blePiano),
+        )
+
+    @Test
     fun connectedWithLog() =
         capture(
             "connected",

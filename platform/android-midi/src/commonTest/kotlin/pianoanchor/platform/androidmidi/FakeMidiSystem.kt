@@ -48,6 +48,9 @@ internal class FakeMidiSystem(
     /** When false, opening any device fails (as if it went away just before). */
     var opensSucceed = true
 
+    /** While set, [openBluetooth] waits for it to complete before it opens anything (a link that never comes up). */
+    var bluetoothOpenGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
     /** When true, open senders throw [IOException] (as a closed Android port does). */
     var sendsFail = false
 
@@ -115,6 +118,7 @@ internal class FakeMidiSystem(
 
     /** Lists an advertising device as a new Bluetooth system device (new system id, as Android does each time). */
     override suspend fun openBluetooth(address: String): AutoCloseable? {
+        bluetoothOpenGate?.await()
         val advertisement = advertising.value.firstOrNull { it.address == address }
         if (!opensSucceed || advertisement == null) return null
         bluetoothOpened.incrementAndGet()

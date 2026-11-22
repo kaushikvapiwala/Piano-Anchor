@@ -43,6 +43,9 @@ class TodayScreenScreenshotTest {
     private val piano = PianoChip(MidiDevice("ble:AA:BB", "FP-30X"), Transport.BLE, latencyMs = 18)
 
     @Test
+    fun connectingPiano() = capture("connecting", TodayState(connecting = true, daysThisWeek = 2))
+
+    @Test
     fun earCard() =
         capture(
             "ear_card",

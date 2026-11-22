@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.Strictness
@@ -27,9 +28,13 @@ private const val LAST_UPDATE_CHECK = "last_update_check"
 private const val LATEST_RELEASE = "latest_release"
 private const val DISMISSED_UPDATE = "dismissed_update"
 private const val STRICTNESS = "strictness"
+private const val LAST_PIANO = "last_piano"
 
 /** A stored text that is "not set" (the rows of absent values hold it, so every update writes every row). */
 private const val UNSET = ""
+
+/** Separates a piano's id from its name in the `last_piano` row; an id (`ble:<ADDRESS>`) has no line break. */
+private const val PIANO_SEPARATOR = "\n"
 
 /** Separates a release's version from its page URL in the `latest_release` row; neither contains a space. */
 private const val RELEASE_SEPARATOR = " "
@@ -72,6 +77,7 @@ public class SqlSettingsRepositoryAdapter(
                         queries.put(LATEST_RELEASE, updated.latestRelease.stored())
                         queries.put(DISMISSED_UPDATE, updated.dismissedUpdate ?: UNSET)
                         queries.put(STRICTNESS, updated.strictness.name)
+                        queries.put(LAST_PIANO, updated.lastPiano.stored())
                     }
                 }
             }
@@ -104,12 +110,20 @@ private fun Map<String, String>.toSettings(): Settings {
                 STRICTNESS,
                 defaults.strictness,
             ) { name -> Strictness.entries.firstOrNull { it.name == name } },
+        lastPiano = this[LAST_PIANO]?.toPianoOrNull(),
     )
 }
 
 private fun LocalDate?.stored(): String = if (this == null) UNSET else toString()
 
 private fun Release?.stored(): String = if (this == null) UNSET else version + RELEASE_SEPARATOR + pageUrl
+
+private fun MidiDevice?.stored(): String = if (this == null) UNSET else id + PIANO_SEPARATOR + name
+
+private fun String.toPianoOrNull(): MidiDevice? {
+    val parts = split(PIANO_SEPARATOR, limit = 2)
+    return if (parts.size == 2 && parts.none { it.isBlank() }) MidiDevice(parts[0], parts[1]) else null
+}
 
 private fun String.toReleaseOrNull(): Release? {
     val parts = split(RELEASE_SEPARATOR)

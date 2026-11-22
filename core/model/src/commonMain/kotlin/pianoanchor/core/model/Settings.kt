@@ -30,7 +30,8 @@ public val WEEKLY_GOAL_DAYS_RANGE: IntRange = 1..MAX_WEEKLY_GOAL_DAYS
  * finished, so the app opens on Today from then on. The update check keeps its own state here: [lastUpdateCheck] is the
  * learner day of the last request (at most one a day), [latestRelease] the newest release it has seen and
  * [dismissedUpdate] the version whose banner the learner dismissed with "Not now". [strictness] scales the timing
- * tolerance and the grading bands of the next run.
+ * tolerance and the grading bands of the next run. [lastPiano] is the piano connected last through onboarding or
+ * Pianos, reconnected when Today opens; null when none or forgotten.
  */
 public data class Settings(
     val dailyBudget: DailyBudget = DailyBudget.MIN_20,
@@ -42,6 +43,8 @@ public data class Settings(
     val latestRelease: Release? = null,
     val dismissedUpdate: String? = null,
     val strictness: Strictness = Strictness.STANDARD,
+    /** The piano connected last through onboarding or Pianos, reconnected on start; null when none or forgotten. */
+    val lastPiano: MidiDevice? = null,
 ) {
     init {
         require(weeklyGoalDays in WEEKLY_GOAL_DAYS_RANGE) {

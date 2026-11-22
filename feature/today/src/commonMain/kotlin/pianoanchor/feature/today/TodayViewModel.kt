@@ -12,21 +12,26 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.CalibrationRepositoryPort
+import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.core.ports.UpdateCheckPort
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
@@ -58,7 +63,8 @@ public class TodayViewModel(
     private val learner: LearnerModel,
     private val settings: SettingsRepositoryPort,
     private val attempts: AttemptRepositoryPort,
-    input: MidiInputPort,
+    private val input: MidiInputPort,
+    private val discovery: MidiDiscoveryPort,
     private val calibration: CalibrationRepositoryPort,
     private val clock: Clock,
     private val zone: TimeZone,
@@ -79,6 +85,7 @@ public class TodayViewModel(
         }
         refresh()
         viewModelScope.launch { checkForUpdate() }
+        viewModelScope.launch { reconnectLastPiano() }
     }
 
     /** Loads the plan and counts again, e.g. after a run was saved or a failed read. */
@@ -146,6 +153,29 @@ public class TodayViewModel(
             }
         } catch (_: StorageUnavailableException) {
             mutableState.update { it.copy(session = null, storageFailed = true) }
+        }
+    }
+
+    /**
+     * Once per start: connects the piano stored in [settings] when [input] does not list it, showing
+     * [TodayState.connecting] meanwhile. A failure leaves the chip at "No piano" without an error or a retry.
+     */
+    private suspend fun reconnectLastPiano() {
+        try {
+            val last = settings.settings.first().lastPiano ?: return
+            if (input.inputDevices.first().any { it.id == last.id }) return
+            mutableState.update { it.copy(connecting = true) }
+            try {
+                withTimeoutOrNull(Tunables.RECONNECT_LAST_PIANO_TIMEOUT_MS) { discovery.connect(last) }
+            } catch (_: BluetoothUnavailableException) {
+                // Bluetooth is off or not permitted: the chip keeps saying "No piano"; Pianos explains why.
+            } catch (_: MidiDeviceUnavailableException) {
+                // The piano is off or out of range. (A connect that takes longer than the timeout is the same.)
+            } finally {
+                mutableState.update { it.copy(connecting = false) }
+            }
+        } catch (_: StorageUnavailableException) {
+            // Nothing is remembered that can be read: the chip keeps saying "No piano".
         }
     }
 
