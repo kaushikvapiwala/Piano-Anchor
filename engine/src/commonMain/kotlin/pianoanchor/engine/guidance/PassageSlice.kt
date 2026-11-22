@@ -14,18 +14,13 @@ internal fun Passage.barCount(): Int = barOf(steps.lastIndex)
  * attributable. Throws [IllegalArgumentException] when no step is in [range].
  */
 public fun Passage.slice(range: BarRange): Passage {
-    val inside = steps.indices.filter { barOf(it) in range.first..range.last }.map { steps[it] }
+    val inside = steps.filterIndexed { i, _ -> barOf(i) in range.first..range.last }
     require(inside.isNotEmpty()) { "passage \"$id\" has no step in bars ${range.first}-${range.last}" }
     val offset = (range.first - 1) * timeSignature.barTicks
     return copy(
         id = "$id$BARS_MARKER${range.first}-${range.last}",
         steps =
-            inside.map {
-                it.copy(
-                    onsetTicks =
-                        it.onsetTicks - offset,
-                )
-            },
+            inside.map { it.copy(onsetTicks = it.onsetTicks - offset) },
     )
 }
 

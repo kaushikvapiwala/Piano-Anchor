@@ -11,13 +11,13 @@ import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.StrictnessProfile
 import pianoanchor.core.model.TICKS_PER_QUARTER
+import pianoanchor.engine.NANOS_PER_MILLI
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.profile
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToLong
 
-private const val NANOS_PER_MILLI = 1_000_000L
 private const val NANOS_PER_MINUTE = 60_000_000_000.0
 private val MISTOUCH_SEMITONES = 1..2
 

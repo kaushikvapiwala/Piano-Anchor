@@ -15,6 +15,7 @@ import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ErrorKind
+import pianoanchor.core.model.Finding
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StorageUnavailableException
@@ -86,8 +87,8 @@ public class ResultsViewModel(
         val analysed =
             passage?.let {
                 withContext(analysisDispatcher) {
-                    val summary = ResultsSummary.of(it, attempt, analyse(it, attempt, strictness))
-                    summary to spotOf(it, attempt, strictness)
+                    val analysis = analyse(it, attempt, strictness)
+                    ResultsSummary.of(it, attempt, analysis) to spotOf(it, attempt, analysis?.findings.orEmpty())
                 }
             }
         val summary = analysed?.first
@@ -126,10 +127,10 @@ public class ResultsViewModel(
     private fun spotOf(
         passage: Passage,
         attempt: Attempt,
-        strictness: StrictnessProfile,
+        findings: List<Finding>,
     ): BarRange? {
         val offered = attempt.mode == RunMode.PRACTICE && attempt.band != Band.CLEAN
-        return if (offered) SpotFinder.worst(passage, attempt, strictness) else null
+        return if (offered) SpotFinder.worst(passage, attempt, findings) else null
     }
 
     /** The analysis of a timed run, or of a wait-mode run with played notes; null for older wait-mode runs. */
