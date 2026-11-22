@@ -22,7 +22,7 @@ import kotlin.time.Instant
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [SDK], qualifiers = "w411dp-h891dp-xxhdpi")
+@Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
 class SongsScreenScreenshotTest {
     private fun capture(
         name: String,

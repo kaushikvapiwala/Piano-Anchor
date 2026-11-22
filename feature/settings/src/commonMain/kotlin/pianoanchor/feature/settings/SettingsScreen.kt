@@ -1,6 +1,7 @@
 package pianoanchor.feature.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -72,7 +74,13 @@ import pianoanchor.feature.settings.resources.settings_weekly_goal_more_glyph
 
 private val TouchTarget = 44.dp
 
-/** The settings: grouped rows for the daily budget, weekly goal, click, strictness and update check. Stateless. */
+/** The widest the settings column gets, so rows stay readable on a wide landscape screen. */
+private val MaxContentWidth = 600.dp
+
+/**
+ * The settings, landscape: grouped rows for the daily budget, weekly goal, click, strictness and update check.
+ * Stateless.
+ */
 @Composable
 public fun SettingsScreen(
     state: SettingsState,
@@ -80,28 +88,33 @@ public fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
-        Column(modifier = Modifier.safeDrawingPadding().verticalScroll(rememberScrollState())) {
-            TopBar(actions.onBack)
+        // Landscape: one scrolling column, no wider than MaxContentWidth, centred.
+        Box(modifier = Modifier.safeDrawingPadding().fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Column(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.widthIn(max = MaxContentWidth).fillMaxWidth().verticalScroll(rememberScrollState()),
             ) {
-                if (state.storageFailed) ErrorCard(actions.onDismissError)
-                GroupTitle(Res.string.settings_group_practice)
-                BudgetRow(state.settings.dailyBudget, actions.onDailyBudget)
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                WeeklyGoalRow(state.settings.weeklyGoalDays, actions.onWeeklyGoalStep)
-                GroupTitle(Res.string.settings_group_playing)
-                SwitchRow(Res.string.settings_click, null, state.settings.clickOn, actions.onClickOn)
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                StrictnessRows(state.settings.strictness, actions.onStrictness)
-                GroupTitle(Res.string.settings_group_updates)
-                SwitchRow(
-                    Res.string.settings_update_check,
-                    Res.string.settings_update_check_note,
-                    state.settings.updateCheckOn,
-                    actions.onUpdateCheckOn,
-                )
+                TopBar(actions.onBack)
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (state.storageFailed) ErrorCard(actions.onDismissError)
+                    GroupTitle(Res.string.settings_group_practice)
+                    BudgetRow(state.settings.dailyBudget, actions.onDailyBudget)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    WeeklyGoalRow(state.settings.weeklyGoalDays, actions.onWeeklyGoalStep)
+                    GroupTitle(Res.string.settings_group_playing)
+                    SwitchRow(Res.string.settings_click, null, state.settings.clickOn, actions.onClickOn)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    StrictnessRows(state.settings.strictness, actions.onStrictness)
+                    GroupTitle(Res.string.settings_group_updates)
+                    SwitchRow(
+                        Res.string.settings_update_check,
+                        Res.string.settings_update_check_note,
+                        state.settings.updateCheckOn,
+                        actions.onUpdateCheckOn,
+                    )
+                }
             }
         }
     }

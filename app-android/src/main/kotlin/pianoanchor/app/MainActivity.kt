@@ -4,7 +4,6 @@ package pianoanchor.app
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -12,7 +11,6 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -242,16 +240,6 @@ private fun OnboardingNavigation(
     }
 }
 
-/** Landscape while in the composition (the phone sits on the music rest), back to the system's choice after. */
-@Composable
-private fun LandscapeEffect() {
-    val activity = LocalActivity.current
-    DisposableEffect(activity) {
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        onDispose { activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
-    }
-}
-
 /** A ViewModel store owner that lives as long as the calling route: its ViewModels are cleared when it leaves. */
 @Composable
 private fun rememberRouteViewModelStoreOwner(): ViewModelStoreOwner {
@@ -272,7 +260,6 @@ private fun PracticeRoute(
     onCalibrate: (TempoRung, RunMode) -> Unit,
     onPlayWhole: (TempoRung) -> Unit,
 ) {
-    LandscapeEffect()
     val viewModel: PracticeViewModel =
         koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) {
             parametersOf(
@@ -346,7 +333,6 @@ private fun CalibrationRoute(
     device: MidiDevice,
     onLeave: () -> Unit,
 ) {
-    LandscapeEffect()
     val viewModel: CalibrationViewModel =
         koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device) }
     val state by viewModel.state.collectAsState()
@@ -371,7 +357,6 @@ private fun ResultsRoute(
     results: Destination.Results,
     go: (Destination) -> Unit,
 ) {
-    LandscapeEffect()
     val viewModel: ResultsViewModel =
         koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) {
             parametersOf(results.attemptId, results.rung)
