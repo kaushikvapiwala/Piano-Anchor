@@ -30,6 +30,8 @@ public data class PianoChip(
  * piano is connected. [daysThisWeek] counts the days with a saved attempt since Monday against [weeklyGoalDays];
  * [practicedDays] counts them over the last [PRACTICE_WINDOW_DAYS] days. [update] is a newer release to announce, or
  * null.
+ * [connecting] is true while the app reconnects the remembered piano in the background: the chip then says so
+ * until the piano is listed or the attempt fails.
  */
 public data class TodayState(
     val session: Session? = null,
@@ -40,6 +42,7 @@ public data class TodayState(
     val practicedDays: Int = 0,
     val storageFailed: Boolean = false,
     val update: Release? = null,
+    val connecting: Boolean = false,
 ) {
     /** The cold-open card, if something is due. */
     val coldOpen: Card.ColdOpen? get() = session?.cards?.filterIsInstance<Card.ColdOpen>()?.firstOrNull()

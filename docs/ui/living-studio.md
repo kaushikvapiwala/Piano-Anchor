@@ -222,12 +222,19 @@ card per unit in curriculum order, each with its pieces in content order. Rows a
   title>."
 - **Storage error**: an `errorContainer` card with Retry. The list reloads when the screen is opened again after a run.
 
+## Pianos screen
+
+The piano connected last through onboarding or Pianos is remembered. Its row on Pianos (when it is listed) has a
+"Forget" text button (TalkBack: "Forget FP-30X"): it disconnects the piano and stops Today reconnecting it.
+
 ## Today screen
 
 The start screen, portrait. A navigation rail (Today selected, Songs, Pianos, Settings gear; shared by Today and Songs as `AppNavRail`) on the left; every item has a
 text label. Reading order: the greeting by time of day ("Good morning" from 05:00, afternoon from 12:00, evening from
 18:00) and the line "Middle C is calling." naming the cold-open skill ("Ready when you are." with none); the piano
-chip (name, USB or BLE and the latency offset when calibrated, e.g. "FP-30X · BLE · 18 ms"; "No piano" opens Pianos)
+chip (name, USB or BLE and the latency offset when calibrated, e.g. "FP-30X · BLE · 18 ms"; "No piano" opens Pianos; "Connecting…" while the app reconnects the remembered piano in
+the background when Today opens, with no scan and no dialog; if that fails the chip reads "No piano", with no error
+card and no retry until Today opens again)
 and the weekly goal dots (one per goal day, plum for each day practised since Monday); the cards; the session bar;
 "Practised 9 of the last 16 days".
 

@@ -132,7 +132,9 @@ public class AndroidMidiAdapter internal constructor(
 
     override suspend fun connect(device: MidiDevice) {
         requireBluetooth()
-        val address = discovered[device.id] ?: throw MidiDeviceUnavailableException(device.id)
+        // A scanned device has its address on record; a `ble:` id from an earlier run carries it in the id.
+        val address =
+            discovered[device.id] ?: bluetoothAddressOf(device.id) ?: throw MidiDeviceUnavailableException(device.id)
         if (!bluetooth.connect(device.id, address)) throw MidiDeviceUnavailableException(device.id)
     }
 

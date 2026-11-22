@@ -597,6 +597,7 @@ private fun MonitorRoute(
                 onSelect = viewModel::select,
                 onScan = { askBluetooth.launch(BLUETOOTH_PERMISSIONS) },
                 onConnect = viewModel::connect,
+                onForget = viewModel::forget,
                 onStartRecording = viewModel::startRecording,
                 onStopRecording = viewModel::stopRecording,
                 onExport = { export.launch(FIXTURE_FILE_NAME) },

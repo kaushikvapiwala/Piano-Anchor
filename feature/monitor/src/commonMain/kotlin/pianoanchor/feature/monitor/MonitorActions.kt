@@ -11,6 +11,7 @@ public data class MonitorActions(
     val onSelect: (MidiDevice) -> Unit = {},
     val onScan: () -> Unit = {},
     val onConnect: (MidiDevice) -> Unit = {},
+    val onForget: () -> Unit = {},
     val onStartRecording: () -> Unit = {},
     val onStopRecording: () -> Unit = {},
     val onExport: () -> Unit = {},

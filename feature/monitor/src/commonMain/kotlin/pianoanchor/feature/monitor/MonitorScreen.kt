@@ -50,6 +50,8 @@ import pianoanchor.feature.monitor.resources.monitor_error_device_unavailable
 import pianoanchor.feature.monitor.resources.monitor_error_recording_limit
 import pianoanchor.feature.monitor.resources.monitor_error_storage
 import pianoanchor.feature.monitor.resources.monitor_export
+import pianoanchor.feature.monitor.resources.monitor_forget
+import pianoanchor.feature.monitor.resources.monitor_forget_device
 import pianoanchor.feature.monitor.resources.monitor_instrument_model
 import pianoanchor.feature.monitor.resources.monitor_log
 import pianoanchor.feature.monitor.resources.monitor_log_empty
@@ -118,7 +120,12 @@ private fun LazyListScope.devices(
     item { SectionTitle(Res.string.monitor_devices) }
     if (state.devices.isEmpty()) item { Text(stringResource(Res.string.monitor_no_devices)) }
     items(state.devices, key = { "listed-${it.id}" }) { device ->
-        DeviceRow(device, selected = device.id == state.selected?.id, onSelect = { actions.onSelect(device) })
+        DeviceRow(
+            device,
+            selected = device.id == state.selected?.id,
+            onSelect = { actions.onSelect(device) },
+            onForget = actions.onForget.takeIf { device.id == state.lastPiano?.id },
+        )
     }
     item {
         if (state.scanning) {
@@ -153,19 +160,28 @@ private fun DeviceRow(
     device: MidiDevice,
     selected: Boolean,
     onSelect: () -> Unit,
+    onForget: (() -> Unit)?,
 ) {
     val description = stringResource(Res.string.monitor_select_device, device.name)
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton)
-                .semantics { contentDescription = description }
-                .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = null)
-        Text(device.name, modifier = Modifier.padding(start = 8.dp))
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton)
+                    .semantics { contentDescription = description }
+                    .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RadioButton(selected = selected, onClick = null)
+            Text(device.name, modifier = Modifier.padding(start = 8.dp))
+        }
+        if (onForget != null) {
+            val forgetDescription = stringResource(Res.string.monitor_forget_device, device.name)
+            TextButton(onClick = onForget, modifier = Modifier.semantics { contentDescription = forgetDescription }) {
+                Text(stringResource(Res.string.monitor_forget))
+            }
+        }
     }
 }
 

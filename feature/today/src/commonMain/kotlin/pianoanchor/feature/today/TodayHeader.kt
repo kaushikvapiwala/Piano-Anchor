@@ -28,6 +28,8 @@ import pianoanchor.feature.today.resources.today_greeting_afternoon
 import pianoanchor.feature.today.resources.today_greeting_evening
 import pianoanchor.feature.today.resources.today_greeting_morning
 import pianoanchor.feature.today.resources.today_latency_ms
+import pianoanchor.feature.today.resources.today_piano_connecting
+import pianoanchor.feature.today.resources.today_piano_connecting_description
 import pianoanchor.feature.today.resources.today_piano_none
 import pianoanchor.feature.today.resources.today_piano_none_description
 import pianoanchor.feature.today.resources.today_ready
@@ -62,7 +64,7 @@ internal fun Header(
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            PianoChipView(state.piano, onPianos)
+            PianoChipView(state.piano, state.connecting, onPianos)
             WeekDots(state.daysThisWeek, state.weeklyGoalDays)
         }
     }
@@ -71,11 +73,12 @@ internal fun Header(
 @Composable
 private fun PianoChipView(
     piano: PianoChip?,
+    connecting: Boolean,
     onPianos: () -> Unit,
 ) {
     val text =
         if (piano == null) {
-            stringResource(Res.string.today_piano_none)
+            stringResource(if (connecting) Res.string.today_piano_connecting else Res.string.today_piano_none)
         } else {
             listOfNotNull(
                 piano.device.name,
@@ -90,7 +93,12 @@ private fun PianoChipView(
                 piano.latencyMs?.let { stringResource(Res.string.today_latency_ms, it) },
             ).joinToString(stringResource(Res.string.today_chip_separator))
         }
-    val description = if (piano == null) stringResource(Res.string.today_piano_none_description) else text
+    val description =
+        when {
+            piano != null -> text
+            connecting -> stringResource(Res.string.today_piano_connecting_description)
+            else -> stringResource(Res.string.today_piano_none_description)
+        }
     OutlinedCard(
         onClick = onPianos,
         shape = CircleShape,

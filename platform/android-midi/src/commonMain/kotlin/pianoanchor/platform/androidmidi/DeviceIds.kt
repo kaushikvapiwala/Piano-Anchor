@@ -29,7 +29,13 @@ internal fun identify(devices: List<SystemDevice>): List<ListedDevice> {
 }
 
 /** The id of the Bluetooth device at [address]: `ble:<ADDRESS>`, so it is the same before and after connecting. */
-internal fun bluetoothId(address: String): String = "ble:${address.uppercase()}"
+internal fun bluetoothId(address: String): String = "$BLUETOOTH_ID_PREFIX${address.uppercase()}"
+
+private const val BLUETOOTH_ID_PREFIX = "ble:"
+
+/** The address in a Bluetooth device [id] (`ble:<ADDRESS>`), or null for any other id. */
+internal fun bluetoothAddressOf(id: String): String? =
+    id.removePrefix(BLUETOOTH_ID_PREFIX).takeIf { id.startsWith(BLUETOOTH_ID_PREFIX) && it.isNotBlank() }
 
 private fun baseId(device: SystemDevice): String {
     val manufacturer = device.manufacturer.present()
