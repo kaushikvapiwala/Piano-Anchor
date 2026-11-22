@@ -142,6 +142,7 @@ class SessionComposerTest {
         assertEquals(Skills.RH_TUNES, lesson.skill)
         assertEquals(setOf(Skills.RH_SKIPS, Skills.RHYTHM_HALF), lesson.unlockedBy.toSet())
         assertEquals(TempoRung.WAIT, lesson.rung)
+        assertEquals(RunMode.PRACTICE, lesson.mode)
         assertEquals(Curriculum.units.flatMap { it.passages }.first { Skills.RH_TUNES.id in it.skills }, lesson.passage)
     }
 
@@ -151,6 +152,7 @@ class SessionComposerTest {
         val song = compose(plan).cards.filterIsInstance<Card.Song>().single()
         // A traditional piece of the latest unit with a learned skill, at the first rung with nothing clean.
         assertEquals("builtin:hot-cross-buns", song.passage.id)
+        assertEquals(RunMode.PRACTICE, song.mode)
         assertEquals(TempoRung.WAIT, song.rung)
         val bpm = TempoRung.P70.bpm(song.passage)!!
         val history = mapOf(song.passage.id to played(1, bpm))

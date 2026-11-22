@@ -194,7 +194,7 @@ class TodayViewModelTest {
 
     private suspend fun earReviewOn(date: LocalDate) =
         LearnerModel(Curriculum.graph, learnerRepository)
-            .recordSkill(EarSkills.ECHO_NOTE.id, Band.GOOD, date, "ear:$date")
+            .recordEarSet(EarSkills.ECHO_NOTE.id, Band.GOOD, date, "$date")
 
     @Test
     fun aDayWithOnlyAnEarReviewCountsAsAPracticeDay() =

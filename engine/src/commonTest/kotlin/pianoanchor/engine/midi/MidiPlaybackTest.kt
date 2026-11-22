@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Tone
@@ -15,6 +16,7 @@ import pianoanchor.testing.FakePiano
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -38,6 +40,15 @@ class MidiPlaybackTest {
     ) = Tone(MidiNote(note), start, length)
 
     private val two = listOf(tone(60, 0, 400), tone(64, 500, 400))
+
+    @Test
+    fun canPlayOnADeviceTheOutputListsAndNotOneItLacks() =
+        runTest {
+            assertTrue(piano.canPlayOn(piano.device))
+            assertFalse(piano.canPlayOn(MidiDevice(id = "other", name = "Other")))
+            piano.inputOnly = true
+            assertFalse(piano.canPlayOn(piano.device))
+        }
 
     @Test
     fun playsEachTonesNoteOnAndNoteOffAtItsTimes() =

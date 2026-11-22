@@ -29,7 +29,7 @@ public data class DailyPlan(
 public const val PLACEMENT_ATTEMPT_ID: String = "placement"
 
 /** The prefix of the attempt id of a review recorded from an ear set. */
-public const val EAR_ATTEMPT_ID_PREFIX: String = "ear:"
+internal const val EAR_ATTEMPT_ID_PREFIX: String = "ear:"
 
 /** The rating of a cold check from the band of the run: never EASY (`docs/algorithms/learner-model.md`). */
 public fun Band.toRating(): Rating =
@@ -82,19 +82,20 @@ public class LearnerModel(
 
     /**
      * Records a cold check of [skillId] rated by [band] (an ear set, not a played passage), with the same
-     * one-review-per-day rules as [record]. Returns the review, or null when the skill already has one on [day].
+     * one-review-per-day rules as [record]. The review's attempt id is `ear:` plus [id].
+     * Returns the review, or null when the skill already has one on [day].
      * Throws [IllegalArgumentException] for a skill that is not in the graph.
      */
-    public suspend fun recordSkill(
+    public suspend fun recordEarSet(
         skillId: String,
         band: Band,
         day: LocalDate,
-        attemptId: String,
+        id: String,
     ): Review? {
         require(graph.byId(skillId) != null) { "unknown skill to record: $skillId" }
         return recordColdCheck(
             repository.states()[skillId],
-            Review(skillId, day, band.toRating(), attemptId, unaided = true),
+            Review(skillId, day, band.toRating(), "$EAR_ATTEMPT_ID_PREFIX$id", unaided = true),
         )
     }
 

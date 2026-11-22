@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -37,6 +36,7 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
+import pianoanchor.engine.midi.canPlayOn
 import pianoanchor.engine.midi.playTones
 import pianoanchor.engine.onboarding.echoCanStillMatch
 import pianoanchor.engine.onboarding.echoMatches
@@ -265,7 +265,7 @@ public class OnboardingViewModel(
      */
     private suspend fun echo(device: MidiDevice): Boolean {
         mutableState.update { it.copy(step = OnboardingStep.ECHO, echo = EchoPhase.PLAYING, keysHighlighted = false) }
-        val played = hasOutput(device) && output.playChord(device)
+        val played = output.canPlayOn(device) && output.playChord(device)
         mutableState.update { it.copy(echo = EchoPhase.LISTENING, keysHighlighted = !played) }
         val attempt = ArrayList<NoteOn>()
         val matched =
@@ -297,8 +297,6 @@ public class OnboardingViewModel(
         if (matched) mutableState.update { it.copy(echo = EchoPhase.PASSED) }
         return matched
     }
-
-    private suspend fun hasOutput(device: MidiDevice): Boolean = output.outputDevices.first().any { it.id == device.id }
 }
 
 /**

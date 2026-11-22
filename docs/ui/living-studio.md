@@ -34,6 +34,8 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
 - **Text** comes from Compose resources (`composeResources/values/strings.xml`), never hard-coded. Every control
   has a label TalkBack can read; rows that act on a device name the device in their content description.
 - No infinite animations on screens with screenshots (a spinner never lets the test go idle): show progress as text.
+- **Screen on**: the phone sits on the music rest throughout, so the app keeps the screen on while it is in the
+  foreground (`MainActivity` sets the window's keep-screen-on flag; the emulator end-to-end test checks it).
 
 ## Practice screen (wait mode)
 
@@ -80,7 +82,7 @@ Landscape: the phone sits on the music rest (`app-android` forces landscape whil
   starts without it again at Delayed and Off.
 - **Mode switch**: a two-segment "Practice | Perform" control right of the tempo ladder. Perform is disabled on Wait
   (its description reads "Pick a tempo to perform"), and picking Wait switches to Practice; changing mode discards a
-  run in progress. In Perform the band, Hint button, blue and orange note colours, timing tags, the legend and the key
+  run in progress. In Perform the band, Hint button, the waiting note's amber, blue and orange note colours, timing tags, the legend and the key
   strip's verdict text are hidden; the staff, cursor, count-in and click stay and pressed keys light in a neutral
   colour. Results label the run "Performed" beside "run N". Today's cold open card reads "Perform cold open" at a
   timed rung.

@@ -11,6 +11,7 @@ import android.media.midi.MidiManager
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.view.WindowManager
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -26,6 +27,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -136,6 +138,13 @@ class WalkingSkeletonEndToEndTest {
 
         playCde { compose.onNodeWithText(text(PracticeRes.string.results_try_again)).performClick() }
         assertCleanResults(run = 2)
+    }
+
+    @Test
+    fun keepsTheScreenOnWhileTheAppIsOpen() {
+        // The phone sits on the music rest for the whole session, so the app keeps it awake in the foreground.
+        val flags = compose.activity.window.attributes.flags
+        assertTrue(flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0)
     }
 
     /** [openPractice], waits until practice reads the piano (so no note is lost), then plays C-D-E. */

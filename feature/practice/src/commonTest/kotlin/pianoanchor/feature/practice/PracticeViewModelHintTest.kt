@@ -1,7 +1,11 @@
 package pianoanchor.feature.practice
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -12,13 +16,17 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
+import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StepCorrect
+import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
@@ -86,10 +94,29 @@ class PracticeViewModelHintTest {
         }
     }
 
-    private fun TestScope.practice(): PracticeViewModel =
+    private fun TestScope.practice(store: AttemptRepositoryPort = attempts): PracticeViewModel =
         PracticeViewModel(
             piano.device,
             Passages.CDE,
+            piano,
+            store,
+            FakeCalibrationRepository(),
+            FakeMetronome(clock),
+            clock,
+            FakeWallClock(Instant.parse("2026-11-13T09:00:00Z")),
+            LearnerModel(Curriculum.graph, FakeLearnerRepository()),
+            TimeZone.UTC,
+            FakeSettingsRepository(),
+            skips,
+        ) {
+            "attempt-${++ids}"
+        }.also { runCurrent() }
+
+    /** A spot loop on bar 1 of C D E: its id is the piece's with a `#bars` suffix. */
+    private fun TestScope.loop(): PracticeViewModel =
+        PracticeViewModel(
+            piano.device,
+            Passages.CDE.slice(BarRange(1, 1)),
             piano,
             attempts,
             FakeCalibrationRepository(),
@@ -100,6 +127,9 @@ class PracticeViewModelHintTest {
             TimeZone.UTC,
             FakeSettingsRepository(),
             skips,
+            TempoRung.WAIT,
+            RunMode.PRACTICE,
+            BarRange(1, 1),
         ) {
             "attempt-${++ids}"
         }.also { runCurrent() }
@@ -125,6 +155,39 @@ class PracticeViewModelHintTest {
 
     private val delayedHistory = arrayOf(Band.CLEAN, Band.CLEAN)
     private val offHistory = arrayOf(Band.CLEAN, Band.CLEAN, Band.CLEAN, Band.CLEAN)
+
+    @Test
+    fun aLoopOnAPieceAtOffStartsUnaided() =
+        runTest(dispatcher) {
+            store(*offHistory)
+            val vm = loop()
+
+            assertEquals(HintLevel.OFF, vm.state.value.hintLevel)
+            assertFalse(vm.state.value.hintVisible)
+        }
+
+    @Test
+    fun aLoopOnAPieceAtDelayedUsesThePiecesDelay() =
+        runTest(dispatcher) {
+            store(*delayedHistory)
+            val vm = loop()
+
+            assertEquals(HintLevel.DELAYED, vm.state.value.hintLevel)
+            assertFalse(vm.state.value.hintVisible)
+            wait(799)
+            assertFalse(vm.state.value.hintVisible)
+            wait(1)
+            assertTrue(vm.state.value.hintVisible)
+        }
+
+    @Test
+    fun aLoopOnANewPieceStartsAtFull() =
+        runTest(dispatcher) {
+            val vm = loop()
+
+            assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
+            assertTrue(vm.state.value.hintVisible)
+        }
 
     @Test
     fun fullShowsTheBandAtOnceAndRecordsAnAidedRun() =
@@ -281,5 +344,64 @@ class PracticeViewModelHintTest {
 
             assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
             assertTrue(vm.state.value.hintVisible)
+        }
+
+    /** [attempts] behind a slow store: each `recent` answers only once the gate [opened] returns completes. */
+    private fun slowStore(opened: () -> CompletableDeferred<Unit>): AttemptRepositoryPort =
+        object : AttemptRepositoryPort by attempts {
+            override fun recent(
+                passageId: String,
+                limit: Int,
+            ): Flow<List<Attempt>> =
+                flow {
+                    opened().await()
+                    emitAll(attempts.recent(passageId, limit))
+                }
+        }
+
+    @Test
+    fun theBandStaysHiddenUntilADelayedLevelIsRead() =
+        runTest(dispatcher) {
+            store(*delayedHistory)
+            val opened = CompletableDeferred<Unit>()
+            val vm = practice(slowStore { opened })
+
+            assertFalse(vm.state.value.hintVisible) // no FULL flash while the store is slow
+
+            opened.complete(Unit)
+            runCurrent()
+            assertEquals(HintLevel.DELAYED, vm.state.value.hintLevel)
+            assertFalse(vm.state.value.hintVisible)
+        }
+
+    @Test
+    fun theBandShowsOnceAFullLevelIsRead() =
+        runTest(dispatcher) {
+            val opened = CompletableDeferred<Unit>()
+            val vm = practice(slowStore { opened })
+
+            assertFalse(vm.state.value.hintVisible)
+
+            opened.complete(Unit)
+            runCurrent()
+            assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
+            assertTrue(vm.state.value.hintVisible)
+        }
+
+    @Test
+    fun aRestartHidesTheBandUntilTheLevelIsReadAgain() =
+        runTest(dispatcher) {
+            store(*delayedHistory)
+            var gate = CompletableDeferred(Unit)
+            val vm = practice(slowStore { gate })
+            assertEquals(HintLevel.DELAYED, vm.state.value.hintLevel)
+            wait(800)
+            assertTrue(vm.state.value.hintVisible) // the delayed band is up
+
+            gate = CompletableDeferred()
+            vm.restart()
+            runCurrent()
+
+            assertFalse(vm.state.value.hintVisible)
         }
 }

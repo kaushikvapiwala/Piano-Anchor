@@ -26,8 +26,9 @@ import pianoanchor.engine.matcher.TempoRung
  * waits for Calibrate or Skip).
  *
  * Key hints (`docs/algorithms/guidance.md`): [hintLevel] is the level the run started at and [hintVisible] whether the
- * amber band shows on the waiting step's keys right now. [mode] is practice or perform; a perform take (always on a
- * timed rung) shows no band, marks, tags or verdict text ([showsVerdicts] is false) and lights pressed keys neutrally.
+ * amber band shows on the waiting step's keys right now (the screen keeps it false until the run's level is read).
+ * [mode] is practice or perform; a perform take (always on a timed rung) shows no band, marks, tags or verdict text
+ * ([showsVerdicts] is false) and lights pressed keys neutrally.
  * [spotLoop] is set while the screen loops a spot of the passage (`docs/algorithms/guidance.md`): [passage] is then
  * the slice.
  */

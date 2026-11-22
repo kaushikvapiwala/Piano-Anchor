@@ -7,8 +7,6 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-private const val MS_PER_SECOND = 1_000L
-
 /** Equal temperament: A4 (MIDI note 69) is 440 Hz and an octave doubles the frequency. */
 private const val A4_NOTE = 69
 private const val A4_HERTZ = 440.0
@@ -53,5 +51,5 @@ internal class ToneRenderer(
         }
     }
 
-    private fun frames(ms: Long): Int = (ms * sampleRate / MS_PER_SECOND).toInt()
+    private fun frames(ms: Long): Int = framesOf(sampleRate, ms)
 }

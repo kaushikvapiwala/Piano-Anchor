@@ -64,10 +64,10 @@ import pianoanchor.ui.shell.RailDestination
 import pianoanchor.ui.shell.pianoAnchorColors
 import androidx.compose.material3.Card as MaterialCard
 
-private val TouchTarget = 44.dp
+internal val TouchTarget = 44.dp
 private val ColdOpenBackground = Color(0xFF2A2730)
 private val OnColdOpen = Color(0xFFF7F5F2)
-private val CardShape = RoundedCornerShape(20.dp)
+internal val CardShape = RoundedCornerShape(20.dp)
 private val BarHeight = 10.dp
 
 /**
@@ -234,7 +234,7 @@ private fun cardLabel(card: Card.PassageCard): StringResource =
 
 private fun cardAction(card: Card.PassageCard): StringResource =
     when {
-        card is Card.ColdOpen && card.mode == RunMode.PERFORM -> Res.string.today_action_cold_open_perform
+        card.mode == RunMode.PERFORM -> Res.string.today_action_cold_open_perform
         card is Card.ColdOpen -> Res.string.today_action_cold_open
         card is Card.Lesson -> Res.string.today_action_lesson
         else -> Res.string.today_action_song

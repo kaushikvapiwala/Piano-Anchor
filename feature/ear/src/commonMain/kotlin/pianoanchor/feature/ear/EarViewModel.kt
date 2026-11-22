@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -31,9 +30,9 @@ import pianoanchor.engine.ear.EarEcho
 import pianoanchor.engine.ear.EarGenerator
 import pianoanchor.engine.ear.EarGrading
 import pianoanchor.engine.ear.tones
-import pianoanchor.engine.learner.EAR_ATTEMPT_ID_PREFIX
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
+import pianoanchor.engine.midi.canPlayOn
 import pianoanchor.engine.midi.playTones
 import kotlin.random.Random
 import kotlin.time.Clock
@@ -232,11 +231,11 @@ public class EarViewModel(
         itemsDone += outcomes.size
         outcomes.clear()
         try {
-            learner.recordSkill(
+            learner.recordEarSet(
                 skills[skillIndex].id,
                 band,
                 learnerDay(clock.now(), zone),
-                "$EAR_ATTEMPT_ID_PREFIX${newId()}",
+                newId(),
             )
         } catch (_: StorageUnavailableException) {
             storageFailed = true
@@ -279,7 +278,7 @@ public class EarViewModel(
         mutableState.update { it.copy(playing = true) }
         val tones = exercise.tones()
         try {
-            if (!speakerOnly && output.outputDevices.first().any { it.id == device.id }) {
+            if (!speakerOnly && output.canPlayOn(device)) {
                 try {
                     output.playTones(device, tones)
                     return

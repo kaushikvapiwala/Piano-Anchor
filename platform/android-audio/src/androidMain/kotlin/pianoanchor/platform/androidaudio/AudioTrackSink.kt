@@ -18,7 +18,6 @@ import pianoanchor.engine.Tunables
 
 private const val GLUE = "thin android.media.AudioTrack glue; checked by ear on a device (owner check, M1.4a)"
 private const val TAG = "PianoAnchorAudio"
-private const val MS_PER_SECOND = 1_000
 private const val NANOS_PER_MS = 1_000_000L
 private const val BYTES_PER_FRAME = 2 // mono 16-bit
 
@@ -61,7 +60,8 @@ public fun AndroidMetronomeAdapter(
 
 /** Creates the speaker tones on their own `AudioTrack` over [context]'s audio output, created on the first tone. */
 @ExcludeFromCoverage(GLUE)
-public fun AndroidToneAdapter(context: Context): AndroidToneAdapter = AndroidToneAdapter(AudioTrackSink(context))
+public fun AndroidToneAdapter(context: Context): AndroidToneAdapter =
+    AndroidToneAdapter(AudioTrackSink(context), Dispatchers.Default)
 
 /**
  * [AudioSink] over a streaming `AudioTrack`: mono 16-bit PCM at the device's native rate,
@@ -146,7 +146,7 @@ internal class AudioTrackSink(
         val minimum =
             AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
         val chunks =
-            (sampleRate * Tunables.METRONOME_CHUNK_MS / MS_PER_SECOND).toInt() * BUFFER_CHUNKS * BYTES_PER_FRAME
+            framesOf(sampleRate, Tunables.METRONOME_CHUNK_MS) * BUFFER_CHUNKS * BYTES_PER_FRAME
         return AudioTrack
             .Builder()
             .setAudioAttributes(

@@ -8,14 +8,20 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ErrorKind
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.Strictness
+import pianoanchor.core.model.StrictnessProfile
 import pianoanchor.core.ports.AttemptRepositoryPort
+import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.analysis.PerformanceAnalyser
 import pianoanchor.engine.analysis.PerformanceAnalysis
 import pianoanchor.engine.analysis.TempoReference
@@ -29,16 +35,21 @@ import pianoanchor.engine.grading.noteNumber
 import pianoanchor.engine.grading.noteValue
 import pianoanchor.engine.guidance.SpotFinder
 import pianoanchor.engine.matcher.TempoRung
+import pianoanchor.engine.profile
 
 /**
  * The results of the run saved as [attemptId] in [attempts]: [ResultsState.Loading] until it is read, then
  * [ResultsState.Ready] or [ResultsState.NotFound], or [ResultsState.Unavailable] when the store can't be read. The
- * run number is one more than the passage's runs started before this one. The run is analysed on
- * [analysisDispatcher], off the main thread, so a long passage doesn't stall the screen as it opens.
+ * run number is one more than the passage's runs started before this one. [rung] is the rung the run was played on
+ * (Practice passes it, so rungs that share a tempo stay distinct). The run is analysed with the strictness stored
+ * in [settings] (Standard if unreadable), on [analysisDispatcher], off the main thread, so a long passage doesn't
+ * stall the screen as it opens.
  */
 public class ResultsViewModel(
     private val attemptId: String,
+    private val rung: TempoRung,
     private val attempts: AttemptRepositoryPort,
+    private val settings: SettingsRepositoryPort,
     private val analysisDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<ResultsState>(ResultsState.Loading)
@@ -71,11 +82,12 @@ public class ResultsViewModel(
     private suspend fun load(): ResultsState {
         val attempt = attempts.get(attemptId) ?: return ResultsState.NotFound
         val passage = Curriculum.passage(attempt.passageId)
+        val strictness = storedStrictness()
         val analysed =
             passage?.let {
                 withContext(analysisDispatcher) {
-                    val summary = ResultsSummary.of(it, attempt, analyse(it, attempt))
-                    summary to spotOf(it, attempt)
+                    val summary = ResultsSummary.of(it, attempt, analyse(it, attempt, strictness))
+                    summary to spotOf(it, attempt, strictness)
                 }
             }
         val summary = analysed?.first
@@ -95,31 +107,41 @@ public class ResultsViewModel(
             hesitation = summary?.hesitation?.let { hesitationTile(it) },
             mode = attempt.mode,
             spot = analysed?.second,
-            rung = passage?.let { rungOf(it, attempt) } ?: TempoRung.WAIT,
+            rung = rung,
         )
     }
 
-    /** The bars to offer as a spot loop: none for a perform take (`docs/algorithms/guidance.md`). */
+    /** The learner's strictness profile, read on each load; Standard when the settings can't be read. */
+    private suspend fun storedStrictness(): StrictnessProfile =
+        try {
+            settings.settings
+                .first()
+                .strictness
+                .profile()
+        } catch (_: StorageUnavailableException) {
+            Strictness.STANDARD.profile()
+        }
+
+    /** The bars to offer as a spot loop: none for a perform take or a CLEAN run (`docs/algorithms/guidance.md`). */
     private fun spotOf(
         passage: Passage,
         attempt: Attempt,
-    ) = if (attempt.mode == RunMode.PRACTICE) SpotFinder.worst(passage, attempt) else null
-
-    /** The rung whose tempo the run was played at; WAIT when none matches. */
-    private fun rungOf(
-        passage: Passage,
-        attempt: Attempt,
-    ) = TempoRung.entries.firstOrNull { it.bpm(passage) == attempt.tempoBpm } ?: TempoRung.WAIT
+        strictness: StrictnessProfile,
+    ): BarRange? {
+        val offered = attempt.mode == RunMode.PRACTICE && attempt.band != Band.CLEAN
+        return if (offered) SpotFinder.worst(passage, attempt, strictness) else null
+    }
 
     /** The analysis of a timed run, or of a wait-mode run with played notes; null for older wait-mode runs. */
     private fun analyse(
         passage: Passage,
         attempt: Attempt,
+        strictness: StrictnessProfile,
     ): PerformanceAnalysis? {
         if (attempt.tempoBpm == null && attempt.playedNotes.isEmpty()) return null
         val tempo = attempt.tempoBpm?.let { TempoReference.Target(it, startNanos = 0) } ?: TempoReference.Untimed
         val notes = LatencyCalibration.corrected(attempt.playedNotes, attempt.latencyOffsetNanos)
-        return PerformanceAnalyser.analyse(passage, notes, tempo)
+        return PerformanceAnalyser.analyse(passage, notes, tempo, strictness)
     }
 
     private fun timingTile(

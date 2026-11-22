@@ -49,6 +49,7 @@ import pianoanchor.engine.analysis.releasesAllKeys
 import pianoanchor.engine.grading.Grader
 import pianoanchor.engine.guidance.HintDelay
 import pianoanchor.engine.guidance.HintFading
+import pianoanchor.engine.guidance.sourcePassageId
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.matcher.LiveVerdict
@@ -104,8 +105,14 @@ public class PracticeViewModel(
     private val spot: BarRange? = null,
     private val newId: () -> String,
 ) : ViewModel() {
+    // The band stays hidden until `loadHints` reads the run's level, so a slow store can't flash it at FULL.
     private val mutableState =
-        MutableStateFlow(PracticeState.start(passage).copy(spotLoop = spot?.let { SpotLoopState(it, initialRung) }))
+        MutableStateFlow(
+            PracticeState.start(passage).copy(
+                spotLoop = spot?.let { SpotLoopState(it, initialRung) },
+                hintVisible = false,
+            ),
+        )
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
 
     private var run: Job? = null
@@ -179,6 +186,7 @@ public class PracticeViewModel(
                     doneRungs = it.doneRungs,
                     clickOn = it.clickOn,
                     spotLoop = it.spotLoop,
+                    hintVisible = false,
                 )
         }
         val previous = run
@@ -205,7 +213,7 @@ public class PracticeViewModel(
     private suspend fun loadHints() {
         val history =
             try {
-                attempts.recent(passage.id, Tunables.HINT_FADE_HISTORY).first()
+                attempts.recent(sourcePassageId(passage.id), Tunables.HINT_FADE_HISTORY).first()
             } catch (_: StorageUnavailableException) {
                 emptyList()
             }
@@ -734,7 +742,7 @@ public class PracticeViewModel(
                     phase = if (playing) RunPhase.PLAYING else RunPhase.COUNT_IN,
                     beat = beat,
                     currentStep = cursor,
-                    steps = it.steps.mapIndexed { i, step -> step.copy(status = cursorStatus(i, cursor)) },
+                    steps = it.steps.mapIndexed { i, step -> step.copy(status = cursorStatus(i, cursor, it.mode)) },
                 )
             }
         }
@@ -744,10 +752,12 @@ public class PracticeViewModel(
 /** The beat unit of a quarter note in a time signature (the 4 of 3/4). */
 private const val QUARTER_UNIT = 4
 
+/** A timed step's colour: the cursor step waits (amber) in practice; a perform take draws every note neutrally. */
 private fun cursorStatus(
     step: Int,
     cursor: Int,
-) = if (step == cursor) StepStatus.WAITING else StepStatus.UPCOMING
+    mode: RunMode,
+) = if (step == cursor && mode == RunMode.PRACTICE) StepStatus.WAITING else StepStatus.UPCOMING
 
 private fun statuses(
     steps: List<StepView>,
