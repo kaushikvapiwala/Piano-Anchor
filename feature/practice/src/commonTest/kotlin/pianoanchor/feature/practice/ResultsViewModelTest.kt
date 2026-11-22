@@ -31,6 +31,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.Instant
 
@@ -151,11 +152,22 @@ class ResultsViewModelTest {
     fun `offers a loop of a timed run with the rung it was played on`() =
         runTest(dispatcher) {
             val notes = listOf(played(C4, 0, 600), played(D4, 750, 600), played(E4, 1700, 400))
-            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 80, playedNotes = notes))
+            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 80, playedNotes = notes, band = Band.GOOD))
 
             val state = assertIs<ResultsState.Ready>(vm.state.value)
             assertEquals(BarRange(1, 1), state.spot)
             assertEquals(TempoRung.P100, state.rung)
+        }
+
+    @Test
+    fun `a clean timed run with timing findings offers no loop`() =
+        runTest(dispatcher) {
+            val notes = listOf(played(C4, 0, 600), played(D4, 750, 600), played(E4, 1700, 400))
+            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 80, playedNotes = notes, band = Band.CLEAN))
+
+            val state = assertIs<ResultsState.Ready>(vm.state.value)
+            assertNotNull(state.timing)
+            assertNull(state.spot)
         }
 
     @Test

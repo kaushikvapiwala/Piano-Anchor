@@ -18,7 +18,7 @@ public fun Passage.slice(range: BarRange): Passage {
     require(inside.isNotEmpty()) { "passage \"$id\" has no step in bars ${range.first}-${range.last}" }
     val offset = (range.first - 1) * timeSignature.barTicks
     return copy(
-        id = "$id#bars${range.first}-${range.last}",
+        id = "$id$BARS_MARKER${range.first}-${range.last}",
         steps =
             inside.map {
                 it.copy(
@@ -28,3 +28,8 @@ public fun Passage.slice(range: BarRange): Passage {
             },
     )
 }
+
+private const val BARS_MARKER = "#bars"
+
+/** The id of the passage a slice was cut from ([id] without its `#bars…` suffix); [id] itself for a whole passage. */
+public fun sourcePassageId(id: String): String = id.substringBefore(BARS_MARKER)

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.Band
 import pianoanchor.core.model.ErrorKind
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RunMode
@@ -99,11 +100,11 @@ public class ResultsViewModel(
         )
     }
 
-    /** The bars to offer as a spot loop: none for a perform take (`docs/algorithms/guidance.md`). */
+    /** The bars to offer as a spot loop: none for a perform take or a CLEAN run (`docs/algorithms/guidance.md`). */
     private fun spotOf(
         passage: Passage,
         attempt: Attempt,
-    ) = if (attempt.mode == RunMode.PRACTICE) SpotFinder.worst(passage, attempt) else null
+    ) = if (attempt.mode == RunMode.PRACTICE && attempt.band != Band.CLEAN) SpotFinder.worst(passage, attempt) else null
 
     /** The rung whose tempo the run was played at; WAIT when none matches. */
     private fun rungOf(

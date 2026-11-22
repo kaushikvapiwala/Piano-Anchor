@@ -49,6 +49,7 @@ import pianoanchor.engine.analysis.releasesAllKeys
 import pianoanchor.engine.grading.Grader
 import pianoanchor.engine.guidance.HintDelay
 import pianoanchor.engine.guidance.HintFading
+import pianoanchor.engine.guidance.sourcePassageId
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.matcher.LiveVerdict
@@ -212,7 +213,7 @@ public class PracticeViewModel(
     private suspend fun loadHints() {
         val history =
             try {
-                attempts.recent(passage.id, Tunables.HINT_FADE_HISTORY).first()
+                attempts.recent(sourcePassageId(passage.id), Tunables.HINT_FADE_HISTORY).first()
             } catch (_: StorageUnavailableException) {
                 emptyList()
             }
