@@ -2,6 +2,7 @@ package pianoanchor.engine.midi
 
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
@@ -13,6 +14,10 @@ import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.engine.Tunables
 
 private const val CHANNEL = 0
+
+/** Whether this port currently lists [device] as an output (a device seen only as an input can't be played on). */
+public suspend fun MidiOutputPort.canPlayOn(device: MidiDevice): Boolean =
+    outputDevices.first().any { it.id == device.id }
 
 /** One NoteOn or NoteOff of a playback, [atMs] after it started. */
 private class Action(

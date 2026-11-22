@@ -8,53 +8,12 @@ import pianoanchor.core.model.Skill
 import pianoanchor.core.model.SkillGraph
 import pianoanchor.core.model.SkillState
 import pianoanchor.core.model.Track
-import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Pieces
 import pianoanchor.engine.learner.DailyPlan
 import pianoanchor.engine.matcher.TempoRung
 import kotlin.time.Instant
-
-/**
- * What the learner has played of one passage: when it was last played, the tempos (BPM) of its CLEAN timed runs and
- * whether a wait-mode run was CLEAN ([cleanWait]).
- */
-public data class PassageHistory(
-    val lastPlayed: Instant?,
-    val cleanTempos: Set<Int>,
-    val cleanWait: Boolean = false,
-)
-
-/**
- * The [PassageHistory] of each of [passages], keyed by passage id: the one loader Today and Songs share.
- *
- * @throws pianoanchor.core.model.StorageUnavailableException when the store can't be read.
- */
-public suspend fun AttemptRepositoryPort.passageHistories(passages: Iterable<Passage>): Map<String, PassageHistory> =
-    passages.associate {
-        it.id to PassageHistory(lastPlayed(it.id), cleanTempos(it.id), hasCleanWaitRun(it.id))
-    }
-
-/** Whether [history] has a CLEAN run of [passage] at [rung] (a CLEAN wait-mode run for [TempoRung.WAIT]). */
-internal fun isClean(
-    passage: Passage,
-    history: PassageHistory?,
-    rung: TempoRung,
-): Boolean {
-    val bpm = rung.bpm(passage)
-    return history != null && if (bpm == null) history.cleanWait else bpm in history.cleanTempos
-}
-
-/** The highest rung of the tempo ladder with a CLEAN run of [passage] in [history], null when none. */
-internal fun highestClean(
-    passage: Passage,
-    history: PassageHistory?,
-): TempoRung? = TempoRung.entries.lastOrNull { isClean(passage, history, it) }
-
-/** The rung to play next above [highestClean]: WAIT when none is clean, null when the top rung is. */
-internal fun nextRung(highestClean: TempoRung?): TempoRung? =
-    if (highestClean == null) TempoRung.WAIT else TempoRung.entries.getOrNull(highestClean.ordinal + 1)
 
 /** One card of Today, for about [minutes]. */
 public sealed interface Card {
@@ -64,6 +23,9 @@ public sealed interface Card {
     public sealed interface PassageCard : Card {
         public val passage: Passage
         public val rung: TempoRung
+
+        /** How the passage is run: PRACTICE, except a cold open performs once a timed run was clean. */
+        public val mode: RunMode
     }
 
     /** Ear skills for today: due ones first (plan order), then new ones. Opened by the ear screen. */
@@ -82,7 +44,7 @@ public sealed interface Card {
         override val minutes: Int,
         val skill: Skill,
         val lastPlayed: Instant?,
-        val mode: RunMode,
+        override val mode: RunMode,
     ) : PassageCard
 
     /** First passage of a new skill; [unlockedBy] names the prerequisites just learned ("why now"). */
@@ -92,14 +54,18 @@ public sealed interface Card {
         override val minutes: Int,
         val skill: Skill,
         val unlockedBy: List<Skill>,
-    ) : PassageCard
+    ) : PassageCard {
+        override val mode: RunMode = RunMode.PRACTICE
+    }
 
     /** The piece in progress at its next tempo rung. */
     public data class Song(
         override val passage: Passage,
         override val rung: TempoRung,
         override val minutes: Int,
-    ) : PassageCard
+    ) : PassageCard {
+        override val mode: RunMode = RunMode.PRACTICE
+    }
 }
 
 /**
@@ -178,7 +144,7 @@ public object SessionComposer {
         history: Map<String, PassageHistory>,
     ): Card.ColdOpen? =
         due.firstNotNullOfOrNull { state ->
-            passagesOf(curriculum)
+            curriculum.passages
                 .filter { state.skillId in it.skills }
                 .minWithOrNull(compareBy(nullsFirst()) { history[it.id]?.lastPlayed })
                 ?.let { passage ->
@@ -197,7 +163,7 @@ public object SessionComposer {
         graph: SkillGraph,
     ): Card.Lesson? {
         val skill = plan.new.firstOrNull { it.track != Track.EAR } ?: return null
-        return passagesOf(curriculum).firstOrNull { skill.id in it.skills }?.let { passage ->
+        return curriculum.passages.firstOrNull { skill.id in it.skills }?.let { passage ->
             Card.Lesson(
                 passage,
                 TempoRung.WAIT,
@@ -215,8 +181,7 @@ public object SessionComposer {
         used: List<String>,
     ): Card.Song? {
         if (learned.isEmpty()) return null
-        return curriculum.units
-            .flatMap { it.passages }
+        return curriculum.passages
             .filter { it.piece && it.id !in used && Pieces.waitingFor(it, curriculum.graph, learned) == null }
             .mapNotNull { passage -> nextRung(highestClean(passage, history[passage.id]))?.let { passage to it } }
             .sortedWith(
@@ -227,8 +192,6 @@ public object SessionComposer {
             ).firstOrNull()
             ?.let { (passage, rung) -> Card.Song(passage, rung, 0) }
     }
-
-    private fun passagesOf(curriculum: Curriculum): List<Passage> = curriculum.units.flatMap { it.passages }
 
     /** [total] split in proportion to [shares] in whole numbers (largest remainders first, ties in order). */
     private fun split(

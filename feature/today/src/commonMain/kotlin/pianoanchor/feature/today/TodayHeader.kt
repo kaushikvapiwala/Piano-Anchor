@@ -35,7 +35,6 @@ import pianoanchor.feature.today.resources.today_transport_ble
 import pianoanchor.feature.today.resources.today_transport_usb
 import pianoanchor.feature.today.resources.today_week_goal
 
-private val TouchTarget = 44.dp
 private val DotSize = 12.dp
 
 /** The greeting, the line naming the cold-open skill, the piano chip and the weekly goal dots. */

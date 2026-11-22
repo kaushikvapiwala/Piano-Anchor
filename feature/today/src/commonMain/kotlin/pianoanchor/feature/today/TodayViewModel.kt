@@ -103,8 +103,7 @@ public class TodayViewModel(
     /** Where tapping [card] leads: Practice on its passage and rung, or Pianos when no piano is connected. */
     public fun target(card: Card.PassageCard): TodayTarget {
         val piano = mutableState.value.piano ?: return TodayTarget.Pianos
-        val mode = (card as? Card.ColdOpen)?.mode ?: RunMode.PRACTICE
-        return TodayTarget.Practice(piano.device, card.passage.id, card.rung, mode)
+        return TodayTarget.Practice(piano.device, card.passage.id, card.rung, card.mode)
     }
 
     /** Where tapping the Ear [card] leads: the ear screen with its skills, or Pianos when no piano is connected. */
@@ -122,7 +121,7 @@ public class TodayViewModel(
             val today = local.date
             val stored = settings.settings.first()
             val history =
-                attempts.passageHistories(Curriculum.units.flatMap { it.passages })
+                attempts.passageHistories(Curriculum.passages)
             val weekStart = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
             val from = minOf(weekStart, windowStart)

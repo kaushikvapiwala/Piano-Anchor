@@ -66,7 +66,7 @@ public class SongsViewModel(
         try {
             val states = learner.states()
             val history =
-                attempts.passageHistories(Curriculum.units.flatMap { it.passages }.filter { it.piece })
+                attempts.passageHistories(Curriculum.passages.filter { it.piece })
             val pieces = Pieces.list(Curriculum, Curriculum.graph, states, history)
             mutableState.update { it.copy(pieces = pieces, storageFailed = false) }
         } catch (_: StorageUnavailableException) {

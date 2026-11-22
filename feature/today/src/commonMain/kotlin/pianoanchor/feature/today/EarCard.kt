@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -24,9 +23,6 @@ import pianoanchor.feature.today.resources.today_card_ear
 import pianoanchor.feature.today.resources.today_card_ear_skill_one
 import pianoanchor.feature.today.resources.today_card_ear_skills
 import pianoanchor.ui.shell.pianoAnchorColors
-
-private val TouchTarget = 44.dp
-private val CardShape = RoundedCornerShape(20.dp)
 
 /** The Ear card: the ear accent, the first skill's title and how many skills the screen runs. */
 @Composable

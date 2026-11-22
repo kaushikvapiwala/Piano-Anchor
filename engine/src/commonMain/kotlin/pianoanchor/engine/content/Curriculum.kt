@@ -9,6 +9,9 @@ public object Curriculum {
     /** The units in teaching order: 0 "Find your way", 1 "Five-finger tunes", 2 "Both hands", 3 "Songs and chords". */
     public val units: List<CurriculumUnit> = listOf(UNIT_0, UNIT_1, UNIT_2, SONGS_UNIT)
 
+    /** Every passage of every unit, in teaching order. */
+    public val passages: List<Passage> = units.flatMap { it.passages }
+
     /** Every skill, with its prerequisites: those the units teach, then the ear skills (no passage, no unit). */
     public val graph: SkillGraph =
         SkillGraph(
@@ -39,5 +42,5 @@ public object Curriculum {
         )
 
     /** The passage with [id], or null if there is none (e.g. an attempt of a passage since removed). */
-    public fun passage(id: String): Passage? = units.flatMap { it.passages }.firstOrNull { it.id == id }
+    public fun passage(id: String): Passage? = passages.firstOrNull { it.id == id }
 }

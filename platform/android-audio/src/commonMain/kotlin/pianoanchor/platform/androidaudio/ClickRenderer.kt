@@ -6,8 +6,6 @@ import kotlin.math.exp
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-private const val MS_PER_SECOND = 1_000
-
 /** Peak level of a click as a fraction of full scale: loud, with headroom so two overlapping clicks barely clip. */
 private const val PEAK_LEVEL = 0.8
 
@@ -28,7 +26,7 @@ internal class ClickRenderer(
     fun click(accent: Boolean): ShortArray = if (accent) this.accent else beat
 
     private fun render(hertz: Int): ShortArray {
-        val frames = (sampleRate * Tunables.METRONOME_CLICK_MS / MS_PER_SECOND).toInt()
+        val frames = framesOf(sampleRate, Tunables.METRONOME_CLICK_MS)
         return ShortArray(frames) { i ->
             val envelope = exp(-DECAY_TIME_CONSTANTS * i / frames)
             val wave = sin(2 * PI * hertz * i / sampleRate)

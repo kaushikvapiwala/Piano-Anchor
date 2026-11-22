@@ -40,12 +40,14 @@ public object Pieces {
         graph: SkillGraph,
         states: Map<String, SkillState>,
         history: Map<String, PassageHistory>,
-    ): List<PieceView> =
-        curriculum.units.flatMap { unit ->
+    ): List<PieceView> {
+        val learned = states.filterValues { it.learned }.keys
+        return curriculum.units.flatMap { unit ->
             unit.passages
                 .filter { it.piece }
-                .map { view(it, unit.title, graph, states, history[it.id]) }
+                .map { view(it, unit.title, graph, learned, history[it.id]) }
         }
+    }
 
     /**
      * The first skill (graph order) of [passage] whose prerequisites are not all in [learned]; null when the passage
@@ -62,10 +64,10 @@ public object Pieces {
         passage: Passage,
         unitTitle: String,
         graph: SkillGraph,
-        states: Map<String, SkillState>,
+        learned: Set<String>,
         history: PassageHistory?,
     ): PieceView {
-        val waitingFor = waitingFor(passage, graph, states.filterValues { it.learned }.keys)
+        val waitingFor = waitingFor(passage, graph, learned)
         val clean = TempoRung.entries.count { isClean(passage, history, it) }
         val highest = highestClean(passage, history)
         val status =
