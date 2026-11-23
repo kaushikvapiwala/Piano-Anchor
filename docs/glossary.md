@@ -32,6 +32,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Landmark hint | The one plain line shown after a wrong key in wait mode: how to find the key to play from the groups of two and three black keys (`wrongKeyHint`, `docs/algorithms/wrong-key-hint.md`). |
 | Lesson step | One of a beginner lesson's five steps: Why (the concept card), See (the app plays it), Try (one action the piano checks), Use (a tiny piece), Recap. |
 | Perform run | An attempt played in perform mode: one take at a timed rung with no hints and no live verdicts (`mode` PERFORM). |
+| Quiz | A 10-20 s piano-checked review of a learned concept in Today's warm-up, made by `QuizMaker` from the concept's Try check and rated by mistakes (`docs/algorithms/quizzes.md`). |
 | Try check | The small piano-checked task of a course concept, such as "play every C" or "hold C for 2 clicks"; the type is `TryCheck`, evaluated by `TryRun` (`docs/algorithms/try-checks.md`). |
 | Unaided run | A perform run with no hint shown (`Attempt.unaided`); always the case for a perform run. `Review.unaided` also holds for ear sets and placement. A skill needs one unaided recalled check before it counts as learned (`docs/algorithms/learner-model.md`). |
 | Aided run | An attempt with `hintShown` true: the key band showed at some point (Full level, a Delayed hint that fired, or the Hint button). |

@@ -48,6 +48,9 @@ import pianoanchor.feature.ear.EarViewModel
 import pianoanchor.feature.lesson.LessonActions
 import pianoanchor.feature.lesson.LessonScreen
 import pianoanchor.feature.lesson.LessonViewModel
+import pianoanchor.feature.lesson.QuizActions
+import pianoanchor.feature.lesson.QuizScreen
+import pianoanchor.feature.lesson.QuizViewModel
 import pianoanchor.feature.monitor.MonitorActions
 import pianoanchor.feature.monitor.MonitorScreen
 import pianoanchor.feature.monitor.MonitorViewModel
@@ -144,6 +147,12 @@ private sealed interface Destination {
         val startAt: LessonStep? = null,
     ) : Destination
 
+    /** The review quizzes on [device], run in order; back returns to Today. */
+    data class Quiz(
+        val device: MidiDevice,
+        val quizzes: List<pianoanchor.engine.lesson.Quiz>,
+    ) : Destination
+
     /** The ear screen on [device], running [skills] in order; back returns to Today. */
     data class Ear(
         val device: MidiDevice,
@@ -182,6 +191,7 @@ private fun AppNavigation() {
                 onPractice = { destination = it },
                 onEar = { destination = it },
                 onLesson = { destination = it },
+                onQuiz = { destination = it },
                 onSongs = { destination = Destination.Songs },
                 onPianos = { destination = Destination.Monitor(from = current) },
                 onSettings = { destination = Destination.Settings(from = current) },
@@ -215,6 +225,10 @@ private fun AppNavigation() {
 
         is Destination.Ear -> {
             EarRoute(current, onBack = back)
+        }
+
+        is Destination.Quiz -> {
+            QuizRoute(current, onBack = back)
         }
 
         is Destination.Lesson -> {
@@ -356,6 +370,26 @@ private fun EarRoute(
             onDone = { leave() },
         ),
     )
+}
+
+/**
+ * The quiz screen, landscape. Its ViewModel lives as long as the route. Leaving (back, Done) closes the piano first, so
+ * Today can reopen it (one reader per input); quizzes already finished stay recorded.
+ */
+@Composable
+private fun QuizRoute(
+    quiz: Destination.Quiz,
+    onBack: () -> Unit,
+) {
+    val viewModel: QuizViewModel =
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) {
+            parametersOf(quiz.device, quiz.quizzes)
+        }
+    val state by viewModel.state.collectAsState()
+    val scope = rememberCoroutineScope()
+    val leave = { scope.launch { viewModel.close() }.invokeOnCompletion { onBack() } }
+    BackHandler { leave() }
+    QuizScreen(state, QuizActions(onBack = { leave() }, onSkip = viewModel::skip, onDone = { leave() }))
 }
 
 /**
@@ -537,6 +571,7 @@ private fun TodayRoute(
     onPractice: (Destination.Practice) -> Unit,
     onEar: (Destination.Ear) -> Unit,
     onLesson: (Destination.Lesson) -> Unit,
+    onQuiz: (Destination.Quiz) -> Unit,
     onSongs: () -> Unit,
     onPianos: () -> Unit,
     onSettings: () -> Unit,
@@ -567,6 +602,10 @@ private fun TodayRoute(
 
                     is TodayTarget.Ear -> {
                         onEar(Destination.Ear(target.device, target.skills))
+                    }
+
+                    is TodayTarget.Quizzes -> {
+                        onQuiz(Destination.Quiz(target.device, target.quizzes))
                     }
 
                     is TodayTarget.Lesson -> {

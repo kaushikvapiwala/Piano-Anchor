@@ -46,7 +46,11 @@ class TodayViewModelTest : TodayViewModelFixture() {
     @Test
     fun cardsOpenPracticeWithPassageAndRung() =
         runTest(dispatcher) {
+            // Three more due quiz skills sort ahead of middle C by id: they get the quizzes, it gets the cold open.
             givenStates(
+                skillState(Skills.BARS_AND_COUNTING.id),
+                skillState(Skills.BASS_CLEF_WHOLE_NOTE.id),
+                skillState(Skills.BLACK_KEY_GROUPS.id),
                 skillState(Skills.MIDDLE_C.id),
                 skillState(Skills.FINGER_NUMBER_TUNES.id, dueDay = LocalDate(2026, 12, 1), learned = true),
                 skillState(Skills.RH_C_POSITION.id, dueDay = LocalDate(2026, 12, 1), learned = true),
@@ -58,7 +62,10 @@ class TodayViewModelTest : TodayViewModelFixture() {
             val vm = viewModel()
 
             val session = assertNotNull(vm.state.value.session)
-            val cold = assertIs<Card.ColdOpen>(session.cards.first())
+            val quizzes = assertIs<Card.Quizzes>(session.cards.first())
+            assertEquals(3, quizzes.quizzes.size)
+            assertEquals(TodayTarget.Quizzes(piano.device, quizzes.quizzes), vm.target(quizzes))
+            val cold = session.cards.filterIsInstance<Card.ColdOpen>().single()
             assertEquals(
                 TodayTarget.Practice(piano.device, cold.passage.id, cold.rung, RunMode.PERFORM),
                 vm.target(cold),

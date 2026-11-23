@@ -43,12 +43,21 @@ class SessionComposerTest {
 
     private fun passage(id: String) = checkNotNull(Curriculum.passage("builtin:$id")) { id }
 
+    /** The course skills moved off the core track, so the composer offers no quizzes: the cold-open tests need none. */
+    private val noQuizzes = SkillGraph(Curriculum.graph.skills.map { it.copy(track = Track.SONGS) })
+
     private fun compose(
         plan: DailyPlan,
         history: Map<String, PassageHistory> = emptyMap(),
         budget: DailyBudget = DailyBudget.MIN_20,
         learned: Set<String> = learnedWithPrerequisites(plan),
-    ) = SessionComposer.compose(plan, Curriculum, budget, history, learned)
+    ) = SessionComposer.compose(plan, Curriculum, budget, history, learned, day, noQuizzes)
+
+    private fun composeWithQuizzes(
+        plan: DailyPlan,
+        history: Map<String, PassageHistory> = emptyMap(),
+        budget: DailyBudget = DailyBudget.MIN_20,
+    ) = SessionComposer.compose(plan, Curriculum, budget, history, learnedWithPrerequisites(plan), day)
 
     /** The learned skills of [plan]'s due list and everything they build on. */
     private fun learnedWithPrerequisites(plan: DailyPlan): Set<String> {
@@ -183,7 +192,7 @@ class SessionComposerTest {
         val lesson =
             assertIs<Card.Lesson>(compose(plan, courseTickedBefore(Skills.FINGER_NUMBER_TUNES)).cards.first())
         assertEquals(Skills.FINGER_NUMBER_TUNES, lesson.skill)
-        assertEquals(setOf(Skills.STEPS_AND_SKIPS), lesson.unlockedBy.toSet())
+        assertEquals(setOf(Skills.STEPS_AND_SKIPS.id), lesson.unlockedBy.map { it.id }.toSet())
         assertEquals(TempoRung.WAIT, lesson.rung)
         assertEquals(RunMode.PRACTICE, lesson.mode)
         assertEquals(
@@ -431,7 +440,7 @@ class SessionComposerTest {
     private val earA = Skill("ear-a", "Ear A", emptySet(), Track.EAR)
     private val earB = Skill("ear-b", "Ear B", emptySet(), Track.EAR)
     private val earC = Skill("ear-c", "Ear C", emptySet(), Track.EAR)
-    private val withEar = SkillGraph(Curriculum.graph.skills + listOf(earA, earB, earC))
+    private val withEar = SkillGraph(noQuizzes.skills + listOf(earA, earB, earC))
 
     private fun composeEar(
         plan: DailyPlan,
@@ -443,6 +452,7 @@ class SessionComposerTest {
         budget,
         history,
         learnedWithPrerequisites(plan),
+        day,
         withEar,
     )
 
@@ -519,5 +529,79 @@ class SessionComposerTest {
             listOf(4, 7, 6, 3),
             listOf(twenty.reviewMinutes, twenty.lessonMinutes, twenty.songMinutes, twenty.earMinutes),
         )
+    }
+
+    private fun quizSkills(card: Card.Quizzes) = card.quizzes.map { it.skillId }
+
+    @Test
+    fun `the three most overdue quizzable due skills become the first card`() {
+        val plan =
+            DailyPlan(
+                listOf(
+                    state(Skills.MIDDLE_C),
+                    state(Skills.HIGH_AND_LOW),
+                    state(Skills.STEADY_BEAT),
+                    state(Skills.WHITE_KEY_NAMES),
+                ),
+                emptyList(),
+            )
+        val session = composeWithQuizzes(plan)
+        val quizzes = assertIs<Card.Quizzes>(session.cards.first())
+        assertEquals(
+            listOf(Skills.MIDDLE_C.id, Skills.HIGH_AND_LOW.id, Skills.STEADY_BEAT.id),
+            quizSkills(quizzes),
+        )
+        assertEquals(1, quizzes.minutes)
+        // The fourth is left for the cold open; the quizzed ones are not repeated by it.
+        assertEquals(Skills.WHITE_KEY_NAMES, assertIs<Card.ColdOpen>(session.cards[1]).skill)
+        assertEquals(emptyList(), session.moreDue)
+    }
+
+    @Test
+    fun `a day's quiz is stable`() {
+        val plan = DailyPlan(listOf(state(Skills.WHITE_KEY_NAMES)), emptyList())
+        assertEquals(composeWithQuizzes(plan).cards.first(), composeWithQuizzes(plan).cards.first())
+    }
+
+    @Test
+    fun `a due passage skill still gets the cold open and no quizzes card`() {
+        val plan = DailyPlan(listOf(state(Skills.HANDS_TOGETHER_HELD, learned = true)), emptyList())
+        val session = composeWithQuizzes(plan)
+        assertEquals(Skills.HANDS_TOGETHER_HELD, assertIs<Card.ColdOpen>(session.cards.first()).skill)
+        assertTrue(session.cards.none { it is Card.Quizzes })
+    }
+
+    @Test
+    fun `quiz minutes round up and are part of the review segment`() {
+        val plan =
+            DailyPlan(
+                listOf(
+                    state(Skills.MIDDLE_C),
+                    state(Skills.HIGH_AND_LOW),
+                    state(Skills.STEADY_BEAT),
+                    state(Skills.HANDS_TOGETHER_HELD, learned = true),
+                ),
+                listOf(Skills.BLACK_KEY_GROUPS),
+            )
+        val session = composeWithQuizzes(plan, budget = DailyBudget.MIN_20)
+        val quizzes = assertIs<Card.Quizzes>(session.cards.first())
+        assertEquals(
+            (Tunables.QUIZ_MAX_PER_DAY * Tunables.QUIZ_SECONDS + 59) / 60,
+            quizzes.minutes,
+        )
+        assertEquals(
+            DailyBudget.MIN_20.minutes,
+            session.reviewMinutes + session.lessonMinutes + session.songMinutes + session.earMinutes,
+        )
+        assertEquals(
+            session.reviewMinutes,
+            quizzes.minutes + session.cards.filterIsInstance<Card.ColdOpen>().sumOf { it.minutes },
+        )
+    }
+
+    @Test
+    fun `ear skills and unknown skills get no quizzes`() {
+        val plan = DailyPlan(listOf(state(earA), state(Skill("orphan", "Orphan", emptySet()))), emptyList())
+        assertTrue(composeEar(plan).cards.none { it is Card.Quizzes })
     }
 }

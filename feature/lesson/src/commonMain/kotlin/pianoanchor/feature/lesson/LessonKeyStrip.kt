@@ -43,9 +43,15 @@ private val BLACK_PITCH_CLASSES = setOf(1, 3, 6, 8, 10)
 private val MidiNote.isBlack: Boolean get() = number % NOTES_PER_OCTAVE in BLACK_PITCH_CLASSES
 
 /** The keys the strip shows for [state]: whole octaves (C to B) around the notes of its Try and Use, at least two. */
-internal fun lessonKeyRange(state: LessonState): IntRange {
+internal fun lessonKeyRange(state: LessonState): IntRange = keyRange(state.check, passageNotes(state))
+
+/** The keys a strip shows for [check] and any [extra] notes: whole octaves (C to B) around them, at least two. */
+internal fun keyRange(
+    check: TryCheck?,
+    extra: List<Int> = emptyList(),
+): IntRange {
     val notes =
-        when (val check = state.check) {
+        when (check) {
             null, TryCheck.AnyKey -> listOf(MIDDLE_C)
             is TryCheck.PlayKey -> listOf(check.note)
             is TryCheck.FindAll -> listOf(check.range.first, check.range.last)
@@ -56,7 +62,7 @@ internal fun lessonKeyRange(state: LessonState): IntRange {
             is TryCheck.StressBeatOne -> listOf(check.note)
             is TryCheck.Chord -> check.notes.toList()
             is TryCheck.Passage -> emptyList()
-        } + passageNotes(state)
+        } + extra
     var low = notes.min() / NOTES_PER_OCTAVE * NOTES_PER_OCTAVE
     val high = notes.max() / NOTES_PER_OCTAVE * NOTES_PER_OCTAVE + NOTES_PER_OCTAVE - 1
     if (high - low + 1 < MIN_SPAN) low -= NOTES_PER_OCTAVE
@@ -83,18 +89,30 @@ internal fun LessonKeyStrip(
     state: LessonState,
     modifier: Modifier = Modifier,
 ) {
-    val notes = lessonKeyRange(state).map(::MidiNote)
+    val wrong = state.tryProgress?.lastWrong.takeIf { state.step == LessonStep.TRY }
+    KeyStrip(lessonKeyRange(state), state.litKeys, state.glowKeys, wrong, modifier)
+}
+
+/** A strip of the keys in [range]: [litKeys] light up, [glowKeys] glow in the accent and the [wrong] key shows grey. */
+@Composable
+internal fun KeyStrip(
+    range: IntRange,
+    litKeys: Set<Int>,
+    glowKeys: Set<Int>,
+    wrong: Int?,
+    modifier: Modifier = Modifier,
+) {
+    val notes = range.map(::MidiNote)
     val whites = notes.filterNot { it.isBlack }
     val width = WHITE_PITCH * whites.size - (WHITE_PITCH - WHITE_KEY_WIDTH)
-    val wrong = state.tryProgress?.lastWrong.takeIf { state.step == LessonStep.TRY }
     Box(modifier.horizontalScroll(rememberScrollState()).size(width, WHITE_KEY_HEIGHT)) {
         whites.forEachIndexed { i, note ->
-            Key(note, state, wrong, WHITE_KEY_WIDTH, WHITE_KEY_HEIGHT, WHITE_PITCH * i, black = false)
+            Key(note, litKeys, glowKeys, wrong, WHITE_KEY_WIDTH, WHITE_KEY_HEIGHT, WHITE_PITCH * i, black = false)
         }
         notes.filter { it.isBlack }.forEach { note ->
             val whitesBelow = whites.count { it.number < note.number }
             val x = WHITE_PITCH * whitesBelow - (WHITE_PITCH - WHITE_KEY_WIDTH) / 2 - BLACK_KEY_WIDTH / 2
-            Key(note, state, wrong, BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT, x, black = true)
+            Key(note, litKeys, glowKeys, wrong, BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT, x, black = true)
         }
     }
 }
@@ -102,7 +120,8 @@ internal fun LessonKeyStrip(
 @Composable
 private fun Key(
     note: MidiNote,
-    state: LessonState,
+    litKeys: Set<Int>,
+    glowKeys: Set<Int>,
     wrong: Int?,
     width: Dp,
     height: Dp,
@@ -112,8 +131,8 @@ private fun Key(
     val colors = MaterialTheme.pianoAnchorColors
     val accent = MaterialTheme.colorScheme.primary
     val idle = if (black) colors.blackKey else colors.whiteKey
-    val lit = note.number in state.litKeys
-    val glow = note.number in state.glowKeys && !lit
+    val lit = note.number in litKeys
+    val glow = note.number in glowKeys && !lit
     val target =
         when {
             note.number == wrong -> colors.wrongKey

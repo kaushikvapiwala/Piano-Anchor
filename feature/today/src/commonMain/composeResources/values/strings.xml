@@ -26,6 +26,9 @@
     <string name="today_card_ear">EAR · %1$s MIN</string>
     <string name="today_card_ear_skills">%1$s skills today</string>
     <string name="today_card_ear_skill_one">1 skill today</string>
+    <string name="today_card_quizzes">Quick quizzes · %1$s</string>
+    <string name="today_card_quizzes_detail">About %1$s min, checked by your piano</string>
+    <string name="today_action_quizzes">Start quizzes</string>
     <string name="today_action_ear">Start ear</string>
     <string name="today_action_cold_open">Start cold open</string>
     <string name="today_action_cold_open_perform">Perform cold open</string>

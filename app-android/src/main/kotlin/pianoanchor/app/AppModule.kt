@@ -23,9 +23,11 @@ import pianoanchor.core.ports.UpdateCheckPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.ear.EarViewModel
 import pianoanchor.feature.lesson.LessonViewModel
+import pianoanchor.feature.lesson.QuizViewModel
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.onboarding.OnboardingViewModel
 import pianoanchor.feature.practice.CalibrationSkips
@@ -113,6 +115,9 @@ val appModule =
         }
         viewModel { (device: MidiDevice, skillId: String, startAt: LessonStep?) ->
             LessonViewModel(device, skillId, get(), get(), get(), get(), get(), get(), get(), startAt)
+        }
+        viewModel { (device: MidiDevice, quizzes: List<Quiz>) ->
+            QuizViewModel(device, quizzes, get(), get(), get(), get(), get(), get()) { Uuid.random().toString() }
         }
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
         viewModel { (attemptId: String, rung: TempoRung) -> ResultsViewModel(attemptId, rung, get(), get()) }

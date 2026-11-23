@@ -6,6 +6,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.Density
@@ -15,10 +16,14 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import pianoanchor.core.model.Release
 import pianoanchor.engine.content.Curriculum
+import pianoanchor.engine.content.Skills
+import pianoanchor.engine.lesson.QuizMaker
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.Session
 import pianoanchor.ui.shell.PianoAnchorTheme
+import kotlin.random.Random
+import kotlin.test.assertEquals
 
 /** The piano chip's text and TalkBack description in the states with no connected piano. */
 @OptIn(ExperimentalTestApi::class)
@@ -69,6 +74,21 @@ class TodayScreenTest {
         }
 
     @Test
+    fun theQuizzesCardShowsAndOpensTheQuizzes() =
+        runComposeUiTest {
+            val card = quizzesCard()
+            val started = mutableListOf<Card>()
+            val state = TodayState(session = Session(listOf(card), 1, 0, 0, 0, emptyList()))
+            setContent { PianoAnchorTheme { TodayScreen(state, TodayActions(onStart = { started += it })) } }
+
+            onNodeWithText("Quick quizzes · 2").assertIsDisplayed()
+            onNodeWithText("About 1 min, checked by your piano").assertIsDisplayed()
+            onNodeWithText("Start quizzes").performClick()
+
+            assertEquals(listOf<Card>(card), started)
+        }
+
+    @Test
     fun theErrorCardTopsThePlan() =
         runComposeUiTest {
             setContent { PianoAnchorTheme { TodayScreen(TodayState(storageFailed = true), TodayActions()) } }
@@ -76,6 +96,14 @@ class TodayScreenTest {
             onNodeWithText("Retry").assertIsDisplayed()
         }
 }
+
+internal fun quizzesCard(): Card.Quizzes =
+    Card.Quizzes(
+        listOf(Skills.MIDDLE_C, Skills.HIGH_AND_LOW).map {
+            checkNotNull(QuizMaker.make(it.id, emptySet(), Random(1)))
+        },
+        1,
+    )
 
 private const val LARGE_FONT_SCALE = 2f
 private const val CHIP_TEST_SDK = 36

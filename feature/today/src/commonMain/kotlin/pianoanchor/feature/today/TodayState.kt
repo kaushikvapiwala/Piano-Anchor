@@ -5,6 +5,7 @@ import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
+import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.Session
@@ -71,6 +72,12 @@ public sealed interface TodayTarget {
     public data class Ear(
         val device: MidiDevice,
         val skills: List<Skill>,
+    ) : TodayTarget
+
+    /** The review quizzes on [device], run in order. */
+    public data class Quizzes(
+        val device: MidiDevice,
+        val quizzes: List<Quiz>,
     ) : TodayTarget
 
     /** No piano is connected: the Pianos screen. */
