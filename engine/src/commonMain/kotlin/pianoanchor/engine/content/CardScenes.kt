@@ -60,11 +60,35 @@ private const val WHOLE_NOTE_AT_MS = 2100
 private const val WHOLE_NOTE_PULSE_MS = 450
 private const val WHOLE_NOTE_DOT_MS = 400
 private const val FIRST_FINGER_MS_LEFT = 300
+private const val CHORD_FINGER_AT_MS = 300
+private const val CHORD_FINGER_GAP_MS = 500
+private const val CHORD_AT_MS = 1800
+private const val SYMBOL_AT_MS = 250
+private const val SYMBOL_MS = 1200
+private const val TUNE_NOTE_MS = 900
+private const val ACCIDENTAL_AT_MS = 900
+private const val ACCIDENTAL_MS = 1200
+private const val FLAT_AT_MS = 2800
+private const val D_ABOVE_MIDDLE_C = 62
+private const val F_ABOVE_MIDDLE_C = 65
+private const val A_ABOVE_MIDDLE_C = 69
+private const val B_BELOW_MIDDLE_C = 59
+private const val C_SHARP = 61
+private val ODE_NOTES = listOf(E_ABOVE_MIDDLE_C, E_ABOVE_MIDDLE_C, F_ABOVE_MIDDLE_C, G_ABOVE_MIDDLE_C)
+private val C_CHORD_NOTES = listOf(MIDDLE_C, E_ABOVE_MIDDLE_C, G_ABOVE_MIDDLE_C)
+private val LOW_C_CHORD_NOTES = listOf(LOW_C, 52, G_ABOVE_LOW_C)
 private val FIVE_FINGER_NOTES = listOf(60, 62, 64, 65, 67)
 private val RUN_NOTES = FIVE_FINGER_NOTES + FIVE_FINGER_NOTES.dropLast(1).reversed()
 
 private val CS = intArrayOf(36, 48, 60, 72, 84)
 private val WHITE_NAMES = listOf("C" to 48, "D" to 50, "E" to 52, "F" to 53, "G" to 55, "A" to 57, "B" to 59)
+
+/** A chord symbol and its keys lit together for one [SYMBOL_MS] slot. */
+private fun chord(
+    at: Int,
+    symbol: String,
+    notes: List<Int>,
+): List<SceneCue> = notes.map { cue(at, SYMBOL_MS, LightKey(it)) } + cue(at, SYMBOL_MS, Caption(symbol))
 
 private fun cue(
     at: Int,
@@ -81,7 +105,7 @@ private fun beats(vararg keyLengths: Pair<Int, Int>): List<SceneCue> =
 
 /**
  * The looping animations of the concept cards, one per skill, written in the shared scene vocabulary so every card
- * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 2 now;
+ * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 3 now;
  * later units add theirs.
  */
 internal object CardScenes {
@@ -331,6 +355,68 @@ internal object CardScenes {
             "Middle C glows faintly for soft, then bright and ringed for loud.",
         )
 
+    private val cChord =
+        CardScene(
+            SceneStage(60..67, hand = SceneHand.RIGHT),
+            listOf(cue(0, CARD_SCENE_LOOP_MS, SceneAction.HandPose(curved = true, overNote = MIDDLE_C))) +
+                listOf(1, 3, 5).mapIndexed { i, finger ->
+                    cue(
+                        CHORD_FINGER_AT_MS + i * CHORD_FINGER_GAP_MS,
+                        CHORD_FINGER_GAP_MS,
+                        SceneAction.ShowFinger(finger),
+                    )
+                } +
+                C_CHORD_NOTES.zip(listOf(1, 3, 5)).map { (note, finger) ->
+                    cue(CHORD_AT_MS, CAPTION_END_MS - CHORD_AT_MS, LightKey(note, finger, strong = true))
+                } +
+                cue(CHORD_AT_MS, CAPTION_END_MS - CHORD_AT_MS, Caption("C chord")),
+            "Fingers 1, 3 and 5 show in turn, then middle C, E and G light up together as the C chord.",
+        )
+
+    private val gAndFChords =
+        CardScene(
+            SceneStage(55..72),
+            listOf(
+                chord(SYMBOL_AT_MS, "C", C_CHORD_NOTES - G_ABOVE_MIDDLE_C),
+                chord(SYMBOL_AT_MS + SYMBOL_MS, "G", listOf(B_BELOW_MIDDLE_C, D_ABOVE_MIDDLE_C)),
+                chord(SYMBOL_AT_MS + 2 * SYMBOL_MS, "F", listOf(MIDDLE_C, F_ABOVE_MIDDLE_C, A_ABOVE_MIDDLE_C)),
+                // The G both the C and the G chord share stays lit across the change.
+                listOf(cue(SYMBOL_AT_MS, 2 * SYMBOL_MS, LightKey(G_ABOVE_MIDDLE_C))),
+            ).flatten(),
+            "The C chord lights, then the G chord with its top G still lit, then the F chord.",
+        )
+
+    private val melodyAndChords =
+        CardScene(
+            SceneStage(LOW_C..72, staff = SceneStaff.GRAND),
+            LOW_C_CHORD_NOTES.flatMap {
+                listOf(cue(0, CARD_SCENE_LOOP_MS, LightKey(it)), cue(0, CARD_SCENE_LOOP_MS, SceneAction.StaffNote(it)))
+            } +
+                ODE_NOTES.withIndex().flatMap { (i, note) ->
+                    val at = STAFF_AT_MS + i * TUNE_NOTE_MS
+                    listOf(
+                        cue(at, TUNE_NOTE_MS - POSE_OVERLAP_MS, LightKey(note, strong = true)),
+                        cue(at, TUNE_NOTE_MS - POSE_OVERLAP_MS, SceneAction.StaffNote(note)),
+                    )
+                } +
+                cue(STAFF_AT_MS, CAPTION_END_MS - STAFF_AT_MS, Caption("Left holds, right plays")),
+            "The left hand holds a low C chord while the right hand plays E, E, F, G, the opening of Ode to Joy.",
+        )
+
+    private val sharpsAndFlats =
+        CardScene(
+            SceneStage(60..64),
+            listOf(
+                cue(STAFF_AT_MS, ACCIDENTAL_AT_MS - STAFF_AT_MS, LightKey(MIDDLE_C)),
+                cue(ACCIDENTAL_AT_MS, ACCIDENTAL_MS, LightKey(C_SHARP, strong = true)),
+                cue(ACCIDENTAL_AT_MS, ACCIDENTAL_MS, Caption("C\u266F")),
+                cue(ACCIDENTAL_AT_MS + ACCIDENTAL_MS, FLAT_AT_MS - ACCIDENTAL_AT_MS - ACCIDENTAL_MS, LightKey(62)),
+                cue(FLAT_AT_MS, CAPTION_END_MS - FLAT_AT_MS - POSE_OVERLAP_MS, LightKey(C_SHARP, strong = true)),
+                cue(FLAT_AT_MS, CAPTION_END_MS - FLAT_AT_MS - POSE_OVERLAP_MS, Caption("D\u266D")),
+            ),
+            "C lights, then the black key just right of it for C sharp; D lights, then the same black key for D flat.",
+        )
+
     /** Every card scene by the id of its skill. */
     val all: Map<String, CardScene> =
         mapOf(
@@ -353,5 +439,9 @@ internal object CardScenes {
             Skills.GRAND_STAFF_TURNS_RESTS.id to grandStaffTurnsRests,
             Skills.THREE_FOUR_TIME.id to threeFourTime,
             Skills.HANDS_TOGETHER_HELD.id to handsTogetherHeld,
+            Skills.C_CHORD.id to cChord,
+            Skills.G_AND_F_CHORDS.id to gAndFChords,
+            Skills.MELODY_AND_CHORDS.id to melodyAndChords,
+            Skills.SHARPS_AND_FLATS.id to sharpsAndFlats,
         )
 }
