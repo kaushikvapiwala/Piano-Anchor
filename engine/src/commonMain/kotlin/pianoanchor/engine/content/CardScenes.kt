@@ -312,8 +312,8 @@ internal object CardScenes {
                 cue(0, CARD_SCENE_LOOP_MS, SceneAction.StaffNote(LOW_C)),
                 cue(STAFF_AT_MS, CAPTION_END_MS - STAFF_AT_MS, Caption("Left holds, right moves")),
             ) +
-                listOf(MIDDLE_C, 62, E_ABOVE_MIDDLE_C).flatMap { note ->
-                    val at = HELD_MS / 2 + (note - MIDDLE_C) / 2 * HELD_MS
+                listOf(MIDDLE_C, 62, E_ABOVE_MIDDLE_C).withIndex().flatMap { (i, note) ->
+                    val at = HELD_MS / 2 + i * HELD_MS
                     listOf(cue(at, HELD_MS, LightKey(note)), cue(at, HELD_MS, SceneAction.StaffNote(note)))
                 },
             "The left hand holds the low C all the way through while the right hand lights middle C, D and E in turn.",
