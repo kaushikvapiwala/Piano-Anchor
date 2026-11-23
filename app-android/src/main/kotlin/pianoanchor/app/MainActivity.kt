@@ -77,6 +77,7 @@ import pianoanchor.feature.today.TodayTarget
 import pianoanchor.feature.today.TodayViewModel
 import pianoanchor.ui.shell.PianoAnchorTheme
 import java.io.IOException
+import pianoanchor.engine.lesson.Quiz as ReviewQuiz
 
 private const val FIXTURE_MIME_TYPE = "application/x-ndjson"
 private const val FIXTURE_FILE_NAME = "piano-anchor-fixture.jsonl"
@@ -150,7 +151,7 @@ private sealed interface Destination {
     /** The review quizzes on [device], run in order; back returns to Today. */
     data class Quiz(
         val device: MidiDevice,
-        val quizzes: List<pianoanchor.engine.lesson.Quiz>,
+        val quizzes: List<ReviewQuiz>,
     ) : Destination
 
     /** The ear screen on [device], running [skills] in order; back returns to Today. */
