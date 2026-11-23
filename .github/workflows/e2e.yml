@@ -51,6 +51,7 @@ jobs:
       - name: Show failed tests
         if: failure()
         run: |
+          # shellcheck disable=SC2016 # $0 is awk's, not the shell's
           find app-android/build/outputs/androidTest-results -name 'TEST-*.xml' -print0 |
             xargs -0 -r awk '/<testcase/ { name = $0 } /<failure/ { print name; on = 1 } on { print } /<\/failure>/ { on = 0 }' ||
             echo "No test results found."
