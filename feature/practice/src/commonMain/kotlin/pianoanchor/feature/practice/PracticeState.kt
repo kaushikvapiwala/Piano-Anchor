@@ -31,6 +31,8 @@ import pianoanchor.engine.matcher.TempoRung
  * ([showsVerdicts] is false) and lights pressed keys neutrally.
  * [spotLoop] is set while the screen loops a spot of the passage (`docs/algorithms/guidance.md`): [passage] is then
  * the slice.
+ * [linkResumed] is true from the moment a timed run was restarted because the piano's link dropped and came back
+ * (messages in the gap were lost) until the next note; the screen says why the run started over.
  */
 public data class PracticeState(
     val passage: Passage,
@@ -54,6 +56,7 @@ public data class PracticeState(
     val hintVisible: Boolean = true,
     val mode: RunMode = RunMode.PRACTICE,
     val spotLoop: SpotLoopState? = null,
+    val linkResumed: Boolean = false,
 ) {
     init {
         require(steps.size == passage.steps.size) {

@@ -28,11 +28,16 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
@@ -53,6 +58,7 @@ import pianoanchor.feature.practice.resources.practice_disconnected
 import pianoanchor.feature.practice.resources.practice_end_run
 import pianoanchor.feature.practice.resources.practice_hint
 import pianoanchor.feature.practice.resources.practice_hint_glyph
+import pianoanchor.feature.practice.resources.practice_link_resumed
 import pianoanchor.feature.practice.resources.practice_mode_perform
 import pianoanchor.feature.practice.resources.practice_mode_switch_perform
 import pianoanchor.feature.practice.resources.practice_mode_switch_perform_disabled
@@ -65,6 +71,7 @@ import pianoanchor.feature.practice.resources.practice_save_failed
 import pianoanchor.feature.practice.resources.practice_tempo_done
 import pianoanchor.feature.practice.resources.practice_tempo_percent
 import pianoanchor.feature.practice.resources.practice_tempo_wait
+import pianoanchor.ui.shell.BackButton
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
@@ -136,6 +143,7 @@ public fun PracticeScreen(
                 legend = state.showsVerdicts,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp).fillMaxWidth().height(196.dp),
             )
+            if (state.linkResumed) LinkResumedLine(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
             if (state.rung != TempoRung.WAIT &&
                 !state.calibrationOffered
             ) {
@@ -145,6 +153,17 @@ public fun PracticeScreen(
             KeyStrip(state, modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth())
         }
     }
+}
+
+/** Says why a timed run started over by itself: the piano's link dropped and came back. */
+@Composable
+private fun LinkResumedLine(modifier: Modifier = Modifier) {
+    Text(
+        stringResource(Res.string.practice_link_resumed),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
+    )
 }
 
 @Composable
@@ -162,7 +181,7 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        BackButton(onBack)
+        BackButton(onClick = onBack)
         Column {
             Text(state.passage.title, fontFamily = displayFontFamily, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(
@@ -210,7 +229,7 @@ private fun ModeSwitch(
     state: PracticeState,
     onSelectMode: (RunMode) -> Unit,
 ) {
-    val canPerform = state.rung != TempoRung.WAIT
+    val canPerform = state.rung.canPerform
     val practice = stringResource(Res.string.practice_mode_switch_practice)
     val perform = stringResource(Res.string.practice_mode_switch_perform)
     val performDescription =
@@ -245,14 +264,41 @@ private fun ModeSegment(
             enabled -> colors.onSurfaceVariant
             else -> colors.onSurfaceVariant.copy(alpha = DISABLED_ALPHA)
         }
+    Pill(
+        label = label,
+        description = description,
+        selected = selected,
+        enabled = enabled,
+        shape = shape,
+        borderColor = if (selected) colors.primary else colors.outline,
+        textColor = textColor,
+        onClick = { onSelectMode(mode) },
+    )
+}
+
+/** The 30 dp radio pill behind [ModeSegment] and [TempoChip]: [selected] fills it plum, [minWidth] widens it. */
+@Composable
+private fun Pill(
+    label: String,
+    description: String,
+    selected: Boolean,
+    enabled: Boolean,
+    shape: Shape,
+    borderColor: Color,
+    textColor: Color,
+    onClick: () -> Unit,
+    minWidth: Dp = Dp.Unspecified,
+) {
+    val colors = MaterialTheme.colorScheme
     Box(
         modifier =
             Modifier
                 .minimumInteractiveComponentSize()
-                .selectable(selected = selected, enabled = enabled, role = Role.RadioButton) { onSelectMode(mode) }
+                .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
                 .semantics { contentDescription = description }
                 .height(30.dp)
-                .border(1.5.dp, if (selected) colors.primary else colors.outline, shape)
+                .widthIn(min = minWidth)
+                .border(1.5.dp, borderColor, shape)
                 .background(if (selected) colors.primary else colors.background, shape)
                 .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
@@ -319,21 +365,17 @@ private fun TempoChip(
             done -> doneColor
             else -> colors.onSurfaceVariant
         }
-    Box(
-        modifier =
-            Modifier
-                .minimumInteractiveComponentSize()
-                .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-                .semantics { contentDescription = description }
-                .height(30.dp)
-                .widthIn(min = 44.dp)
-                .border(1.5.dp, borderColor, shape)
-                .background(if (selected) colors.primary else colors.background, shape)
-                .padding(horizontal = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = textColor)
-    }
+    Pill(
+        label = label,
+        description = description,
+        selected = selected,
+        enabled = true,
+        shape = shape,
+        borderColor = borderColor,
+        textColor = textColor,
+        onClick = onClick,
+        minWidth = 44.dp,
+    )
 }
 
 /**

@@ -16,8 +16,9 @@ runs alike: hints are about knowing the notes, not the tempo.
 long as the fade count moves the level one step down; a run of KEEP_PRACTISING attempts as long as that count moves it
 one step up. Every move resets both counts, and a GOOD attempt breaks either streak without adding to one. The level
 stops at Full and at Off. Spot-loop attempts (those with a bar range) are skipped: they neither count nor break a
-streak. The practice screen reads the level when a run starts and keeps the band hidden until it has it, so a slow store
-never flashes the band before a Delayed or Off run.
+streak. The practice screen reads the level when its first run starts and keeps the band hidden until it has it, so a slow
+store never flashes the band before a Delayed or Off run. Later runs on the same screen reuse that read (the history
+can't change there); a failed read is tried again at the next start, and a failed save clears it.
 
 ## Delay rule
 `HintDelay.millis` pools the gaps between the `StepCorrect` events of the newest few runs (the events already carry
@@ -57,7 +58,8 @@ After a run, Results can offer to loop the stretch that went worst.
 - **Window.** `SpotFinder.worst` slides a window of `SPOT_LOOP_BARS` bars over the passage and picks the one with the
   most findings; the earliest wins a tie. A passage shorter than the window gives its whole range. No findings, no
   window, and Results offer nothing. A perform take offers none either: loops are practice. A CLEAN run offers none:
-  only GOOD and KEEP_PRACTISING runs do.
+  only GOOD and KEEP_PRACTISING runs do. Timed findings use the learner's strictness (the timing band the run was
+  graded with), so the window agrees with the Results screen.
 - **Slice.** `Passage.slice` keeps the steps inside the bars, moves them so the first bar starts at tick 0 and keeps
   the time signature, tempo, rights and skills. Its id gets a `#bars5-6` suffix so attempts stay attributable.
 - **Loop run.** Practice opens on the slice in practice mode, one tempo rung below the run's (wait mode stays wait),

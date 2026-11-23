@@ -3,6 +3,7 @@ package pianoanchor.feature.monitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -14,6 +15,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.ControlChange
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
@@ -28,6 +30,7 @@ import pianoanchor.engine.midi.MidiParser
 import pianoanchor.testing.FakeClock
 import pianoanchor.testing.FakeInstrumentRepository
 import pianoanchor.testing.FakePiano
+import pianoanchor.testing.FakeSettingsRepository
 import pianoanchor.testing.FakeWallClock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -58,10 +61,11 @@ class MonitorViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private val instruments = FakeInstrumentRepository()
+    private val settings = FakeSettingsRepository()
     private val wallClock = FakeWallClock(Instant.parse("2026-11-12T10:00:00Z"))
 
     private fun viewModel(input: MidiInputPort = piano) =
-        MonitorViewModel(input, piano, piano, instruments, clock, wallClock, APP_VERSION)
+        MonitorViewModel(input, piano, piano, instruments, settings, clock, wallClock, APP_VERSION)
 
     private fun TestScope.monitor(): MonitorViewModel = viewModel().also { runCurrent() }
 
@@ -622,6 +626,18 @@ class MonitorViewModelTest {
     fun sysExIsLoggedWithItsFullLength() =
         runTest(dispatcher) {
             assertEquals("SysEx 2 bytes", SysEx(0, emptyList()).describe())
+        }
+
+    @Test
+    fun aResumedLinkIsNotLogged() =
+        runTest(dispatcher) {
+            val vm = selected()
+            play { piano.dropLink() }
+            assertTrue(
+                vm.state.value.log
+                    .isEmpty(),
+            )
+            assertEquals("Link resumed", LinkResumed(0).describe())
         }
 
     @Test

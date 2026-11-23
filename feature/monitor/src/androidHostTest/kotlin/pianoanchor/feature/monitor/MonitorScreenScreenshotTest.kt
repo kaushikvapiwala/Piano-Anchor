@@ -18,7 +18,7 @@ import kotlin.time.Instant
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [SDK], qualifiers = "w411dp-h891dp-xxhdpi")
+@Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
 class MonitorScreenScreenshotTest {
     private val usbPiano = MidiDevice(id = "usb-1", name = "Digital Piano (USB)")
     private val blePiano = MidiDevice(id = "ble-1", name = "FP-30X")
@@ -50,10 +50,20 @@ class MonitorScreenScreenshotTest {
     fun empty() = capture("empty", MonitorState())
 
     @Test
+    fun scanning() = capture("scanning", MonitorState(devices = listOf(usbPiano), scanning = true))
+
+    @Test
     fun devicesAndScanResults() =
         capture(
             "devices",
             MonitorState(devices = listOf(usbPiano), scanned = listOf(blePiano), scanning = false),
+        )
+
+    @Test
+    fun rememberedPianoWithForget() =
+        capture(
+            "forget",
+            MonitorState(devices = listOf(usbPiano, blePiano), lastPiano = blePiano),
         )
 
     @Test

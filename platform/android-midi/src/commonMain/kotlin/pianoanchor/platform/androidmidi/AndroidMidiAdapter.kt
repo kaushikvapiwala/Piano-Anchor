@@ -3,6 +3,8 @@ package pianoanchor.platform.androidmidi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -10,6 +12,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import pianoanchor.core.model.BluetoothUnavailableException
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
@@ -40,43 +43,82 @@ public class AndroidMidiAdapter internal constructor(
     private val listed: Flow<List<ListedDevice>> = system.devices.map(::identify)
     private val discovered = ConcurrentHashMap<String, String>() // Bluetooth address by device id, from scans
     private val bluetooth = BluetoothConnections(system, listed, scope)
+    private val dropGrace = DropGrace(system.devices, bluetooth.kept, scope)
     private val openInputs: MutableSet<String> = ConcurrentHashMap.newKeySet()
     private val sendersLock = Mutex()
     private val senders = mutableMapOf<Int, SystemSender>() // by SystemDevice.systemId, guarded by sendersLock
 
+    /** Also keeps a dropped Bluetooth device listed for `Tunables.BLE_DROP_GRACE_MS` while it is reopened. */
     override val inputDevices: Flow<List<MidiDevice>> =
-        listed.map { all -> all.filter { it.system.outputPorts > 0 }.map { it.device } }
+        dropGrace.view
+            .map { all -> all.filter { it.system.outputPorts > 0 }.map { it.device } }
+            .distinctUntilChanged()
 
     override val outputDevices: Flow<List<MidiDevice>> =
         listed.map { all -> all.filter { it.system.inputPorts > 0 }.map { it.device } }
 
-    /** Also fails with [IllegalStateException] while another collector has [device] open. */
+    /**
+     * Also fails with [IllegalStateException] while another collector has [device] open. A kept Bluetooth device
+     * that drops is waited for and reopened (see [reopened]); the flow then carries on after a `LinkResumed`.
+     */
     override fun events(device: MidiDevice): Flow<MidiEvent> =
         flow {
-            val target =
-                listed.first().find(device) { it.outputPorts > 0 } ?: throw MidiDeviceUnavailableException(device.id)
+            var target =
+                listed.first().outputOf(device) ?: throw MidiDeviceUnavailableException(device.id)
             check(openInputs.add(device.id)) { "MIDI device '${device.id}' is already open" }
             try {
-                val channel = Channel<MidiEvent>(Channel.UNLIMITED)
                 val stamper = Stamper()
-                val handle =
-                    system.openInput(
-                        target,
-                        onBytes = { bytes, offset, count, timestamp ->
-                            // Runs on a platform thread: a bad range fails this flow instead of crashing that thread.
-                            try {
-                                stamper.feed(bytes, offset, count, timestamp).forEach { channel.trySend(it) }
-                            } catch (e: IllegalArgumentException) {
-                                channel.close(e)
-                            }
-                        },
-                        onClosed = { channel.close() },
-                    ) ?: throw MidiDeviceUnavailableException(device.id)
-                handle.use { for (event in channel) emit(event) }
+                var resumed = false
+                while (true) {
+                    val channel = Channel<MidiEvent>(Channel.UNLIMITED)
+                    stamper.newLink()
+                    val handle =
+                        system.openInput(
+                            target,
+                            onBytes = { bytes, offset, count, timestamp ->
+                                // A platform thread: a bad range fails this flow instead of crashing that thread.
+                                try {
+                                    stamper.feed(bytes, offset, count, timestamp).forEach { channel.trySend(it) }
+                                } catch (e: IllegalArgumentException) {
+                                    channel.close(e)
+                                }
+                            },
+                            onClosed = { channel.close() },
+                        ) ?: if (resumed) return@flow else throw MidiDeviceUnavailableException(device.id)
+                    handle.use {
+                        if (resumed) emit(LinkResumed(stamper.resumedAt(System.nanoTime())))
+                        for (event in channel) emit(event)
+                    }
+                    if (device.id !in bluetooth.kept.value) return@flow
+                    target = reopened(device, target) ?: return@flow
+                    resumed = true
+                }
             } finally {
                 openInputs.remove(device.id)
             }
         }
+
+    /** The system device that lists [device] again after [dead] closed, or null if not back within the grace. */
+    private suspend fun reopened(
+        device: MidiDevice,
+        dead: SystemDevice,
+    ): SystemDevice? {
+        val probes = combine(listed, bluetooth.kept) { all, ids -> Probe(all.outputOf(device), device.id in ids) }
+        // The grace starts when the system list drops the device, as the held entry in `inputDevices` does, so the
+        // flow never ends while the device is still listed there.
+        // A device that stays listed with its dead handle, or stops being kept, ends the flow too.
+        val left = withTimeoutOrNull(Tunables.BLE_DROP_GRACE_MS) { probes.first { it.now != dead || !it.kept } }
+        if (left == null || !left.kept) return null
+        val notBack = setOf(null, dead)
+        val back =
+            withTimeoutOrNull(Tunables.BLE_DROP_GRACE_MS) {
+                probes.first {
+                    !it.kept ||
+                        it.now !in notBack
+                }
+            }
+        return back?.takeIf { it.kept }?.now
+    }
 
     override suspend fun send(
         device: MidiDevice,
@@ -132,7 +174,9 @@ public class AndroidMidiAdapter internal constructor(
 
     override suspend fun connect(device: MidiDevice) {
         requireBluetooth()
-        val address = discovered[device.id] ?: throw MidiDeviceUnavailableException(device.id)
+        // A scanned device has its address on record; a `ble:` id from an earlier run carries it in the id.
+        val address =
+            discovered[device.id] ?: bluetoothAddressOf(device.id) ?: throw MidiDeviceUnavailableException(device.id)
         if (!bluetooth.connect(device.id, address)) throw MidiDeviceUnavailableException(device.id)
     }
 
@@ -141,6 +185,8 @@ public class AndroidMidiAdapter internal constructor(
     private fun requireBluetooth() {
         system.bluetoothProblem()?.let { throw BluetoothUnavailableException(it) }
     }
+
+    private fun List<ListedDevice>.outputOf(device: MidiDevice): SystemDevice? = find(device) { it.outputPorts > 0 }
 
     private fun List<ListedDevice>.find(
         device: MidiDevice,
@@ -158,6 +204,12 @@ public class AndroidMidiAdapter internal constructor(
     }
 }
 
+/** What [AndroidMidiAdapter] sees of one device while it waits for a reopen: its listing, and whether it is kept. */
+private class Probe(
+    val now: SystemDevice?,
+    val kept: Boolean,
+)
+
 /**
  * Parses one open device's bytes and stamps them. Android calls back on binder threads, so feeding is locked.
  * Stamps never go backwards: `max(previous stamp, platform timestamp)`.
@@ -165,6 +217,17 @@ public class AndroidMidiAdapter internal constructor(
 private class Stamper {
     private val parser = MidiParser()
     private var lastStamp = Long.MIN_VALUE
+
+    /** A new link: bytes of the dead one (running status, half a SysEx) must not shape what the new one sends. */
+    @Synchronized
+    fun newLink() = parser.reset()
+
+    /** The stamp for a message the adapter makes up at [nowNanos]; never before the last one. */
+    @Synchronized
+    fun resumedAt(nowNanos: Long): Long {
+        lastStamp = maxOf(lastStamp, nowNanos)
+        return lastStamp
+    }
 
     @Synchronized
     fun feed(

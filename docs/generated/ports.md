@@ -85,7 +85,7 @@ Driven port: finding and connecting MIDI devices that are not listed until conne
 | Function | Description |
 |---|---|
 | `fun scan(): Flow<List<MidiDevice>>` | Scans while collected: emits the devices found so far (starting with an empty list), de-duplicated by id, and completes after `Tunables.BLE_SCAN_TIMEOUT_MS`. Devices already listed when the scan starts are not included. Fails with [BluetoothUnavailableException] if scanning isn't possible. |
-| `suspend fun connect(device: MidiDevice)` | Connects [device], found by a [scan] of this adapter; returns once it is listed in [MidiInputPort.inputDevices] and [MidiOutputPort.outputDevices] under the same id (within `Tunables.BLE_LISTED_TIMEOUT_MS` of opening). While the app runs, the adapter reopens it after a drop (backoff from `Tunables.BLE_RECONNECT_INITIAL_MS` to `BLE_RECONNECT_MAX_MS`, giving up after `BLE_RECONNECT_GIVE_UP_MS`); during a drop the device is not listed. Connecting a device that is already connected and listed does nothing. |
+| `suspend fun connect(device: MidiDevice)` | Connects [device], which was found by a [scan] of this adapter, **or has a Bluetooth id this adapter can open directly** (`ble:<address>`, as an earlier run stored it); returns once it is listed in [MidiInputPort.inputDevices] and [MidiOutputPort.outputDevices] under the same id (within `Tunables.BLE_LISTED_TIMEOUT_MS` of opening). While the app runs, the adapter reopens it after a drop (backoff from `Tunables.BLE_RECONNECT_INITIAL_MS` to `BLE_RECONNECT_MAX_MS`, giving up after `BLE_RECONNECT_GIVE_UP_MS`); during a drop the device is not listed. Connecting a device that is already connected and listed does nothing. |
 | `suspend fun disconnect(device: MidiDevice)` | Stops reconnecting [device] and closes it if open. No-op if unknown. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/MidiDiscoveryPortContractTest.kt`
@@ -96,8 +96,8 @@ Driven port: MIDI messages arriving from instruments. Contract: `pianoanchor.tes
 
 | Function | Description |
 |---|---|
-| `val inputDevices: Flow<List<MidiDevice>>` | Input devices currently available. Emits the current list as soon as it is collected, then a new list after every change. Never completes. |
-| `fun events(device: MidiDevice): Flow<MidiEvent>` | Opens [device] while collected and emits its messages in arrival order, each stamped in the `ClockPort` clock domain with non-decreasing timestamps. Messages that arrive while nobody collects are dropped. Completes normally when the device disconnects; cancelling the collector closes the device. Fails with [MidiDeviceUnavailableException] if [device] is not listed when collection starts. |
+| `val inputDevices: Flow<List<MidiDevice>>` | Input devices currently available. Emits the current list as soon as it is collected, then a new list after every change. Never completes. A Bluetooth device that drops stays listed for up to the adapter's drop grace (`Tunables.BLE_DROP_GRACE_MS`) while it is reopened. |
+| `fun events(device: MidiDevice): Flow<MidiEvent>` | Opens [device] while collected and emits its messages in arrival order, each stamped in the `ClockPort` clock domain with non-decreasing timestamps. Messages that arrive while nobody collects are dropped. A dropped Bluetooth device that is reopened within the grace period keeps the flow open and emits [pianoanchor.core.model.LinkResumed]; the flow completes normally when the device stays gone. Cancelling the collector closes the device. Fails with [MidiDeviceUnavailableException] if [device] is not listed when collection starts. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/MidiInputPortContractTest.kt`
 

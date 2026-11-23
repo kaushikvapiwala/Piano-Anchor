@@ -24,7 +24,8 @@ Android names ports from the device's point of view:
 
 ## Opening and closing
 - `events(device)` opens the device and its output port when collection starts and closes both when the collector
-  is cancelled. If the device is removed while open (or while it is being opened), the flow completes normally.
+  is cancelled. If the device is removed while open (or while it is being opened), the flow completes normally;
+  a Bluetooth device the adapter keeps connected is waited for instead (`docs/protocols/ble-midi.md`).
   Only one collector per device at a time; a second one fails with `IllegalStateException`. A received block whose
   range is invalid fails the flow instead of crashing Android's callback thread.
 - `send` opens input port 0 on first use and keeps it open. When the device has left the list, the open port is

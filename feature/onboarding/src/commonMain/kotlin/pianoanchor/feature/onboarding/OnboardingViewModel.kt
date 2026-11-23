@@ -47,9 +47,9 @@ private val CHORD = listOf(MidiNote(60), MidiNote(64), MidiNote(67))
 
 /**
  * First-launch onboarding (`docs/ui/living-studio.md`): the first note on any listed [input] picks the piano (while
- * [discovery] connects the Bluetooth pianos it finds); the piano plays C-E-G through [output] and the learner echoes
- * it; the route then hosts the tap calibration; the start point places the skills of the units before it with
- * [learner] and stores `onboarded` in [settings]. The day follows [clock] in [zone].
+ * [discovery] connects the Bluetooth pianos it finds, and the one picked is stored as `lastPiano` in [settings]);
+ * the piano plays C-E-G through [output] and the learner echoes it; the route then hosts the tap calibration; the
+ * start point places the skills of the units before it with [learner] and stores `onboarded` in [settings]. The day follows [clock] in [zone].
  *
  * An input has one reader at a time: [close] returns once the piano is closed, and the next session or the
  * calibration starts only after the reader before it has closed. When the ViewModel is cleared, [cleanup] runs
@@ -211,20 +211,9 @@ public class OnboardingViewModel(
                     mutableState.update { it.copy(pianoListHint = true) }
                 }
                 launch {
-                    var forget: Job? = null
                     input.inputDevices.collect { devices ->
-                        forget?.cancel()
-                        val listed = devices.firstOrNull()
-                        if (listed != null) {
-                            mutableState.update { it.copy(listed = listed) }
-                        } else {
-                            // A Bluetooth link often drops and comes back by itself: wait before saying it's gone.
-                            forget =
-                                launch {
-                                    delay(Tunables.ONBOARDING_LISTED_GRACE_MS)
-                                    mutableState.update { it.copy(listed = null) }
-                                }
-                        }
+                        // The input port keeps a dropped Bluetooth piano listed while it reopens, so no timer here.
+                        mutableState.update { it.copy(listed = devices.firstOrNull()) }
                         for (device in devices.filter { reading.add(it.id) }) {
                             launch {
                                 try {
@@ -244,9 +233,19 @@ public class OnboardingViewModel(
                 first.await().also { coroutineContext.cancelChildren() }
             }
         mutableState.update { it.copy(device = picked, listed = null, pianoListHint = false) }
+        if (connectedByScan.any { it.id == picked.id }) remember(picked)
         // The search is over: stop scanning, and let go of the Bluetooth pianos connected for it but not chosen.
         release()
         return picked
+    }
+
+    /** Stores the Bluetooth piano [picked] as the one Today reconnects; a store that can't be written is skipped. */
+    private suspend fun remember(picked: MidiDevice) {
+        try {
+            settings.update { it.copy(lastPiano = picked) }
+        } catch (_: StorageUnavailableException) {
+            // Today then asks for a piano as before; the echo goes on.
+        }
     }
 
     private suspend fun connect(device: MidiDevice) {

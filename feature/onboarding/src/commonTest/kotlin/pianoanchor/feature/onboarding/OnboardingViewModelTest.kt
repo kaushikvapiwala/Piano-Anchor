@@ -161,26 +161,24 @@ class OnboardingViewModelTest {
 
             piano.unplug()
             runCurrent()
-            assertEquals(piano.device, vm.state.value.listed) // a drop may be brief
-            advanceTimeBy(Tunables.ONBOARDING_LISTED_GRACE_MS + 1)
 
+            // The input port rides out brief Bluetooth drops itself, so the line follows the list without a timer.
             assertNull(vm.state.value.listed)
+            piano.plugIn()
+            runCurrent()
+            assertEquals(piano.device, vm.state.value.listed)
         }
 
     @Test
-    fun `a piano that drops and comes back stays shown as connected`() =
+    fun `a resumed link while waiting for the first note changes nothing`() =
         runTest(dispatcher) {
             val vm = viewModel()
 
-            piano.unplug()
+            piano.dropLink()
             runCurrent()
-            advanceTimeBy(Tunables.ONBOARDING_LISTED_GRACE_MS - 1)
-            assertEquals(piano.device, vm.state.value.listed)
-            piano.plugIn()
-            runCurrent()
-            advanceTimeBy(Tunables.ONBOARDING_LISTED_GRACE_MS)
 
             assertEquals(piano.device, vm.state.value.listed)
+            assertNull(vm.state.value.device)
         }
 
     @Test
@@ -353,13 +351,27 @@ class OnboardingViewModelTest {
 
             piano.unplug()
             runCurrent()
-            advanceTimeBy(Tunables.ONBOARDING_LISTED_GRACE_MS + 1)
 
             assertEquals(OnboardingState(), vm.state.value)
             piano.plugIn()
             runCurrent()
             play(C4)
             assertEquals(piano.device, vm.state.value.device)
+        }
+
+    @Test
+    fun `a resumed link during the echo does not disturb the attempt`() =
+        runTest(dispatcher) {
+            val vm = connectAndListen()
+            play(C4)
+            val before = vm.state.value
+
+            piano.dropLink()
+            runCurrent()
+
+            assertEquals(before, vm.state.value)
+            play(E4, G4)
+            assertEquals(EchoPhase.PASSED, vm.state.value.echo)
         }
 
     @Test
@@ -509,6 +521,66 @@ class OnboardingViewModelTest {
 
             assertEquals(piano.device, vm.state.value.device)
             assertFalse(ble in piano.inputDevices.first())
+        }
+
+    @Test
+    fun `a Bluetooth piano connected for the search and picked is remembered`() =
+        runTest(dispatcher) {
+            val ble = MidiDevice("ble:AA", "Bluetooth Piano")
+            val blePiano = FakePiano(device = ble)
+            blePiano.unplug()
+            blePiano.advertised = listOf(ble)
+            OnboardingViewModel(
+                blePiano,
+                blePiano,
+                blePiano,
+                LearnerModel(Curriculum.graph, learnerRepository),
+                settings,
+                clock,
+                TimeZone.UTC,
+            ).scanBluetooth()
+            runCurrent()
+            assertNull(settings.settings.first().lastPiano)
+
+            blePiano.press(C4)
+            runCurrent()
+
+            assertEquals(ble, settings.settings.first().lastPiano)
+        }
+
+    @Test
+    fun `a wired piano is not remembered`() =
+        runTest(dispatcher) {
+            val vm = connectAndListen()
+            assertNull(settings.settings.first().lastPiano)
+            assertEquals(piano.device, vm.state.value.device)
+        }
+
+    @Test
+    fun `an unwritable store does not stop the echo of a remembered Bluetooth piano`() =
+        runTest(dispatcher) {
+            val ble = MidiDevice("ble:AA", "Bluetooth Piano")
+            val blePiano = FakePiano(device = ble)
+            blePiano.unplug()
+            blePiano.advertised = listOf(ble)
+            val vm =
+                OnboardingViewModel(
+                    blePiano,
+                    blePiano,
+                    blePiano,
+                    LearnerModel(Curriculum.graph, learnerRepository),
+                    settings,
+                    clock,
+                    TimeZone.UTC,
+                )
+            vm.scanBluetooth()
+            runCurrent()
+            settings.failing = true
+
+            blePiano.press(C4)
+            runCurrent()
+
+            assertEquals(ble, vm.state.value.device)
         }
 
     @Test

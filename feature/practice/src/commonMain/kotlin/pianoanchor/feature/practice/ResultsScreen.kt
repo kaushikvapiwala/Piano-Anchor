@@ -43,6 +43,7 @@ import pianoanchor.feature.practice.resources.results_headline_keep_practising
 import pianoanchor.feature.practice.resources.results_not_found
 import pianoanchor.feature.practice.resources.results_try_again
 import pianoanchor.feature.practice.resources.results_unavailable
+import pianoanchor.ui.shell.BackButton
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
@@ -67,7 +68,7 @@ public fun ResultsScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BackButton(onBack)
+                BackButton(onClick = onBack)
                 if (state is ResultsState.Ready) Header(state)
             }
             when (state) {

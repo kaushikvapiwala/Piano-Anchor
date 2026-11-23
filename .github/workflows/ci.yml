@@ -67,7 +67,9 @@ jobs:
             exit 1
           fi
       # Developer Certificate of Origin: every commit needs a matching Signed-off-by (git commit -s).
+      # Dependabot cannot sign off; its commits only bump versions, which the build job verifies.
       - name: DCO sign-off
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}

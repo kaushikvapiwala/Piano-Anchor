@@ -1,6 +1,7 @@
 package pianoanchor.engine.midi
 
 import pianoanchor.core.model.ControlChange
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
@@ -9,6 +10,7 @@ import pianoanchor.core.model.SysEx
 /**
  * Canonical bytes for a [MidiEvent]: the status byte is always present (no running status) and SysEx is framed
  * with 0xF0…0xF7. `MidiParser().feed(encode(event), t)` gives back exactly `listOf(event)` stamped with `t`.
+ * Fails for `LinkResumed`: the adapter makes it up, no instrument sends it.
  */
 public object MidiEncoder {
     /** The MIDI 1.0 bytes of [event]. */
@@ -17,6 +19,7 @@ public object MidiEncoder {
             is NoteOn -> channelMessage(NOTE_ON, event.channel, event.note.number, event.velocity)
             is NoteOff -> channelMessage(NOTE_OFF, event.channel, event.note.number, event.velocity)
             is ControlChange -> channelMessage(CONTROL_CHANGE, event.channel, event.controller, event.value)
+            is LinkResumed -> throw IllegalArgumentException("LinkResumed is not a MIDI message and has no bytes")
             is SysEx -> (listOf(START_OF_SYSEX) + event.payload + END_OF_SYSEX).toBytes()
         }
 

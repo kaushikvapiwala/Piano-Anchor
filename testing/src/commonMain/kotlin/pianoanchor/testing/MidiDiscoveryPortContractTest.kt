@@ -126,10 +126,10 @@ abstract class MidiDiscoveryPortContractTest {
             val h = connected()
             h.drop(h.device)
             val dropped = currentTime
-            assertFalse(h.device in h.input.inputDevices.first())
-            h.input.inputDevices.first { h.device in it }
+            assertFalse(h.device in h.output.outputDevices.first())
+            h.output.outputDevices.first { h.device in it }
             assertEquals(Tunables.BLE_RECONNECT_INITIAL_MS, currentTime - dropped)
-            assertTrue(h.device in h.output.outputDevices.first())
+            assertTrue(h.device in h.input.inputDevices.first())
         }
 
     @Test
@@ -202,12 +202,35 @@ abstract class MidiDiscoveryPortContractTest {
         }
 
     @Test
-    fun connectNeedsADeviceFoundByAScan() =
+    fun connectOpensABluetoothDeviceThatWasNeverScanned() =
         runTest {
             val h = harness()
             h.advertise(h.device)
-            assertFailsWith<MidiDeviceUnavailableException> { h.discovery.connect(h.device) }
-            assertFalse(h.device in h.input.inputDevices.first())
+            h.discovery.connect(h.device)
+            assertTrue(h.device in h.input.inputDevices.first())
+            assertTrue(h.device in h.output.outputDevices.first())
+        }
+
+    @Test
+    fun connectingAnUnscannedBluetoothDeviceNeedsBluetooth() =
+        runTest {
+            val h = harness()
+            h.advertise(h.device)
+            h.bluetoothOff()
+            assertEquals(
+                Reason.BLUETOOTH_OFF,
+                assertFailsWith<BluetoothUnavailableException> { h.discovery.connect(h.device) }.reason,
+            )
+        }
+
+    @Test
+    fun connectFailsForANonBluetoothDeviceNoScanFound() =
+        runTest {
+            val h = harness()
+            val wired = MidiDevice(id = "usb:Acme/Piano/1", name = "Wired Piano")
+            h.advertise(wired)
+            assertFailsWith<MidiDeviceUnavailableException> { h.discovery.connect(wired) }
+            assertFalse(wired in h.input.inputDevices.first())
         }
 
     /** A harness whose [DiscoveryHarness.device] has been found by a scan and connected. */

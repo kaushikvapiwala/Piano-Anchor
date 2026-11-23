@@ -19,17 +19,20 @@ import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.Instrument
 import pianoanchor.core.model.InstrumentIdentity
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
+import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.SysEx
 import pianoanchor.core.ports.ClockPort
 import pianoanchor.core.ports.InstrumentRepositoryPort
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
+import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.kit.ContributionKit
 import pianoanchor.engine.kit.ContributionKitCodec
@@ -43,7 +46,8 @@ private const val SYSEX_FRAME_BYTES = 2
  * JSONL fixture (`fixtures/SCHEMA.md`). On every connect it asks the piano who it is (MIDI Identity Request,
  * `docs/protocols/midi-identity.md`) and stores it in [instruments]; if storing fails it still shows the piano, with
  * [MonitorError.STORAGE], and MIDI keeps flowing. [clock] times messages; [wallClock] gives the recording start time
- * and when a piano was seen; [appVersion] goes into the contribution kit.
+ * and when a piano was seen; a Bluetooth piano connected here is stored as `lastPiano` in [settings] until
+ * forgotten; [appVersion] goes into the contribution kit.
  */
 @Suppress("TooManyFunctions") // One small function per user action, as in the other ViewModels.
 public class MonitorViewModel(
@@ -51,6 +55,7 @@ public class MonitorViewModel(
     output: MidiOutputPort,
     private val discovery: MidiDiscoveryPort,
     instruments: InstrumentRepositoryPort,
+    private val settings: SettingsRepositoryPort,
     private val clock: ClockPort,
     private val wallClock: Clock,
     private val appVersion: String,
@@ -70,6 +75,13 @@ public class MonitorViewModel(
         viewModelScope.launch {
             input.inputDevices.collect { devices ->
                 mutableState.update { it.copy(devices = devices) }
+            }
+        }
+        viewModelScope.launch {
+            try {
+                settings.settings.collect { stored -> mutableState.update { it.copy(lastPiano = stored.lastPiano) } }
+            } catch (_: StorageUnavailableException) {
+                // Without storage no piano is remembered, so none is offered for forgetting.
             }
         }
     }
@@ -148,8 +160,41 @@ public class MonitorViewModel(
                     MonitorError.DEVICE_UNAVAILABLE
                 }
             if (error != null) return@launch mutableState.update { it.copy(error = error) }
+            remember(device)
             mutableState.update { it.copy(scanned = it.scanned - device) }
             select(device)
+        }
+    }
+
+    /**
+     * Forgets the remembered piano ([MonitorState.lastPiano]): deselects it if it is selected, disconnects it and
+     * stops Today reconnecting it.
+     * Does nothing when none is remembered.
+     */
+    public fun forget() {
+        val device = state.value.lastPiano ?: return
+        viewModelScope.launch {
+            if (state.value.selected?.id == device.id) {
+                // End the session first: a monitor that outlives its device would show "dropped, reconnecting".
+                session?.cancelAndJoin()
+                session = null
+                released = null
+                mutableState.update { it.copy(selected = null, connection = Connection.NONE, instrument = null) }
+            }
+            discovery.disconnect(device)
+            try {
+                settings.update { it.copy(lastPiano = null) }
+            } catch (_: StorageUnavailableException) {
+                // Still remembered: Pianos keeps offering "Forget".
+            }
+        }
+    }
+
+    private suspend fun remember(device: MidiDevice) {
+        try {
+            settings.update { it.copy(lastPiano = device) }
+        } catch (_: StorageUnavailableException) {
+            // The piano works now; Today just won't reconnect it on the next start.
         }
     }
 
@@ -249,6 +294,7 @@ public class MonitorViewModel(
         }
 
     private fun onEvent(event: MidiEvent) {
+        if (event is LinkResumed) return // a reopened link: the monitor shows only what the piano sent
         mutableState.update {
             it.withLine(
                 LogLine(event.describe(), event.timestampNanos.millisAfter(selectedAtNanos)),
@@ -295,4 +341,5 @@ internal fun MidiEvent.describe(): String =
         is NoteOff -> "${note.name} ↑ $velocity"
         is ControlChange -> "CC$controller $value"
         is SysEx -> "SysEx ${payload.size + SYSEX_FRAME_BYTES} bytes"
+        is LinkResumed -> "Link resumed"
     }

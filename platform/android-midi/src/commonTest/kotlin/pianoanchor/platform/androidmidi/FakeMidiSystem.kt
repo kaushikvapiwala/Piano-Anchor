@@ -48,6 +48,15 @@ internal class FakeMidiSystem(
     /** When false, opening any device fails (as if it went away just before). */
     var opensSucceed = true
 
+    /** When false, closing a Bluetooth handle leaves the device listed (Android is slow to drop it). */
+    var closingUnlists = true
+
+    /** When true, only [openInput] fails (the device is listed but its port can't be opened). */
+    var inputsFail = false
+
+    /** While set, [openBluetooth] waits for it to complete before it opens anything (a link that never comes up). */
+    var bluetoothOpenGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
     /** When true, open senders throw [IOException] (as a closed Android port does). */
     var sendsFail = false
 
@@ -77,7 +86,7 @@ internal class FakeMidiSystem(
         onBytes: (ByteArray, Int, Int, Long) -> Unit,
         onClosed: () -> Unit,
     ): AutoCloseable? {
-        if (!opensSucceed) return null
+        if (!opensSucceed || inputsFail) return null
         inputsOpened.incrementAndGet()
         inputs[device.systemId] = OpenInput(onBytes, onClosed)
         return AutoCloseable {
@@ -115,6 +124,7 @@ internal class FakeMidiSystem(
 
     /** Lists an advertising device as a new Bluetooth system device (new system id, as Android does each time). */
     override suspend fun openBluetooth(address: String): AutoCloseable? {
+        bluetoothOpenGate?.await()
         val advertisement = advertising.value.firstOrNull { it.address == address }
         if (!opensSucceed || advertisement == null) return null
         bluetoothOpened.incrementAndGet()
@@ -130,17 +140,34 @@ internal class FakeMidiSystem(
         if (listsOpenedBluetooth) plugIn(device)
         return AutoCloseable {
             bluetoothClosed.incrementAndGet()
-            list.update { devices -> devices - device }
+            inputs[device.systemId]?.onClosed?.invoke()
+            if (closingUnlists) list.update { devices -> devices - device }
         }
     }
 
     /** Adds an advertisement (repeats allowed); every running scan sees all current ones again. */
     fun advertise(advertisement: BluetoothAdvertisement) = advertising.update { it + advertisement }
 
-    /** The link of the connected Bluetooth device at [address] drops, as Android reports it: the device is removed. */
-    suspend fun dropBluetooth(address: String) {
-        list.value.filter { it.bluetoothAddress == address }.forEach { unplug(it.systemId) }
+    /**
+     * The link of the connected Bluetooth device at [address] drops, as Android reports it: its input is told, then
+     * the device is removed. Unlike [unplug] the input is told on the caller's thread: a reader that waits for the
+     * reopen starts its grace timer inside that callback, and while the test body waits on another thread virtual
+     * time would skip past the timer.
+     */
+    fun dropBluetooth(address: String) {
+        list.value.filter { it.bluetoothAddress == address }.forEach { device ->
+            inputs[device.systemId]?.onClosed?.invoke()
+            list.update { devices -> devices - device }
+        }
     }
+
+    /** Only the open input of the Bluetooth device at [address] is told it closed; the device stays listed. */
+    fun closeBluetoothInput(address: String) {
+        list.value.filter { it.bluetoothAddress == address }.forEach { inputs[it.systemId]?.onClosed?.invoke() }
+    }
+
+    /** Only removes the Bluetooth device at [address] from the list (its input was told earlier or never). */
+    fun unlistBluetooth(address: String) = list.update { all -> all.filterNot { it.bluetoothAddress == address } }
 
     /** The device with [systemId] sends `bytes[offset until offset + count]` in one platform callback. */
     suspend fun deliver(

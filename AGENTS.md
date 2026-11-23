@@ -65,7 +65,8 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 ## Workflow
 - One feature per PR, on a branch (`feat/…`, `fix/…`, `docs/…`, `ci/…`, `chore/…`). Never commit to `main`.
 - PR title = Conventional Commit (`feat(engine): …`); it becomes the squash commit. Sign off: `git commit -s`.
-- Never force-push or rewrite pushed history; add commits. Never commit secrets, `local.properties`,
+- Never force-push or rewrite pushed history; add commits (`.claude/settings.json` allows `git add`/`commit`/`push`
+  for unattended auto-mode runs and denies force-push, push to `main` and `--amend`). Never commit secrets, `local.properties`,
   build output or `.claude/worktrees/`.
 - AI loop: an Opus session orchestrates and reviews; the `implementer` subagent (`.claude/agents/`, Sonnet)
   writes code from one spec issue and can't finish while `fastCheck` fails (`SubagentStop` hook; `.claude/hooks/stop_fastcheck.py` also skips when another Gradle build runs, and the cloud dispatcher sets `PIANO_ANCHOR_STOP_HOOK=subagent-only` so only subagent stops run it); Haiku

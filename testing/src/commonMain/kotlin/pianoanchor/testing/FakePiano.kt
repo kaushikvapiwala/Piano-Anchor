@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import pianoanchor.core.model.BluetoothUnavailableException
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
@@ -58,6 +59,9 @@ class FakePiano(
         set(value) {
             advertisedDevices.value = value
         }
+
+    /** Every device passed to [connect], in order, whether it succeeded or not. */
+    val connectCalls = mutableListOf<MidiDevice>()
 
     /** When set, [scan] and [connect] fail with [BluetoothUnavailableException] for this reason. */
     var bluetoothProblem: BluetoothUnavailableException.Reason? = null
@@ -123,10 +127,16 @@ class FakePiano(
             }
         }
 
-    /** Lists [device] if a [scan] found it; the fake connects at once. */
+    /**
+     * Lists [device] if a [scan] found it or it is [advertised] with a `ble:` id (opened without a scan); the fake
+     * connects at once.
+     */
     override suspend fun connect(device: MidiDevice) {
+        connectCalls += device
         requireBluetooth()
-        if (device.id !in scanned) throw MidiDeviceUnavailableException(device.id)
+        val openable =
+            device.id in scanned || (device.id.startsWith("ble:") && advertisedDevices.value.any { it.id == device.id })
+        if (!openable) throw MidiDeviceUnavailableException(device.id)
         reconnects.remove(device.id)?.cancel()
         connected += device.id
         list(device)
@@ -153,6 +163,17 @@ class FakePiano(
                 reconnects.remove(device.id)
                 list(device)
             }
+    }
+
+    /**
+     * The wired device's link drops and is reopened at once: it stays listed and its open `events` flows carry on,
+     * each getting a `LinkResumed` stamped now (as a real adapter does for a Bluetooth drop it rides out).
+     */
+    fun dropLink() {
+        if (device !in devices.value) return
+        parser.reset()
+        val resumed = LinkResumed(clock.nowNanos())
+        collectors.filter { it.deviceId == device.id }.forEach { it.channel.trySend(resumed) }
     }
 
     /**

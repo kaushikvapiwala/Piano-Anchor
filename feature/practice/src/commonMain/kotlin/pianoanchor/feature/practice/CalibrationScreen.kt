@@ -53,6 +53,7 @@ import pianoanchor.feature.practice.resources.calibration_too_few
 import pianoanchor.feature.practice.resources.calibration_try_again
 import pianoanchor.feature.practice.resources.calibration_uneven
 import pianoanchor.feature.practice.resources.practice_disconnected
+import pianoanchor.ui.shell.BackButton
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 import kotlin.math.abs
@@ -85,7 +86,7 @@ public fun CalibrationScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BackButton(onCancel)
+                BackButton(onClick = onCancel)
                 Column {
                     Text(
                         stringResource(Res.string.calibration_title),

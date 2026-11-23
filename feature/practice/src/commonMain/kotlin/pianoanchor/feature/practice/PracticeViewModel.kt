@@ -23,6 +23,7 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.HintLevel
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
@@ -105,14 +106,8 @@ public class PracticeViewModel(
     private val spot: BarRange? = null,
     private val newId: () -> String,
 ) : ViewModel() {
-    // The band stays hidden until `loadHints` reads the run's level, so a slow store can't flash it at FULL.
     private val mutableState =
-        MutableStateFlow(
-            PracticeState.start(passage).copy(
-                spotLoop = spot?.let { SpotLoopState(it, initialRung) },
-                hintVisible = false,
-            ),
-        )
+        MutableStateFlow(PracticeState.start(passage).copy(spotLoop = spot?.let { SpotLoopState(it, initialRung) }))
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
 
     private var run: Job? = null
@@ -127,6 +122,9 @@ public class PracticeViewModel(
     /** The key-hint level of the run in progress and the delay of its Delayed hints (read when the run starts). */
     private var hintLevel = HintLevel.FULL
     private var hintDelayMillis = Tunables.HINT_DELAY_DEFAULT_MS
+
+    /** The level and delay of the first successful history read, null until then. */
+    private var hintCache: Pair<HintLevel, Long>? = null
 
     /** The strictness profile runs are judged and graded with, read from the settings when the screen opens. */
     private var strictness: StrictnessProfile = Strictness.STANDARD.profile()
@@ -155,7 +153,7 @@ public class PracticeViewModel(
      */
     public fun selectRung(rung: TempoRung) {
         // A spot loop's clean streak counts loops at one rung: a new rung starts it again.
-        mutableState.update { it.copy(spotLoop = it.spotLoop?.copy(cleanLoops = 0, offerFull = false)) }
+        mutableState.update { it.copy(spotLoop = it.spotLoop?.restarted()) }
         start(rung, mutableState.value.mode)
     }
 
@@ -165,7 +163,7 @@ public class PracticeViewModel(
      */
     public fun selectMode(mode: RunMode) {
         val current = mutableState.value
-        if (spot != null || mode == current.mode || current.rung == TempoRung.WAIT) return
+        if (spot != null || mode == current.mode || !current.rung.canPerform) return
         start(current.rung, mode)
     }
 
@@ -173,7 +171,7 @@ public class PracticeViewModel(
         rung: TempoRung,
         requested: RunMode,
     ) {
-        val mode = if (rung == TempoRung.WAIT || spot != null) RunMode.PRACTICE else requested
+        val mode = if (!rung.canPerform || spot != null) RunMode.PRACTICE else requested
         flashTimer?.cancel()
         hintTimer?.cancel()
         unsaved = null
@@ -186,6 +184,7 @@ public class PracticeViewModel(
                     doneRungs = it.doneRungs,
                     clickOn = it.clickOn,
                     spotLoop = it.spotLoop,
+                    // Hidden until `loadHints` reads the run's level, so a slow store can't flash the band at FULL.
                     hintVisible = false,
                 )
         }
@@ -201,26 +200,36 @@ public class PracticeViewModel(
 
     /** Shows the key band on the waiting step, for that step only (the Hint button). */
     public fun showHint() {
-        if (mutableState.value.mode == RunMode.PERFORM) return
+        if (!mutableState.value.showsVerdicts) return
         hintShown = true
         mutableState.update { it.copy(hintVisible = true) }
     }
 
     /**
      * Works out the run's hint level and delay from the passage's stored attempts; a store that can't be read gives
-     * the defaults (FULL).
+     * the defaults (FULL) for this start only. A successful read is kept for later starts, since the history can't
+     * change within this screen (a saved whole-passage run leaves it, and loop attempts belong to the slice's own id);
+     * a failed save clears it, as that save may have reached the store.
      */
     private suspend fun loadHints() {
-        val history =
-            try {
-                attempts.recent(sourcePassageId(passage.id), Tunables.HINT_FADE_HISTORY).first()
-            } catch (_: StorageUnavailableException) {
-                emptyList()
-            }
-        hintLevel = HintFading.level(history.asReversed())
-        hintDelayMillis = HintDelay.millis(history)
+        val known = hintCache
+        if (known != null) {
+            hintLevel = known.first
+            hintDelayMillis = known.second
+        } else {
+            val history =
+                try {
+                    attempts.recent(sourcePassageId(passage.id), Tunables.HINT_FADE_HISTORY).first()
+                } catch (_: StorageUnavailableException) {
+                    null
+                }
+            val runs = history.orEmpty()
+            hintLevel = HintFading.level(runs.asReversed())
+            hintDelayMillis = HintDelay.millis(runs)
+            if (history != null) hintCache = hintLevel to hintDelayMillis
+        }
         // A perform run gets no hint at all, whatever the level the passage would start at.
-        val aided = hintLevel == HintLevel.FULL && mutableState.value.mode == RunMode.PRACTICE
+        val aided = hintLevel == HintLevel.FULL && mutableState.value.showsVerdicts
         hintShown = aided
         mutableState.update { it.copy(hintLevel = hintLevel, hintVisible = aided) }
     }
@@ -232,7 +241,7 @@ public class PracticeViewModel(
      */
     private fun startHintStep(answered: Boolean = false) {
         hintTimer?.cancel()
-        val practice = mutableState.value.mode == RunMode.PRACTICE
+        val practice = mutableState.value.showsVerdicts
         mutableState.update { it.copy(hintVisible = practice && hintLevel == HintLevel.FULL) }
         if (!practice || hintLevel != HintLevel.DELAYED || answered) return
         hintTimer =
@@ -310,9 +319,7 @@ public class PracticeViewModel(
                 } catch (_: StorageUnavailableException) {
                     return@launch settle(attempt, saved = false)
                 }
-                recordLearning(attempt)
-                refreshDoneRungs()
-                settle(attempt, saved = true)
+                savedSettle(attempt)
             }
     }
 
@@ -384,6 +391,11 @@ public class PracticeViewModel(
         } catch (_: StorageUnavailableException) {
             return settle(attempt, saved = false)
         }
+        savedSettle(attempt)
+    }
+
+    /** After a successful save: records the learning, refreshes the done rungs and finishes the run. */
+    private suspend fun savedSettle(attempt: Attempt) {
         recordLearning(attempt)
         refreshDoneRungs()
         settle(attempt, saved = true)
@@ -419,6 +431,8 @@ public class PracticeViewModel(
         saved: Boolean,
     ) {
         unsaved = if (saved) null else attempt
+        // A save that failed may still have reached the store: read the history again on the next start.
+        if (!saved) hintCache = null
         if (saved && spot != null) return loopFinished(attempt)
         mutableState.update {
             if (saved) it.copy(saveFailed = false, finishedAttemptId = attempt.id) else it.copy(saveFailed = true)
@@ -445,7 +459,7 @@ public class PracticeViewModel(
     /** After the "bars are clean" card: loops on, with the clean streak starting again. */
     public fun keepLooping() {
         val loop = mutableState.value.spotLoop ?: return
-        mutableState.update { it.copy(spotLoop = loop.copy(cleanLoops = 0, offerFull = false)) }
+        mutableState.update { it.copy(spotLoop = loop.restarted()) }
         restart()
     }
 
@@ -453,7 +467,7 @@ public class PracticeViewModel(
         note: MidiNote,
         flash: KeyFlash,
     ) {
-        if (mutableState.value.mode == RunMode.PERFORM) {
+        if (!mutableState.value.showsVerdicts) {
             // The key still lights, in a neutral colour: no verdict, no flash, no last-key text.
             return mutableState.update { it.copy(keysDown = it.keysDown + note) }
         }
@@ -471,6 +485,11 @@ public class PracticeViewModel(
                 delay(Tunables.KEY_FLASH_MS)
                 mutableState.update { it.copy(flash = null) }
             }
+    }
+
+    private fun updateKeys(event: MidiEvent) {
+        if (event is NoteOff) mutableState.update { it.released(event.note) }
+        if (event is ControlChange && event.releasesAllKeys()) mutableState.update { it.releasedAll() }
     }
 
     /** One wait-mode run's progress: the matcher state, its events so far and the wall time of the first note. */
@@ -525,15 +544,42 @@ public class PracticeViewModel(
             scope: CoroutineScope,
             ended: CompletableDeferred<Unit>,
         ) {
-            if (ended.isCompleted) return // events already buffered when the tail ended
-            if (match.complete) return onTail(event, ended)
-            midi += event
-            if (event is NoteOn) {
-                onNoteOn(event)
-                if (match.complete) startTail(scope, ended)
-            } else {
-                updateKeys(event)
+            // Events already buffered when the tail ended are ignored.
+            when {
+                ended.isCompleted -> {}
+
+                event is LinkResumed -> {
+                    onLinkResumed(event, ended)
+                }
+
+                match.complete -> {
+                    onTail(event, ended)
+                }
+
+                else -> {
+                    midi += event
+                    if (event is NoteOn) {
+                        onNoteOn(event)
+                        if (match.complete) startTail(scope, ended)
+                    } else {
+                        updateKeys(event)
+                    }
+                }
             }
+        }
+
+        /**
+         * The link dropped and came back: wait mode loses nothing that matters (it waits for the next right key), but
+         * a key let go in the gap would stay lit and held notes would never end. Releases them all at the resume
+         * stamp; a take that was only waiting for its keys to come up ends here.
+         */
+        private fun onLinkResumed(
+            event: LinkResumed,
+            ended: CompletableDeferred<Unit>,
+        ) {
+            PlayedNotes.sounding(midi).forEach { midi += NoteOff(event.timestampNanos, 0, it, 0) }
+            mutableState.update { it.releasedAll() }
+            if (match.complete) end(ended)
         }
 
         /** After the completing NoteOn: keys up and pedal changes join the take until nothing sounds. */
@@ -558,11 +604,6 @@ public class PracticeViewModel(
                 delay((capNanos - time.nowNanos()).coerceAtLeast(0).nanoseconds)
                 end(ended, capNanos)
             }
-        }
-
-        private fun updateKeys(event: MidiEvent) {
-            if (event is NoteOff) mutableState.update { it.released(event.note) }
-            if (event is ControlChange && event.releasesAllKeys()) mutableState.update { it.releasedAll() }
         }
 
         private fun onNoteOn(event: NoteOn) {
@@ -601,6 +642,9 @@ public class PracticeViewModel(
         private val latencyOffsetNanos: Long?,
     ) {
         var startedAt: Instant? = null
+
+        /** True once the run has started over or its clock has ended: later events belong to someone else. */
+        private var finished = false
         private var judge: TempoJudge? = null
         private var startNanos = 0L
         private var firstBeatNanos = 0L
@@ -642,20 +686,45 @@ public class PracticeViewModel(
             scope: CoroutineScope,
             ended: CompletableDeferred<Boolean>,
         ) {
-            if (event is NoteOff) mutableState.update { it.released(event.note) }
-            if (event is ControlChange && event.releasesAllKeys()) mutableState.update { it.releasedAll() }
+            // A run that started over, or whose take is over, reads nothing more.
+            if (finished) return
+            if (event is NoteOn && mutableState.value.linkResumed) mutableState.update { it.copy(linkResumed = false) }
+            updateKeys(event)
             val judge = judge
-            if (judge == null) {
-                // The key that starts the count-in is not graded and not part of the take; a pedal already down is.
-                if (event is NoteOn) {
-                    begin(event, scope, ended)
-                } else if (event !is NoteOff) {
-                    midi += event
+            when {
+                event is LinkResumed -> {
+                    onLinkResumed(judge)
                 }
-                return
+
+                // The key that starts the count-in is not graded and not part of the take; a pedal already down is.
+                judge == null && event is NoteOn -> {
+                    begin(event, scope, ended)
+                }
+
+                judge == null -> {
+                    if (event !is NoteOff) midi += event
+                }
+
+                else -> {
+                    midi += event
+                    if (event is NoteOn) onNoteOn(event, judge)
+                }
             }
-            midi += event
-            if (event is NoteOn) onNoteOn(event, judge)
+        }
+
+        /**
+         * The link dropped and came back: messages in the gap are lost. Before the starting key there is no take, so
+         * only the keys come up. Otherwise the take is meaningless: it is discarded unsaved and the run starts over
+         * like [restart] (same rung, mode and spot loop), saying why until the next note.
+         */
+        private fun onLinkResumed(judge: TempoJudge?) {
+            if (judge == null) {
+                mutableState.update { it.releasedAll() }
+            } else {
+                finished = true // this reader may still hold buffered events: the new run owns the piano's notes now
+                restart()
+                mutableState.update { it.copy(linkResumed = true) }
+            }
         }
 
         private suspend fun begin(
@@ -675,6 +744,7 @@ public class PracticeViewModel(
             if (mutableState.value.clickOn) click.start(metronome)
             scope.launch {
                 runClock(timing)
+                finished = true
                 ended.complete(true)
             }
         }
@@ -709,7 +779,7 @@ public class PracticeViewModel(
         ) {
             answered += at.stepIndex
             if (at.stepIndex == hintStep) hintTimer?.cancel() // played in time: no help needed for this step
-            if (mutableState.value.mode == RunMode.PERFORM) return // no live verdicts in a perform take
+            if (!mutableState.value.showsVerdicts) return // no live verdicts in a perform take
             mutableState.update { it.copy(liveMarks = it.liveMarks + (at to mark)) }
         }
 
@@ -738,16 +808,20 @@ public class PracticeViewModel(
                 startHintStep(answered = cursor in answered)
             }
             mutableState.update {
+                val marked = it.showsVerdicts
                 it.copy(
                     phase = if (playing) RunPhase.PLAYING else RunPhase.COUNT_IN,
                     beat = beat,
                     currentStep = cursor,
-                    steps = it.steps.mapIndexed { i, step -> step.copy(status = cursorStatus(i, cursor, it.mode)) },
+                    steps = it.steps.mapIndexed { i, step -> step.copy(status = cursorStatus(i, cursor, marked)) },
                 )
             }
         }
     }
 }
+
+/** The loop with its clean streak and the "bars are clean" offer cleared. */
+private fun SpotLoopState.restarted() = copy(cleanLoops = 0, offerFull = false)
 
 /** The beat unit of a quarter note in a time signature (the 4 of 3/4). */
 private const val QUARTER_UNIT = 4
@@ -756,8 +830,8 @@ private const val QUARTER_UNIT = 4
 private fun cursorStatus(
     step: Int,
     cursor: Int,
-    mode: RunMode,
-) = if (step == cursor && mode == RunMode.PRACTICE) StepStatus.WAITING else StepStatus.UPCOMING
+    showsVerdicts: Boolean,
+) = if (step == cursor && showsVerdicts) StepStatus.WAITING else StepStatus.UPCOMING
 
 private fun statuses(
     steps: List<StepView>,
