@@ -44,6 +44,7 @@ private const val STAFF_GAP_MS = 1000
 private const val STAFF_END_MS = 3700
 private const val G_ABOVE_MIDDLE_C = 67
 private const val LOW_C = 48
+private const val E_ABOVE_LOW_C = 52
 private const val F_ABOVE_LOW_C = 53
 private const val G_ABOVE_LOW_C = 55
 private const val E_ABOVE_MIDDLE_C = 64
@@ -65,6 +66,7 @@ private const val CHORD_FINGER_GAP_MS = 500
 private const val CHORD_AT_MS = 1800
 private const val SYMBOL_AT_MS = 250
 private const val SYMBOL_MS = 1200
+private const val TUNE_AT_MS = 50
 private const val TUNE_NOTE_MS = 900
 private const val ACCIDENTAL_AT_MS = 900
 private const val ACCIDENTAL_MS = 1200
@@ -76,7 +78,7 @@ private const val B_BELOW_MIDDLE_C = 59
 private const val C_SHARP = 61
 private val ODE_NOTES = listOf(E_ABOVE_MIDDLE_C, E_ABOVE_MIDDLE_C, F_ABOVE_MIDDLE_C, G_ABOVE_MIDDLE_C)
 private val C_CHORD_NOTES = listOf(MIDDLE_C, E_ABOVE_MIDDLE_C, G_ABOVE_MIDDLE_C)
-private val LOW_C_CHORD_NOTES = listOf(LOW_C, 52, G_ABOVE_LOW_C)
+private val LOW_C_CHORD_NOTES = listOf(LOW_C, E_ABOVE_LOW_C, G_ABOVE_LOW_C)
 private val FIVE_FINGER_NOTES = listOf(60, 62, 64, 65, 67)
 private val RUN_NOTES = FIVE_FINGER_NOTES + FIVE_FINGER_NOTES.dropLast(1).reversed()
 
@@ -202,7 +204,7 @@ internal object CardScenes {
             SceneStage(60..72),
             listOf(
                 cue(RUN_START_MS, STEP_MS, LightKey(60)),
-                cue(RUN_START_MS + STEP_MS, STEP_MS, LightKey(62)),
+                cue(RUN_START_MS + STEP_MS, STEP_MS, LightKey(D_ABOVE_MIDDLE_C)),
                 cue(RUN_START_MS, 2 * STEP_MS, Caption("Step")),
                 cue(SKIP_AT_MS, STEP_MS, LightKey(64)),
                 cue(SKIP_AT_MS, STEP_MS, Highlight(setOf(65))),
@@ -393,7 +395,7 @@ internal object CardScenes {
                 listOf(cue(0, CARD_SCENE_LOOP_MS, LightKey(it)), cue(0, CARD_SCENE_LOOP_MS, SceneAction.StaffNote(it)))
             } +
                 ODE_NOTES.withIndex().flatMap { (i, note) ->
-                    val at = STAFF_AT_MS + i * TUNE_NOTE_MS
+                    val at = TUNE_AT_MS + i * TUNE_NOTE_MS
                     listOf(
                         cue(at, TUNE_NOTE_MS - POSE_OVERLAP_MS, LightKey(note, strong = true)),
                         cue(at, TUNE_NOTE_MS - POSE_OVERLAP_MS, SceneAction.StaffNote(note)),
@@ -410,7 +412,11 @@ internal object CardScenes {
                 cue(STAFF_AT_MS, ACCIDENTAL_AT_MS - STAFF_AT_MS, LightKey(MIDDLE_C)),
                 cue(ACCIDENTAL_AT_MS, ACCIDENTAL_MS, LightKey(C_SHARP, strong = true)),
                 cue(ACCIDENTAL_AT_MS, ACCIDENTAL_MS, Caption("C\u266F")),
-                cue(ACCIDENTAL_AT_MS + ACCIDENTAL_MS, FLAT_AT_MS - ACCIDENTAL_AT_MS - ACCIDENTAL_MS, LightKey(62)),
+                cue(
+                    ACCIDENTAL_AT_MS + ACCIDENTAL_MS,
+                    FLAT_AT_MS - ACCIDENTAL_AT_MS - ACCIDENTAL_MS,
+                    LightKey(D_ABOVE_MIDDLE_C),
+                ),
                 cue(FLAT_AT_MS, CAPTION_END_MS - FLAT_AT_MS - POSE_OVERLAP_MS, LightKey(C_SHARP, strong = true)),
                 cue(FLAT_AT_MS, CAPTION_END_MS - FLAT_AT_MS - POSE_OVERLAP_MS, Caption("D\u266D")),
             ),

@@ -57,13 +57,11 @@ class CardScenesTest {
 
     @Test
     fun `g and f chords keep the shared G lit from the C chord into the G chord`() {
-        val g =
-            checkNotNull(Curriculum.scene(Skills.G_AND_F_CHORDS.id)).cues.filter {
-                (it.action as? SceneAction.LightKey)?.note ==
-                    67
-            }
+        val scene = checkNotNull(Curriculum.scene(Skills.G_AND_F_CHORDS.id))
+        val g = scene.cues.filter { (it.action as? SceneAction.LightKey)?.note == 67 }
+        val gChordAt = scene.cues.first { (it.action as? SceneAction.Caption)?.text == "G" }.atMs
         assertEquals(1, g.size)
-        assertTrue(g.single().lengthMs > 1200)
+        assertTrue(g.single().atMs < gChordAt && g.single().atMs + g.single().lengthMs > gChordAt)
     }
 
     @Test
