@@ -2,7 +2,6 @@ package pianoanchor.feature.practice
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -13,31 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.feature.practice.resources.Res
-import pianoanchor.feature.practice.resources.practice_back
-import pianoanchor.feature.practice.resources.practice_back_glyph
-
-/** The 44 dp back arrow of the practice and results screens, read as "Back". */
-@Composable
-internal fun BackButton(onBack: () -> Unit) {
-    val backLabel = stringResource(Res.string.practice_back)
-    TextButton(
-        onClick = onBack,
-        modifier = Modifier.size(44.dp).semantics { contentDescription = backLabel },
-        contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
-    ) {
-        Text(
-            stringResource(Res.string.practice_back_glyph),
-            fontSize = 20.sp,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-}
 
 /** A button on an [MessageCard]: its [label] and what it does. */
 internal class CardAction(

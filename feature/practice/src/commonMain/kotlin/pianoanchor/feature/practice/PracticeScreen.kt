@@ -71,6 +71,7 @@ import pianoanchor.feature.practice.resources.practice_save_failed
 import pianoanchor.feature.practice.resources.practice_tempo_done
 import pianoanchor.feature.practice.resources.practice_tempo_percent
 import pianoanchor.feature.practice.resources.practice_tempo_wait
+import pianoanchor.ui.shell.BackButton
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
@@ -180,7 +181,7 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        BackButton(onBack)
+        BackButton(onClick = onBack)
         Column {
             Text(state.passage.title, fontFamily = displayFontFamily, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(

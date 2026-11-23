@@ -7,6 +7,7 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
   because the phone sits on the music rest. Reference layout 915×412 dp; content scrolls instead of clipping (also at
   font scale 2.0). Every Android screen has a landscape layout; the desktop window keeps its own size. The
   two-pane screens (onboarding, Ear, Pianos) split about 45/55, left to right, and TalkBack reads the left pane first.
+- **Back button**: every screen with a back arrow uses `BackButton` (`ui/shell/src/commonMain/kotlin/pianoanchor/ui/shell/BackButton.kt`): TalkBack reads "Back, button" (the arrow is hidden), the arrow flips in right-to-left layouts, and it is at least 44 dp, growing with the font.
 - **Material 3**, light and dark, following the system setting. Every screen is checked in both (screenshots).
 - **Palette** (the studio teal of the first screens is gone):
 
