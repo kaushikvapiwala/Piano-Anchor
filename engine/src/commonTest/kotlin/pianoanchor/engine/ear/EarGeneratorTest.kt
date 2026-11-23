@@ -129,7 +129,7 @@ class EarGeneratorTest {
 
     @Test
     fun `a skill that is not an ear skill throws`() {
-        assertFailsWith<IllegalArgumentException> { EarGenerator.draw("rh-steps", Random(1)) }
+        assertFailsWith<IllegalArgumentException> { EarGenerator.draw("steps-and-skips", Random(1)) }
     }
 
     @Test

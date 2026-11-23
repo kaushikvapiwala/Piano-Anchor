@@ -10,7 +10,6 @@ import pianoanchor.core.model.SkillState
 import pianoanchor.core.model.Track
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
-import pianoanchor.engine.content.Pieces
 import pianoanchor.engine.learner.DailyPlan
 import pianoanchor.engine.matcher.TempoRung
 import kotlin.time.Instant
@@ -90,8 +89,9 @@ public object SessionComposer {
     /**
      * Composes the session for [plan] over [curriculum], splitting [budget] by the SESSION_SHARE tunables.
      * [history] is keyed by passage id; a passage missing from it was never played. [learned] are the ids of every
-     * learned skill (the plan lists only due and new ones); [graph] gives each skill its track; the song comes from
-     * the latest unit with one.
+     * learned skill (the plan lists only due and new ones); [graph] gives each skill its track. The cold open uses only
+     * passages whose skills are all learned. The song is a piece with no lock: played before new, then public domain
+     * before original, then curriculum order.
      */
     public fun compose(
         plan: DailyPlan,
@@ -102,7 +102,7 @@ public object SessionComposer {
         graph: SkillGraph = curriculum.graph,
     ): Session {
         val (dueEar, dueOther) = plan.due.partition { graph.byId(it.skillId)?.track == Track.EAR }
-        val cold = coldOpen(dueOther, curriculum, history)
+        val cold = coldOpen(dueOther, curriculum, history, learned)
         val lesson = lesson(plan, curriculum, graph)
         val earSkills = dueEar.mapNotNull { graph.byId(it.skillId) } + plan.new.filter { it.track == Track.EAR }
         val used = listOfNotNull(cold?.passage, lesson?.passage).map { it.id }
@@ -142,11 +142,14 @@ public object SessionComposer {
         due: List<SkillState>,
         curriculum: Curriculum,
         history: Map<String, PassageHistory>,
+        learned: Set<String>,
     ): Card.ColdOpen? =
         due.firstNotNullOfOrNull { state ->
             curriculum.passages
-                .filter { state.skillId in it.skills }
-                .minWithOrNull(compareBy(nullsFirst()) { history[it.id]?.lastPlayed })
+                .filter { passage ->
+                    state.skillId in passage.skills &&
+                        passage.skills.all { it in learned || it == state.skillId }
+                }.minWithOrNull(compareBy(nullsFirst()) { history[it.id]?.lastPlayed })
                 ?.let { passage ->
                     // A passage lists only skills of the graph (checked by the content tests).
                     val skill = curriculum.graph.skills.first { it.id == state.skillId }
@@ -182,7 +185,7 @@ public object SessionComposer {
     ): Card.Song? {
         if (learned.isEmpty()) return null
         return curriculum.passages
-            .filter { it.piece && it.id !in used && Pieces.waitingFor(it, curriculum.graph, learned) == null }
+            .filter { it.piece && it.id !in used }
             .mapNotNull { passage -> nextRung(highestClean(passage, history[passage.id]))?.let { passage to it } }
             .sortedWith(
                 compareBy(

@@ -9,6 +9,7 @@ import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.RunMode
+import pianoanchor.core.model.Skill
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.EarSkills
 import pianoanchor.engine.content.Skills
@@ -85,7 +86,7 @@ class TodayScreenScreenshotTest {
                                     passage("middle-c-march"),
                                     TempoRung.WAIT,
                                     5,
-                                    Skills.KB_MIDDLE_C,
+                                    Skills.MIDDLE_C,
                                     Instant.parse("2026-11-10T09:00:00Z"),
                                     RunMode.PRACTICE,
                                 ),
@@ -93,8 +94,8 @@ class TodayScreenScreenshotTest {
                                     passage("skipping-stones"),
                                     TempoRung.WAIT,
                                     9,
-                                    Skills.RH_SKIPS,
-                                    listOf(Skills.RH_STEPS),
+                                    RIGHT_HAND_SKIPS,
+                                    listOf(RIGHT_HAND_STEPS),
                                 ),
                                 Card.Song(passage("hot-cross-buns"), TempoRung.P70, 6),
                             ),
@@ -140,7 +141,7 @@ class TodayScreenScreenshotTest {
                     Session(
                         cards =
                             listOf(
-                                Card.Lesson(passage("all-the-cs"), TempoRung.WAIT, 20, Skills.KB_FIND_C, emptyList()),
+                                Card.Lesson(passage("all-the-cs"), TempoRung.WAIT, 20, FIND_EVERY_C, emptyList()),
                             ),
                         reviewMinutes = 0,
                         lessonMinutes = 20,
@@ -174,3 +175,8 @@ class TodayScreenScreenshotTest {
 
 /** Android API level the screenshots render with (the newest Robolectric supports). */
 private const val SDK = 36
+
+// Skills as the goldens show them, fixed here so renaming curriculum skills doesn't redraw the Today screen.
+private val RIGHT_HAND_STEPS = Skill("rh-steps", "Right hand steps", emptySet())
+private val RIGHT_HAND_SKIPS = Skill("rh-skips", "Right hand skips (thirds)", setOf(RIGHT_HAND_STEPS.id))
+private val FIND_EVERY_C = Skill("kb-find-c", "Find every C", emptySet())

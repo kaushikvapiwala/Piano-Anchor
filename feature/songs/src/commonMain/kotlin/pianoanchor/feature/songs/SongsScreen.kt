@@ -36,10 +36,7 @@ import pianoanchor.engine.content.PieceView
 import pianoanchor.feature.songs.resources.Res
 import pianoanchor.feature.songs.resources.songs_action_retry
 import pianoanchor.feature.songs.resources.songs_error_storage
-import pianoanchor.feature.songs.resources.songs_lock_glyph
-import pianoanchor.feature.songs.resources.songs_locked_description
 import pianoanchor.feature.songs.resources.songs_mastered
-import pianoanchor.feature.songs.resources.songs_needs
 import pianoanchor.feature.songs.resources.songs_new
 import pianoanchor.feature.songs.resources.songs_progress
 import pianoanchor.feature.songs.resources.songs_row_description
@@ -56,7 +53,7 @@ private val CardShape = RoundedCornerShape(20.dp)
 /**
  * Songs, landscape: the rail with Songs selected, then a heading over an adaptive grid with a card per piece under
  * its unit's heading, in curriculum order. A card shows the title and the progress ("rung 3 of 5", "Mastered",
- * "New"); a locked card shows a lock and the skill it needs and cannot be tapped. Stateless; nothing animates, so
+ * "New"); every card opens. Stateless; nothing animates, so
  * screenshots stay still.
  */
 @Composable
@@ -128,19 +125,12 @@ private fun PieceCard(
     piece: PieceView,
     onOpen: (PieceView) -> Unit,
 ) {
-    val locked = piece.status == PieceStatus.LOCKED
     val progress = progressLine(piece)
+    val description = stringResource(Res.string.songs_row_description, piece.passage.title, progress)
     val modifier =
-        if (locked) {
-            val description = stringResource(Res.string.songs_locked_description, piece.waitingFor?.title.orEmpty())
-            // Not tappable; TalkBack reads one line saying why.
-            Modifier.clearAndSetSemantics { contentDescription = description }
-        } else {
-            val description = stringResource(Res.string.songs_row_description, piece.passage.title, progress)
-            Modifier.clickable(role = Role.Button) { onOpen(piece) }.clearAndSetSemantics {
-                contentDescription = description
-                role = Role.Button
-            }
+        Modifier.clickable(role = Role.Button) { onOpen(piece) }.clearAndSetSemantics {
+            contentDescription = description
+            role = Role.Button
         }
     OutlinedCard(
         shape = CardShape,
@@ -155,8 +145,7 @@ private fun PieceCard(
             Text(
                 piece.passage.title,
                 style = MaterialTheme.typography.titleMedium,
-                color =
-                    if (locked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 progress,
@@ -170,11 +159,6 @@ private fun PieceCard(
 @Composable
 private fun progressLine(piece: PieceView): String =
     when (piece.status) {
-        PieceStatus.LOCKED -> {
-            stringResource(Res.string.songs_lock_glyph) + " " +
-                stringResource(Res.string.songs_needs, piece.waitingFor?.title.orEmpty())
-        }
-
         PieceStatus.NEW -> {
             stringResource(Res.string.songs_new)
         }

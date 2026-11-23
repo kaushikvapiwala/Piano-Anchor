@@ -26,7 +26,7 @@
     <string name="onboarding_start_beginning_summary">Unit 0 · %1$s. Nothing is assumed.</string>
     <string name="onboarding_start_can_play">I can already play</string>
     <string name="onboarding_start_unit">Unit %1$s · %2$s</string>
-    <string name="onboarding_start_unit_1_summary">You can find middle C and play quarter notes with your right hand.</string>
-    <string name="onboarding_start_unit_2_summary">You can also play steps, skips and half notes, and short five-finger tunes.</string>
+    <string name="onboarding_start_unit_1_summary">You can find middle C, know the black-key groups and keep a steady beat.</string>
+    <string name="onboarding_start_unit_2_summary">You can also play five-finger tunes with your right hand and read the first notes on the staff.</string>
     <string name="onboarding_start_error">Couldn't save your start point. Tap one to try again.</string>
 </resources>

@@ -8,24 +8,21 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
-import pianoanchor.core.model.MemoryState
 import pianoanchor.core.model.MidiDevice
-import pianoanchor.core.model.SkillState
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.PieceStatus
 import pianoanchor.engine.content.PieceView
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
-import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakePiano
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -34,8 +31,6 @@ import kotlin.time.Instant
 @OptIn(ExperimentalCoroutinesApi::class)
 class SongsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
-    private val day = LocalDate(2026, 11, 15)
-    private val learner = FakeLearnerRepository()
     private val attempts = FakeAttemptRepository()
     private val piano = FakePiano(device = MidiDevice("usb:Roland/FP-30X", "FP-30X"))
 
@@ -45,22 +40,7 @@ class SongsViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun TestScope.viewModel() = SongsViewModel(learner, attempts, piano).also { runCurrent() }
-
-    private fun learned(skillId: String) =
-        SkillState(
-            skillId = skillId,
-            memory = MemoryState(stability = 2.0, difficulty = 5.0),
-            introducedDay = day,
-            lastReviewDay = day,
-            dueDay = day,
-            cleanColdChecks = 0,
-            recalledColdChecks = 0,
-            unaidedRecalledChecks = 0,
-            learned = true,
-        )
-
-    private suspend fun learnEverything() = learner.replaceStates(Curriculum.graph.skills.map { learned(it.id) })
+    private fun TestScope.viewModel() = SongsViewModel(attempts, piano).also { runCurrent() }
 
     private suspend fun playClean(
         id: String,
@@ -93,27 +73,21 @@ class SongsViewModelTest {
     @Test
     fun listsPiecesWithStatus() =
         runTest(dispatcher) {
-            learner.replaceStates(
-                Curriculum.graph.skills
-                    .filter { it.id != "chord-a-minor" }
-                    .map { learned(it.id) },
-            )
             playClean("a", "builtin:lightly-row", TempoRung.P60)
             val vm = viewModel()
 
             assertEquals(PieceStatus.IN_PROGRESS, vm.piece("lightly-row").status)
             assertEquals(PieceStatus.NEW, vm.piece("hot-cross-buns").status)
             assertEquals(PieceStatus.NEW, vm.piece("when-the-saints-go-marching-in").status)
-            // chord-four needs the A minor skill, which isn't learned.
-            assertEquals(PieceStatus.LOCKED, vm.piece("four-chord-walk").status)
+            // Nothing is learned, yet the last piece is as open as the first.
+            assertEquals(PieceStatus.NEW, vm.piece("four-chord-walk").status)
             assertEquals(10, checkNotNull(vm.state.value.pieces).size)
             assertFalse(vm.state.value.storageFailed)
         }
 
     @Test
-    fun anUnlockedTapOpensPracticeWithPassageAndRung() =
+    fun aTapOpensPracticeWithPassageAndRung() =
         runTest(dispatcher) {
-            learnEverything()
             playClean("a", "builtin:ode-to-joy", TempoRung.P70)
             playClean("b", "builtin:au-clair-de-la-lune", TempoRung.P100)
             val vm = viewModel()
@@ -138,19 +112,18 @@ class SongsViewModelTest {
         }
 
     @Test
-    fun aLockedTapDoesNothing() =
+    fun everyPieceOpensPracticeWhateverIsLearned() =
         runTest(dispatcher) {
             val vm = viewModel()
 
-            val locked = vm.piece("four-chord-walk")
-            assertEquals(PieceStatus.LOCKED, locked.status)
-            assertNull(vm.target(locked))
+            val pieces = checkNotNull(vm.state.value.pieces)
+            assertTrue(pieces.isNotEmpty())
+            pieces.forEach { assertIs<SongsTarget.Practice>(vm.target(it), it.passage.id) }
         }
 
     @Test
     fun refreshesAfterReturningFromPractice() =
         runTest(dispatcher) {
-            learnEverything()
             val vm = viewModel()
             assertEquals(PieceStatus.NEW, vm.piece("lightly-row").status)
 
@@ -166,12 +139,12 @@ class SongsViewModelTest {
     @Test
     fun anUnreadableStoreShowsAnErrorUntilRefreshed() =
         runTest(dispatcher) {
-            learner.failing = true
+            attempts.failing = true
             val vm = viewModel()
             assertTrue(vm.state.value.storageFailed)
             assertNull(vm.state.value.pieces)
 
-            learner.failing = false
+            attempts.failing = false
             vm.refresh()
             runCurrent()
             assertFalse(vm.state.value.storageFailed)

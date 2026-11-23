@@ -133,7 +133,11 @@ class CurriculumTest {
             assertTrue(it.tempoBpm in 60..92, it.id)
         }
 
-    private val chordPassages get() = Curriculum.units.first { it.id == "unit-3" }.passages
+    private val chordPassages get() =
+        Curriculum.units
+            .filter {
+                it.id in setOf("unit-3", "unit-more-songs")
+            }.flatMap { it.passages }
 
     private fun chordNotes() = chordPassages.flatMap { p -> p.steps.flatMap { it.notes } }
 
@@ -171,6 +175,169 @@ class CurriculumTest {
         Curriculum.graph.skills.filter { it.track == Track.SONGS }.forEach { skill ->
             assertTrue(chordPassages.any { skill.id in it.skills }, skill.id)
         }
+
+    private val courseIds =
+        listOf(
+            "hand-shape",
+            "middle-c",
+            "black-key-groups",
+            "high-and-low",
+            "steady-beat",
+            "quarter-and-half",
+            "white-key-names",
+            "rh-c-position",
+            "steps-and-skips",
+            "finger-number-tunes",
+            "bars-and-counting",
+            "staff-steps",
+            "treble-clef",
+            "soft-and-loud",
+            "lh-c-position",
+            "bass-clef-whole-note",
+            "grand-staff-turns-rests",
+            "three-four-time",
+            "hands-together-held",
+            "c-chord",
+            "g-and-f-chords",
+            "melody-and-chords",
+            "sharps-and-flats",
+        )
+
+    private val courseUnits get() = Curriculum.units.take(4)
+
+    @Test
+    fun `the course is the 23 concepts in map order across units 0 to 3`() {
+        assertEquals(listOf("unit-0", "unit-1", "unit-2", "unit-3"), courseUnits.map { it.id })
+        assertEquals(courseIds, courseUnits.flatMap { it.skills })
+        assertEquals(listOf(7, 7, 5, 4), courseUnits.map { it.skills.size })
+        assertEquals(
+            listOf("Meet the piano", "Five-finger tunes", "Left hand, then both hands", "Chords and songs"),
+            courseUnits.map { it.title },
+        )
+        courseIds.forEach { assertEquals(Track.CORE, Curriculum.graph.byId(it)!!.track, it) }
+    }
+
+    @Test
+    fun `each concept needs the one before it and the first needs nothing`() {
+        courseIds.forEachIndexed { index, id ->
+            val expected = if (index == 0) emptySet() else setOf(courseIds[index - 1])
+            assertEquals(expected, Curriculum.graph.byId(id)!!.prerequisites, id)
+        }
+    }
+
+    @Test
+    fun `every course skill has a passage and every passage stays in its own unit unless it is a piece`() {
+        courseUnits.forEach { unit ->
+            unit.skills.forEach { skill -> assertTrue(unit.passages.any { skill in it.skills }, skill) }
+            unit.passages.forEach { passage ->
+                val allowed =
+                    if (passage.piece) {
+                        courseUnits
+                            .take(
+                                courseUnits.indexOf(unit) + 1,
+                            ).flatMap { it.skills }
+                    } else {
+                        unit.skills
+                    }
+                assertTrue(passage.skills.all { it in allowed }, passage.id)
+                assertTrue(passage.skills.any { it in unit.skills }, passage.id)
+            }
+        }
+    }
+
+    @Test
+    fun `More songs is the last unit and teaches the songs track`() {
+        val more = Curriculum.units.last()
+        assertEquals(5, Curriculum.units.size)
+        assertEquals("unit-more-songs", more.id)
+        assertEquals("More songs", more.title)
+        assertEquals(listOf("more-inversions", "more-a-minor", "more-four-chords"), more.skills)
+        more.skills.forEach { assertEquals(Track.SONGS, Curriculum.graph.byId(it)!!.track, it) }
+        assertEquals(
+            setOf("melody-and-chords", "sharps-and-flats"),
+            Curriculum.graph.byId("more-inversions")!!.prerequisites,
+        )
+        assertEquals(setOf("c-chord", "sharps-and-flats"), Curriculum.graph.byId("more-a-minor")!!.prerequisites)
+        assertEquals(
+            setOf("more-inversions", "more-a-minor"),
+            Curriculum.graph.byId("more-four-chords")!!.prerequisites,
+        )
+        assertEquals(
+            listOf("close-moves", "minor-colour", "when-the-saints-go-marching-in", "four-chord-walk"),
+            more.passages.map { it.id.removePrefix("builtin:") },
+        )
+    }
+
+    @Test
+    fun `More songs only opens once the course is done`() {
+        val graph = Curriculum.graph
+        val moreIds = setOf("more-inversions", "more-a-minor", "more-four-chords")
+        val upToCChord = courseIds.take(courseIds.indexOf("c-chord") + 1).toSet()
+        assertEquals(
+            listOf("g-and-f-chords"),
+            graph.unlocked(upToCChord).filter { it.track != Track.EAR }.map { it.id },
+        )
+        val upToMelody = courseIds.take(courseIds.indexOf("melody-and-chords") + 1).toSet()
+        assertEquals(emptySet(), graph.unlocked(upToMelody).map { it.id }.toSet() intersect moreIds)
+        assertEquals(
+            setOf("more-inversions", "more-a-minor"),
+            graph.unlocked(courseIds.toSet()).map { it.id }.toSet() intersect moreIds,
+        )
+    }
+
+    @Test
+    fun `the new passages are original and sit with their concept`() {
+        val expected =
+            mapOf(
+                "five-fingers" to "hand-shape",
+                "every-f-every-b" to "white-key-names",
+                "staff-steps" to "staff-steps",
+                "soft-then-loud" to "soft-and-loud",
+                "sharp-phrase" to "sharps-and-flats",
+                "c-chord-hold" to "c-chord",
+            )
+        expected.forEach { (id, skill) ->
+            val passage = Curriculum.passage("builtin:$id")!!
+            assertEquals(setOf(skill), passage.skills, id)
+            assertEquals(RightsStatus.ORIGINAL, passage.rights.status, id)
+            assertTrue(passage.steps.size >= 3 && !passage.piece, id)
+            val last = passage.steps.last()
+            val ticks = last.onsetTicks + last.notes.maxOf { it.lengthTicks }
+            assertTrue(
+                ticks / passage.timeSignature.barTicks in 2..4,
+                "$id is ${ticks / passage.timeSignature.barTicks} bars",
+            )
+        }
+    }
+
+    @Test
+    fun `existing passages keep their ids and take the concept the course gives them`() {
+        val concepts =
+            mapOf(
+                "middle-c" to listOf("middle-c-march"),
+                "black-key-groups" to listOf("twos-and-threes", "twos-and-threes-down", "which-c-is-middle"),
+                "high-and-low" to listOf("all-the-cs", "cs-up-and-down"),
+                "steady-beat" to listOf("steady-quarters"),
+                "quarter-and-half" to listOf("half-and-quarter"),
+                "rh-c-position" to listOf("cde", "five-finger-walk"),
+                "steps-and-skips" to listOf("step-up-step-down", "skipping-stones"),
+                "finger-number-tunes" to listOf("hot-cross-buns", "mary-had-a-little-lamb", "au-clair-de-la-lune"),
+                "bars-and-counting" to listOf("steady-skipping", "lightly-row"),
+                "treble-clef" to listOf("ode-to-joy"),
+                "lh-c-position" to listOf("left-hand-walk", "left-hand-steps"),
+                "bass-clef-whole-note" to listOf("long-notes", "low-whole-notes"),
+                "grand-staff-turns-rests" to listOf("turn-taking", "echo"),
+                "three-four-time" to listOf("waltz-in-c", "three-beat-steps"),
+                "hands-together-held" to listOf("held-bass", "ode-to-joy-held-bass"),
+                "g-and-f-chords" to listOf("three-chords", "change-on-the-beat"),
+                "melody-and-chords" to listOf("hold-and-sing", "lightly-row-with-chords", "ode-to-joy-with-chords"),
+            )
+        concepts.forEach { (skill, ids) ->
+            ids.forEach { id ->
+                assertTrue(skill in Curriculum.passage("builtin:$id")!!.skills, "$id teaches $skill")
+            }
+        }
+    }
 
     @Test
     fun `chord voicings match the table`() {

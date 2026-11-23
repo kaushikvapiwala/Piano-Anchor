@@ -18,8 +18,8 @@ class EarSkillsTest {
 
     @Test
     fun `the echoes also need a playing skill`() {
-        assertEquals(setOf("kb-middle-c"), EarSkills.ECHO_NOTE.prerequisites)
+        assertEquals(setOf("middle-c"), EarSkills.ECHO_NOTE.prerequisites)
         assertEquals(setOf("ear-step-skip", "rh-c-position"), EarSkills.ECHO_THREE.prerequisites)
-        assertEquals(setOf("ear-chord-quality", "rh-skips"), EarSkills.ECHO_FIVE.prerequisites)
+        assertEquals(setOf("ear-chord-quality", "steps-and-skips"), EarSkills.ECHO_FIVE.prerequisites)
     }
 }

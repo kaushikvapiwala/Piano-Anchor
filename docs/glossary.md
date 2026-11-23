@@ -56,7 +56,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Note monitor | The Pianos screen (`:feature:monitor`), reached from Today's rail: pick a piano, watch its live notes, record a session and export it as a fixture. |
 | Onset | When a step starts, in ticks from the start of the passage (`Step.onsetTicks`); onsets strictly increase. |
 | Passage | A piece of music to practise (`Passage` in `:core:model`): a stable id, a title, its steps, a time signature and a written tempo. |
-| Piece | A passage marked `piece` (`Passage.piece`): a tune or song, listed on the Songs screen with its tempo-ladder progress, as opposed to an exercise. `Pieces.list` gives each a status: locked, new, in progress or mastered. |
+| Piece | A passage marked `piece` (`Passage.piece`): a tune or song, listed on the Songs screen with its tempo-ladder progress, as opposed to an exercise. `Pieces.list` gives each a status: new, in progress or mastered. Nothing is locked. |
 | Placement | Starting a learner past the early units (`LearnerModel.place`): each skill of the units before the chosen start gets a GOOD review with attempt id `placement` and counts as learned, without counting as a cold check. Chosen in the onboarding's last step. |
 | Performance analyser | `PerformanceAnalyser` in `:engine`: aligns a take's played notes to the passage, fits its tempo and reports findings of every error kind (`docs/algorithms/performance-analysis.md`). |
 | Played note | One key as played (`PlayedNote` in `:core:model`): pitch, onset velocity, key down, key up and when it stopped sounding, paired from MIDI events by `PlayedNotes.from`. |

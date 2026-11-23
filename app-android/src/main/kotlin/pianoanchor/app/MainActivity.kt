@@ -534,10 +534,6 @@ private fun SongsRoute(
                     SongsTarget.Pianos -> {
                         onPianos()
                     }
-
-                    null -> {
-                        // A locked piece does nothing.
-                    }
                 }
             },
             onToday = onToday,
