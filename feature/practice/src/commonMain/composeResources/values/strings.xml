@@ -1,6 +1,4 @@
 <resources>
-    <string name="practice_back">Back</string>
-    <string name="practice_back_glyph">←</string>
     <string name="practice_chord_join">+</string>
     <string name="practice_list_join">, </string>
     <string name="practice_mode_wait">Wait mode</string>

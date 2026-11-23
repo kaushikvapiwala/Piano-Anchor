@@ -9,4 +9,7 @@
     <string name="nav_songs_glyph">♫</string>
     <string name="nav_pianos_glyph">♪</string>
     <string name="nav_settings_glyph">⚙</string>
+    <string name="back">Back</string>
+    <string name="back_glyph">←</string>
+    <string name="back_glyph_rtl">→</string>
 </resources>

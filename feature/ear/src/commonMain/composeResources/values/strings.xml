@@ -1,6 +1,4 @@
 <resources>
-    <string name="ear_back">Back</string>
-    <string name="ear_back_glyph">←</string>
     <string name="ear_skill_of">Skill %1$s of %2$s</string>
     <string name="ear_item_of">Item %1$s of %2$s</string>
     <string name="ear_prompt_identify">Listen, then choose what you heard.</string>

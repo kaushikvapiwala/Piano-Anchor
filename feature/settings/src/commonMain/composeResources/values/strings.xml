@@ -1,7 +1,5 @@
 <resources>
     <string name="settings_title">Settings</string>
-    <string name="settings_back">Back</string>
-    <string name="settings_back_glyph">←</string>
     <string name="settings_group_practice">Practice</string>
     <string name="settings_group_playing">Playing</string>
     <string name="settings_group_updates">Updates</string>

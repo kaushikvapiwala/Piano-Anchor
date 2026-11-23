@@ -43,8 +43,6 @@ import pianoanchor.core.model.EarExercise
 import pianoanchor.feature.ear.resources.Res
 import pianoanchor.feature.ear.resources.ear_answer_mark
 import pianoanchor.feature.ear.resources.ear_answer_marked
-import pianoanchor.feature.ear.resources.ear_back
-import pianoanchor.feature.ear.resources.ear_back_glyph
 import pianoanchor.feature.ear.resources.ear_choice_fifth
 import pianoanchor.feature.ear.resources.ear_choice_fourth
 import pianoanchor.feature.ear.resources.ear_choice_higher
@@ -77,6 +75,7 @@ import pianoanchor.feature.ear.resources.ear_summary
 import pianoanchor.feature.ear.resources.ear_summary_one_skill
 import pianoanchor.feature.ear.resources.ear_summary_storage
 import pianoanchor.feature.ear.resources.ear_summary_title
+import pianoanchor.ui.shell.BackButton
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
@@ -156,14 +155,7 @@ private fun Header(
 ) {
     val itemText = stringResource(Res.string.ear_item_of, state.itemNumber.toString(), state.itemCount.toString())
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        TextButton(onClick = onBack, modifier = Modifier.heightIn(min = AnswerButton)) {
-            val back = stringResource(Res.string.ear_back)
-            Text(
-                stringResource(Res.string.ear_back_glyph),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.semantics { contentDescription = back },
-            )
-        }
+        BackButton(onClick = onBack, modifier = Modifier.heightIn(min = AnswerButton))
         Column {
             Text(
                 state.skillTitle,
