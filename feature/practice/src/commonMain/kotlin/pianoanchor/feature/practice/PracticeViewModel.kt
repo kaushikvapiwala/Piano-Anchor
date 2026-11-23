@@ -541,11 +541,21 @@ public class PracticeViewModel(
         restart()
     }
 
-    /** A key press: lights it, flashes it and, with [hinting] (wait mode), points a wrong key to the right one. */
+    /** The first key of a run ends any passage playing for the learner and hides the Listen button. */
+    private fun keyPressedInRun() {
+        demo?.cancel()
+        if (!mutableState.value.played) mutableState.update { it.copy(played = true) }
+    }
+
+    /**
+     * A key press: lights it, flashes it and, in wait mode, [needed] (the notes the matcher still needs of the step,
+     * [advanced] when the step just moved on) points a wrong key to the right one.
+     */
     private fun pressKey(
         note: MidiNote,
         flash: KeyFlash,
-        hinting: Boolean = false,
+        needed: Set<MidiNote>? = null,
+        advanced: Boolean = false,
     ) {
         if (!mutableState.value.showsVerdicts) {
             // The key still lights, in a neutral colour: no verdict, no flash, no last-key text.
@@ -558,7 +568,7 @@ public class PracticeViewModel(
                     wrongKeys = if (flash.correct) it.wrongKeys - note else it.wrongKeys + note,
                     flash = flash,
                     lastKey = flash,
-                ).withHint(note, flash.correct, hinting)
+                ).withHint(note, flash.correct, needed, advanced)
         }
         flashTimer?.cancel()
         flashTimer =
@@ -640,6 +650,7 @@ public class PracticeViewModel(
                 else -> {
                     midi += event
                     if (event is NoteOn) {
+                        keyPressedInRun()
                         onNoteOn(event)
                         if (match.complete) startTail(scope, ended)
                     } else {
@@ -701,7 +712,9 @@ public class PracticeViewModel(
             mutableState.update {
                 it.copy(steps = statuses(it.steps, match), currentStep = match.stepIndex)
             }
-            pressKey(event.note, KeyFlash(event.note, correct = step.events.none { it is WrongNote }), hinting = true)
+            val advanced = match.complete || match.stepIndex != stepBefore
+            val needed = if (match.complete) emptySet() else passage.steps[match.stepIndex].pitches - match.pressed
+            pressKey(event.note, KeyFlash(event.note, correct = step.events.none { it is WrongNote }), needed, advanced)
         }
     }
 
@@ -769,6 +782,7 @@ public class PracticeViewModel(
         ) {
             // A run that started over, or whose take is over, reads nothing more.
             if (finished) return
+            if (event is NoteOn) keyPressedInRun()
             if (event is NoteOn && mutableState.value.linkResumed) mutableState.update { it.copy(linkResumed = false) }
             updateKeys(event)
             val judge = judge
@@ -938,31 +952,35 @@ private fun statuses(
     }
 
 /**
- * After a press of [note]: a wrong key in wait mode ([hinting]) names the nearest key of the waiting step it was meant
- * to find and makes the step's keys glow; a right key takes itself out of the glow, and the hint goes with the last
- * one.
+ * After a press of [note] in wait mode, with [needed] the notes the matcher still needs of the step ([advanced] when
+ * the step just moved on, which drops any hint). A wrong key points to the nearest needed key and makes the needed
+ * keys glow. A right key in the same step recomputes both from what is still needed (the matcher forgets chord
+ * presses after the chord window), and the hint goes when nothing is.
  */
 private fun PracticeState.withHint(
     note: MidiNote,
     correct: Boolean,
-    hinting: Boolean,
+    needed: Set<MidiNote>?,
+    advanced: Boolean,
 ): PracticeState =
     when {
-        !hinting -> this
-        correct -> (hintGlow - note).let { copy(hintGlow = it, hint = hint.takeIf { _ -> it.isNotEmpty() }) }
-        else -> pointedFrom(note)
+        needed == null -> this
+        advanced -> copy(hint = null, hintGlow = emptySet())
+        !correct -> pointedFrom(note.number, needed)
+        hint == null -> this
+        else -> pointedFrom(hint.played, needed)
     }
 
-/** The state after a wrong [note]: the hint towards the nearest key still to play, and the waiting step's glow. */
-private fun PracticeState.pointedFrom(note: MidiNote): PracticeState {
-    val pool = (waitingNotes - keysDown).ifEmpty { waitingNotes }
-    val expected = pool.filter { it != note }.minByOrNull { abs(it.number - note.number) }
-    return if (expected ==
-        null
-    ) {
-        this
+/** The state with a hint from the [played] key to the nearest of [needed], which glow; none if nothing is needed. */
+private fun PracticeState.pointedFrom(
+    played: Int,
+    needed: Set<MidiNote>,
+): PracticeState {
+    val expected = needed.filter { it.number != played }.minByOrNull { abs(it.number - played) }
+    return if (expected == null) {
+        copy(hint = null, hintGlow = emptySet())
     } else {
-        copy(hint = wrongKeyHint(note.number, expected.number), hintGlow = waitingNotes)
+        copy(hint = wrongKeyHint(played, expected.number), hintGlow = needed)
     }
 }
 

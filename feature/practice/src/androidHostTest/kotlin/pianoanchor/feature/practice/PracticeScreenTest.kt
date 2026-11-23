@@ -9,6 +9,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -455,6 +456,45 @@ class PracticeScreenTest {
             }
 
             onNodeWithContentDescription("Treble staff", substring = true).assertDoesNotExist()
+        }
+
+    @Test
+    fun aHiddenStaffStillSpeaksTheNextKey() =
+        runComposeUiTest {
+            val unit0 = PracticeState.start(Passages.CDE).copy(staffHidden = true)
+            val state = mutableStateOf(unit0)
+            setContent { PianoAnchorTheme { PracticeScreen(state.value, {}, {}, {}, {}, {}) } }
+
+            onNodeWithContentDescription("Waiting for C4.")
+                .assertExists()
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+            state.value = unit0.copy(steps = unit0.steps.map { it.copy(status = StepStatus.DONE) })
+            onNodeWithContentDescription("Done.").assertExists()
+        }
+
+    @Test
+    fun theCountInNumeralShowsWithoutAStaff() =
+        runComposeUiTest {
+            val state =
+                PracticeState
+                    .start(Passages.CDE)
+                    .copy(staffHidden = true, rung = TempoRung.P60, phase = RunPhase.COUNT_IN, beat = 3)
+            setContent { PianoAnchorTheme { PracticeScreen(state, {}, {}, {}, {}, {}) } }
+
+            onNodeWithText("2").assertIsDisplayed()
+        }
+
+    @Test
+    fun aWrongKeyWithoutAHintKeepsTheLastKeyLine() =
+        runComposeUiTest {
+            val wrong = start.copy(lastKey = KeyFlash(MidiNote(65), correct = false))
+            val state = mutableStateOf(wrong)
+            setContent { PianoAnchorTheme { PracticeScreen(state.value, {}, {}, {}, {}, {}) } }
+
+            onNodeWithText("F4 · waiting for C4").assertExists()
+            onNodeWithContentDescription("Wrong, F4").assertExists()
+            state.value = wrong.copy(hint = wrongKeyHint(65, 60))
+            onNodeWithText("F4 · waiting for C4").assertDoesNotExist()
         }
 
     @Test

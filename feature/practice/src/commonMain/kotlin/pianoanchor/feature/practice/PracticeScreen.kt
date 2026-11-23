@@ -109,48 +109,82 @@ public fun PracticeScreen(
     onSkipListening: () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(modifier = Modifier.safeDrawingPadding()) {
-            TopBar(state, onBack, onSelectRung, onToggleClick, onHint, onSelectMode)
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            if (state.connection == PracticeConnection.DISCONNECTED) {
-                MessageCard(
-                    stringResource(Res.string.practice_disconnected),
-                    CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
-                    modifier = CARD_MODIFIER,
+        Box(Modifier.safeDrawingPadding(), contentAlignment = Alignment.Center) {
+            Column(Modifier.fillMaxSize()) {
+                TopBar(state, onBack, onSelectRung, onToggleClick, onHint, onSelectMode)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                StatusCards(
+                    state,
+                    onBack,
+                    onRetrySave,
+                    onDiscard,
+                    onCalibrate,
+                    onSkipCalibration,
+                    onPlayWhole,
+                    onKeepLooping,
+                )
+                StaffArea(state)
+                HintRow(state, onListen, onSkipListening, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
+                if (state.linkResumed) LinkResumedLine(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+                if (state.rung != TempoRung.WAIT && !state.calibrationOffered) {
+                    RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
+                }
+                state.spotLoop?.lastLoop?.let {
+                    LoopResultLine(
+                        it,
+                        Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                    )
+                }
+                KeyStrip(
+                    state,
+                    modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(),
+                    tall = state.staffHidden,
                 )
             }
-            if (state.saveFailed) {
-                MessageCard(
-                    stringResource(Res.string.practice_save_failed),
-                    CardAction(stringResource(Res.string.practice_retry), onRetrySave),
-                    CardAction(stringResource(Res.string.practice_discard), onDiscard),
-                    modifier = CARD_MODIFIER,
-                )
-            }
-            if (state.calibrationOffered) {
-                MessageCard(
-                    stringResource(Res.string.practice_calibrate_offer, CalibrationState.DURATION_SECONDS.toString()),
-                    CardAction(stringResource(Res.string.practice_calibrate), onCalibrate),
-                    CardAction(stringResource(Res.string.practice_calibrate_skip), onSkipCalibration),
-                    modifier = CARD_MODIFIER,
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
-            state.spotLoop?.takeIf { it.offerFull }?.let { loop ->
-                SpotCleanCard(loop.bars, onPlayWhole, onKeepLooping, modifier = CARD_MODIFIER)
-            }
-            StaffArea(state)
-            HintRow(state, onListen, onSkipListening, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
-            if (state.linkResumed) LinkResumedLine(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
-            if (state.rung != TempoRung.WAIT &&
-                !state.calibrationOffered
-            ) {
-                RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
-            }
-            state.spotLoop?.lastLoop?.let { LoopResultLine(it, Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) }
-            KeyStrip(state, modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(), tall = state.staffHidden)
+            CountInNumeral(state)
         }
+    }
+}
+
+/** The cards above the staff: disconnected, save failed, calibrate offer and the clean spot loop. */
+@Composable
+private fun StatusCards(
+    state: PracticeState,
+    onBack: () -> Unit,
+    onRetrySave: () -> Unit,
+    onDiscard: () -> Unit,
+    onCalibrate: () -> Unit,
+    onSkipCalibration: () -> Unit,
+    onPlayWhole: () -> Unit,
+    onKeepLooping: () -> Unit,
+) {
+    if (state.connection == PracticeConnection.DISCONNECTED) {
+        MessageCard(
+            stringResource(Res.string.practice_disconnected),
+            CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
+            modifier = CARD_MODIFIER,
+        )
+    }
+    if (state.saveFailed) {
+        MessageCard(
+            stringResource(Res.string.practice_save_failed),
+            CardAction(stringResource(Res.string.practice_retry), onRetrySave),
+            CardAction(stringResource(Res.string.practice_discard), onDiscard),
+            modifier = CARD_MODIFIER,
+        )
+    }
+    if (state.calibrationOffered) {
+        MessageCard(
+            stringResource(Res.string.practice_calibrate_offer, CalibrationState.DURATION_SECONDS.toString()),
+            CardAction(stringResource(Res.string.practice_calibrate), onCalibrate),
+            CardAction(stringResource(Res.string.practice_calibrate_skip), onSkipCalibration),
+            modifier = CARD_MODIFIER,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
+    }
+    state.spotLoop?.takeIf { it.offerFull }?.let { loop ->
+        SpotCleanCard(loop.bars, onPlayWhole, onKeepLooping, modifier = CARD_MODIFIER)
     }
 }
 

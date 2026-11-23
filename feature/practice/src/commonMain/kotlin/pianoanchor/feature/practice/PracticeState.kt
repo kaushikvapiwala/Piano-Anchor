@@ -41,7 +41,8 @@ private const val COUNT_IN_NUMERALS = 3
  * expected key and [hintGlow] holds the keys that glow in the accent until played. [playNow] is true for the one beat
  * after the count-in, when the screen says "Play!". [canListen] is true when the passage can be played for the learner
  * ([PassagePlayer]); [listening] while it does, with [demoStep] the step sounding and [demoKeys] its keys.
- * A Unit 0 passage hides the staff ([staffHidden], set by the ViewModel) and glows every next key.
+ * A Unit 0 passage hides the staff ([staffHidden], set by the ViewModel) and glows every next key while a run is
+ * under way. [played] is true once a key was pressed in the run (the Listen button then goes).
  */
 public data class PracticeState(
     val passage: Passage,
@@ -74,6 +75,7 @@ public data class PracticeState(
     val demoStep: Int? = null,
     val demoKeys: Set<MidiNote> = emptySet(),
     val staffHidden: Boolean = false,
+    val played: Boolean = false,
 ) {
     init {
         require(steps.size == passage.steps.size) {
@@ -94,7 +96,17 @@ public data class PracticeState(
                 .orEmpty()
 
     /** Keys that glow in the accent: those a wrong key points to and, in Unit 0, every next key at any hint level. */
-    val glowKeys: Set<MidiNote> get() = if (staffHidden && showsVerdicts) hintGlow + waitingNotes else hintGlow
+    val glowKeys: Set<MidiNote> get() =
+        if (staffHidden && showsVerdicts &&
+            underway
+        ) {
+            hintGlow + waitingNotes
+        } else {
+            hintGlow
+        }
+
+    /** Whether a run is reading the piano: wait mode when not listening, a timed run once the cursor moves. */
+    private val underway: Boolean get() = !listening && (rung == TempoRung.WAIT || phase == RunPhase.PLAYING)
 
     /** The steps as the staff draws them: while the passage plays for the learner the cursor follows the sound. */
     val shownSteps: List<StepView>
@@ -124,7 +136,7 @@ public data class PracticeState(
     /** Whether the Listen button shows: the run has not started and nothing is playing. */
     val showsListen: Boolean
         get() =
-            canListen && !listening && phase == RunPhase.READY && currentStep == 0 && !calibrationOffered &&
+            canListen && !listening && !played && phase == RunPhase.READY && currentStep == 0 && !calibrationOffered &&
                 !saveFailed && finishedAttemptId == null && connection == PracticeConnection.CONNECTED
 
     public companion object {

@@ -23,17 +23,25 @@ public class PassagePlayer(
 ) {
     private var speakerOnly = false
 
-    /** Plays [tones] and returns when they have ended; cancelling stops the sound. */
+    /**
+     * Plays [tones] and returns when they have ended; cancelling stops the sound. A piano that fails midway hands the
+     * rest to the speaker: only the tones not yet struck, moved so the first sounds at once (the failure happens at its
+     * onset), which keeps the sound on the timeline the screen's cursor follows.
+     */
     internal suspend fun play(tones: List<Tone>) {
+        var rest = tones
         if (!speakerOnly && output.canPlayOn(device)) {
+            var struck = 0
             try {
-                output.playTones(device, tones)
+                output.playTones(device, tones) { struck++ }
                 return
             } catch (_: MidiDeviceUnavailableException) {
                 speakerOnly = true
+                rest = tones.sortedBy { it.startMs }.drop(struck)
             }
         }
-        tone.play(tones)
+        val from = rest.minOfOrNull { it.startMs } ?: return
+        tone.play(rest.map { it.copy(startMs = it.startMs - from) })
     }
 }
 

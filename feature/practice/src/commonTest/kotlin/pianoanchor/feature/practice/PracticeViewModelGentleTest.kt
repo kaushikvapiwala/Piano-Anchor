@@ -164,11 +164,15 @@ class PracticeViewModelGentleTest {
             )
             assertEquals(setOf(c4, e4), vm.state.value.glowKeys)
 
-            tap(e4)
+            clock.advanceNanos(10 * ms)
+            piano.press(e4)
+            runCurrent()
             assertEquals(setOf(c4), vm.state.value.glowKeys)
             assertNotNull(vm.state.value.hint)
 
-            tap(c4)
+            clock.advanceNanos(10 * ms)
+            piano.press(c4)
+            runCurrent()
             assertNull(vm.state.value.hint)
         }
 
@@ -398,6 +402,93 @@ class PracticeViewModelGentleTest {
             assertTrue(playNow)
             assertFalse(vm.state.value.playNow)
         }
+
+    @Test
+    fun theHintFollowsWhatTheMatcherStillNeedsWhenItForgetsAChordPress() =
+        runTest(dispatcher) {
+            val g4 = MidiNote(67)
+            val vm = practice(plain.copy(steps = listOf(chord(c4, g4))))
+            clock.advanceNanos(300 * ms)
+            piano.press(c4) // held and correct
+            runCurrent()
+            clock.advanceNanos(10 * ms)
+            piano.press(d4) // wrong: only G is needed
+            runCurrent()
+            assertEquals(
+                67,
+                vm.state.value.hint
+                    ?.expected,
+            )
+
+            clock.advanceNanos(100 * ms) // past the chord window: the matcher forgets C
+            piano.press(g4)
+            runCurrent()
+
+            assertEquals(
+                60,
+                vm.state.value.hint
+                    ?.expected,
+            )
+            assertEquals(setOf(c4), vm.state.value.glowKeys)
+        }
+
+    @Test
+    fun aHintDoesNotOutliveItsStep() =
+        runTest(dispatcher) {
+            val g4 = MidiNote(67)
+            val vm = practice(plain.copy(steps = listOf(chord(c4, g4), step(e4, 960))))
+            clock.advanceNanos(300 * ms)
+            piano.press(c4)
+            runCurrent()
+            clock.advanceNanos(10 * ms)
+            piano.press(d4)
+            runCurrent()
+            assertNotNull(vm.state.value.hint)
+
+            clock.advanceNanos(10 * ms)
+            piano.press(g4) // completes the chord: the step moves on
+            runCurrent()
+
+            assertEquals(1, vm.state.value.currentStep)
+            assertNull(vm.state.value.hint)
+            assertEquals(emptySet(), vm.state.value.glowKeys)
+        }
+
+    @Test
+    fun aKeyPressedWhileTheDemoPlaysEndsTheDemoAndHidesListen() =
+        runTest(dispatcher) {
+            storeRun(plain.id)
+            val vm = practice(player = player())
+            vm.listen()
+            runCurrent()
+            assertTrue(vm.state.value.listening)
+
+            tap(f4)
+            runCurrent()
+
+            assertFalse(vm.state.value.listening)
+            assertNull(vm.state.value.demoStep)
+            assertFalse(vm.state.value.showsListen)
+            tap(c4)
+            assertEquals(1, vm.state.value.currentStep)
+        }
+
+    @Test
+    fun unitZeroGlowsOnlyWhileARunIsUnderWay() {
+        val unit0 = PracticeState.start(Passages.CDE).copy(staffHidden = true)
+        val first = setOf(c4)
+        assertEquals(first, unit0.glowKeys)
+        assertEquals(emptySet(), unit0.copy(listening = true).glowKeys)
+        val timed = unit0.copy(rung = TempoRung.P60)
+        assertEquals(emptySet(), timed.glowKeys)
+        assertEquals(emptySet(), timed.copy(phase = RunPhase.COUNT_IN).glowKeys)
+        assertEquals(first, timed.copy(phase = RunPhase.PLAYING).glowKeys)
+    }
+
+    private fun step(
+        note: MidiNote,
+        onset: Int,
+    ) = pianoanchor.core.model.Step(onset, setOf(pianoanchor.core.model.ScoreNote(note, 960)))
 
     private fun chord(vararg notes: MidiNote) =
         pianoanchor.core.model.Step(

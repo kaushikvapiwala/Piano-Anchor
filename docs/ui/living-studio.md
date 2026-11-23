@@ -74,12 +74,20 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
   "Wrong, F4". No red and no sound; the app waits as before. A timed run only flashes the key grey: no glow, no line.
 - **Listen and hear it first**: a passage with no attempt yet plays once on opening, at its written tempo, on the
   piano when it accepts MIDI out and else on the speaker, with the cursor and the keys following the sound; the run
-  starts when it ends. A "Skip" button (right end of the line under the staff) stops it. While no run is under way a
-  "Listen" button in the same place plays it again.
+  starts when it ends. A "Skip" button (right end of the line under the staff) stops it. Before the first key of a
+  run a "Listen" button in the same place plays it again; the first key pressed ends a demo still playing and removes
+  the button for that run. If the piano stops accepting notes midway, the speaker plays only the notes not yet struck,
+  on the same timeline. The hint after a wrong chord key follows what the matcher still needs of the step (it forgets
+  chord keys after `CHORD_CLUSTER_MS`) and goes when the step moves on.
 - **Unit 0 layout**: a passage whose skills all belong to Unit 0 has no staff; its room goes to the key strip (240 dp
-  white keys), and the next key glows at every hint level.
+  white keys), and the next key glows at every hint level, but only while a run is under way (wait mode not
+  listening, or a timed run once it plays), not during the count-in or hear-it-first. With no staff to read, a polite
+  live region in its place says "Waiting for D4." (or "Done."). The count-in numeral floats over the whole screen, so
+  it is never clipped.
 - **Accessibility**: the staff reads as "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."); each key is named; the
-  verdict is a polite live region announcing "Correct" or "Wrong, F4".
+  verdict is a polite live region announcing "Correct". A wrong key in wait mode announces the hint line instead of
+  "Wrong, F4" (which stays for a timed run, and for a wrong key that has no hint, with the old "F4 · waiting for E4"
+  text).
 - **Finishing**: nothing new shows after the last note. Results open once the last notes stop sounding (keys up, pedal
   up), at most 3 s after it (`WAIT_MODE_RELEASE_TIMEOUT_MS`); a new key press ends the wait at once.
 - **Disconnected**: the error card "Piano disconnected" with "Back to pianos"; the run is discarded.

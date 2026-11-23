@@ -46,6 +46,7 @@ import pianoanchor.feature.practice.resources.practice_last_key_correct
 import pianoanchor.feature.practice.resources.practice_last_key_early
 import pianoanchor.feature.practice.resources.practice_last_key_late
 import pianoanchor.feature.practice.resources.practice_last_key_on_time
+import pianoanchor.feature.practice.resources.practice_last_key_wrong
 import pianoanchor.feature.practice.resources.practice_last_key_wrong_timed
 import pianoanchor.ui.shell.PianoAnchorColors
 import pianoanchor.ui.shell.pianoAnchorColors
@@ -83,20 +84,31 @@ internal fun KeyStrip(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.weight(1f))
-            state.lastKey?.let { LastKeyText(it, timed = state.rung != TempoRung.WAIT) }
+            state.lastKey?.let {
+                LastKeyText(
+                    it,
+                    waiting,
+                    timed = state.rung != TempoRung.WAIT,
+                    hinted =
+                        state.hint != null,
+                )
+            }
         }
         Keys(state, if (state.hintVisible) waiting else emptySet(), tall)
     }
 }
 
 /**
- * "E4 · correct, moving on"; TalkBack announces "Correct". A wrong key in wait mode says nothing here: the hint line
- * under the staff tells how to find the right one. A wrong timed note reads "F4 · wrong note", announced "Wrong, F4".
+ * "E4 · correct, moving on"; TalkBack announces "Correct". A wrong key in wait mode says nothing here while the
+ * hint line under the staff tells how to find the right one; without a hint it reads "F4 · waiting for E4".
+ * A wrong timed note reads "F4 · wrong note", announced "Wrong, F4".
  */
 @Composable
 private fun LastKeyText(
     key: KeyFlash,
+    waiting: Set<MidiNote>,
     timed: Boolean,
+    hinted: Boolean,
 ) {
     val name = key.note.name
     val ms = key.deviationMs
@@ -107,8 +119,13 @@ private fun LastKeyText(
                     stringResource(Res.string.practice_announce_wrong, name)
             }
 
-            !key.correct -> {
+            !key.correct && hinted -> {
                 return
+            }
+
+            !key.correct -> {
+                stringResource(Res.string.practice_last_key_wrong, name, waiting.chordName()) to
+                    stringResource(Res.string.practice_announce_wrong, name)
             }
 
             ms != null -> {

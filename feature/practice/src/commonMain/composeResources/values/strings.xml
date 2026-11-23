@@ -45,6 +45,9 @@
     <string name="practice_hint_right_of_three">%1$s is just right of the three black keys.</string>
     <string name="practice_hint_black_above">%1$s is the black key just right of %2$s.</string>
     <string name="practice_hint_same_key">Same letter, other octave: try %1$s.</string>
+    <string name="practice_last_key_wrong">%1$s · waiting for %2$s</string>
+    <string name="practice_next_key">Waiting for %1$s.</string>
+    <string name="practice_next_key_done">Done.</string>
     <string name="practice_play_now">Play!</string>
     <string name="practice_listen">Listen</string>
     <string name="practice_skip">Skip</string>
