@@ -17,6 +17,7 @@ one before it (the echo skills also need a playing skill, so the ear never runs 
 ## Why sets of four
 An identify item has two choices, so one item is right half the time by guessing. A review is therefore a set of
 `EAR_ITEMS_PER_REVIEW` freshly drawn items (never the same twice in a set, unless the skill has too few to avoid it).
+`EarGenerator.drawNew` repeats a draw up to `EAR_MAX_REDRAWS` times to avoid an item already in the set, then accepts one.
 Only the set's band is stored, as one review of the skill: the ear track shares the daily plan and the learner model
 with everything else (`docs/algorithms/learner-model.md`).
 
@@ -34,7 +35,7 @@ into the playback schedule shared by MIDI and speaker output: one group every `P
 
 ## Outcome and band
 An item ends FIRST_TRY (right at the first answer without a replay), RECOVERED (right, otherwise) or MISSED (two wrong
-answers or Show me). `EarGrading.band`: every item FIRST_TRY is CLEAN; at least `EAR_GOOD_MIN_RIGHT` right in the end is
+answers or Show me). `EarGrading.outcome` decides an item's outcome from the answer count and the replays. `EarGrading.band`: every item FIRST_TRY is CLEAN; at least `EAR_GOOD_MIN_RIGHT` right in the end is
 GOOD; else KEEP_PRACTISING. `LearnerModel.recordEarSet` then records it like a played cold check: the first review of
 the learner day counts and the band maps to the rating as for passages (never EASY).
 
