@@ -110,6 +110,7 @@ public fun TodayScreen(
                         when (card) {
                             is Card.PassageCard -> CardView(card, session, actions.onStart)
                             is Card.Ear -> EarCardView(card, actions.onStart)
+                            is Card.Quizzes -> QuizzesCardView(card, actions.onStart)
                         }
                     }
                     if (session.cards.isNotEmpty()) SessionBar(session)

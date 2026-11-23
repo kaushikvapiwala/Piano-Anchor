@@ -31,14 +31,14 @@ private const val LETTER_OF_E4 = 2
 private val LETTER_OF_PITCH_CLASS = listOf(0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6)
 
 /** Half spaces above the treble staff's bottom line E4 (middle C = -2, the bass's top line = -4). */
-private fun position(note: Int): Int =
+internal fun staffPosition(note: Int): Int =
     note / SEMITONES * LETTERS + LETTER_OF_PITCH_CLASS[note % SEMITONES] - (MIDI_OCTAVE_OF_E4 * LETTERS + LETTER_OF_E4)
 
-private const val TREBLE_LOW = -4
-private const val TREBLE_HIGH = 12
+internal const val TREBLE_LOW = -4
+internal const val TREBLE_HIGH = 12
 private const val BASS_LOW = -16
 private const val BASS_HIGH = 0
-private val TREBLE_LINES = listOf(0, 2, 4, 6, 8)
+internal val TREBLE_LINES = listOf(0, 2, 4, 6, 8)
 private val BASS_LINES = listOf(-12, -10, -8, -6, -4)
 
 private fun lines(staff: SceneStaff): List<Int> =
@@ -95,7 +95,7 @@ internal fun DrawScope.drawStaffNote(
     val action = cue.action as SceneAction.StaffNote
     val slot = staffSlot(scene, cue)
     val x = stage.size.width * (NOTE_AREA_START + NOTE_AREA_WIDTH * slot)
-    val position = position(action.note)
+    val position = staffPosition(action.note)
     val width = geometry.unit * NOTEHEAD_WIDTH_UNITS
     val height = geometry.unit * NOTEHEAD_HEIGHT_UNITS
     ledgerLines(position, lines(staff)).forEach {

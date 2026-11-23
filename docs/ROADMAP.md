@@ -43,19 +43,20 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 1. **Automatic link latency** (spec #172; owner's hardware check; ADR 0025): timed runs measure the piano's link delay
     with Identity Request round trips; calibration leaves the onboarding and the first-run card; tap calibration becomes
     the optional "Fine-tune timing" with a 45 ms spread limit.
-2. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
-    Today's warm-up, rated by mistakes into the review planner.
-3. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
+2. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
     loops save their attempts under the slice's id (`…#bars5-6`) and also set `Attempt.spot`, so the full-passage
     queries' spot filters never match a row, the loop's done-rung refresh always reads an empty set and `run N` counts
     loops apart from the piece. Save them under the piece's id and rely on `spot` alone (then drop the id suffix and
     `sourcePassageId`); this changes stored data and run numbers.
-4. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
+3. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
     mode by hand where it starts hints; give the run an effective level (OFF in perform) so `loadHints` and
     `startHintStep` read only that, and keep the Hint button's own guard.
-5. **Lesson Try: the landmark hint** (follow-up of #189; mechanical): the lesson's Try step still says "That was X.
-    Waiting for Y." with its own key strip; share practice's wrong-key landmark line and strip colours (#190) with
-    `feature/lesson`, through a shared UI module rather than a feature-to-feature dependency.
+4. **Lesson Try: the landmark hint** (follow-up of #189 and #195; mechanical): the lesson's Try step still says "That
+    was X. Waiting for Y."; use the quiz screen's landmark line (`QuizHint.kt`) there too, and move that text, now copied
+    from `feature/practice`, into one shared UI module instead of two copies.
+5. **Quizzes count as practice days** (follow-up of #195; needs an owner decision): Today's weekly dots and day
+    line count ear reviews (`ear:` attempt ids) but not review quizzes (`quiz:` ids), so a day with only quizzes shows as
+    missed. Decide whether a quiz-only day counts.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never

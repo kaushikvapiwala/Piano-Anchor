@@ -283,6 +283,17 @@ the current step; only this pane changes between steps. A key strip runs along t
   a sequence, after a wrong key for the rest).
 - The step is saved as it changes and the lesson reopens there; a finished lesson reopens at Why.
 
+## Quiz screen
+
+Landscape like the lesson, no rail. Left pane (about 30%): a back button and a small "Quiz 2 of 3" header; a quiz that
+shows a note on the staff draws a mini treble staff with it below (TalkBack reads "A note on the staff: G4"). Right
+pane: the prompt ("Play every F", "A skip up from E4", "Hold C4 for 2 clicks"), the progress ("1 of 3", "✓ Well done"),
+the gentle wrong-key hint in a polite live region ("That was F4. G is in the three black keys, just left of the middle
+one."; a chord says "Try again"), a count-in numeral for quizzes with a click and "Skip", always visible. The key
+strip runs along the bottom: held keys lit, the wrong key grey, the expected key glowing after a wrong key. There is no
+See step and no card. After the last quiz the right pane reads "3 quizzes: 2 clean" with "Done" back to Today. The
+piano is handed over as practice does: leaving closes it first.
+
 ## Card animations
 
 Each concept card has a short looping animation, shown on the lesson's Why step and in the card pane (`CardAnimation` in
@@ -341,6 +352,8 @@ weekly goal dots, "Practised 9 of the last 16 days" and the update banner.
   "n more to review". **New lesson**: surface with a border titled with the first unticked concept, its passage and minutes, "Begin" and the "why now" line; it opens the lesson (absent once every concept is ticked). **Song**: "♩ = 72 · rung 3
   of 5" (wait mode reads "Wait mode · rung 1 of 5") and "Continue". Each opens Practice on the card's passage and
   rung (the lesson card opens the lesson); with no piano connected a card opens Pianos.
+- **Quizzes** card (first, when due skills have a quiz): surface with a 2 dp border in the primary colour, "Quick
+  quizzes · 3", "About 1 min, checked by your piano" and "Start quizzes"; it opens the quiz screen.
 - **Ear** card: surface with a 2 dp border in the ear accent (above), the label "EAR · 3 MIN" in amber,
   the first skill's title, "3 skills today" and an amber "Start ear" button. It opens the Ear screen with its skills.
 - **Session bar**: Review, Lesson, Song and (amber) Ear segments with widths proportional to their minutes (a zero

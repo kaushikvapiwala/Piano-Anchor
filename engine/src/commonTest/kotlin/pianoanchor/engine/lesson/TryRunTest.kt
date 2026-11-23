@@ -52,12 +52,15 @@ class TryRunTest {
     }
 
     @Test
-    fun `find all breaks a tie towards the lower key and rejects keys outside the range`() {
+    fun `find all breaks a tie towards the lower key and ignores its letter outside the range`() {
         val run = TryRun(TryCheck.FindAll(0, 48..72)).press(60)
         // 54 is 6 from 48 and 6 from 60 (found), 72 is 18 away: the lower key wins a tie of 48 and 60.
         assertEquals(48, run.press(54).progress.expected)
-        // C0 is the right pitch class but outside the range.
-        assertEquals(1, run.press(12).progress.wrongCount)
+        // C0 is the right pitch class but outside the range: neither found nor wrong.
+        assertEquals(run.progress, run.press(12).progress)
+        assertEquals(run.progress, run.press(84).progress)
+        // A key of another pitch class outside the range is still wrong.
+        assertEquals(1, run.press(13).progress.wrongCount)
     }
 
     @Test

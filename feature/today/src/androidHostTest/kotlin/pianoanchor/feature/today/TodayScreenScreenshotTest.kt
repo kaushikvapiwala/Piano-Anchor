@@ -50,6 +50,24 @@ class TodayScreenScreenshotTest {
     fun connectingPiano() = capture("connecting", TodayState(connecting = true, daysThisWeek = 2))
 
     @Test
+    fun quizzesCardScreen() =
+        capture(
+            "quizzes_card",
+            TodayState(
+                session =
+                    Session(
+                        cards = listOf(quizzesCard(), Card.Song(passage("hot-cross-buns"), TempoRung.P70, 6)),
+                        reviewMinutes = 1,
+                        lessonMinutes = 0,
+                        songMinutes = 6,
+                        earMinutes = 0,
+                        moreDue = emptyList(),
+                    ),
+                piano = piano,
+            ),
+        )
+
+    @Test
     fun earCard() =
         capture(
             "ear_card",

@@ -255,43 +255,18 @@ public class LessonViewModel(
             if (bpm == null) {
                 accepting = true
             } else {
-                countIn(bpm)
+                countIn(
+                    metronome,
+                    time,
+                    bpm,
+                    { n -> mutableState.update { it.copy(countIn = n) } },
+                ) { accepting = true }
             }
             awaitCancellation()
         } finally {
             withContext(NonCancellable) { if (bpm != null) metronome.stop() }
         }
     }
-
-    /** Starts the click and counts one bar in ("3, 2, 1"); notes count from half a beat before the first beat. */
-    private suspend fun countIn(bpm: Int) {
-        val beat = beatNanos(bpm)
-        metronome.start(time.nowNanos() + beat, beat, BEATS_PER_BAR)
-        val beatMs = beat / NANOS_PER_MILLI
-        // The count-in is one bar: the click starts a beat from now, then four clicks, the last three numbered.
-        delay(beatMs)
-        for (i in 1..BEATS_PER_BAR) {
-            val numeral = BEATS_PER_BAR + 1 - i
-            mutableState.update { it.copy(countIn = numeral.takeIf { n -> n < BEATS_PER_BAR }) }
-            if (i < BEATS_PER_BAR) {
-                delay(beatMs)
-            } else {
-                // A first beat played a little early still counts: notes count from half a beat before it.
-                delay(beatMs - beatMs / 2)
-                accepting = true
-                delay(beatMs / 2)
-            }
-        }
-        mutableState.update { it.copy(countIn = null) }
-    }
-
-    private fun clickOf(check: TryCheck): Int? =
-        when (check) {
-            is TryCheck.Repeat -> check.bpm
-            is TryCheck.Hold -> check.bpm
-            is TryCheck.StressBeatOne -> check.bpm
-            else -> null
-        }
 
     private suspend fun readPiano() {
         try {

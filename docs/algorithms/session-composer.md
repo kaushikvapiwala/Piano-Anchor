@@ -6,6 +6,12 @@ Song and Ear segments. It is pure; the Today screen supplies the history from `A
 through `passageHistories` (beside `PassageHistory`), the loader Songs shares.
 
 ## Cards
+- **Quizzes.** Before the cold open: the due core-track skills (plan order, most overdue first) that `QuizMaker` has a
+  quiz for, at most `QUIZ_MAX_PER_DAY`, as one card the quiz screen runs (`docs/algorithms/quizzes.md`). Each quiz is
+  seeded by the learner day and its skill id, so a day's quiz is stable. A quizzed skill counts as reviewed today: the
+  cold open and `moreDue` skip it. Skills without a quiz (passage concepts, hand-shape), ear skills and unknown skills
+  never get one. Its minutes are `ceil(count * QUIZ_SECONDS / 60)` and come off the budget before the shares are split;
+  they are added to the Review segment. With no quizzable due skill there is no card.
 - **Cold open.** The first due skill of the plan that is not an ear skill (the plan lists them lowest retrievability first). Of the passages
   that exercise it and whose skills are all learned (the due skill itself always counts, so its own passage
   qualifies; a piece needing later skills is not used to review an early one), the one played least recently (never played counts as oldest; ties go to curriculum order). Its
@@ -31,6 +37,7 @@ through `passageHistories` (beside `PassageHistory`), the loader Songs shares.
   passage. No ear skills means no card. Ear skills never become the cold open, the lesson or `moreDue`.
 
 ## Minutes
+The Quizzes card takes its minutes first; the rest of the budget is split as below.
 The budget is split by `SESSION_SHARE_REVIEW`, `SESSION_SHARE_LESSON`, `SESSION_SHARE_SONG` and `SESSION_SHARE_EAR`
 (20/35/30/15 %). A missing card's share goes to the others in proportion. Minutes are whole: each share is rounded
 down and the leftover minutes go to the largest fractional parts, ties in the order review, lesson, song, ear, so they

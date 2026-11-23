@@ -909,4 +909,40 @@ public object Tunables {
      * Source: a starting value.
      */
     public const val LESSON_DEMO_LOUD_VELOCITY: Int = 100
+
+    /**
+     * The most review quizzes Today's warm-up offers in one day.
+     *
+     * Why: the warm-up stays about a minute.
+     *
+     * Source: the owner's decision.
+     */
+    public const val QUIZ_MAX_PER_DAY: Int = 3
+
+    /**
+     * The click tempo, in beats per minute, of the review quizzes that use one (hold, clicks, beat-1 accent).
+     *
+     * Why: one click a second keeps every clicked quiz, count-in included, within QUIZ_SECONDS.
+     *
+     * Source: the quiz spec (#195).
+     */
+    public const val QUIZ_BPM: Int = 60
+
+    /**
+     * The time one review quiz is budgeted, in seconds; Today's Quizzes card takes `ceil(count * this / 60)` minutes.
+     *
+     * Why: the upper bound of "10-20 s" in the course doc, so the budget never runs short.
+     *
+     * Source: `docs/course/beginner-course.md`, "Review".
+     */
+    public const val QUIZ_SECONDS: Int = 20
+
+    /**
+     * The keys a "play every" quiz searches (MIDI notes, inclusive).
+     *
+     * Why: three octaves around middle C keep "play every F" to 3-4 targets, within 20 s.
+     *
+     * Source: a starting value.
+     */
+    public val QUIZ_RANGE: IntRange = 48..84
 }

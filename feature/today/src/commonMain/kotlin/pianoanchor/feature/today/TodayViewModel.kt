@@ -109,7 +109,8 @@ public class TodayViewModel(
 
     /**
      * Where tapping [card] leads: the lesson of a Lesson card's concept, Practice on another passage card's passage
-     * and rung, the ear screen with an Ear card's skills, or Pianos when no piano is connected.
+     * and rung, the ear screen with an Ear card's skills, the quizzes of a Quizzes card,
+     * or Pianos when no piano is connected.
      */
     public fun target(card: Card): TodayTarget {
         val piano = mutableState.value.piano ?: return TodayTarget.Pianos
@@ -117,6 +118,7 @@ public class TodayViewModel(
             is Card.Lesson -> TodayTarget.Lesson(piano.device, card.skill.id)
             is Card.PassageCard -> TodayTarget.Practice(piano.device, card.passage.id, card.rung, card.mode)
             is Card.Ear -> TodayTarget.Ear(piano.device, card.skills)
+            is Card.Quizzes -> TodayTarget.Quizzes(piano.device, card.quizzes)
         }
     }
 
@@ -141,6 +143,8 @@ public class TodayViewModel(
                     stored.dailyBudget,
                     history,
                     learner.learnedSkills(),
+                    learnerDay(now, zone),
+                    quizzesDone = learner.quizzesOn(learnerDay(now, zone)),
                 )
             mutableState.update {
                 it.copy(

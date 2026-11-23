@@ -1,5 +1,6 @@
 package pianoanchor.engine.session
 
+import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RightsStatus
@@ -12,7 +13,10 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.DailyPlan
 import pianoanchor.engine.lesson.CourseProgress
+import pianoanchor.engine.lesson.Quiz
+import pianoanchor.engine.lesson.QuizMaker
 import pianoanchor.engine.matcher.TempoRung
+import kotlin.random.Random
 import kotlin.time.Instant
 
 /** One card of Today, for about [minutes]. */
@@ -31,6 +35,15 @@ public sealed interface Card {
     /** Ear skills for today: due ones first (plan order), then new ones. Opened by the ear screen. */
     public data class Ear(
         val skills: List<Skill>,
+        override val minutes: Int,
+    ) : Card
+
+    /**
+     * Quick piano-checked quizzes of the most overdue due skills, opened by the quiz screen. They count as those
+     * skills' review of the day, so the cold open skips them.
+     */
+    public data class Quizzes(
+        val quizzes: List<Quiz>,
         override val minutes: Int,
     ) : Card
 
@@ -85,6 +98,9 @@ public data class Session(
     val moreDue: List<SkillState>,
 )
 
+private const val SEED_PRIME = 31L
+private const val SECONDS_PER_MINUTE = 60
+
 /** The index of the Ear segment among the shares. */
 private const val EAR_SEGMENT = 3
 
@@ -95,8 +111,11 @@ public object SessionComposer {
      * [history] is keyed by passage id; a passage missing from it was never played. [learned] are the ids of every
      * learned skill (the plan lists only due and new ones); [graph] gives each skill its track. The cold open uses only
      * passages whose skills are all learned, never the lesson's passage. The lesson is the first course concept without
-     * a clean wait-mode run in [history]; the plan's new skills play no part. The song is a piece with no lock: played
-     * before new, then public domain before original, then curriculum order.
+     * a clean wait-mode run in [history]; the plan's new skills play no part. Up to QUIZ_MAX_PER_DAY of the due core
+     * skills that have a quiz (fewer by [quizzesDone], the quizzes already recorded that day) come first as a Quizzes
+     * card (seeded by [day] and the skill id, so a day's quiz is stable); the cold open takes the other due skills.
+     * The quizzes' minutes are part of the Review segment.
+     * The song is a piece with no lock: played before new, then public domain before original, then curriculum order.
      */
     public fun compose(
         plan: DailyPlan,
@@ -104,9 +123,15 @@ public object SessionComposer {
         budget: DailyBudget,
         history: Map<String, PassageHistory>,
         learned: Set<String>,
+        day: LocalDate,
         graph: SkillGraph = curriculum.graph,
+        quizzesDone: Int = 0,
     ): Session {
-        val (dueEar, dueOther) = plan.due.partition { graph.byId(it.skillId)?.track == Track.EAR }
+        val (dueEar, dueNotEar) = plan.due.partition { graph.byId(it.skillId)?.track == Track.EAR }
+        val taught = CourseProgress.ticked(curriculum, history)
+        val quizzes = quizzes(dueNotEar, graph, taught, day, Tunables.QUIZ_MAX_PER_DAY - quizzesDone)
+        val quizzed = quizzes.map { it.skillId }.toSet()
+        val dueOther = dueNotEar.filter { it.skillId !in quizzed }
         val lesson = lesson(curriculum, history, graph)
         val cold = coldOpen(dueOther, curriculum, history, learned, lesson?.let { it.passage.id })
         val earSkills = dueEar.mapNotNull { graph.byId(it.skillId) } + plan.new.filter { it.track == Track.EAR }
@@ -119,8 +144,10 @@ public object SessionComposer {
                 Tunables.SESSION_SHARE_SONG.takeIf { song != null } ?: 0.0,
                 Tunables.SESSION_SHARE_EAR.takeIf { earSkills.isNotEmpty() } ?: 0.0,
             )
-        val minutes = split(budget.minutes, shares)
-        val (review, lessonMinutes, songMinutes) = minutes
+        val quizMinutes = quizMinutes(quizzes.size)
+        val minutes = split((budget.minutes - quizMinutes).coerceAtLeast(0), shares)
+        val (coldMinutes, lessonMinutes, songMinutes) = minutes
+        val review = coldMinutes + quizMinutes
         val earMinutes = minutes[EAR_SEGMENT]
         val ear =
             Card
@@ -128,7 +155,8 @@ public object SessionComposer {
                 .takeIf { earSkills.isNotEmpty() }
         val cards =
             listOfNotNull(
-                cold?.copy(minutes = review),
+                Card.Quizzes(quizzes, quizMinutes).takeIf { quizzes.isNotEmpty() },
+                cold?.copy(minutes = coldMinutes),
                 lesson?.copy(minutes = lessonMinutes),
                 song?.copy(minutes = songMinutes),
                 ear,
@@ -142,6 +170,28 @@ public object SessionComposer {
             dueOther.filter { state -> state.skillId != cold?.let { it.skill.id } },
         )
     }
+
+    /** The quizzes of the most overdue due core skills that have one, at most [allowance]. */
+    private fun quizzes(
+        due: List<SkillState>,
+        graph: SkillGraph,
+        taught: Set<String>,
+        day: LocalDate,
+        allowance: Int,
+    ): List<Quiz> =
+        due
+            .filter { graph.byId(it.skillId)?.track == Track.CORE }
+            .mapNotNull { QuizMaker.make(it.skillId, taught, Random(seed(day, it.skillId))) }
+            .take(allowance.coerceAtLeast(0))
+
+    private fun seed(
+        day: LocalDate,
+        skillId: String,
+    ): Long = day.toEpochDays() * SEED_PRIME + skillId.hashCode()
+
+    /** Whole minutes for [count] quizzes, rounded up. */
+    private fun quizMinutes(count: Int): Int =
+        (count * Tunables.QUIZ_SECONDS + SECONDS_PER_MINUTE - 1) / SECONDS_PER_MINUTE
 
     private fun coldOpen(
         due: List<SkillState>,
