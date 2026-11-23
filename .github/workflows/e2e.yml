@@ -47,6 +47,12 @@ jobs:
         run: >-
           ./gradlew :app-android:atdPixelDebugAndroidTest
           -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
+      # Print each failing test and its message into the log, so a failure is readable without the artifact.
+      - name: Show failed tests
+        if: failure()
+        run: |
+          find app-android/build/outputs/androidTest-results -name 'TEST-*.xml' -print0 |
+            xargs -0 -r grep -h -B1 -A12 '<failure' || echo "No test results found."
       - name: Upload test reports on failure
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
