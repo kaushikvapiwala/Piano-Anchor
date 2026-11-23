@@ -116,8 +116,11 @@ class WalkingSkeletonEndToEndTest {
 
     @Test
     fun playsCdeTwiceAndCountsRuns() {
-        // Today is the start screen; the monitor is behind its Pianos entry.
-        compose.onNodeWithText(text(ShellRes.string.nav_pianos)).performClick()
+        // Today is the start screen; the monitor is behind its Pianos entry. Wait for it: when the piano is already
+        // registered, @Before returns before Today has replaced the start route.
+        val pianos = text(ShellRes.string.nav_pianos)
+        awaitText(pianos)
+        compose.onNodeWithText(pianos).performClick()
         val select = text(MonitorRes.string.monitor_select_device, piano.name)
         compose.waitUntil(UI_TIMEOUT_MS) {
             compose.onAllNodesWithContentDescription(select).fetchSemanticsNodes().isNotEmpty()
