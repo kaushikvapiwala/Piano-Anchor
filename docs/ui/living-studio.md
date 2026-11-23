@@ -255,9 +255,33 @@ per piece in content order. Cards are at least 56 dp high; the grid scrolls and 
 - **Unlocked card**: the title and a progress line: "New", "rung 3 of 5" (the next rung to play, as on Today's Song
   card) or "✓ Mastered". Tapping opens Practice on that piece at its next rung (a mastered piece at its top rung);
   with no piano connected it opens Pianos.
+- **Ticks**: a piece whose course concepts are all passed (a clean wait-mode run) shows a plum "✓" before its title and
+  TalkBack adds "Passed". A piece that exercises the suggested next concept shows a "Next" chip beside its title and
+  TalkBack adds "Suggested next".
 - **Locked card**: dimmed, with a lock and "Needs: <skill title>"; not tappable. TalkBack reads "Locked. Needs <skill
   title>."
 - **Storage error**: an `errorContainer` card with Retry. The list reloads when the screen is opened again after a run.
+
+## Lesson screen
+
+Landscape (915×412 dp), no rail. Left pane (about 40%): a back button and the concept's title, the four card fields
+(What, Why, How, When; static for now, animations come later) and the dot row. Right pane (about 60%): the content of
+the current step; only this pane changes between steps. A key strip runs along the bottom.
+
+- **Dots**: five tappable buttons (44 dp or more) with the step name under each; filled up to the current step, the
+  current name in bold. Any dot jumps to its step. TalkBack reads "Step 3 of 5, Try, current". When the Try is a
+  passage the Try dot reads "In Use" (TalkBack "Step 3 of 5, Try, in Use") and jumps to Use.
+- **Why**: the card's Why line and "Next". **See**: "Watch and listen: the keys light as they sound." with "Play again"
+  (off while sounding) and "Skip"; a concept with nothing to hear says "Watch the hand" with "Next". **Try**: the
+  per-check instruction, the progress ("3 of 8", "✓ Well done" when passed), "That was D♯4. Waiting for D4." after a
+  wrong key (a polite live region) and a big count-in numeral for checks with a click; "Skip" is always there; a
+  dropped piano is explained in place. **Use**: the first passage's title, "Play it" (opens Practice in wait mode, which
+  ends in Results with "Finish lesson") and "Next". **Recap**: "You’ve learned <concept>. Next: <next concept>." with
+  "Next lesson" and "Done", or "You've finished the course!" with "Done".
+- **Key strip**: whole octaves around the Try's notes (at least two; the whole keyboard for "every C"). Sounding or
+  held keys are blue, the key of a wrong press grey, and the expected key glows in the accent (always for a lit key or
+  a sequence, after a wrong key for the rest).
+- The step is saved as it changes and the lesson reopens there; a finished lesson reopens at Why.
 
 ## Pianos screen
 
@@ -287,9 +311,9 @@ weekly goal dots, "Practised 9 of the last 16 days" and the update banner.
   again. Below it, the weekly goal dots (one per goal day, plum for each day practised since Monday).
 - TalkBack reads the plan first, then the side pane.
 - **Cold open** card: dark (`#2A2730`, light text, light button) with "Start cold open", the skill, its minutes and
-  "n more to review". **New lesson**: surface with a border, "Begin" and the "why now" line. **Song**: "♩ = 72 · rung 3
+  "n more to review". **New lesson**: surface with a border titled with the first unticked concept, its passage and minutes, "Begin" and the "why now" line; it opens the lesson (absent once every concept is ticked). **Song**: "♩ = 72 · rung 3
   of 5" (wait mode reads "Wait mode · rung 1 of 5") and "Continue". Each opens Practice on the card's passage and
-  rung; with no piano connected a card opens Pianos.
+  rung (the lesson card opens the lesson); with no piano connected a card opens Pianos.
 - **Ear** card: surface with a 2 dp border in the ear accent (above), the label "EAR · 3 MIN" in amber,
   the first skill's title, "3 skills today" and an amber "Start ear" button. It opens the Ear screen with its skills.
 - **Session bar**: Review, Lesson, Song and (amber) Ear segments with widths proportional to their minutes (a zero

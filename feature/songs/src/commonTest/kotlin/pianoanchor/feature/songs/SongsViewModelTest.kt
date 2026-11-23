@@ -14,6 +14,8 @@ import pianoanchor.core.model.MidiDevice
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.PieceStatus
 import pianoanchor.engine.content.PieceView
+import pianoanchor.engine.content.Skills
+import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakePiano
@@ -134,6 +136,67 @@ class SongsViewModelTest {
             val piece = vm.piece("lightly-row")
             assertEquals(PieceStatus.IN_PROGRESS, piece.status)
             assertEquals(1, piece.cleanRungs)
+        }
+
+    @Test
+    fun aConceptTicksOnACleanWaitRunAndTheFirstUntickedIsNext() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            assertEquals(emptySet(), vm.state.value.ticked)
+            assertEquals(Skills.HAND_SHAPE.id, vm.state.value.next)
+
+            // A clean wait-mode run of Middle C march ticks middle-c; hand-shape stays next (map order).
+            playClean("a", "builtin:middle-c-march", null)
+            vm.refresh()
+            runCurrent()
+
+            assertEquals(setOf(Skills.MIDDLE_C.id), vm.state.value.ticked)
+            assertEquals(Skills.HAND_SHAPE.id, vm.state.value.next)
+        }
+
+    @Test
+    fun aPieceTicksWhenItsConceptsAreTickedAndMarksTheNextConcept() =
+        runTest(dispatcher) {
+            // The concepts before the first tunes are passed through their first passages.
+            CourseProgress
+                .skills(Curriculum)
+                .takeWhile { it != Skills.FINGER_NUMBER_TUNES }
+                .forEach { skill ->
+                    val passage = Curriculum.passages.first { skill.id in it.skills }
+                    playClean("p-${passage.id}", passage.id, null)
+                }
+            val vm = viewModel()
+
+            val hot = vm.piece("hot-cross-buns")
+            assertEquals(Skills.FINGER_NUMBER_TUNES.id, vm.state.value.next)
+            assertTrue(vm.state.value.isNext(hot))
+            assertFalse(vm.state.value.isTicked(hot))
+
+            playClean("hot", hot.passage.id, null)
+            vm.refresh()
+            runCurrent()
+
+            assertTrue(vm.state.value.isTicked(vm.piece("hot-cross-buns")))
+            assertFalse(vm.state.value.isNext(vm.piece("hot-cross-buns")))
+            // A piece of the More songs unit has no course concept: no tick, no chip.
+            val saints = vm.piece("when-the-saints-go-marching-in")
+            assertFalse(vm.state.value.isTicked(saints))
+            assertFalse(vm.state.value.isNext(saints))
+        }
+
+    @Test
+    fun aFailedReadClearsTheTicks() =
+        runTest(dispatcher) {
+            playClean("a", "builtin:middle-c-march", null)
+            val vm = viewModel()
+            assertEquals(setOf(Skills.MIDDLE_C.id), vm.state.value.ticked)
+
+            attempts.failing = true
+            vm.refresh()
+            runCurrent()
+
+            assertEquals(emptySet(), vm.state.value.ticked)
+            assertNull(vm.state.value.next)
         }
 
     @Test

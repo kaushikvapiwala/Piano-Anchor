@@ -11,6 +11,7 @@ import pianoanchor.core.model.Track
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.DailyPlan
+import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.matcher.TempoRung
 import kotlin.time.Instant
 
@@ -46,7 +47,10 @@ public sealed interface Card {
         override val mode: RunMode,
     ) : PassageCard
 
-    /** First passage of a new skill; [unlockedBy] names the prerequisites just learned ("why now"). */
+    /**
+     * The first unticked course concept (`CourseProgress.next`), opened as a five-step lesson; [passage] is the
+     * concept's first passage (the lesson's Use step) and [unlockedBy] names its prerequisites ("why now").
+     */
     public data class Lesson(
         override val passage: Passage,
         override val rung: TempoRung,
@@ -90,8 +94,9 @@ public object SessionComposer {
      * Composes the session for [plan] over [curriculum], splitting [budget] by the SESSION_SHARE tunables.
      * [history] is keyed by passage id; a passage missing from it was never played. [learned] are the ids of every
      * learned skill (the plan lists only due and new ones); [graph] gives each skill its track. The cold open uses only
-     * passages whose skills are all learned. The song is a piece with no lock: played before new, then public domain
-     * before original, then curriculum order.
+     * passages whose skills are all learned, never the lesson's passage. The lesson is the first course concept without
+     * a clean wait-mode run in [history]; the plan's new skills play no part. The song is a piece with no lock: played
+     * before new, then public domain before original, then curriculum order.
      */
     public fun compose(
         plan: DailyPlan,
@@ -102,8 +107,8 @@ public object SessionComposer {
         graph: SkillGraph = curriculum.graph,
     ): Session {
         val (dueEar, dueOther) = plan.due.partition { graph.byId(it.skillId)?.track == Track.EAR }
-        val cold = coldOpen(dueOther, curriculum, history, learned)
-        val lesson = lesson(plan, curriculum, graph)
+        val lesson = lesson(curriculum, history, graph)
+        val cold = coldOpen(dueOther, curriculum, history, learned, lesson?.let { it.passage.id })
         val earSkills = dueEar.mapNotNull { graph.byId(it.skillId) } + plan.new.filter { it.track == Track.EAR }
         val used = listOfNotNull(cold?.passage, lesson?.passage).map { it.id }
         val song = song(curriculum, history, learned, used)
@@ -143,11 +148,13 @@ public object SessionComposer {
         curriculum: Curriculum,
         history: Map<String, PassageHistory>,
         learned: Set<String>,
+        lessonPassageId: String?,
     ): Card.ColdOpen? =
         due.firstNotNullOfOrNull { state ->
             curriculum.passages
                 .filter { passage ->
-                    state.skillId in passage.skills &&
+                    passage.id != lessonPassageId &&
+                        state.skillId in passage.skills &&
                         passage.skills.all { it in learned || it == state.skillId }
                 }.minWithOrNull(compareBy(nullsFirst()) { history[it.id]?.lastPlayed })
                 ?.let { passage ->
@@ -161,20 +168,14 @@ public object SessionComposer {
         }
 
     private fun lesson(
-        plan: DailyPlan,
         curriculum: Curriculum,
+        history: Map<String, PassageHistory>,
         graph: SkillGraph,
     ): Card.Lesson? {
-        val skill = plan.new.firstOrNull { it.track != Track.EAR } ?: return null
-        return curriculum.passages.firstOrNull { skill.id in it.skills }?.let { passage ->
-            Card.Lesson(
-                passage,
-                TempoRung.WAIT,
-                0,
-                skill,
-                graph.skills.filter { it.id in skill.prerequisites },
-            )
-        }
+        val skill = CourseProgress.next(curriculum, CourseProgress.ticked(curriculum, history)) ?: return null
+        // Every course concept has a passage (checked by the content tests).
+        val passage = curriculum.passages.first { skill.id in it.skills }
+        return Card.Lesson(passage, TempoRung.WAIT, 0, skill, graph.skills.filter { it.id in skill.prerequisites })
     }
 
     private fun song(

@@ -24,11 +24,13 @@ private class Action(
     val atMs: Long,
     val note: MidiNote,
     val on: Boolean,
+    val velocity: Int?,
 )
 
 /**
- * Plays [tones] on [device]: a NoteOn (velocity `Tunables.PLAYBACK_VELOCITY`, channel 0) at each tone's startMs and a
- * NoteOff at startMs + lengthMs, timed with delay() from the call. Returns when the last NoteOff is sent.
+ * Plays [tones] on [device]: a NoteOn (the tone's velocity, else `Tunables.PLAYBACK_VELOCITY`; channel 0) at each
+ * tone's startMs and a NoteOff at startMs + lengthMs, timed with delay() from the call. Returns when the last
+ * NoteOff is sent.
  * At the same time a NoteOff goes before a NoteOn, so a repeated note is struck again cleanly.
  * Cancelled or failed midway, it sends a NoteOff (in NonCancellable) for every key still down, stopping quietly at
  * the first [MidiDeviceUnavailableException], then rethrows.
@@ -44,7 +46,10 @@ public suspend fun MidiOutputPort.playTones(
     val actions =
         tones
             .flatMap {
-                listOf(Action(it.startMs, it.note, true), Action(it.startMs + it.lengthMs, it.note, false))
+                listOf(
+                    Action(it.startMs, it.note, true, it.velocity),
+                    Action(it.startMs + it.lengthMs, it.note, false, null),
+                )
             }.sortedWith(compareBy({ it.atMs }, { it.on }))
     val down = HashSet<MidiNote>()
     var at = 0L
@@ -54,7 +59,7 @@ public suspend fun MidiOutputPort.playTones(
             at = action.atMs
             val message =
                 if (action.on) {
-                    NoteOn(0, CHANNEL, action.note, Tunables.PLAYBACK_VELOCITY)
+                    NoteOn(0, CHANNEL, action.note, action.velocity ?: Tunables.PLAYBACK_VELOCITY)
                 } else {
                     NoteOff(0, CHANNEL, action.note, 0)
                 }

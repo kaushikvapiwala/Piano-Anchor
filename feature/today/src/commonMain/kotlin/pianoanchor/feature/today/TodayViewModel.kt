@@ -108,12 +108,13 @@ public class TodayViewModel(
     }
 
     /**
-     * Where tapping [card] leads: Practice on a passage card's passage and rung, the ear screen with an Ear card's
-     * skills, or Pianos when no piano is connected.
+     * Where tapping [card] leads: the lesson of a Lesson card's concept, Practice on another passage card's passage
+     * and rung, the ear screen with an Ear card's skills, or Pianos when no piano is connected.
      */
     public fun target(card: Card): TodayTarget {
         val piano = mutableState.value.piano ?: return TodayTarget.Pianos
         return when (card) {
+            is Card.Lesson -> TodayTarget.Lesson(piano.device, card.skill.id)
             is Card.PassageCard -> TodayTarget.Practice(piano.device, card.passage.id, card.rung, card.mode)
             is Card.Ear -> TodayTarget.Ear(piano.device, card.skills)
         }

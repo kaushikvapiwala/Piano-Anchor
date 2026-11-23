@@ -37,6 +37,16 @@ class SettingsTest {
     }
 
     @Test
+    fun noLessonHasASavedStepByDefault() {
+        assertEquals(emptyMap(), Settings().lessonSteps)
+        assertEquals(
+            LessonStep.TRY,
+            Settings(lessonSteps = mapOf("middle-c" to LessonStep.TRY)).lessonSteps["middle-c"],
+        )
+        assertEquals(listOf("WHY", "SEE", "TRY", "USE", "RECAP"), LessonStep.entries.map { it.name })
+    }
+
+    @Test
     fun budgetsKnowTheirMinutes() {
         assertEquals(listOf(15, 20, 30), DailyBudget.entries.map { it.minutes })
     }

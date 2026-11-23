@@ -64,6 +64,30 @@ class ResultsScreenTest {
         }
 
     @Test
+    fun finishLessonShowsOnlyWhenStartedFromALesson() =
+        runComposeUiTest {
+            var finished = 0
+            var fromLesson by mutableStateOf(false)
+            setContent {
+                PianoAnchorTheme {
+                    ResultsScreen(
+                        ready,
+                        onBack = {},
+                        onTryAgain = {},
+                        onRetry = {},
+                        onFinishLesson = if (fromLesson) ({ finished++ }) else null,
+                    )
+                }
+            }
+
+            onNodeWithText("Finish lesson").assertDoesNotExist()
+            fromLesson = true
+            onNodeWithText("Finish lesson").performClick()
+            assertEquals(1, finished)
+            onNodeWithText("Try again").assertIsDisplayed()
+        }
+
+    @Test
     fun theSpotLoopActionNamesItsBarsAndStartsTheLoop() =
         runComposeUiTest {
             val started = mutableListOf<BarRange>()

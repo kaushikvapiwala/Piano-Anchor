@@ -55,6 +55,7 @@ dependencies {
     implementation(project(":feature:ear"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:practice"))
+    implementation(project(":feature:lesson"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:songs"))
     implementation(project(":feature:today"))

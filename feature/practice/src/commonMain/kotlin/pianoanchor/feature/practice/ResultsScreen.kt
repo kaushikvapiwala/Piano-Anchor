@@ -51,6 +51,7 @@ import pianoanchor.feature.practice.resources.results_caption_tempo
 import pianoanchor.feature.practice.resources.results_details
 import pianoanchor.feature.practice.resources.results_details_collapsed
 import pianoanchor.feature.practice.resources.results_details_expanded
+import pianoanchor.feature.practice.resources.results_finish_lesson
 import pianoanchor.feature.practice.resources.results_headline_clean
 import pianoanchor.feature.practice.resources.results_headline_good
 import pianoanchor.feature.practice.resources.results_headline_keep_practising
@@ -80,7 +81,8 @@ import pianoanchor.ui.shell.pianoAnchorColors
 /**
  * The results screen (Living Studio mock, `docs/ui/living-studio.md`): the run's caption and headline, the Pitch
  * tile and "Try again". Stateless: see [ResultsViewModel]. [onBack] leaves for the pianos; [onTryAgain] practises
- * the passage again; [onRetry] reads the run again after [ResultsState.Unavailable]; [onLoopBars] starts a spot
+ * the passage again; [onFinishLesson], set only when the run started from a lesson, adds "Finish lesson" (back to
+ * the lesson's recap); [onRetry] reads the run again after [ResultsState.Unavailable]; [onLoopBars] starts a spot
  * loop on the bars of [ResultsState.Ready.spot], offered as "Loop bars 5–6" under "Try again" when there are any.
  */
 @Composable
@@ -91,6 +93,7 @@ public fun ResultsScreen(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
     onLoopBars: (BarRange) -> Unit = {},
+    onFinishLesson: (() -> Unit)? = null,
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
         Column(
@@ -124,7 +127,7 @@ public fun ResultsScreen(
                 }
 
                 is ResultsState.Ready -> {
-                    Ready(state, onTryAgain, onLoopBars)
+                    Ready(state, onTryAgain, onLoopBars, onFinishLesson)
                 }
             }
         }
@@ -182,6 +185,7 @@ private fun Ready(
     state: ResultsState.Ready,
     onTryAgain: () -> Unit,
     onLoopBars: (BarRange) -> Unit,
+    onFinishLesson: (() -> Unit)?,
 ) {
     Words(state)
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -198,8 +202,35 @@ private fun Ready(
     }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onTryAgain, modifier = Modifier.height(44.dp), shape = RoundedCornerShape(22.dp)) {
-                Text(stringResource(Res.string.results_try_again), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            if (onFinishLesson != null) {
+                Button(onClick = onFinishLesson, modifier = Modifier.height(44.dp), shape = RoundedCornerShape(22.dp)) {
+                    Text(
+                        stringResource(Res.string.results_finish_lesson),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            }
+            if (onFinishLesson == null) {
+                Button(onClick = onTryAgain, modifier = Modifier.height(44.dp), shape = RoundedCornerShape(22.dp)) {
+                    Text(
+                        stringResource(Res.string.results_try_again),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            } else {
+                OutlinedButton(
+                    onClick = onTryAgain,
+                    modifier = Modifier.height(44.dp),
+                    shape = RoundedCornerShape(22.dp),
+                ) {
+                    Text(
+                        stringResource(Res.string.results_try_again),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
             }
             state.spot?.let { spot ->
                 OutlinedButton(

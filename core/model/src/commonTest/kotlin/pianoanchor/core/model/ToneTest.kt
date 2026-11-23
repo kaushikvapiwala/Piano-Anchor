@@ -17,4 +17,12 @@ class ToneTest {
     fun `a tone cannot be empty`() {
         assertFailsWith<IllegalArgumentException> { Tone(MidiNote.MIDDLE_C, 0, 0) }
     }
+
+    @Test
+    fun `a tone may carry a velocity from 1 to 127`() {
+        assertEquals(null, Tone(MidiNote.MIDDLE_C, 0, 500).velocity)
+        assertEquals(40, Tone(MidiNote.MIDDLE_C, 0, 500, velocity = 40).velocity)
+        assertFailsWith<IllegalArgumentException> { Tone(MidiNote.MIDDLE_C, 0, 500, velocity = 0) }
+        assertFailsWith<IllegalArgumentException> { Tone(MidiNote.MIDDLE_C, 0, 500, velocity = 128) }
+    }
 }

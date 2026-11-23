@@ -5,6 +5,7 @@ import kotlinx.datetime.TimeZone
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Skill
 import pianoanchor.core.ports.AttemptRepositoryPort
@@ -24,6 +25,7 @@ import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.ear.EarViewModel
+import pianoanchor.feature.lesson.LessonViewModel
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.onboarding.OnboardingViewModel
 import pianoanchor.feature.practice.CalibrationSkips
@@ -108,6 +110,9 @@ val appModule =
             ) {
                 Uuid.random().toString()
             }
+        }
+        viewModel { (device: MidiDevice, skillId: String, startAt: LessonStep?) ->
+            LessonViewModel(device, skillId, get(), get(), get(), get(), get(), get(), get(), startAt)
         }
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
         viewModel { (attemptId: String, rung: TempoRung) -> ResultsViewModel(attemptId, rung, get(), get()) }

@@ -36,6 +36,7 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pianoanchor.core.model.BarRange
+import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
@@ -44,6 +45,9 @@ import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.ear.EarActions
 import pianoanchor.feature.ear.EarScreen
 import pianoanchor.feature.ear.EarViewModel
+import pianoanchor.feature.lesson.LessonActions
+import pianoanchor.feature.lesson.LessonScreen
+import pianoanchor.feature.lesson.LessonViewModel
 import pianoanchor.feature.monitor.MonitorActions
 import pianoanchor.feature.monitor.MonitorScreen
 import pianoanchor.feature.monitor.MonitorViewModel
@@ -88,8 +92,8 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Where the app is: the first-launch onboarding, Today, the pianos (the note monitor), the settings, practising or
- * calibrating, or the results.
+ * Where the app is: the first-launch onboarding, Today, the pianos (the note monitor), the settings, a lesson,
+ * practising or calibrating, or the results.
  */
 private sealed interface Destination {
     /** The start screen. */
@@ -118,6 +122,7 @@ private sealed interface Destination {
      * Practising [passageId] on [device], starting on [rung] (a card's, or the one picked before a calibration);
      * back returns to the screen that opened it ([from]): Today, Songs or the monitor. With [spot], it loops those
      * bars of the passage one rung below [rung] (a spot loop); "Play it" then plays the whole passage at [rung].
+     * [fromLesson] is the concept whose lesson opened it: Results then offers "Finish lesson".
      */
     data class Practice(
         val device: MidiDevice,
@@ -126,6 +131,17 @@ private sealed interface Destination {
         val from: Destination,
         val mode: RunMode = RunMode.PRACTICE,
         val spot: BarRange? = null,
+        val fromLesson: String? = null,
+    ) : Destination
+
+    /**
+     * The five-step lesson of the course concept [skillId] on [device], opened at [startAt] (null: the saved step);
+     * back returns to Today.
+     */
+    data class Lesson(
+        val device: MidiDevice,
+        val skillId: String,
+        val startAt: LessonStep? = null,
     ) : Destination
 
     /** The ear screen on [device], running [skills] in order; back returns to Today. */
@@ -165,6 +181,7 @@ private fun AppNavigation() {
             TodayRoute(
                 onPractice = { destination = it },
                 onEar = { destination = it },
+                onLesson = { destination = it },
                 onSongs = { destination = Destination.Songs },
                 onPianos = { destination = Destination.Monitor(from = current) },
                 onSettings = { destination = Destination.Settings(from = current) },
@@ -193,22 +210,15 @@ private fun AppNavigation() {
         }
 
         is Destination.Practice -> {
-            // Keyed so "Play it" (a Practice of the whole passage after a spot loop) builds a new ViewModel.
-            key(current) {
-                PracticeRoute(
-                    current,
-                    onBack = { destination = current.from },
-                    onFinished = { id, rung -> destination = Destination.Results(id, rung, current) },
-                    onCalibrate = { rung, mode ->
-                        destination = Destination.Calibrate(current.device, current.copy(rung = rung, mode = mode))
-                    },
-                    onPlayWhole = { rung -> destination = current.copy(rung = rung, spot = null) },
-                )
-            }
+            PracticeDestination(current, go = { destination = it })
         }
 
         is Destination.Ear -> {
             EarRoute(current, onBack = back)
+        }
+
+        is Destination.Lesson -> {
+            key(current) { LessonRoute(current, go = { destination = it }) }
         }
 
         is Destination.Calibrate -> {
@@ -218,6 +228,28 @@ private fun AppNavigation() {
         is Destination.Results -> {
             ResultsRoute(current, go = { destination = it })
         }
+    }
+}
+
+/** Practice of [current], keyed so "Play it" (the whole passage after a spot loop) builds a new ViewModel. */
+@Composable
+private fun PracticeDestination(
+    current: Destination.Practice,
+    go: (Destination) -> Unit,
+) {
+    key(current) {
+        PracticeRoute(
+            current,
+            onBack = { go(current.from) },
+            onFinished = { id, rung -> go(Destination.Results(id, rung, current)) },
+            onCalibrate = {
+                rung,
+                mode,
+                ->
+                go(Destination.Calibrate(current.device, current.copy(rung = rung, mode = mode)))
+            },
+            onPlayWhole = { rung -> go(current.copy(rung = rung, spot = null)) },
+        )
     }
 }
 
@@ -327,6 +359,55 @@ private fun EarRoute(
 }
 
 /**
+ * The lesson screen, landscape. Its ViewModel lives as long as the route. Leaving (back, Done, Play it, Next lesson)
+ * closes the piano first, so the next screen can open it (one reader per input).
+ */
+@Composable
+private fun LessonRoute(
+    lesson: Destination.Lesson,
+    go: (Destination) -> Unit,
+) {
+    val viewModel: LessonViewModel =
+        koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) {
+            parametersOf(lesson.device, lesson.skillId, lesson.startAt)
+        }
+    val state by viewModel.state.collectAsState()
+    val scope = rememberCoroutineScope()
+    val leave = { to: Destination -> scope.launch { viewModel.close() }.invokeOnCompletion { go(to) } }
+    val today = Destination.Today
+    BackHandler { leave(today) }
+    LessonScreen(
+        state,
+        LessonActions(
+            onBack = { leave(today) },
+            onGoTo = viewModel::goTo,
+            onNext = viewModel::next,
+            onSkip = viewModel::skip,
+            onPlayAgain = viewModel::replaySee,
+            onPlayIt = {
+                state.usePassage?.let { passage ->
+                    // Back from practice returns to this lesson's Use step; Results then offers "Finish lesson".
+                    val back = Destination.Lesson(lesson.device, lesson.skillId, LessonStep.USE)
+                    leave(
+                        Destination.Practice(
+                            lesson.device,
+                            passage.id,
+                            TempoRung.WAIT,
+                            from = back,
+                            fromLesson = lesson.skillId,
+                        ),
+                    )
+                }
+            },
+            onNextLesson = {
+                state.recap?.nextSkillId?.let { leave(Destination.Lesson(lesson.device, it)) }
+            },
+            onDone = { leave(today) },
+        ),
+    )
+}
+
+/**
  * The calibration screen, landscape like practice. Leaving (Done, Cancel, back) closes the piano first, so the screen
  * it returns to can reopen it (one reader per input).
  */
@@ -366,12 +447,16 @@ private fun ResultsRoute(
     val state by viewModel.state.collectAsState()
     val onBack = { go(results.practice.from) }
     val onTryAgain = { go(results.practice) }
+    val lesson = results.practice.fromLesson
+    val onFinishLesson =
+        lesson?.let { skillId -> { go(Destination.Lesson(results.practice.device, skillId, LessonStep.RECAP)) } }
     BackHandler(onBack = onBack)
     ResultsScreen(
         state,
         onBack = onBack,
         onTryAgain = onTryAgain,
         onRetry = viewModel::retry,
+        onFinishLesson = onFinishLesson,
         onLoopBars = { spot ->
             (state as? ResultsState.Ready)?.let {
                 go(results.practice.copy(rung = it.rung, mode = RunMode.PRACTICE, spot = spot))
@@ -451,6 +536,7 @@ private fun SettingsRoute(onBack: () -> Unit) {
 private fun TodayRoute(
     onPractice: (Destination.Practice) -> Unit,
     onEar: (Destination.Ear) -> Unit,
+    onLesson: (Destination.Lesson) -> Unit,
     onSongs: () -> Unit,
     onPianos: () -> Unit,
     onSettings: () -> Unit,
@@ -481,6 +567,10 @@ private fun TodayRoute(
 
                     is TodayTarget.Ear -> {
                         onEar(Destination.Ear(target.device, target.skills))
+                    }
+
+                    is TodayTarget.Lesson -> {
+                        onLesson(Destination.Lesson(target.device, target.skillId))
                     }
                 }
             },
