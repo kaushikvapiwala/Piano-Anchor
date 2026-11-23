@@ -40,17 +40,29 @@ class ResultsScreenScreenshotTest {
     private fun capture(
         name: String,
         state: ResultsState,
+        fromLesson: Boolean = false,
     ) {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             captureRoboImage("screenshots/ResultsScreen_${name}_$theme.png") {
-                PianoAnchorTheme(darkTheme = dark) { ResultsScreen(state, onBack = {}, onTryAgain = {}, onRetry = {}) }
+                PianoAnchorTheme(darkTheme = dark) {
+                    ResultsScreen(
+                        state,
+                        onBack = {},
+                        onTryAgain = {},
+                        onRetry = {},
+                        onFinishLesson = if (fromLesson) ({}) else null,
+                    )
+                }
             }
         }
     }
 
     @Test
     fun everyNoteRight() = capture("clean", clean)
+
+    @Test
+    fun finishLessonAfterACleanRun() = capture("finish_lesson", clean, fromLesson = true)
 
     @Test
     fun oneWrongNote() = capture("good", clean.copy(band = Band.GOOD, wrongNotes = 1, words = wrongNotes))

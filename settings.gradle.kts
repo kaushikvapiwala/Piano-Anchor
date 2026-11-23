@@ -36,6 +36,7 @@ include(
     ":feature:ear",
     ":feature:onboarding",
     ":feature:practice",
+    ":feature:lesson",
     ":feature:settings",
     ":feature:songs",
     ":feature:today",

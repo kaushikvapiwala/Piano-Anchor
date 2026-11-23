@@ -836,4 +836,32 @@ public object Tunables {
      * Source: a starting value.
      */
     public const val TRY_STRESS_MIN_DELTA: Int = 12
+
+    /**
+     * How long the lesson screen shows the "✓" after a Try is passed, before it moves on to Use, in milliseconds.
+     *
+     * Why: long enough to see the tick, short enough to keep the lesson flowing.
+     *
+     * Source: a starting value.
+     */
+    public const val LESSON_TRY_DONE_PAUSE_MS: Long = 800
+
+    /**
+     * The velocity (MIDI 1-127) of a soft key in the lesson's See demos (soft-then-loud, the unaccented beats of the
+     * stress check).
+     *
+     * Why: well below the soft limit of the Try ([TRY_SOFT_MAX_VELOCITY]), so the learner hears what soft is.
+     *
+     * Source: a starting value.
+     */
+    public const val LESSON_DEMO_SOFT_VELOCITY: Int = 40
+
+    /**
+     * The velocity (MIDI 1-127) of a loud key in the lesson's See demos (soft-then-loud, the accented beat 1).
+     *
+     * Why: well above the loud limit of the Try ([TRY_LOUD_MIN_VELOCITY]), so the accent is plain to hear.
+     *
+     * Source: a starting value.
+     */
+    public const val LESSON_DEMO_LOUD_VELOCITY: Int = 100
 }

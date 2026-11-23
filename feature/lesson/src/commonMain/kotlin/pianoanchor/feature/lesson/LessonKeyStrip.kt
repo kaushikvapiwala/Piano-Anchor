@@ -1,0 +1,142 @@
+package pianoanchor.feature.lesson
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import pianoanchor.core.model.LessonStep
+import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.TryCheck
+import pianoanchor.ui.shell.pianoAnchorColors
+
+private val WHITE_KEY_WIDTH = 24.dp
+private val WHITE_PITCH = 26.dp
+private val BLACK_KEY_WIDTH = 16.dp
+private val WHITE_KEY_HEIGHT = 76.dp
+private val BLACK_KEY_HEIGHT = 46.dp
+private val GLOW_BORDER = 3.dp
+private const val KEY_COLOR_MS = 150
+private const val GLOW_ALPHA = 0.55f
+private const val NOTES_PER_OCTAVE = 12
+private const val MIN_SPAN = 24
+private const val LOWEST_KEY = 21
+private const val HIGHEST_KEY = 108
+private const val MIDDLE_C = 60
+private val BLACK_PITCH_CLASSES = setOf(1, 3, 6, 8, 10)
+
+private val MidiNote.isBlack: Boolean get() = number % NOTES_PER_OCTAVE in BLACK_PITCH_CLASSES
+
+/** The keys the strip shows for [state]: whole octaves (C to B) around the notes of its Try and Use, at least two. */
+internal fun lessonKeyRange(state: LessonState): IntRange {
+    val notes =
+        when (val check = state.check) {
+            null, TryCheck.AnyKey -> listOf(MIDDLE_C)
+            is TryCheck.PlayKey -> listOf(check.note)
+            is TryCheck.FindAll -> listOf(check.range.first, check.range.last)
+            is TryCheck.Sequence -> check.notes
+            is TryCheck.Repeat -> listOf(check.note)
+            is TryCheck.Hold -> listOf(check.note)
+            is TryCheck.SoftThenLoud -> listOf(check.note)
+            is TryCheck.StressBeatOne -> listOf(check.note)
+            is TryCheck.Chord -> check.notes.toList()
+            is TryCheck.Passage -> emptyList()
+        } + passageNotes(state)
+    var low = notes.min() / NOTES_PER_OCTAVE * NOTES_PER_OCTAVE
+    val high = notes.max() / NOTES_PER_OCTAVE * NOTES_PER_OCTAVE + NOTES_PER_OCTAVE - 1
+    if (high - low + 1 < MIN_SPAN) low -= NOTES_PER_OCTAVE
+    return low.coerceAtLeast(LOWEST_KEY)..high.coerceAtMost(HIGHEST_KEY)
+}
+
+/** The pitches of the Use passage when the Try is that passage; the Use step lights nothing else. */
+private fun passageNotes(state: LessonState): List<Int> =
+    if (state.tryMergedIntoUse) {
+        state.usePassage
+            ?.steps
+            ?.flatMap { step -> step.pitches.map { it.number } }
+            .orEmpty()
+    } else {
+        emptyList()
+    }
+
+/**
+ * The key strip along the bottom: keys light while they sound or are held, the key of a wrong press shows grey and
+ * the expected key glows in the accent ([LessonState.glowKeys]).
+ */
+@Composable
+internal fun LessonKeyStrip(
+    state: LessonState,
+    modifier: Modifier = Modifier,
+) {
+    val notes = lessonKeyRange(state).map(::MidiNote)
+    val whites = notes.filterNot { it.isBlack }
+    val width = WHITE_PITCH * whites.size - (WHITE_PITCH - WHITE_KEY_WIDTH)
+    val wrong = state.tryProgress?.lastWrong.takeIf { state.step == LessonStep.TRY }
+    Box(modifier.horizontalScroll(rememberScrollState()).size(width, WHITE_KEY_HEIGHT)) {
+        whites.forEachIndexed { i, note ->
+            Key(note, state, wrong, WHITE_KEY_WIDTH, WHITE_KEY_HEIGHT, WHITE_PITCH * i, black = false)
+        }
+        notes.filter { it.isBlack }.forEach { note ->
+            val whitesBelow = whites.count { it.number < note.number }
+            val x = WHITE_PITCH * whitesBelow - (WHITE_PITCH - WHITE_KEY_WIDTH) / 2 - BLACK_KEY_WIDTH / 2
+            Key(note, state, wrong, BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT, x, black = true)
+        }
+    }
+}
+
+@Composable
+private fun Key(
+    note: MidiNote,
+    state: LessonState,
+    wrong: Int?,
+    width: Dp,
+    height: Dp,
+    x: Dp,
+    black: Boolean,
+) {
+    val colors = MaterialTheme.pianoAnchorColors
+    val accent = MaterialTheme.colorScheme.primary
+    val idle = if (black) colors.blackKey else colors.whiteKey
+    val lit = note.number in state.litKeys
+    val glow = note.number in state.glowKeys && !lit
+    val target =
+        when {
+            note.number == wrong -> colors.wrongKey
+            lit -> colors.correct
+            glow -> accent.copy(alpha = GLOW_ALPHA).compositeOver(idle)
+            else -> idle
+        }
+    val fill by animateColorAsState(target, tween(KEY_COLOR_MS))
+    val shape = RoundedCornerShape(bottomStart = if (black) 6.dp else 8.dp, bottomEnd = if (black) 6.dp else 8.dp)
+    val name = note.name
+    val outline =
+        when {
+            glow -> Modifier.border(GLOW_BORDER, accent, shape)
+            black -> Modifier
+            else -> Modifier.border(1.dp, colors.keyBorder, shape)
+        }
+    Box(
+        Modifier
+            .offset(x = x)
+            .size(width, height)
+            .clip(shape)
+            .background(fill)
+            .then(outline)
+            .semantics { contentDescription = name },
+    )
+}

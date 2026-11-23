@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.Settings
@@ -29,12 +30,17 @@ private const val LATEST_RELEASE = "latest_release"
 private const val DISMISSED_UPDATE = "dismissed_update"
 private const val STRICTNESS = "strictness"
 private const val LAST_PIANO = "last_piano"
+private const val LESSON_STEPS = "lesson_steps"
 
 /** A stored text that is "not set" (the rows of absent values hold it, so every update writes every row). */
 private const val UNSET = ""
 
 /** Separates a piano's id from its name in the `last_piano` row; an id (`ble:<ADDRESS>`) has no line break. */
 private const val PIANO_SEPARATOR = "\n"
+
+/** Separates the `skill=STEP` entries of the `lesson_steps` row and a skill's id from its step. */
+private const val LESSON_ENTRY_SEPARATOR = "\n"
+private const val LESSON_STEP_SEPARATOR = "="
 
 /** Separates a release's version from its page URL in the `latest_release` row; neither contains a space. */
 private const val RELEASE_SEPARATOR = " "
@@ -78,6 +84,7 @@ public class SqlSettingsRepositoryAdapter(
                         queries.put(DISMISSED_UPDATE, updated.dismissedUpdate ?: UNSET)
                         queries.put(STRICTNESS, updated.strictness.name)
                         queries.put(LAST_PIANO, updated.lastPiano.stored())
+                        queries.put(LESSON_STEPS, updated.lessonSteps.stored())
                     }
                 }
             }
@@ -111,6 +118,7 @@ private fun Map<String, String>.toSettings(): Settings {
                 defaults.strictness,
             ) { name -> Strictness.entries.firstOrNull { it.name == name } },
         lastPiano = this[LAST_PIANO]?.toPianoOrNull(),
+        lessonSteps = this[LESSON_STEPS]?.toLessonSteps().orEmpty(),
     )
 }
 
@@ -119,6 +127,18 @@ private fun LocalDate?.stored(): String = if (this == null) UNSET else toString(
 private fun Release?.stored(): String = if (this == null) UNSET else version + RELEASE_SEPARATOR + pageUrl
 
 private fun MidiDevice?.stored(): String = if (this == null) UNSET else id + PIANO_SEPARATOR + name
+
+private fun Map<String, LessonStep>.stored(): String =
+    entries.joinToString(LESSON_ENTRY_SEPARATOR) { (id, step) -> id + LESSON_STEP_SEPARATOR + step.name }
+
+/** The `skill=STEP` entries that can be read; a malformed one is left out. */
+private fun String.toLessonSteps(): Map<String, LessonStep> =
+    split(LESSON_ENTRY_SEPARATOR)
+        .mapNotNull { entry ->
+            val parts = entry.split(LESSON_STEP_SEPARATOR)
+            val step = parts.getOrNull(1)?.let { name -> LessonStep.entries.firstOrNull { it.name == name } }
+            if (parts.size == 2 && parts[0].isNotBlank() && step != null) parts[0] to step else null
+        }.toMap()
 
 private fun String.toPianoOrNull(): MidiDevice? {
     val parts = split(PIANO_SEPARATOR, limit = 2)

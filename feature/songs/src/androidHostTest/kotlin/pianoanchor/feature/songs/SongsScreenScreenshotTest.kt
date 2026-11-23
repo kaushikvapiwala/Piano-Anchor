@@ -8,6 +8,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Pieces
+import pianoanchor.engine.content.Skills
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.PassageHistory
 import pianoanchor.ui.shell.PianoAnchorTheme
@@ -54,6 +55,15 @@ class SongsScreenScreenshotTest {
             "mixed",
             SongsState(pieces = Pieces.list(Curriculum, history)),
         )
+
+    @Test
+    fun tickedAndNext() {
+        val ticked = setOf(Skills.FINGER_NUMBER_TUNES.id, Skills.STEPS_AND_SKIPS.id, Skills.QUARTER_AND_HALF.id)
+        capture(
+            "ticked",
+            SongsState(pieces = Pieces.list(Curriculum, history), ticked = ticked, next = Skills.BARS_AND_COUNTING.id),
+        )
+    }
 
     @Test
     fun storageError() = capture("storage_error", SongsState(storageFailed = true))

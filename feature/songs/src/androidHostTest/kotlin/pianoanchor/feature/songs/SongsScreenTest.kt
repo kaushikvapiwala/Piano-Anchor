@@ -20,6 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Pieces
+import pianoanchor.engine.content.Skills
 import pianoanchor.ui.shell.PianoAnchorTheme
 import kotlin.test.assertEquals
 
@@ -58,6 +59,30 @@ class SongsScreenTest {
             onAllNodesWithText("Needs", substring = true).assertCountEquals(0)
             onAllNodesWithText("Locked", substring = true).assertCountEquals(0)
             onAllNodesWithText("\uD83D\uDD12", substring = true).assertCountEquals(0)
+        }
+
+    @Test
+    fun aPassedPieceShowsATickAndTheSuggestedConceptsPiecesShowANextChip() =
+        runComposeUiTest {
+            val hot = pieces.first { it.passage.id == "builtin:hot-cross-buns" }
+            val mary = pieces.first { it.passage.id == "builtin:mary-had-a-little-lamb" }
+            val state =
+                SongsState(
+                    pieces = pieces,
+                    ticked =
+                        setOf(
+                            Skills.FINGER_NUMBER_TUNES.id,
+                            Skills.STEPS_AND_SKIPS.id,
+                            Skills.QUARTER_AND_HALF.id,
+                        ),
+                    next = Skills.BARS_AND_COUNTING.id,
+                )
+            setContent { PianoAnchorTheme { SongsScreen(state, SongsActions()) } }
+
+            onNodeWithContentDescription("${hot.passage.title}. New. Passed").assertIsDisplayed()
+            onNodeWithContentDescription("${mary.passage.title}. New. Passed").assertIsDisplayed()
+            val lightly = pieces.first { it.passage.id == "builtin:lightly-row" }
+            onNodeWithContentDescription("${lightly.passage.title}. New. Suggested next").assertIsDisplayed()
         }
 
     @Test

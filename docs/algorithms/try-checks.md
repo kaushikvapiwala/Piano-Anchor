@@ -56,3 +56,22 @@ itself (hold length, the beat-1 accent).
 | the six piece concepts | their first passage |
 
 The thresholds are `TRY_*` tunables in `Tunables.kt`, with the reasons beside each.
+
+## See demos
+The lesson's See step plays what the Try asks for (`LessonDemo`), on the piano when it lists as an output, else on the
+phone speaker, lighting the keys as they sound:
+
+| Check | Demo |
+|---|---|
+| PlayKey | the note |
+| FindAll | every target, low to high |
+| Sequence | the notes in order |
+| Repeat, Hold, StressBeatOne | on the click, one beat after it starts; StressBeatOne accents beat 1 by velocity |
+| SoftThenLoud | the note at velocity `LESSON_DEMO_SOFT_VELOCITY`, then at `LESSON_DEMO_LOUD_VELOCITY` |
+| Chord | the notes together |
+| Passage | the passage at its written tempo |
+| AnyKey | nothing to hear: the screen says "Watch the hand" |
+
+A Try with a click (Repeat, Hold, StressBeatOne) starts the metronome with a one-bar count-in ("3, 2, 1") before notes
+count. A passed Try shows its tick for `LESSON_TRY_DONE_PAUSE_MS`, then the lesson moves to Use. A `Passage` check has no
+Try step: it is part of Use.

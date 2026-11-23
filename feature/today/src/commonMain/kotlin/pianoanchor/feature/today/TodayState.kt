@@ -61,6 +61,12 @@ public sealed interface TodayTarget {
         val mode: RunMode = RunMode.PRACTICE,
     ) : TodayTarget
 
+    /** The five-step lesson of the course concept [skillId] on [device]. */
+    public data class Lesson(
+        val device: MidiDevice,
+        val skillId: String,
+    ) : TodayTarget
+
     /** The ear screen on [device], running [skills] in order. */
     public data class Ear(
         val device: MidiDevice,

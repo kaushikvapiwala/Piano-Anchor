@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.StorageUnavailableException
@@ -39,7 +40,7 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             repository.update { it.copy(dailyBudget = DailyBudget.MIN_15) }
 
             assertEquals(Settings(DailyBudget.MIN_15, updateCheckOn = false), repository.settings.first())
-            assertEquals(10, driver.count("setting"))
+            assertEquals(11, driver.count("setting"))
         }
 
     @Test
@@ -92,6 +93,35 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
                 driver.exec("INSERT INTO setting VALUES ('last_piano', '$unreadable')")
                 assertNull(SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().lastPiano)
             }
+        }
+
+    @Test
+    fun theSavedLessonStepsRoundTripAndAnEntryCanBeRemoved() =
+        runTest {
+            val driver = drivers.open()
+            val repository = SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined)
+            assertEquals(emptyMap(), repository.settings.first().lessonSteps)
+            val steps = mapOf("middle-c" to LessonStep.TRY, "hand-shape" to LessonStep.SEE)
+
+            repository.update { it.copy(lessonSteps = steps) }
+            assertEquals(
+                steps,
+                SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().lessonSteps,
+            )
+
+            repository.update { it.copy(lessonSteps = it.lessonSteps - "middle-c") }
+            assertEquals(mapOf("hand-shape" to LessonStep.SEE), repository.settings.first().lessonSteps)
+        }
+
+    @Test
+    fun unreadableLessonStepsAreLeftOut() =
+        runTest {
+            val driver = drivers.open()
+            driver.exec("INSERT INTO setting VALUES ('lesson_steps', 'middle-c=TRY\nbroken\nhand-shape=NOPE\n=SEE')")
+
+            val stored = SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first()
+
+            assertEquals(mapOf("middle-c" to LessonStep.TRY), stored.lessonSteps)
         }
 
     @Test

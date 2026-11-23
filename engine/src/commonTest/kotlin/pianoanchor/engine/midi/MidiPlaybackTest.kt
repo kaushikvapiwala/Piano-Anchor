@@ -69,6 +69,13 @@ class MidiPlaybackTest {
         }
 
     @Test
+    fun aTonesOwnVelocityIsStruck() =
+        runTest {
+            piano.playTones(piano.device, listOf(Tone(MidiNote(60), 0, 10, velocity = 40)))
+            assertEquals(40, piano.sent.first()[2].toInt())
+        }
+
+    @Test
     fun releasesBeforeStrikingARepeatedNoteAtTheSameTime() =
         runTest {
             logSends()

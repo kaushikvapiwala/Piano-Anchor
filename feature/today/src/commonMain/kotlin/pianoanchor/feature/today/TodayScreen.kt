@@ -205,7 +205,7 @@ private fun CardView(
         when (card) {
             is Card.Song -> tempoLine(card)
             is Card.ColdOpen -> stringResource(Res.string.today_card_detail, card.skill.title, card.minutes)
-            is Card.Lesson -> stringResource(Res.string.today_card_detail, card.skill.title, card.minutes)
+            is Card.Lesson -> stringResource(Res.string.today_card_detail, card.passage.title, card.minutes)
         }
     OutlinedCard(
         shape = CardShape,
@@ -219,7 +219,10 @@ private fun CardView(
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(cardLabel(card)), style = MaterialTheme.typography.labelMedium)
-            Text(card.passage.title, style = MaterialTheme.typography.titleLarge)
+            Text(
+                if (card is Card.Lesson) card.skill.title else card.passage.title,
+                style = MaterialTheme.typography.titleLarge,
+            )
             Text(detail, style = MaterialTheme.typography.bodyMedium)
             if (card is Card.Lesson) Text(whyNow(card), style = MaterialTheme.typography.bodyMedium)
             if (card is Card.ColdOpen && session.moreDue.isNotEmpty()) {

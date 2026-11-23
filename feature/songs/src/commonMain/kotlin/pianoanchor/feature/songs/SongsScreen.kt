@@ -38,8 +38,12 @@ import pianoanchor.feature.songs.resources.songs_action_retry
 import pianoanchor.feature.songs.resources.songs_error_storage
 import pianoanchor.feature.songs.resources.songs_mastered
 import pianoanchor.feature.songs.resources.songs_new
+import pianoanchor.feature.songs.resources.songs_next
 import pianoanchor.feature.songs.resources.songs_progress
 import pianoanchor.feature.songs.resources.songs_row_description
+import pianoanchor.feature.songs.resources.songs_row_description_next
+import pianoanchor.feature.songs.resources.songs_row_description_passed
+import pianoanchor.feature.songs.resources.songs_tick
 import pianoanchor.feature.songs.resources.songs_title
 import pianoanchor.ui.shell.AppNavRail
 import pianoanchor.ui.shell.RailDestination
@@ -53,7 +57,8 @@ private val CardShape = RoundedCornerShape(20.dp)
 /**
  * Songs, landscape: the rail with Songs selected, then a heading over an adaptive grid with a card per piece under
  * its unit's heading, in curriculum order. A card shows the title and the progress ("rung 3 of 5", "Mastered",
- * "New"); every card opens. Stateless; nothing animates, so
+ * "New"), a tick when its course concepts are passed or a "Next" chip when it exercises the suggested concept
+ * (TalkBack reads "passed" or "suggested next"); every card opens. Stateless; nothing animates, so
  * screenshots stay still.
  */
 @Composable
@@ -94,7 +99,9 @@ public fun SongsScreen(
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }
-                    items(pieces, key = { it.passage.id }) { PieceCard(it, actions.onOpen) }
+                    items(pieces, key = { it.passage.id }) {
+                        PieceCard(it, state.isTicked(it), state.isNext(it), actions.onOpen)
+                    }
                 }
             }
         }
@@ -123,10 +130,21 @@ private fun ErrorCard(onRetry: () -> Unit) {
 @Composable
 private fun PieceCard(
     piece: PieceView,
+    ticked: Boolean,
+    next: Boolean,
     onOpen: (PieceView) -> Unit,
 ) {
     val progress = progressLine(piece)
-    val description = stringResource(Res.string.songs_row_description, piece.passage.title, progress)
+    val description =
+        stringResource(
+            when {
+                ticked -> Res.string.songs_row_description_passed
+                next -> Res.string.songs_row_description_next
+                else -> Res.string.songs_row_description
+            },
+            piece.passage.title,
+            progress,
+        )
     val modifier =
         Modifier.clickable(role = Role.Button) { onOpen(piece) }.clearAndSetSemantics {
             contentDescription = description
@@ -142,17 +160,41 @@ private fun PieceCard(
             modifier = modifier.fillMaxWidth().heightIn(min = RowMinHeight).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
         ) {
-            Text(
-                piece.passage.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (ticked) {
+                    Text(
+                        stringResource(Res.string.songs_tick),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Text(
+                    piece.passage.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (next) NextChip()
+            }
             Text(
                 progress,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/** The "Next" chip of a piece that exercises the suggested concept. */
+@Composable
+private fun NextChip() {
+    Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+        Text(
+            stringResource(Res.string.songs_next),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+        )
     }
 }
 
