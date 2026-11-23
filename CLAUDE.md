@@ -9,6 +9,8 @@
 - Start each session with `/next-task` (`.claude/skills/next-task/`): one task from `docs/ROADMAP.md`
   "Next up" per session; `.claude/skills/next-task/scripts/run-loop.sh [N]` runs N unattended sessions.
 - Run `./gradlew fastCheck` before reporting work as complete and paste the result.
+- Gradle runs quiet in sessions (`GRADLE_OPTS` in `.claude/settings.json`, ~20k tokens less per green
+  `fastCheck`): a pass prints next to nothing (exit 0); failures still print errors and failed tests. `--info` shows more.
 - Pre-push self-review: `/code-review`, then the cleanup pass that `.claude/skills/next-task/SKILL.md` step 3
   sets for what the PR touches (`/simplify` on the whole diff at a milestone's end).
 - Prefer background tasks for long waits (CI, builds) and keep working on independent tasks meanwhile.
