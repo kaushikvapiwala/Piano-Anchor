@@ -545,6 +545,14 @@ class SettingsTest(unittest.TestCase):
         self.assertNotRegex("Explore", entry["matcher"])
         self.assertNotRegex("general-purpose", entry["matcher"])
 
+    def test_unattended_runs_may_commit_and_push_but_not_rewrite_history(self) -> None:
+        # Auto mode's classifier refused `git commit` in a scheduled run; explicit rules let the loop finish.
+        permissions = json.loads((ROOT / ".claude" / "settings.json").read_text())["permissions"]
+        for rule in ("Bash(git add:*)", "Bash(git commit:*)", "Bash(git push -u origin:*)"):
+            self.assertIn(rule, permissions["allow"])
+        for rule in ("Bash(git push --force:*)", "Bash(git push -f:*)", "Bash(git push origin main:*)"):
+            self.assertIn(rule, permissions["deny"])
+
 
 class DocsCheckTest(TempRepo):
     def problems(self, doc: str) -> list[str]:
