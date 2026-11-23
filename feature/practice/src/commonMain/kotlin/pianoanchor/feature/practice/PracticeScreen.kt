@@ -86,6 +86,9 @@ import pianoanchor.ui.shell.pianoAnchorColors
  * [onSkipCalibration] are the calibrate card's Calibrate and Skip, shown while [PracticeState.calibrationOffered].
  * A spot loop ([PracticeState.spotLoop]) shows its progress as the subtitle and the last loop's result under the
  * staff; its "bars are clean" card has [onPlayWhole] ("Play it") and [onKeepLooping].
+ * Under the staff one line says how to find the right key after a wrong one ("landmark hint"), with the Listen button
+ * ([onListen]: the passage plays for the learner) or, while it plays, Skip ([onSkipListening]). A timed run's count-in
+ * shows "3, 2, 1, Play!" over the staff; a Unit 0 passage has no staff and a taller key strip.
  */
 @Composable
 public fun PracticeScreen(
@@ -102,6 +105,8 @@ public fun PracticeScreen(
     onSelectMode: (RunMode) -> Unit = {},
     onPlayWhole: () -> Unit = {},
     onKeepLooping: () -> Unit = {},
+    onListen: () -> Unit = {},
+    onSkipListening: () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.safeDrawingPadding()) {
@@ -135,14 +140,8 @@ public fun PracticeScreen(
             state.spotLoop?.takeIf { it.offerFull }?.let { loop ->
                 SpotCleanCard(loop.bars, onPlayWhole, onKeepLooping, modifier = CARD_MODIFIER)
             }
-            StaffView(
-                passage = state.passage,
-                steps = state.steps,
-                liveMarks = state.liveMarks,
-                timed = state.rung != TempoRung.WAIT,
-                legend = state.showsVerdicts,
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp).fillMaxWidth().height(196.dp),
-            )
+            StaffArea(state)
+            HintRow(state, onListen, onSkipListening, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
             if (state.linkResumed) LinkResumedLine(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
             if (state.rung != TempoRung.WAIT &&
                 !state.calibrationOffered
@@ -150,7 +149,7 @@ public fun PracticeScreen(
                 RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
             }
             state.spotLoop?.lastLoop?.let { LoopResultLine(it, Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) }
-            KeyStrip(state, modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth())
+            KeyStrip(state, modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(), tall = state.staffHidden)
         }
     }
 }
@@ -426,15 +425,6 @@ private fun RunStatus(
                         style = MaterialTheme.typography.labelLarge,
                         color = colors.onSurfaceVariant,
                     )
-                    if (state.beat > 0) {
-                        Text(
-                            state.beat.toString(),
-                            fontFamily = displayFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = colors.primary,
-                        )
-                    }
                 }
             }
 

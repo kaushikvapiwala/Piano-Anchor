@@ -145,7 +145,7 @@ class PracticeViewModelTest {
         runTest(dispatcher) {
             val vm = practice()
 
-            assertEquals(PracticeState.start(Passages.CDE), vm.state.value)
+            assertEquals(PracticeState.start(Passages.CDE).copy(staffHidden = true), vm.state.value) // a Unit 0 passage
             assertEquals(listOf(StepStatus.WAITING, StepStatus.UPCOMING, StepStatus.UPCOMING), vm.statuses())
             assertEquals(Passages.CDE, vm.state.value.passage)
         }
@@ -605,7 +605,7 @@ class PracticeViewModelTest {
 
             vm.restart()
             runCurrent()
-            assertEquals(PracticeState.start(Passages.CDE), vm.state.value)
+            assertEquals(PracticeState.start(Passages.CDE).copy(staffHidden = true), vm.state.value) // a Unit 0 passage
 
             wallClock.advance(5.seconds)
             tap(c4)
@@ -740,7 +740,7 @@ class PracticeViewModelTest {
             vm.retrySave()
             runCurrent()
 
-            assertEquals(PracticeState.start(Passages.CDE), vm.state.value)
+            assertEquals(PracticeState.start(Passages.CDE).copy(staffHidden = true), vm.state.value) // a Unit 0 passage
         }
 
     @Test
@@ -752,7 +752,7 @@ class PracticeViewModelTest {
 
             vm.discardRun()
             runCurrent()
-            assertEquals(PracticeState.start(Passages.CDE), vm.state.value)
+            assertEquals(PracticeState.start(Passages.CDE).copy(staffHidden = true), vm.state.value) // a Unit 0 passage
             vm.retrySave() // the discarded attempt is gone
             runCurrent()
             assertFalse(vm.state.value.saveFailed)

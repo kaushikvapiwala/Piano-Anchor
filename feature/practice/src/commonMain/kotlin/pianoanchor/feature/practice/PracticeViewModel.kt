@@ -47,10 +47,12 @@ import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.analysis.PlayedNotes
 import pianoanchor.engine.analysis.releasesAllKeys
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.grading.Grader
 import pianoanchor.engine.guidance.HintDelay
 import pianoanchor.engine.guidance.HintFading
 import pianoanchor.engine.guidance.sourcePassageId
+import pianoanchor.engine.guidance.wrongKeyHint
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.matcher.LiveVerdict
@@ -60,6 +62,7 @@ import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.matcher.WaitModeMatcher
 import pianoanchor.engine.matcher.beatNanos
 import pianoanchor.engine.profile
+import kotlin.math.abs
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
@@ -86,6 +89,10 @@ import kotlin.time.Instant
  * [selectMode] switches between practice and perform (`docs/algorithms/guidance.md`). A perform run needs a timed
  * rung: no hint ever shows, the live verdicts (marks, tags, the key strip's text, wrong-key colours) stay hidden, and
  * the attempt is saved as [RunMode.PERFORM] with `hintShown` false. WAIT always practises.
+ *
+ * With a [player] the passage plays once, at its written tempo, before the first run of a passage never played
+ * (hear it first; [skipListening] stops it) and again on [listen] while no run is under way. A wrong key in wait mode
+ * sets [PracticeState.hint] and the glow keys (`docs/algorithms/wrong-key-hint.md`).
  */
 @Suppress("TooManyFunctions")
 public class PracticeViewModel(
@@ -104,14 +111,25 @@ public class PracticeViewModel(
     initialRung: TempoRung = TempoRung.WAIT,
     initialMode: RunMode = RunMode.PRACTICE,
     private val spot: BarRange? = null,
+    private val player: PassagePlayer? = null,
     private val newId: () -> String,
 ) : ViewModel() {
     private val mutableState =
-        MutableStateFlow(PracticeState.start(passage).copy(spotLoop = spot?.let { SpotLoopState(it, initialRung) }))
+        MutableStateFlow(
+            PracticeState
+                .start(passage)
+                .copy(spotLoop = spot?.let { SpotLoopState(it, initialRung) }, staffHidden = isUnitZero(passage)),
+        )
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
 
     private var run: Job? = null
     private var flashTimer: Job? = null
+
+    /** The passage playing for the learner, if any. */
+    private var demo: Job? = null
+
+    /** True until the screen has decided whether this passage plays itself first (once per screen). */
+    private var hearFirstPending = spot == null
 
     /** The graded attempt whose save failed, until it is saved or discarded; null while a retry runs. */
     private var unsaved: Attempt? = null
@@ -174,6 +192,7 @@ public class PracticeViewModel(
         val mode = if (!rung.canPerform || spot != null) RunMode.PRACTICE else requested
         flashTimer?.cancel()
         hintTimer?.cancel()
+        demo?.cancel()
         unsaved = null
         mutableState.update {
             PracticeState
@@ -184,6 +203,8 @@ public class PracticeViewModel(
                     doneRungs = it.doneRungs,
                     clickOn = it.clickOn,
                     spotLoop = it.spotLoop,
+                    canListen = player != null,
+                    staffHidden = it.staffHidden,
                     // Hidden until `loadHints` reads the run's level, so a slow store can't flash the band at FULL.
                     hintVisible = false,
                 )
@@ -193,9 +214,65 @@ public class PracticeViewModel(
             viewModelScope.launch {
                 previous?.cancelAndJoin()
                 loadHints()
+                hearFirst()
                 val bpm = rung.bpm(passage)
                 if (bpm == null) WaitRun().play() else playTimed(bpm)
             }
+    }
+
+    /** Plays the passage again for the learner (the Listen button), unless a run is under way or it is playing. */
+    public fun listen() {
+        if (!mutableState.value.showsListen) return
+        demo = startDemo()
+    }
+
+    /** Stops the passage playing for the learner (the Skip button). */
+    public fun skipListening() {
+        demo?.cancel()
+    }
+
+    /** Hear it first: before the first run of a passage with no attempt yet, plays it once and waits for it to end. */
+    private suspend fun hearFirst() {
+        if (!hearFirstPending || player == null) return
+        hearFirstPending = false
+        val never =
+            try {
+                attempts.lastPlayed(sourcePassageId(passage.id)) == null
+            } catch (_: StorageUnavailableException) {
+                false // can't tell: don't make a returning learner wait
+            }
+        if (!never) return
+        val job = startDemo()
+        demo = job
+        job.join()
+    }
+
+    /** Plays the passage with the cursor and keys following the sound; the screen is back to rest when it ends. */
+    private fun startDemo(): Job {
+        val previous = demo
+        return viewModelScope.launch {
+            previous?.cancelAndJoin()
+            mutableState.update { it.copy(listening = true) }
+            try {
+                coroutineScope {
+                    launch { followDemo() }
+                    checkNotNull(player).play(passage.tones())
+                }
+            } finally {
+                mutableState.update { it.copy(listening = false, demoStep = null, demoKeys = emptySet()) }
+            }
+        }
+    }
+
+    /** Moves the demo cursor and its lit keys to each step as its onset comes. */
+    private suspend fun followDemo() {
+        var at = 0L
+        passage.steps.forEachIndexed { i, step ->
+            val onset = step.onsetTicks.toMillis(passage.tempoBpm)
+            delay(onset - at)
+            at = onset
+            mutableState.update { it.copy(demoStep = i, demoKeys = step.pitches) }
+        }
     }
 
     /** Shows the key band on the waiting step, for that step only (the Hint button). */
@@ -333,6 +410,7 @@ public class PracticeViewModel(
     public suspend fun close() {
         flashTimer?.cancel()
         hintTimer?.cancel()
+        demo?.cancelAndJoin()
         run?.cancelAndJoin()
     }
 
@@ -362,7 +440,7 @@ public class PracticeViewModel(
                 withContext(NonCancellable) { metronome.stop() }
             }
         if (!finished) return mutableState.update { it.disconnected() }
-        mutableState.update { it.copy(phase = RunPhase.FINISHED, beat = 0) }
+        mutableState.update { it.copy(phase = RunPhase.FINISHED, beat = 0, playNow = false) }
         save(
             Grader.timedAttempt(
                 id = newId(),
@@ -463,21 +541,24 @@ public class PracticeViewModel(
         restart()
     }
 
+    /** A key press: lights it, flashes it and, with [hinting] (wait mode), points a wrong key to the right one. */
     private fun pressKey(
         note: MidiNote,
         flash: KeyFlash,
+        hinting: Boolean = false,
     ) {
         if (!mutableState.value.showsVerdicts) {
             // The key still lights, in a neutral colour: no verdict, no flash, no last-key text.
             return mutableState.update { it.copy(keysDown = it.keysDown + note) }
         }
         mutableState.update {
-            it.copy(
-                keysDown = it.keysDown + note,
-                wrongKeys = if (flash.correct) it.wrongKeys - note else it.wrongKeys + note,
-                flash = flash,
-                lastKey = flash,
-            )
+            it
+                .copy(
+                    keysDown = it.keysDown + note,
+                    wrongKeys = if (flash.correct) it.wrongKeys - note else it.wrongKeys + note,
+                    flash = flash,
+                    lastKey = flash,
+                ).withHint(note, flash.correct, hinting)
         }
         flashTimer?.cancel()
         flashTimer =
@@ -620,7 +701,7 @@ public class PracticeViewModel(
             mutableState.update {
                 it.copy(steps = statuses(it.steps, match), currentStep = match.stepIndex)
             }
-            pressKey(event.note, KeyFlash(event.note, correct = step.events.none { it is WrongNote }))
+            pressKey(event.note, KeyFlash(event.note, correct = step.events.none { it is WrongNote }), hinting = true)
         }
     }
 
@@ -812,12 +893,21 @@ public class PracticeViewModel(
                 it.copy(
                     phase = if (playing) RunPhase.PLAYING else RunPhase.COUNT_IN,
                     beat = beat,
+                    playNow = playing && now < startNanos + beatNanos,
                     currentStep = cursor,
                     steps = it.steps.mapIndexed { i, step -> step.copy(status = cursorStatus(i, cursor, marked)) },
                 )
             }
         }
     }
+}
+
+private const val UNIT_ZERO_ID = "unit-0"
+
+/** Whether every skill of [passage] belongs to Unit 0 (a passage with no skills is not): the staff is left out. */
+private fun isUnitZero(passage: Passage): Boolean {
+    val unit = Curriculum.units.firstOrNull { it.id == UNIT_ZERO_ID } ?: return false
+    return passage.skills.isNotEmpty() && unit.skills.containsAll(passage.skills)
 }
 
 /** The loop with its clean streak and the "bars are clean" offer cleared. */
@@ -846,6 +936,35 @@ private fun statuses(
             }
         step.copy(status = status)
     }
+
+/**
+ * After a press of [note]: a wrong key in wait mode ([hinting]) names the nearest key of the waiting step it was meant
+ * to find and makes the step's keys glow; a right key takes itself out of the glow, and the hint goes with the last
+ * one.
+ */
+private fun PracticeState.withHint(
+    note: MidiNote,
+    correct: Boolean,
+    hinting: Boolean,
+): PracticeState =
+    when {
+        !hinting -> this
+        correct -> (hintGlow - note).let { copy(hintGlow = it, hint = hint.takeIf { _ -> it.isNotEmpty() }) }
+        else -> pointedFrom(note)
+    }
+
+/** The state after a wrong [note]: the hint towards the nearest key still to play, and the waiting step's glow. */
+private fun PracticeState.pointedFrom(note: MidiNote): PracticeState {
+    val pool = (waitingNotes - keysDown).ifEmpty { waitingNotes }
+    val expected = pool.filter { it != note }.minByOrNull { abs(it.number - note.number) }
+    return if (expected ==
+        null
+    ) {
+        this
+    } else {
+        copy(hint = wrongKeyHint(note.number, expected.number), hintGlow = waitingNotes)
+    }
+}
 
 private fun PracticeState.released(note: MidiNote) = copy(keysDown = keysDown - note, wrongKeys = wrongKeys - note)
 

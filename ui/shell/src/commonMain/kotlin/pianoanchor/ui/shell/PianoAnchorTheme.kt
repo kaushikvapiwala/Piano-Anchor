@@ -61,9 +61,9 @@ private val DarkColors =
 
 /**
  * Feedback colours on top of the Material scheme: [correct] (played right), [waiting] (the note the app waits for),
- * [timing] (timing off, unused until timing exists), [wrongKey] (a wrong key), plus the staff's [staffLine] and
- * [upcomingNote], the key strip's [targetBand], [whiteKey], [blackKey] and [keyBorder], and the results screen's
- * [page] and its [tile]s, the Ear card's [earAccent] and the text on it, [onEarAccent].
+ * [timing] (timing off, unused until timing exists), [wrongKey] (a wrong key: grey, never red), plus the staff's
+ * [staffLine] and [upcomingNote], the key strip's [targetBand], [whiteKey], [blackKey] and [keyBorder], and the
+ * results screen's [page] and its [tile]s, the Ear card's [earAccent] and the text on it, [onEarAccent].
  */
 @Immutable
 data class PianoAnchorColors(
@@ -88,7 +88,7 @@ private val LightFeedback =
         correct = Color(0xFF1F5F8B),
         waiting = Color(0xFFE69F00),
         timing = Color(0xFFD55E00),
-        wrongKey = Color(0xFFB86FA3),
+        wrongKey = Color(0xFF9A9A9A),
         staffLine = DividerDark,
         upcomingNote = Ink,
         targetBand = Color(0xFFFBE3B0),
@@ -105,7 +105,7 @@ private val DarkFeedback =
         correct = Color(0xFF8CC4E8),
         waiting = Color(0xFFF2B84B),
         timing = Color(0xFFF08A4B),
-        wrongKey = PlumDark,
+        wrongKey = Color(0xFF8A8A8A),
         staffLine = Mist,
         upcomingNote = PaperDark,
         targetBand = Color(0xFFFBE3B0),

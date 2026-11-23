@@ -6,7 +6,10 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.ScoreNoteRef
+import pianoanchor.engine.guidance.WrongKeyHint
 import pianoanchor.engine.matcher.TempoRung
+
+private const val COUNT_IN_NUMERALS = 3
 
 /**
  * What the wait-mode practice screen shows. [passage] is the music practised (title, rhythm and time signature for
@@ -33,6 +36,12 @@ import pianoanchor.engine.matcher.TempoRung
  * the slice.
  * [linkResumed] is true from the moment a timed run was restarted because the piano's link dropped and came back
  * (messages in the gap were lost) until the next note; the screen says why the run started over.
+ *
+ * Gentle feedback (`docs/algorithms/wrong-key-hint.md`): after a wrong key in wait mode [hint] says how to find the
+ * expected key and [hintGlow] holds the keys that glow in the accent until played. [playNow] is true for the one beat
+ * after the count-in, when the screen says "Play!". [canListen] is true when the passage can be played for the learner
+ * ([PassagePlayer]); [listening] while it does, with [demoStep] the step sounding and [demoKeys] its keys.
+ * A Unit 0 passage hides the staff ([staffHidden], set by the ViewModel) and glows every next key.
  */
 public data class PracticeState(
     val passage: Passage,
@@ -57,6 +66,14 @@ public data class PracticeState(
     val mode: RunMode = RunMode.PRACTICE,
     val spotLoop: SpotLoopState? = null,
     val linkResumed: Boolean = false,
+    val hint: WrongKeyHint? = null,
+    val hintGlow: Set<MidiNote> = emptySet(),
+    val playNow: Boolean = false,
+    val canListen: Boolean = false,
+    val listening: Boolean = false,
+    val demoStep: Int? = null,
+    val demoKeys: Set<MidiNote> = emptySet(),
+    val staffHidden: Boolean = false,
 ) {
     init {
         require(steps.size == passage.steps.size) {
@@ -66,6 +83,49 @@ public data class PracticeState(
 
     /** Whether the screen shows live verdicts (colours, timing tags, the last key's text) and the Hint button. */
     val showsVerdicts: Boolean get() = mode == RunMode.PRACTICE
+
+    /** The keys of the waiting step, empty when no step waits. */
+    val waitingNotes: Set<MidiNote>
+        get() =
+            steps
+                .getOrNull(currentStep)
+                ?.takeIf { it.status == StepStatus.WAITING }
+                ?.notes
+                .orEmpty()
+
+    /** Keys that glow in the accent: those a wrong key points to and, in Unit 0, every next key at any hint level. */
+    val glowKeys: Set<MidiNote> get() = if (staffHidden && showsVerdicts) hintGlow + waitingNotes else hintGlow
+
+    /** The steps as the staff draws them: while the passage plays for the learner the cursor follows the sound. */
+    val shownSteps: List<StepView>
+        get() {
+            val playing = demoStep ?: return steps
+            return steps.mapIndexed { i, step ->
+                step.copy(
+                    status =
+                        when {
+                            i < playing -> StepStatus.DONE
+                            i == playing -> StepStatus.WAITING
+                            else -> StepStatus.UPCOMING
+                        },
+                )
+            }
+        }
+
+    /** The large count-in numeral ("3", "2", "1" on the last three beats of the count-in), null outside them. */
+    val countInNumeral: Int?
+        get() =
+            if (phase == RunPhase.COUNT_IN && beat > 0) {
+                (passage.timeSignature.beats - beat + 1).takeIf { it <= COUNT_IN_NUMERALS }
+            } else {
+                null
+            }
+
+    /** Whether the Listen button shows: the run has not started and nothing is playing. */
+    val showsListen: Boolean
+        get() =
+            canListen && !listening && phase == RunPhase.READY && currentStep == 0 && !calibrationOffered &&
+                !saveFailed && finishedAttemptId == null && connection == PracticeConnection.CONNECTED
 
     public companion object {
         /** The state before the first note of [passage]: its first step waiting, the rest upcoming. */
