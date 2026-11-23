@@ -7,19 +7,18 @@ import pianoanchor.core.model.Rights
 import pianoanchor.core.model.ScoreNote
 import pianoanchor.core.model.Step
 
-/** Unit 2, "Both hands": left hand in C position, hands taking turns, whole notes, 3/4. */
+/** Unit 2, "Left hand, then both hands": left-hand C position, whole notes, turns, 3/4, a held bass. */
 internal val UNIT_2: CurriculumUnit =
     CurriculumUnit(
         id = "unit-2",
-        title = "Both hands",
+        title = "Left hand, then both hands",
         skills =
             listOf(
                 Skills.LH_C_POSITION.id,
-                Skills.LH_STEPS.id,
-                Skills.RHYTHM_WHOLE.id,
-                Skills.HANDS_TURNS.id,
-                Skills.TIME_THREE_FOUR.id,
-                Skills.HANDS_HELD_BASS.id,
+                Skills.BASS_CLEF_WHOLE_NOTE.id,
+                Skills.GRAND_STAFF_TURNS_RESTS.id,
+                Skills.THREE_FOUR_TIME.id,
+                Skills.HANDS_TOGETHER_HELD.id,
             ),
         passages =
             listOf(
@@ -36,7 +35,7 @@ internal val UNIT_2: CurriculumUnit =
                     title = "Left hand steps",
                     notes = "C3q D3q E3q D3q | E3q F3q G3q F3q | E3q D3q C3h",
                     tempoBpm = 66,
-                    skills = setOf(Skills.LH_STEPS.id),
+                    skills = setOf(Skills.LH_C_POSITION.id),
                     rights = exerciseRights("left-hand steps up and down"),
                 ),
                 builtinPassage(
@@ -44,7 +43,7 @@ internal val UNIT_2: CurriculumUnit =
                     title = "Long notes",
                     notes = "C4w | E4h D4h | C4w | G4h F4h | E4w",
                     tempoBpm = 60,
-                    skills = setOf(Skills.RHYTHM_WHOLE.id),
+                    skills = setOf(Skills.BASS_CLEF_WHOLE_NOTE.id),
                     rights = exerciseRights("whole notes and half notes in the right hand"),
                 ),
                 builtinPassage(
@@ -52,7 +51,7 @@ internal val UNIT_2: CurriculumUnit =
                     title = "Low whole notes",
                     notes = "C3w | G3w | E3w | C3w",
                     tempoBpm = 60,
-                    skills = setOf(Skills.RHYTHM_WHOLE.id, Skills.LH_C_POSITION.id),
+                    skills = setOf(Skills.BASS_CLEF_WHOLE_NOTE.id),
                     rights = exerciseRights("whole notes in the left hand"),
                 ),
                 builtinPassage(
@@ -60,7 +59,7 @@ internal val UNIT_2: CurriculumUnit =
                     title = "Turn-taking",
                     notes = "C4q D4q E4q F4q | G3q F3q E3q D3q | E4q F4q G4q F4q | E3q D3q C3h",
                     tempoBpm = 66,
-                    skills = setOf(Skills.HANDS_TURNS.id),
+                    skills = setOf(Skills.GRAND_STAFF_TURNS_RESTS.id),
                     rights = exerciseRights("the right hand and the left hand taking turns"),
                 ),
                 builtinPassage(
@@ -68,7 +67,7 @@ internal val UNIT_2: CurriculumUnit =
                     title = "Echo",
                     notes = "C4h E4h | C3h E3h | G4h E4h | G3h C3h",
                     tempoBpm = 60,
-                    skills = setOf(Skills.HANDS_TURNS.id, Skills.RHYTHM_HALF.id),
+                    skills = setOf(Skills.GRAND_STAFF_TURNS_RESTS.id),
                     rights = exerciseRights("the left hand answering the right, an octave lower"),
                 ),
                 builtinPassage(
@@ -78,7 +77,7 @@ internal val UNIT_2: CurriculumUnit =
                         "C4q E4q G4q | G4q E4q C4q | D4q F4q E4q | D4h. | " +
                             "C4q E4q G4q | E4q C4q E4q | D4q E4q D4q | C4h.",
                     tempoBpm = 72,
-                    skills = setOf(Skills.TIME_THREE_FOUR.id),
+                    skills = setOf(Skills.THREE_FOUR_TIME.id),
                     rights = exerciseRights("counting three beats to the bar"),
                     timeSignature = THREE_FOUR,
                 ),
@@ -87,7 +86,7 @@ internal val UNIT_2: CurriculumUnit =
                     title = "Three-beat steps",
                     notes = "C4q D4q E4q | E4h. | F4q E4q D4q | C4h.",
                     tempoBpm = 66,
-                    skills = setOf(Skills.TIME_THREE_FOUR.id, Skills.RHYTHM_HALF.id),
+                    skills = setOf(Skills.THREE_FOUR_TIME.id),
                     rights = exerciseRights("steps and a dotted half note in 3/4"),
                     timeSignature = THREE_FOUR,
                 ),
@@ -129,7 +128,7 @@ private fun heldBassPassage(
     rights: Rights,
     piece: Boolean = false,
 ): Passage {
-    val skills = setOf(Skills.HANDS_HELD_BASS.id, Skills.RHYTHM_WHOLE.id)
+    val skills = setOf(Skills.HANDS_TOGETHER_HELD.id, Skills.BASS_CLEF_WHOLE_NOTE.id)
     val tuneOnly = builtinPassage(id, title, tune, tempoBpm, skills, rights, piece = piece)
     val barTicks = tuneOnly.timeSignature.barTicks
     val steps =

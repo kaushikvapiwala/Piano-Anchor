@@ -6,17 +6,16 @@ rules.
 
 ## What a piece is
 
-A passage with `piece = true`: the traditional tunes of units 1 and 2 and the four songs of the chord unit
-(`SongsUnit.kt`). Exercises are never pieces. Pieces are listed by unit in curriculum order, in content order inside a
-unit.
+A passage with `piece = true`: the traditional tunes of units 1 and 2, the two chord songs of unit 3 and the two
+songs of the "More songs" unit. Exercises are never pieces. Pieces are listed by unit in curriculum order, in content
+order inside a unit.
 
 ## Status
 
-- **Locked** when any skill of the piece has a prerequisite that is not learned. `waitingFor` is the first such skill
-  in graph order, and the row says "Needs: <that skill's title>". `Pieces.waitingFor` holds this rule; Today's Song card
-  uses it too, so it offers only pieces that are not locked.
-- Otherwise **new** when the piece was never played, **mastered** when its top tempo rung has a CLEAN run, else **in
-  progress**.
+Nothing is locked: every piece opens whatever the learner has learned, because the course only suggests the next
+lesson (`docs/course/beginner-course.md`). `Pieces.list` reads attempt history only. A piece is **new** when it was
+never played, **mastered** when its top tempo rung has a CLEAN run, else **in progress**. The row shows no lock and no
+"needs" line, and tapping it always opens Practice (or the piano list when no piano is connected).
 
 ## Rungs
 
@@ -26,8 +25,8 @@ is null once mastered; opening a mastered piece uses the top rung.
 
 ## Chord content
 
-The chord unit teaches six skills in C position (triads, changes in time, melody over held chords, first inversions,
-A minor and the I-V-vi-IV progression). The left hand plays C3-E3-G3 (C), F2-A2-C3 or A2-C3-F3 (F), G2-B2-D3 or
+Unit 3 teaches the C chord, G and F chords, melody plus chords and sharps and flats; the "More songs" unit adds first
+inversions, A minor and the I-V-vi-IV progression. The left hand plays C3-E3-G3 (C), F2-A2-C3 or A2-C3-F3 (F), G2-B2-D3 or
 B2-D3-G3 (G) and A2-C3-E3 (Am) while the right hand stays in C4-G4. A left-hand chord and the right-hand note that
 starts with it are one step, so wait mode asks for them together; the 90 ms chord window then covers up to four notes,
 which may prove tight on real hardware.

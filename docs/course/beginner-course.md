@@ -128,5 +128,31 @@ along the bottom and lights keys. Only the right side changes between steps. A d
 Left for the next course: eighth notes, the G position, the pedal and scales.
 
 ## Existing content
-The new map comes first. Then each existing passage in Units 0–2 and the songs unit is kept, moved or dropped to fit
-it.
+The new map came first, then each existing passage was kept under the concept it exercises. Done in issue 181. Ids
+and notes are unchanged; only the skills they list changed. Pieces stay pieces.
+
+| Concept | Passages |
+|---|---|
+| Middle C | Middle C march |
+| Black keys, groups of 2 and 3 | Twos and threes, Twos and threes coming down, Which C is middle? |
+| High and low, all the Cs | All the Cs, Cs up and down |
+| Steady beat | Steady quarters |
+| Quarter and half notes | Half and quarter |
+| Right-hand C position | C-D-E, Five-finger walk |
+| Steps and skips | Step up, step down; Skipping stones |
+| First tunes by finger number | Hot Cross Buns, Mary Had a Little Lamb, Au clair de la lune |
+| Bar lines, counting to 4 | Steady skipping, Lightly Row |
+| Treble clef = G, skips | Ode to Joy |
+| Left-hand C position | Left hand walk, Left hand steps |
+| Bass clef = F, whole note | Long notes, Low whole notes |
+| Grand staff, hands taking turns, rests | Turn-taking, Echo |
+| 3/4 time, dotted half note | Waltz in C, Three-beat steps |
+| Hands together, left hand holding | Hold and play, Ode to Joy with a held bass |
+| G and F chords, chord symbols | Three chords, Change on the beat |
+| Melody plus chords | Hold and sing, Lightly Row with chords, Ode to Joy with chords |
+
+The optional "More songs" unit after Unit 3 keeps Close moves, Minor colour, When the Saints Go Marching In and
+Four-chord walk (skills: first inversions, A minor, the four-chord progression).
+
+New original passages, one per concept that had none: Five fingers (hand shape), Every F, every B (white key names),
+Steps on the staff, Soft, then loud, C chord held then on the beat, and Sharp phrase (sharps and flats).

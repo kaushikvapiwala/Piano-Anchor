@@ -43,28 +43,26 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 1. **Automatic link latency** (spec #172; owner's hardware check; ADR 0025): timed runs measure the piano's link delay
     with Identity Request round trips; calibration leaves the onboarding and the first-run card; tap calibration becomes
     the optional "Fine-tune timing" with a 45 ms spread limit.
-2. **Beginner course: the new map** (spec #181): rebuild Units 0–3 to the course map (23 concepts), moving,
-    keeping or dropping each existing passage; skill prerequisites suggest the next lesson but lock nothing.
-3. **Beginner course: concept cards** (spec #182; design in `docs/course/beginner-course.md`, ADR 0026) [#181]: a typed
+2. **Beginner course: concept cards** (spec #182; design in `docs/course/beginner-course.md`, ADR 0026) [#181]: a typed
     concept card (what, why, how, when) per concept in the curriculum, a content test that fails on an empty field,
     and the cards for all 23 concepts of the map.
-4. **Beginner course: Try checks** (spec #188) [#181]: one small piano-checked task per course concept and a pure
+3. **Beginner course: Try checks** (spec #188) [#181]: one small piano-checked task per course concept and a pure
     evaluator, for the lesson's Try step and the review quizzes.
-5. **Beginner course: five-step lesson screen** (spec #189) [#188]: Why → See → Try → Use → Recap in the landscape
+4. **Beginner course: five-step lesson screen** (spec #189) [#188]: Why → See → Try → Use → Recap in the landscape
     layout, resuming at the last step; Today's "Next" card and the course map ticks.
-6. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
+5. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
     every card's animation consistent, and the Unit 0 scenes.
-7. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
-8. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
-9. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
-10. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
+6. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
+7. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
+8. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
+9. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
     Today's warm-up, rated by mistakes into the review planner.
-11. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
+10. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
     loops save their attempts under the slice's id (`…#bars5-6`) and also set `Attempt.spot`, so the full-passage
     queries' spot filters never match a row, the loop's done-rung refresh always reads an empty set and `run N` counts
     loops apart from the piece. Save them under the piece's id and rely on `spot` alone (then drop the id suffix and
     `sourcePassageId`); this changes stored data and run numbers.
-12. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
+11. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
     mode by hand where it starts hints; give the run an effective level (OFF in perform) so `loadHints` and
     `startHintStep` read only that, and keep the Hint button's own guard.
 

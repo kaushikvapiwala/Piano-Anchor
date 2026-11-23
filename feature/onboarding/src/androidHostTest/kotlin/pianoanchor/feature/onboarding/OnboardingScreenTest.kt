@@ -142,7 +142,7 @@ class OnboardingScreenTest {
 
             onNodeWithText("Start at the beginning").performScrollTo().performClick()
             onNodeWithText("Unit 1 · Five-finger tunes").performScrollTo().performClick()
-            onNodeWithText("Unit 2 · Both hands").performScrollTo().performClick()
+            onNodeWithText("Unit 2 · Left hand, then both hands").performScrollTo().performClick()
 
             assertEquals(listOf("start BEGINNING", "start UNIT_1", "start UNIT_2"), calls)
         }
@@ -171,7 +171,7 @@ class OnboardingScreenTest {
                 }
             }
 
-            onNodeWithText("Unit 2 · Both hands").performScrollTo().assertIsDisplayed()
+            onNodeWithText("Unit 2 · Left hand, then both hands").performScrollTo().assertIsDisplayed()
         }
 }
 
