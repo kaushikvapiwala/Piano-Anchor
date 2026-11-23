@@ -86,6 +86,9 @@ import pianoanchor.ui.shell.pianoAnchorColors
  * [onSkipCalibration] are the calibrate card's Calibrate and Skip, shown while [PracticeState.calibrationOffered].
  * A spot loop ([PracticeState.spotLoop]) shows its progress as the subtitle and the last loop's result under the
  * staff; its "bars are clean" card has [onPlayWhole] ("Play it") and [onKeepLooping].
+ * Under the staff one line says how to find the right key after a wrong one ("landmark hint"), with the Listen button
+ * ([onListen]: the passage plays for the learner) or, while it plays, Skip ([onSkipListening]). A timed run's count-in
+ * shows "3, 2, 1, Play!" over the staff; a Unit 0 passage has no staff and a taller key strip.
  */
 @Composable
 public fun PracticeScreen(
@@ -102,56 +105,86 @@ public fun PracticeScreen(
     onSelectMode: (RunMode) -> Unit = {},
     onPlayWhole: () -> Unit = {},
     onKeepLooping: () -> Unit = {},
+    onListen: () -> Unit = {},
+    onSkipListening: () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(modifier = Modifier.safeDrawingPadding()) {
-            TopBar(state, onBack, onSelectRung, onToggleClick, onHint, onSelectMode)
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            if (state.connection == PracticeConnection.DISCONNECTED) {
-                MessageCard(
-                    stringResource(Res.string.practice_disconnected),
-                    CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
-                    modifier = CARD_MODIFIER,
+        Box(Modifier.safeDrawingPadding(), contentAlignment = Alignment.Center) {
+            Column(Modifier.fillMaxSize()) {
+                TopBar(state, onBack, onSelectRung, onToggleClick, onHint, onSelectMode)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                StatusCards(
+                    state,
+                    onBack,
+                    onRetrySave,
+                    onDiscard,
+                    onCalibrate,
+                    onSkipCalibration,
+                    onPlayWhole,
+                    onKeepLooping,
+                )
+                StaffArea(state)
+                HintRow(state, onListen, onSkipListening, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
+                if (state.linkResumed) LinkResumedLine(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+                if (state.rung != TempoRung.WAIT && !state.calibrationOffered) {
+                    RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
+                }
+                state.spotLoop?.lastLoop?.let {
+                    LoopResultLine(
+                        it,
+                        Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                    )
+                }
+                KeyStrip(
+                    state,
+                    modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(),
+                    tall = state.staffHidden,
                 )
             }
-            if (state.saveFailed) {
-                MessageCard(
-                    stringResource(Res.string.practice_save_failed),
-                    CardAction(stringResource(Res.string.practice_retry), onRetrySave),
-                    CardAction(stringResource(Res.string.practice_discard), onDiscard),
-                    modifier = CARD_MODIFIER,
-                )
-            }
-            if (state.calibrationOffered) {
-                MessageCard(
-                    stringResource(Res.string.practice_calibrate_offer, CalibrationState.DURATION_SECONDS.toString()),
-                    CardAction(stringResource(Res.string.practice_calibrate), onCalibrate),
-                    CardAction(stringResource(Res.string.practice_calibrate_skip), onSkipCalibration),
-                    modifier = CARD_MODIFIER,
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
-            state.spotLoop?.takeIf { it.offerFull }?.let { loop ->
-                SpotCleanCard(loop.bars, onPlayWhole, onKeepLooping, modifier = CARD_MODIFIER)
-            }
-            StaffView(
-                passage = state.passage,
-                steps = state.steps,
-                liveMarks = state.liveMarks,
-                timed = state.rung != TempoRung.WAIT,
-                legend = state.showsVerdicts,
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp).fillMaxWidth().height(196.dp),
-            )
-            if (state.linkResumed) LinkResumedLine(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
-            if (state.rung != TempoRung.WAIT &&
-                !state.calibrationOffered
-            ) {
-                RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
-            }
-            state.spotLoop?.lastLoop?.let { LoopResultLine(it, Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) }
-            KeyStrip(state, modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth())
+            CountInNumeral(state)
         }
+    }
+}
+
+/** The cards above the staff: disconnected, save failed, calibrate offer and the clean spot loop. */
+@Composable
+private fun StatusCards(
+    state: PracticeState,
+    onBack: () -> Unit,
+    onRetrySave: () -> Unit,
+    onDiscard: () -> Unit,
+    onCalibrate: () -> Unit,
+    onSkipCalibration: () -> Unit,
+    onPlayWhole: () -> Unit,
+    onKeepLooping: () -> Unit,
+) {
+    if (state.connection == PracticeConnection.DISCONNECTED) {
+        MessageCard(
+            stringResource(Res.string.practice_disconnected),
+            CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
+            modifier = CARD_MODIFIER,
+        )
+    }
+    if (state.saveFailed) {
+        MessageCard(
+            stringResource(Res.string.practice_save_failed),
+            CardAction(stringResource(Res.string.practice_retry), onRetrySave),
+            CardAction(stringResource(Res.string.practice_discard), onDiscard),
+            modifier = CARD_MODIFIER,
+        )
+    }
+    if (state.calibrationOffered) {
+        MessageCard(
+            stringResource(Res.string.practice_calibrate_offer, CalibrationState.DURATION_SECONDS.toString()),
+            CardAction(stringResource(Res.string.practice_calibrate), onCalibrate),
+            CardAction(stringResource(Res.string.practice_calibrate_skip), onSkipCalibration),
+            modifier = CARD_MODIFIER,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
+    }
+    state.spotLoop?.takeIf { it.offerFull }?.let { loop ->
+        SpotCleanCard(loop.bars, onPlayWhole, onKeepLooping, modifier = CARD_MODIFIER)
     }
 }
 
@@ -426,15 +459,6 @@ private fun RunStatus(
                         style = MaterialTheme.typography.labelLarge,
                         color = colors.onSurfaceVariant,
                     )
-                    if (state.beat > 0) {
-                        Text(
-                            state.beat.toString(),
-                            fontFamily = displayFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = colors.primary,
-                        )
-                    }
                 }
             }
 

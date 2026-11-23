@@ -57,24 +57,22 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     evaluator, for the lesson's Try step and the review quizzes.
 6. **Beginner course: five-step lesson screen** (spec #189) [#188]: Why → See → Try → Use → Recap in the landscape
     layout, resuming at the last step; Today's "Next" card and the course map ticks.
-7. **Beginner course: gentle practice feedback** (spec #190): grey wrong key with the right key glowing and one
-    landmark line, a visible "3, 2, 1, Play!", hear it first, and Unit 0 without the staff.
-8. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
+7. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
     every card's animation consistent, and the Unit 0 scenes.
-9. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
-10. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
-11. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
-12. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
+8. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
+9. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
+10. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
+11. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
     Today's warm-up, rated by mistakes into the review planner.
-13. **One Today start action** (follow-up of the M4 cleanup; mechanical): the Ear card has its own `target` overload and
+12. **One Today start action** (follow-up of the M4 cleanup; mechanical): the Ear card has its own `target` overload and
     `onStartEar` action, so `MainActivity` repeats the `when (TodayTarget)` with branches that can't happen; give
     `TodayViewModel` one `target(card)` and `TodayActions` one `onStart(card)`.
-14. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
+13. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
     loops save their attempts under the slice's id (`…#bars5-6`) and also set `Attempt.spot`, so the full-passage
     queries' spot filters never match a row, the loop's done-rung refresh always reads an empty set and `run N` counts
     loops apart from the piece. Save them under the piece's id and rely on `spot` alone (then drop the id suffix and
     `sourcePassageId`); this changes stored data and run numbers.
-15. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
+14. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
     mode by hand where it starts hints; give the run an effective level (OFF in perform) so `loadHints` and
     `startHintStep` read only that, and keep the Hint button's own guard.
 

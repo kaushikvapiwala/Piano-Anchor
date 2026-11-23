@@ -20,7 +20,7 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
   | Dividers / chip borders | `#EEE9EF` / `#D9CFDC` | `#3F3B45` / `#5E5A66` |
 
 - **Feedback tokens** (`MaterialTheme.pianoAnchorColors`): correct `#1F5F8B` (dark `#8CC4E8`), waiting `#E69F00`
-  (dark `#F2B84B`), wrong key `#B86FA3` (dark `#E3A6D0`), timing `#D55E00` (dark `#F08A4B`, our choice: the mock
+  (dark `#F2B84B`), wrong key grey `#9A9A9A` (dark `#8A8A8A`; never red), timing `#D55E00` (dark `#F08A4B`, our choice: the mock
   has none; the hollow mark of a timing-off note). Staff lines `#3F3B45` (dark `#CFC8D3`), upcoming notes `#1B1B1F`
   (dark `#F7F5F2`), target-key band `#FBE3B0`. Ear card accent `#8A5300` with white text (dark `#FFC857` with `#1B1B1F`).
 - **Contrast** (WCAG, against the background): all text ≥ 4.5:1 in both themes; dark marks all ≥ 8:1. In light, the
@@ -63,12 +63,31 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
   less; one inside a held note sits at its tick. The final double bar is 1.5 dp + 3 dp, 3 dp apart. At the 28 dp
   minimum a sharp can touch a bar line or the note before it, and ledger lines can join; built-in passages are
   far wider than that.
-- **Key strip**: "Live keys · play the piano" and the last key's verdict ("E4 · correct, moving on",
-  "F4 · waiting for E4"), then two octaves from the C at or below the passage's lowest note. White keys 60 dp on a
+- **Key strip**: "Live keys · play the piano" and the last key's verdict ("E4 · correct, moving on"), then two octaves from the C at or below the passage's lowest note. White keys 60 dp on a
   62 dp pitch, black keys 34×46 dp; the waiting step's keys carry an 18 dp amber band; held and flashing keys turn
-  correct or wrong with a 150 ms colour change; the flash lasts `KEY_FLASH_MS`. All Notes Off and All Sound Off clear every held and wrong key.
+  correct (blue) or wrong (grey, never red) with a 150 ms colour change; the flash lasts `KEY_FLASH_MS`. All Notes Off and All Sound Off clear every held and wrong key.
+- **Wrong key in wait mode**: the played key flashes grey while the key to play glows in the theme's primary colour
+  (a 3 dp primary outline on a tint of it) until it is played. One line under the staff says what was played and how to
+  find the right key by the black keys: "That was F4. C is just left of the two black keys." ("D is between the two
+  black keys.", "C♯ is the black key just right of C.", "Same letter, other octave: try C4."; the landmark rules are in
+  `docs/algorithms/wrong-key-hint.md`). The line is a polite live region and TalkBack reads it instead of
+  "Wrong, F4". No red and no sound; the app waits as before. A timed run only flashes the key grey: no glow, no line.
+- **Listen and hear it first**: a passage with no attempt yet plays once on opening, at its written tempo, on the
+  piano when it accepts MIDI out and else on the speaker, with the cursor and the keys following the sound; the run
+  starts when it ends. A "Skip" button (right end of the line under the staff) stops it. Before the first key of a
+  run a "Listen" button in the same place plays it again; the first key pressed ends a demo still playing and removes
+  the button for that run. If the piano stops accepting notes midway, the speaker plays only the notes not yet struck,
+  on the same timeline. The hint after a wrong chord key follows what the matcher still needs of the step (it forgets
+  chord keys after `CHORD_CLUSTER_MS`) and goes when the step moves on.
+- **Unit 0 layout**: a passage whose skills all belong to Unit 0 has no staff; its room goes to the key strip (240 dp
+  white keys), and the next key glows at every hint level, but only while a run is under way (wait mode not
+  listening, or a timed run once it plays), not during the count-in or hear-it-first. With no staff to read, a polite
+  live region in its place says "Waiting for D4." (or "Done."). The count-in numeral floats over the whole screen, so
+  it is never clipped.
 - **Accessibility**: the staff reads as "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."); each key is named; the
-  verdict is a polite live region announcing "Correct" or "Wrong, F4".
+  verdict is a polite live region announcing "Correct". A wrong key in wait mode announces the hint line instead of
+  "Wrong, F4" (which stays for a timed run, and for a wrong key that has no hint, with the old "F4 · waiting for E4"
+  text).
 - **Finishing**: nothing new shows after the last note. Results open once the last notes stop sounding (keys up, pedal
   up), at most 3 s after it (`WAIT_MODE_RELEASE_TIMEOUT_MS`); a new key press ends the wait at once.
 - **Disconnected**: the error card "Piano disconnected" with "Back to pianos"; the run is discarded.
@@ -101,7 +120,9 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
   "Click off". On by default and kept until the app closes.
 - **Status line** (36 dp, between staff and keys, timed rungs only): "Play any key to count in" until the first key; then
   one pulse dot per beat of the bar (the accent beat larger, the current beat filled), and during the count-in the
-  words "Count-in" and the beat number. The pulse is read as "Beat 2 of 4" and is not a live region (it would
+  word "Count-in". The last three beats of the count-in show a large numeral, 96 sp in the primary colour, centred over
+  the staff: "3", "2", "1" (a count-in of two beats shows "2", "1"; earlier beats are the pulse dots only), then
+  "Play!" for the first beat of the run. Each is announced by TalkBack. The pulse is read as "Beat 2 of 4" and is not a live region (it would
   chatter). The cursor moves in quarter-beat steps, not smoothly, so screenshots stay still.
 - **Live marks** on the staff: a correct note turns blue; a timing-off note is a hollow orange ring (`timing` token)
   with a tag such as "+92 ms" or "−40 ms" above it; unjudged notes keep their colour and the cursor step is amber.
