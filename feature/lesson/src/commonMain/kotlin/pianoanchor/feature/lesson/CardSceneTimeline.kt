@@ -1,0 +1,50 @@
+package pianoanchor.feature.lesson
+
+import androidx.compose.animation.core.FastOutSlowInEasing
+import pianoanchor.core.model.CARD_SCENE_LOOP_MS
+import pianoanchor.core.model.CardScene
+import pianoanchor.core.model.SceneAction
+import pianoanchor.core.model.SceneCue
+import pianoanchor.engine.Tunables
+
+/** The frame shown when the system asks for less motion: the middle of the loop. */
+internal const val CARD_SCENE_MIDPOINT_MS: Int = CARD_SCENE_LOOP_MS / 2
+
+/** The loop plus its rest: the time one cycle of a card animation takes. */
+internal const val CARD_SCENE_CYCLE_MS: Int = CARD_SCENE_LOOP_MS + Tunables.CARD_SCENE_REST_MS
+
+/** A cue's action and how visible it is now, from 0 (faded out) to 1. */
+internal data class ActiveAction(
+    val action: SceneAction,
+    val alpha: Float,
+)
+
+/**
+ * How visible [cue] is at [timeMs]: it fades in and out over `CARD_SCENE_FADE_MS` each with the one motion curve
+ * (`FastOutSlowInEasing`), and is 0 outside its time.
+ */
+internal fun cueAlpha(
+    cue: SceneCue,
+    timeMs: Int,
+): Float {
+    val into = timeMs - cue.atMs
+    val left = cue.atMs + cue.lengthMs - timeMs
+    if (into < 0 || left <= 0) return 0f
+    val fade = Tunables.CARD_SCENE_FADE_MS.toFloat()
+    return FastOutSlowInEasing.transform(minOf(1f, into / fade, left / fade))
+}
+
+/** The actions of [scene] visible at [timeMs] of its cycle, in cue order; none during the rest. */
+internal fun activeActions(
+    scene: CardScene,
+    timeMs: Int,
+): List<ActiveAction> =
+    scene.cues.mapNotNull { cue ->
+        cueAlpha(cue, timeMs).takeIf { it > 0f }?.let { ActiveAction(cue.action, it) }
+    }
+
+/** The keys lit at [timeMs] of [scene]'s cycle. */
+internal fun litKeysAt(
+    scene: CardScene,
+    timeMs: Int,
+): Set<Int> = activeActions(scene, timeMs).mapNotNull { (it.action as? SceneAction.LightKey)?.note }.toSet()

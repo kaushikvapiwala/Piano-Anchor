@@ -1,0 +1,139 @@
+package pianoanchor.engine.content
+
+import pianoanchor.core.model.CardScene
+import pianoanchor.core.model.SceneAction
+import pianoanchor.core.model.SceneAction.Caption
+import pianoanchor.core.model.SceneAction.Highlight
+import pianoanchor.core.model.SceneAction.LightKey
+import pianoanchor.core.model.SceneAction.Pulse
+import pianoanchor.core.model.SceneCue
+import pianoanchor.core.model.SceneHand
+import pianoanchor.core.model.SceneStage
+
+private const val MIDDLE_C = 60
+private const val BEAT_MS = 800
+private const val FIRST_BEAT_MS = 300
+private const val BEATS = 4
+private const val BEAT_CUE_MS = 600
+private const val FINGER_MS = 500
+private const val FIRST_FINGER_MS = 850
+private const val POSE_OVERLAP_MS = 150
+private const val POSE_FLAT_MS = 750
+private const val POSE_CURVED_AT_MS = POSE_FLAT_MS - POSE_OVERLAP_MS
+private const val CAPTION_END_MS = 3800
+private const val GROUP_MS = 800
+private const val C_MS = 700
+private const val NAME_MS = 500
+private const val FIRST_NAME_MS = 250
+private const val LONG_BEATS = 2
+
+private val CS = intArrayOf(36, 48, 60, 72, 84)
+private val WHITE_NAMES = listOf("C" to 48, "D" to 50, "E" to 52, "F" to 53, "G" to 55, "A" to 57, "B" to 59)
+
+private fun cue(
+    at: Int,
+    length: Int,
+    action: SceneAction,
+) = SceneCue(at, length, action)
+
+/** The beat dots at 4 even beats, each with [key] lit for its [lengths] (in beats, one per lit beat) from the first. */
+private fun beats(vararg keyLengths: Pair<Int, Int>): List<SceneCue> =
+    List(BEATS) { cue(FIRST_BEAT_MS + it * BEAT_MS, BEAT_CUE_MS, Pulse(accent = it == 0)) } +
+        keyLengths.map { (beat, lengthInBeats) ->
+            cue(FIRST_BEAT_MS + beat * BEAT_MS, lengthInBeats * BEAT_MS - (BEAT_MS - BEAT_CUE_MS), LightKey(MIDDLE_C))
+        }
+
+/**
+ * The looping animations of the concept cards, one per skill, written in the shared scene vocabulary so every card
+ * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Unit 0 now; later units add theirs.
+ */
+internal object CardScenes {
+    private val handShape =
+        CardScene(
+            SceneStage(60..67, hand = SceneHand.RIGHT),
+            listOf(
+                cue(0, POSE_FLAT_MS, SceneAction.HandPose(curved = false, overNote = MIDDLE_C)),
+                cue(
+                    POSE_CURVED_AT_MS,
+                    4000 - POSE_CURVED_AT_MS,
+                    SceneAction.HandPose(curved = true, overNote = MIDDLE_C),
+                ),
+                cue(800, CAPTION_END_MS - 800, Caption("Curved, like a ball")),
+            ) + (1..5).map { cue(FIRST_FINGER_MS + (it - 1) * FINGER_MS, FINGER_MS, SceneAction.ShowFinger(it)) },
+            "A hand curves over the keys and fingers 1 to 5 light up in turn.",
+        )
+
+    private val middleC =
+        CardScene(
+            SceneStage(48..72),
+            listOf(
+                cue(200, 3600, Highlight(setOf(61, 63))),
+                cue(800, 700, LightKey(MIDDLE_C, strong = true)),
+                cue(1800, 800, LightKey(MIDDLE_C, strong = true)),
+                cue(400, 3400, Caption("Middle C")),
+            ),
+            "Middle C lights up twice, just left of the group of two black keys.",
+        )
+
+    private val blackKeyGroups =
+        CardScene(
+            SceneStage(48..72),
+            listOf(
+                listOf(49, 51),
+                listOf(54, 56, 58),
+                listOf(61, 63),
+                listOf(66, 68, 70),
+            ).mapIndexed { i, keys -> cue(100 + i * GROUP_MS, GROUP_MS, Highlight(keys.toSet())) } +
+                cue(300, 3600, Caption("2s and 3s")),
+            "The black keys come in groups of two and groups of three, repeating up the keyboard.",
+        )
+
+    private val highAndLow =
+        CardScene(
+            SceneStage(36..84),
+            CS.mapIndexed { i, c -> cue(300 + i * C_MS, 3900 - (300 + i * C_MS), LightKey(c)) } +
+                cue(300, 3600, Caption("Every C")),
+            "Every C lights up from the lowest to the highest and stays lit.",
+        )
+
+    private val steadyBeat =
+        CardScene(
+            SceneStage(55..67),
+            beats(0 to 1, 1 to 1, 2 to 1, 3 to 1),
+            "A dot pulses four times, evenly, and middle C lights with each beat.",
+        )
+
+    private val quarterAndHalf =
+        CardScene(
+            SceneStage(55..67),
+            beats(0 to 1, 1 to 1, 2 to LONG_BEATS) + cue(300, 3500, Caption("1 click, 2 clicks")),
+            "Middle C lights for one beat, one beat again, then glows for two beats.",
+        )
+
+    private val whiteKeyNames =
+        CardScene(
+            SceneStage(48..72),
+            listOf(
+                cue(FIRST_NAME_MS, 1500, Highlight(setOf(49, 51))),
+                cue(FIRST_NAME_MS + 1500, 2000, Highlight(setOf(54, 56, 58))),
+            ) +
+                WHITE_NAMES
+                    .mapIndexed { i, pair ->
+                        val at = FIRST_NAME_MS + i * NAME_MS
+                        listOf(cue(at, NAME_MS, LightKey(pair.second)), cue(at, NAME_MS, Caption(pair.first)))
+                    }.flatten(),
+            "White keys light up in turn: C, D, E by the group of two, then F, G, A, B by the group of three.",
+        )
+
+    /** Every card scene by the id of its skill. */
+    val all: Map<String, CardScene> =
+        mapOf(
+            Skills.HAND_SHAPE.id to handShape,
+            Skills.MIDDLE_C.id to middleC,
+            Skills.BLACK_KEY_GROUPS.id to blackKeyGroups,
+            Skills.HIGH_AND_LOW.id to highAndLow,
+            Skills.STEADY_BEAT.id to steadyBeat,
+            Skills.QUARTER_AND_HALF.id to quarterAndHalf,
+            Skills.WHITE_KEY_NAMES.id to whiteKeyNames,
+        )
+}

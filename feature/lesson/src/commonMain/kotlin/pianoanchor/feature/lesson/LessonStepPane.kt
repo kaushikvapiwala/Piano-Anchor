@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -49,6 +50,7 @@ import pianoanchor.ui.shell.displayFontFamily
 
 private val COUNT_IN_SIZE = 56.sp
 private val BUTTON_HEIGHT = 44.dp
+private val WHY_ANIMATION_MAX_WIDTH = 280.dp
 
 /** The right pane: the content of the current step. */
 @Composable
@@ -68,6 +70,7 @@ internal fun StepPane(
         )
         when (state.step) {
             LessonStep.WHY -> {
+                state.scene?.let { CardAnimation(it, Modifier.widthIn(max = WHY_ANIMATION_MAX_WIDTH)) }
                 Body(state.card.why)
                 Buttons { PrimaryButton(stringResource(Res.string.lesson_next), actions.onNext) }
             }

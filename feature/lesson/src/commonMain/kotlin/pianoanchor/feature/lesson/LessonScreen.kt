@@ -99,6 +99,8 @@ private fun CardPane(
             Modifier.weight(1f).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            // The Why step shows the animation larger on the right, so the card pane shows it for the other steps.
+            if (state.step != LessonStep.WHY) state.scene?.let { CardAnimation(it) }
             CardField(Res.string.lesson_card_what, state.card.what)
             CardField(Res.string.lesson_card_why, state.card.why)
             CardField(Res.string.lesson_card_how, state.card.how)

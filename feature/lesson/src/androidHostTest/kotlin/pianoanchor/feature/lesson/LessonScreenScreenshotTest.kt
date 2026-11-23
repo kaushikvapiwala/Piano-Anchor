@@ -1,9 +1,12 @@
 package pianoanchor.feature.lesson
 
+import android.provider.Settings
 import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.LessonStep
@@ -19,6 +22,16 @@ import pianoanchor.ui.shell.PianoAnchorTheme
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
 class LessonScreenScreenshotTest {
+    /** Animations off, so a card animation holds its midpoint frame instead of keeping the screen from going idle. */
+    @Before
+    fun animationsOff() {
+        Settings.Global.putFloat(
+            RuntimeEnvironment.getApplication().contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            0f,
+        )
+    }
+
     private fun capture(
         name: String,
         state: LessonState,
