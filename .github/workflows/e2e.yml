@@ -1,17 +1,12 @@
 # Emulator end-to-end test (docs/adr/0021-emulator-end-to-end-tests.md): the C-D-E walking skeleton on a Gradle
-# Managed Device, fed by a virtual MIDI piano. Runs on main and nightly, and on the PRs that change the test itself;
-# ordinary PRs never run it. Not a required check. Actions are pinned to commit SHAs like the other workflows.
+# Managed Device, fed by a virtual MIDI piano. Runs on every PR, on main and nightly (ADR 0021). Actions are pinned to
+# commit SHAs like the other workflows.
 name: E2E
 
 on:
   push:
     branches: [main]
   pull_request:
-    paths:
-      - .github/workflows/e2e.yml
-      - app-android/src/androidTest/**
-      - app-android/src/debug/**
-      - app-android/build.gradle.kts
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
@@ -51,8 +46,13 @@ jobs:
       - name: Show failed tests
         if: failure()
         run: |
+          # shellcheck disable=SC2016 # $0 is awk's, not the shell's
           find app-android/build/outputs/androidTest-results -name 'TEST-*.xml' -print0 |
-            xargs -0 -r grep -h -B1 -A12 '<failure' || echo "No test results found."
+            xargs -0 -r awk '/<testcase/ { name = $0 } /<failure/ { print name; on = 1 } on { print } /<\/failure>/ { on = 0 }' ||
+            echo "No test results found."
+          # The app's own log lines (MIDI, Bluetooth, storage glue) around the failure.
+          find app-android/build/outputs/androidTest-results -name 'logcat-*.txt' -print0 |
+            xargs -0 -r grep -h 'PianoAnchor\|AndroidRuntime' | tail -n 200 || true
       - name: Upload test reports on failure
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

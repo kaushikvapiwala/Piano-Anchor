@@ -29,9 +29,10 @@ glue the test is for.
 - **AndroidX Test Orchestrator** with `clearPackageData`: each test starts on an empty database.
 - **New test-only dependencies** (Apache-2.0): `androidx.test:runner`, `androidx.test:rules`, `androidx.test.ext:junit`,
   `androidx.test:orchestrator`, `androidx.test.services:test-services` and `androidx.compose.ui:ui-test-junit4`.
-- **CI:** `.github/workflows/e2e.yml` runs it on pushes to main, nightly, on demand and on the PRs that change the test
-  (the workflow, `app-android/src/androidTest/`, `app-android/src/debug/`, `app-android/build.gradle.kts`). It is not part of `fastCheck`,
-  `check` or `ciBuild`, and not a required check: an emulator run takes minutes and ordinary PRs don't touch the glue.
+- **CI:** `.github/workflows/e2e.yml` runs it on every PR, on pushes to main, nightly and on demand. It is not part of
+  `fastCheck`, `check` or `ciBuild`. Amended 2026-11-23: it first ran only on PRs that changed the test, but app and
+  feature changes (#211, #214) then merged while it was red, unnoticed for a day; it now runs on every PR so it can
+  become a required check (about 4 minutes).
 
 Rejected: Koin overrides with `FakePiano` (skip the Android MIDI glue) and a hand-written emulator script (loses
 GMD's image caching and device setup).
