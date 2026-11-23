@@ -67,6 +67,7 @@ Every engine threshold, from the KDoc in `engine/src/commonMain/kotlin/pianoanch
 | `EAR_ITEMS_PER_REVIEW` | 4 | How many items one ear review draws. | one draw is too noisy (a 50% guess rate on 2 choices). | owner, M4 grill. |
 | `EAR_MAX_REPLAYS` | 2 | How many times the learner may replay one ear item. | hear it again without turning it into a memory test. | owner, M4 grill. |
 | `EAR_MAX_ANSWERS` | 2 | How many answers one ear item allows in total. | one second chance, then the answer is shown. | owner, M4 grill. |
+| `EAR_MAX_REDRAWS` | 20 | How many times a draw is repeated to get an item not yet in the set, before an equal one is accepted. | sets of a skill with few possible items (echo one note has five) can't always avoid repeats; a bounded retry keeps drawing finite while making repeats rare. | engineering choice, moved from EarViewModel in the M4 cleanup. |
 | `EAR_GOOD_MIN_RIGHT` | 3 | The fewest items of a set that must end right (first try or recovered) for the band GOOD. | 3 of 4 right in the end is "recalled with slips". | owner, M4 grill. |
 | `EAR_CHORD_LENGTH_MS` | 800 | How long a chord of an ear item is held, in milliseconds. | a chord needs longer than a single note to judge its quality. | starting value. |
 | `PLAYBACK_NOTE_GAP_MS` | 500 | The gap between the starts of the notes the app plays (onboarding's C, E and G; an ear item), in milliseconds. | 500 ms gives a clear, unhurried arpeggio on any piano. | starting value; the mock's pacing. |

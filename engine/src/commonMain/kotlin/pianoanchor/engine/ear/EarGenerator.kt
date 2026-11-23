@@ -77,6 +77,18 @@ public object EarGenerator {
             }
         }
 
+    /**
+     * Draws an item of [skillId] not in [drawn], trying EAR_MAX_REDRAWS draws before accepting one more draw as it is.
+     */
+    public fun drawNew(
+        skillId: String,
+        drawn: Collection<EarExercise>,
+        random: Random,
+    ): EarExercise =
+        generateSequence { draw(skillId, random) }
+            .take(Tunables.EAR_MAX_REDRAWS)
+            .firstOrNull { it !in drawn } ?: draw(skillId, random)
+
     private fun echo(
         notes: List<Int>,
         exactOctave: Boolean,

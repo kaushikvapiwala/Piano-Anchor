@@ -596,6 +596,16 @@ public object Tunables {
     public const val EAR_MAX_ANSWERS: Int = 2
 
     /**
+     * How many times a draw is repeated to get an item not yet in the set, before an equal one is accepted.
+     *
+     * Why: sets of a skill with few possible items (echo one note has five) can't always avoid repeats; a bounded
+     * retry keeps drawing finite while making repeats rare.
+     *
+     * Source: engineering choice, moved from EarViewModel in the M4 cleanup.
+     */
+    public const val EAR_MAX_REDRAWS: Int = 20
+
+    /**
      * The fewest items of a set that must end right (first try or recovered) for the band GOOD.
      *
      * Why: 3 of 4 right in the end is "recalled with slips".

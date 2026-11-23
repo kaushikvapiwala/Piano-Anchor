@@ -37,9 +37,6 @@ import pianoanchor.engine.midi.playTones
 import kotlin.random.Random
 import kotlin.time.Clock
 
-/** How many times a draw is repeated to get an item not yet in the set, before an equal one is accepted. */
-private const val MAX_REDRAWS = 20
-
 /** One item on show and what the learner has done with it. */
 private class ItemRun(
     val exercise: EarExercise,
@@ -149,10 +146,7 @@ public class EarViewModel(
 
     private suspend fun showItem() {
         val skill = skills[skillIndex]
-        val exercise =
-            generateSequence { EarGenerator.draw(skill.id, random) }
-                .take(MAX_REDRAWS)
-                .firstOrNull { it !in drawn } ?: EarGenerator.draw(skill.id, random)
+        val exercise = EarGenerator.drawNew(skill.id, drawn, random)
         drawn += exercise
         val run = ItemRun(exercise)
         item = run
@@ -180,19 +174,18 @@ public class EarViewModel(
         correct: Boolean,
     ) {
         run.answers++
-        when {
-            correct -> {
-                run.outcome =
-                    if (run.answers == 1 && run.replays == 0) EarItemOutcome.FIRST_TRY else EarItemOutcome.RECOVERED
-                moveOn(run)
+        when (val outcome = EarGrading.outcome(correct, run.answers, run.replays)) {
+            null -> {
+                mutableState.update { it.copy(feedback = EarFeedback.TRY_AGAIN) }
             }
 
-            run.answers >= Tunables.EAR_MAX_ANSWERS -> {
+            EarItemOutcome.MISSED -> {
                 miss(run)
             }
 
             else -> {
-                mutableState.update { it.copy(feedback = EarFeedback.TRY_AGAIN) }
+                run.outcome = outcome
+                moveOn(run)
             }
         }
     }

@@ -16,4 +16,21 @@ public object EarGrading {
             outcomes.count { it != EarItemOutcome.MISSED } >= Tunables.EAR_GOOD_MIN_RIGHT -> Band.GOOD
             else -> Band.KEEP_PRACTISING
         }
+
+    /**
+     * The item's outcome after one answer. [answers] counts every answer so far, this one included; [replays] the
+     * Replay taps. Right: FIRST_TRY when it is the first answer and nothing was replayed, else RECOVERED. Wrong: MISSED
+     * once [answers] reaches EAR_MAX_ANSWERS, else null (the item asks again).
+     */
+    public fun outcome(
+        correct: Boolean,
+        answers: Int,
+        replays: Int,
+    ): EarItemOutcome? =
+        when {
+            correct && answers == 1 && replays == 0 -> EarItemOutcome.FIRST_TRY
+            correct -> EarItemOutcome.RECOVERED
+            answers >= Tunables.EAR_MAX_ANSWERS -> EarItemOutcome.MISSED
+            else -> null
+        }
 }
