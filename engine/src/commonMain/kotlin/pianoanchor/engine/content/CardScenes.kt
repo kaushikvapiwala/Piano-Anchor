@@ -43,6 +43,23 @@ private const val STAFF_AT_MS = 300
 private const val STAFF_GAP_MS = 1000
 private const val STAFF_END_MS = 3700
 private const val G_ABOVE_MIDDLE_C = 67
+private const val LOW_C = 48
+private const val F_ABOVE_LOW_C = 53
+private const val G_ABOVE_LOW_C = 55
+private const val E_ABOVE_MIDDLE_C = 64
+private const val THREE_BEATS = 3
+private const val WALTZ_FIRST_MS = 250
+private const val WALTZ_BEAT_MS = 600
+private const val WALTZ_DOT_MS = 560
+private const val WALTZ_BAR_MS = THREE_BEATS * WALTZ_BEAT_MS
+private const val WALTZ_HOLD_MS = WALTZ_BAR_MS - 40
+private const val TURN_MS = 800
+private const val TURN_GAP_MS = 1000
+private const val HELD_MS = 1000
+private const val WHOLE_NOTE_AT_MS = 2100
+private const val WHOLE_NOTE_PULSE_MS = 450
+private const val WHOLE_NOTE_DOT_MS = 400
+private const val FIRST_FINGER_MS_LEFT = 300
 private val FIVE_FINGER_NOTES = listOf(60, 62, 64, 65, 67)
 private val RUN_NOTES = FIVE_FINGER_NOTES + FIVE_FINGER_NOTES.dropLast(1).reversed()
 
@@ -64,7 +81,7 @@ private fun beats(vararg keyLengths: Pair<Int, Int>): List<SceneCue> =
 
 /**
  * The looping animations of the concept cards, one per skill, written in the shared scene vocabulary so every card
- * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 and 1 now;
+ * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 2 now;
  * later units add theirs.
  */
 internal object CardScenes {
@@ -221,6 +238,87 @@ internal object CardScenes {
             "The note G appears on the second line of the treble staff, and that G lights up on the keys.",
         )
 
+    private val leftHandPosition =
+        CardScene(
+            SceneStage(LOW_C..G_ABOVE_LOW_C, hand = SceneHand.LEFT),
+            listOf(cue(0, CARD_SCENE_LOOP_MS, SceneAction.HandPose(curved = true, overNote = G_ABOVE_LOW_C))) +
+                (LOW_C..52).mapIndexed { i, note ->
+                    cue(FIRST_FINGER_MS_LEFT + i * RUN_MS, RUN_MS, LightKey(note, finger = 5 - i))
+                },
+            "The left hand sits curved on the low C and its fingers 5 down to 1 light up the keys in turn.",
+        )
+
+    private val bassClefWholeNote =
+        CardScene(
+            SceneStage(43..55, staff = SceneStaff.BASS),
+            listOf(
+                cue(
+                    STAFF_AT_MS,
+                    WHOLE_NOTE_AT_MS - STAFF_AT_MS,
+                    SceneAction.StaffNote(F_ABOVE_LOW_C),
+                ),
+                cue(
+                    STAFF_AT_MS,
+                    WHOLE_NOTE_AT_MS - STAFF_AT_MS,
+                    LightKey(F_ABOVE_LOW_C, strong = true),
+                ),
+                cue(STAFF_AT_MS, WHOLE_NOTE_AT_MS - STAFF_AT_MS, Caption("F line")),
+                cue(WHOLE_NOTE_AT_MS, CAPTION_END_MS - WHOLE_NOTE_AT_MS, SceneAction.StaffNote(LOW_C, beats = BEATS)),
+                cue(WHOLE_NOTE_AT_MS, CAPTION_END_MS - WHOLE_NOTE_AT_MS, LightKey(LOW_C)),
+                cue(WHOLE_NOTE_AT_MS, CAPTION_END_MS - WHOLE_NOTE_AT_MS, Caption("Whole note: 4 beats")),
+            ) +
+                List(BEATS) {
+                    cue(WHOLE_NOTE_AT_MS + it * WHOLE_NOTE_PULSE_MS, WHOLE_NOTE_DOT_MS, Pulse(accent = it == 0))
+                },
+            "A note sits on the F line of the bass staff and lights its key, then a whole note glows for four beats.",
+        )
+
+    private val grandStaffTurnsRests =
+        CardScene(
+            SceneStage(LOW_C..72, staff = SceneStaff.GRAND),
+            listOf(
+                cue(STAFF_AT_MS, TURN_MS, SceneAction.StaffNote(E_ABOVE_MIDDLE_C)),
+                cue(STAFF_AT_MS, TURN_MS, LightKey(E_ABOVE_MIDDLE_C)),
+                cue(STAFF_AT_MS, TURN_MS, Caption("Right hand")),
+                cue(STAFF_AT_MS + TURN_GAP_MS, TURN_MS, Pulse(accent = true)),
+                cue(STAFF_AT_MS + TURN_GAP_MS, TURN_MS, Caption("Rest: stay quiet")),
+                cue(STAFF_AT_MS + 2 * TURN_GAP_MS, TURN_MS, SceneAction.StaffNote(F_ABOVE_LOW_C)),
+                cue(STAFF_AT_MS + 2 * TURN_GAP_MS, TURN_MS, LightKey(F_ABOVE_LOW_C)),
+                cue(STAFF_AT_MS + 2 * TURN_GAP_MS, TURN_MS, Caption("Left hand")),
+            ),
+            "A treble note lights its key, a rest gives a quiet beat, then a bass note lights its key.",
+        )
+
+    private val threeFourTime =
+        CardScene(
+            SceneStage(55..67),
+            List(2 * THREE_BEATS) {
+                cue(WALTZ_FIRST_MS + it * WALTZ_BEAT_MS, WALTZ_DOT_MS, Pulse(accent = it % THREE_BEATS == 0))
+            } +
+                (0 until 2).flatMap {
+                    listOf(
+                        cue(WALTZ_FIRST_MS + it * WALTZ_BAR_MS, WALTZ_HOLD_MS, LightKey(MIDDLE_C)),
+                        cue(WALTZ_FIRST_MS + it * WALTZ_BAR_MS, WALTZ_HOLD_MS, Caption("1 2 3")),
+                    )
+                },
+            "A dot pulses six times in two groups of three, and middle C glows for the three beats of each group.",
+        )
+
+    private val handsTogetherHeld =
+        CardScene(
+            SceneStage(LOW_C..67, staff = SceneStaff.GRAND),
+            listOf(
+                cue(0, CARD_SCENE_LOOP_MS, LightKey(LOW_C)),
+                cue(0, CARD_SCENE_LOOP_MS, SceneAction.StaffNote(LOW_C)),
+                cue(STAFF_AT_MS, CAPTION_END_MS - STAFF_AT_MS, Caption("Left holds, right moves")),
+            ) +
+                listOf(MIDDLE_C, 62, E_ABOVE_MIDDLE_C).withIndex().flatMap { (i, note) ->
+                    val at = HELD_MS / 2 + i * HELD_MS
+                    listOf(cue(at, HELD_MS, LightKey(note)), cue(at, HELD_MS, SceneAction.StaffNote(note)))
+                },
+            "The left hand holds the low C all the way through while the right hand lights middle C, D and E in turn.",
+        )
+
     private val softAndLoud =
         CardScene(
             SceneStage(55..67),
@@ -250,5 +348,10 @@ internal object CardScenes {
             Skills.STAFF_STEPS.id to staffSteps,
             Skills.TREBLE_CLEF.id to trebleClef,
             Skills.SOFT_AND_LOUD.id to softAndLoud,
+            Skills.LH_C_POSITION.id to leftHandPosition,
+            Skills.BASS_CLEF_WHOLE_NOTE.id to bassClefWholeNote,
+            Skills.GRAND_STAFF_TURNS_RESTS.id to grandStaffTurnsRests,
+            Skills.THREE_FOUR_TIME.id to threeFourTime,
+            Skills.HANDS_TOGETHER_HELD.id to handsTogetherHeld,
         )
 }
