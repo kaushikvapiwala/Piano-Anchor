@@ -2,6 +2,7 @@
     <string name="monitor_title">Note monitor</string>
     <string name="monitor_devices">Pianos</string>
     <string name="monitor_no_devices">No piano found. Connect one with a USB cable, or scan for a Bluetooth piano.</string>
+    <string name="monitor_sleep_hint">Pianos turn Bluetooth off when they sit idle. Turn yours off and on again, then wait a few seconds.</string>
     <string name="monitor_select_device">Show notes from %1$s</string>
     <string name="monitor_scan">Scan for Bluetooth piano</string>
     <string name="monitor_scanning">Scanning for Bluetooth pianos…</string>

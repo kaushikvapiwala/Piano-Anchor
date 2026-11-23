@@ -74,7 +74,7 @@ public class MonitorViewModel(
     init {
         viewModelScope.launch {
             input.inputDevices.collect { devices ->
-                mutableState.update { it.copy(devices = devices) }
+                mutableState.update { it.copy(devices = devices, sleepHint = it.sleepHint && devices.isEmpty()) }
             }
         }
         viewModelScope.launch {
@@ -130,6 +130,7 @@ public class MonitorViewModel(
                     it.copy(
                         scanning = true,
                         scanned = emptyList(),
+                        sleepHint = false,
                         error =
                             it.error.takeUnless { e ->
                                 e in
@@ -137,12 +138,22 @@ public class MonitorViewModel(
                             },
                     )
                 }
+                var ranToTheEnd = false
                 try {
                     discovery.scan().collect { found -> mutableState.update { it.copy(scanned = found) } }
+                    ranToTheEnd = true
                 } catch (e: BluetoothUnavailableException) {
                     mutableState.update { it.copy(error = e.toMonitorError()) }
                 } finally {
-                    mutableState.update { it.copy(scanning = false) }
+                    // The hint is for a scan that ran to its end and found nothing: a failed scan has its own error
+                    // card, and a cancelled one (the screen closed) never finished looking.
+                    mutableState.update {
+                        it.copy(
+                            scanning = false,
+                            sleepHint =
+                                ranToTheEnd && it.scanned.isEmpty() && it.devices.isEmpty(),
+                        )
+                    }
                 }
             }
     }
