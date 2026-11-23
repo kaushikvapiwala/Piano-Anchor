@@ -12,16 +12,16 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.WindowManager
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -194,10 +194,19 @@ class WalkingSkeletonEndToEndTest {
         try {
             compose.waitUntil(UI_TIMEOUT_MS) { hasText(text) }
         } catch (timeout: ComposeTimeoutException) {
-            val screen = compose.onAllNodes(isRoot()).printToString()
-            throw AssertionError("\"$text\" not shown within $UI_TIMEOUT_MS ms. Screen:\n$screen", timeout)
+            throw AssertionError("\"$text\" not shown within $UI_TIMEOUT_MS ms. On screen: ${screenTexts()}", timeout)
         }
     }
+
+    /** Every text and content description on screen, in order, joined with " | ". */
+    private fun screenTexts(): String =
+        compose
+            .onAllNodes(SemanticsMatcher("any node") { true }, useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .flatMap { node ->
+                node.config.getOrElse(SemanticsProperties.Text) { emptyList() }.map { it.text } +
+                    node.config.getOrElse(SemanticsProperties.ContentDescription) { emptyList() }
+            }.joinToString(" | ")
 
     private fun hasText(text: String) = compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
