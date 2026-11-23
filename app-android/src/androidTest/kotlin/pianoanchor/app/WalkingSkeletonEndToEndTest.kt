@@ -102,9 +102,11 @@ class WalkingSkeletonEndToEndTest {
 
     @Before
     fun openPiano() {
+        val manager = midiManager()
+        // A test piano still listed belongs to an earlier test: the MIDI service drops it some time after
+        // the component is disabled. Opening it would hand the app a device about to vanish.
+        compose.waitUntil(UI_TIMEOUT_MS) { findTestPiano(manager) == null }
         setVirtualPianoEnabled(true)
-        val manager = InstrumentationRegistry.getInstrumentation().context.getSystemService(MidiManager::class.java)
-        checkNotNull(manager) { "No MIDI service" }
         // The MIDI service registers the device shortly after the service is enabled.
         compose.waitUntil(UI_TIMEOUT_MS) { findTestPiano(manager) != null }
         piano = TestPiano(manager, checkNotNull(findTestPiano(manager)))
@@ -114,6 +116,9 @@ class WalkingSkeletonEndToEndTest {
     fun closePiano() {
         if (::piano.isInitialized) piano.close()
         setVirtualPianoEnabled(false)
+        // Leave no test piano behind for the next test (see openPiano).
+        val manager = midiManager()
+        compose.waitUntil(UI_TIMEOUT_MS) { findTestPiano(manager) == null }
     }
 
     @Test
@@ -311,6 +316,11 @@ private class TestPiano(
 }
 
 /** The [VirtualPianoService] device once the MIDI service lists it. */
+private fun midiManager(): MidiManager =
+    checkNotNull(InstrumentationRegistry.getInstrumentation().context.getSystemService(MidiManager::class.java)) {
+        "No MIDI service"
+    }
+
 private fun findTestPiano(manager: MidiManager): MidiDeviceInfo? {
     @Suppress("DEPRECATION") // getDevicesForTransport needs API 33; minSdk is 31
     val devices = manager.devices
