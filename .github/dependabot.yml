@@ -12,6 +12,10 @@ updates:
       interval: weekly
     commit-message:
       prefix: build
+    # Robolectric 4.18 moves the screenshot tests to SDK 17 and changes their rendering: upgrade it on purpose
+    # (re-record the screenshots and bump robolectric-android-all together), not in the weekly group.
+    ignore:
+      - dependency-name: "org.robolectric:*"
     groups:
       gradle-dependencies:
         patterns: ["*"]
