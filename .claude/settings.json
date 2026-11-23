@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": { "GRADLE_OPTS": "-Dorg.gradle.logging.level=quiet" },
   "hooks": {
     "SessionStart": [
       {

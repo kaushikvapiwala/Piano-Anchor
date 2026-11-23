@@ -623,6 +623,35 @@ class FailureSummaryTest(unittest.TestCase):
     def test_falls_back_to_the_tail(self) -> None:
         self.assertEqual(failure_summary("x" * 10 + "end", limit=3), "end")
 
+    def test_keeps_failed_tests_and_compiler_errors_printed_before_the_report(self) -> None:
+        output = (
+            "Picked up JAVA_TOOL_OPTIONS: -Dx\n"
+            "...Picked up _JAVA_OPTIONS: -Dy\n"
+            "Successfully generated html at file:///r/detekt.html\n"
+            "e: /src/A.kt:3:1 Unresolved reference 'b'.\n"
+            "ATest > fails() FAILED\n    AssertionFailedError: expected: <1> but was: <2>\n\n"
+            "FAILURE: Build failed with an exception.\n\n"
+            "* What went wrong:\nThere were failing tests.\n\n* Try:\n> help\n"
+        )
+        self.assertEqual(
+            failure_summary(output),
+            "There were failing tests.\n\n"
+            "...e: /src/A.kt:3:1 Unresolved reference 'b'.\n"
+            "ATest > fails() FAILED\n    AssertionFailedError: expected: <1> but was: <2>",
+        )
+
+    def test_keeps_the_start_of_long_details(self) -> None:
+        output = "first error\n" + "x" * 50 + "\nFAILURE: Build failed.\n* What went wrong:\nboom\n* Try:\n"
+        self.assertEqual(failure_summary(output, limit=20), "boom\n\nfirst error\nxx")
+
+
+class ClaudeSettingsEnvTest(unittest.TestCase):
+    """Claude Code sessions run Gradle quietly: a passing fastCheck otherwise prints ~1,300 task lines (~20k tokens)."""
+
+    def test_gradle_runs_quiet_in_claude_sessions(self) -> None:
+        env = json.loads((ROOT / ".claude" / "settings.json").read_text())["env"]
+        self.assertIn("-Dorg.gradle.logging.level=quiet", env["GRADLE_OPTS"].split())
+
 
 if __name__ == "__main__":
     unittest.main()
