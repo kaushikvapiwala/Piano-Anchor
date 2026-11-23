@@ -76,7 +76,7 @@ along the bottom and lights keys. Only the right side changes between steps. A d
 ┌──────────────┬───────────────────────┐
 │ BLACK KEYS   │ TRY                   │
 │ [animation]  │ Play every C you can  │
-│ What …       │ find: 3 of 7 ✓        │
+│ What …       │ find: 3 of 8 ✓        │
 │ Why  …       │                       │
 │ ●●●○○        │                       │
 ├──────────────┴───────────────────────┤
@@ -93,7 +93,7 @@ along the bottom and lights keys. Only the right side changes between steps. A d
 | 1 | Sit, hand shape, fingers 1–5 | Every later step names a finger. | "Any key with finger 3". The app can't see fingers, so it trusts the learner. |
 | 2 | Middle C | The first sound and home base; everything is placed relative to it. | Play the glowing key. |
 | 3 | Black keys, groups of 2 and 3 | They answer "how do I find C without the light?" | No light: find C, just left of a 2-group. |
-| 4 | High and low, all the Cs | The pattern repeats every 7 white keys, with the same names. | Play every C, from 0 of 7 to 7 of 7. |
+| 4 | High and low, all the Cs | The pattern repeats every 7 white keys, with the same names. | Play every C on the keyboard, from 0 of 8 to 8 of 8 (88 keys). |
 | 5 | Steady beat | Music has a pulse; later, timing is judged against it. | Play C eight times with the click. |
 | 6 | Quarter and half notes | Notes have lengths; this fixes letting go too soon. | Hold C for 2 clicks. |
 | 7 | C D E, then F G A B | The names hang on the 2-groups and 3-groups. | "Play every F". |

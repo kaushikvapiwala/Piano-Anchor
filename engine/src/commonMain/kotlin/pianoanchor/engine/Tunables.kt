@@ -800,4 +800,40 @@ public object Tunables {
      * Source: a starting value, to be tuned from dogfood.
      */
     public const val RESULTS_HELD_RIGHT_MIN_PERCENT: Int = 70
+
+    /**
+     * The share of a Try hold's length the learner may fall short by and still pass (fraction of the full length).
+     *
+     * Why: beginners let go a little early, and a hold that is 85% long shows they counted.
+     *
+     * Source: a starting value.
+     */
+    public const val TRY_HOLD_TOLERANCE: Double = 0.15
+
+    /**
+     * The loudest velocity (MIDI 1-127) that counts as the soft press of the soft-then-loud Try.
+     *
+     * Why: a clear gap below the playback velocity (80).
+     *
+     * Source: a starting value, tuned on the owner's piano.
+     */
+    public const val TRY_SOFT_MAX_VELOCITY: Int = 60
+
+    /**
+     * The quietest velocity (MIDI 1-127) that counts as the loud press of the soft-then-loud Try.
+     *
+     * Why: a clear gap above the playback velocity (80).
+     *
+     * Source: a starting value, tuned on the owner's piano.
+     */
+    public const val TRY_LOUD_MIN_VELOCITY: Int = 85
+
+    /**
+     * How many velocity points the beat-1 presses must beat the other presses by, on average, in the stress Try.
+     *
+     * Why: an audible accent.
+     *
+     * Source: a starting value.
+     */
+    public const val TRY_STRESS_MIN_DELTA: Int = 12
 }
