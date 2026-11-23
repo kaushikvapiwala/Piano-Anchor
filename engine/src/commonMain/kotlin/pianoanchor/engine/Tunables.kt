@@ -775,6 +775,15 @@ public object Tunables {
     public const val SPOT_LOOP_CLEAN_TARGET: Int = 2
 
     /**
+     * The longest a concept card field (what, why, how, when) may be, in characters.
+     *
+     * Why: a field must fit two lines of the landscape card column at the default font scale.
+     *
+     * Source: the course screen sketch (`docs/course/beginner-course.md`), a starting value.
+     */
+    public const val CONCEPT_CARD_FIELD_MAX_CHARS: Int = 120
+
+    /**
      * How many beats a whole run's median onset deviation must reach for Results to say the run started early or late.
      *
      * Why: a whole run half a beat or more off means the start was missed, not uneven playing.

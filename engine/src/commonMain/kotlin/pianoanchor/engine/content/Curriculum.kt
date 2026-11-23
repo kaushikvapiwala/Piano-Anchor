@@ -1,5 +1,6 @@
 package pianoanchor.engine.content
 
+import pianoanchor.core.model.ConceptCard
 import pianoanchor.core.model.CurriculumUnit
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.SkillGraph
@@ -53,4 +54,7 @@ public object Curriculum {
 
     /** The passage with [id], or null if there is none (e.g. an attempt of a passage since removed). */
     public fun passage(id: String): Passage? = passages.firstOrNull { it.id == id }
+
+    /** The concept card of [skillId], or null for a skill without one (More songs, ear skills). */
+    public fun card(skillId: String): ConceptCard? = ConceptCards.all.firstOrNull { it.skillId == skillId }
 }
