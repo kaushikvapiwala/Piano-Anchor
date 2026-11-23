@@ -49,6 +49,8 @@ class OnboardingScreenTest {
             onNodeWithText("Press any key on your piano").assertExists()
             onNodeWithText("Searching for your piano…").assertExists()
             onNodeWithText("Step 1 of 4").assertExists()
+            onNodeWithText("Press any key to continue.").assertDoesNotExist()
+            onNodeWithText(SLEEP_LINE).assertExists()
             onNodeWithText("Not found? Open the piano list").performClick()
 
             assertEquals(listOf("list"), calls)
@@ -62,6 +64,24 @@ class OnboardingScreenTest {
             onNodeWithText("Press any key on your piano").assertExists()
             onNodeWithText("Connected · FP-30X").assertExists()
             onNodeWithText("Searching for your piano…").assertDoesNotExist()
+            onNodeWithText("Press any key to continue.").assertExists()
+            onNodeWithText(SLEEP_LINE).assertDoesNotExist()
+        }
+
+    @Test
+    fun aPickedPianoSaysAKeyPressContinues() =
+        runComposeUiTest {
+            show(OnboardingState(device = piano))
+
+            onNodeWithText("Press any key to continue.").assertExists()
+        }
+
+    @Test
+    fun searchingDoesNotSayToPressAKeyToContinue() =
+        runComposeUiTest {
+            show(OnboardingState())
+
+            onNodeWithText("Press any key to continue.").assertDoesNotExist()
         }
 
     @Test
@@ -158,3 +178,6 @@ class OnboardingScreenTest {
 private const val LARGE_FONT_SCALE = 2f
 
 private const val SDK = 36
+
+private const val SLEEP_LINE =
+    "Pianos turn Bluetooth off when they sit idle. Turn yours off and on again, then wait a few seconds."

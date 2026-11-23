@@ -42,8 +42,10 @@ import pianoanchor.core.model.MidiDevice
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.feature.onboarding.resources.Res
 import pianoanchor.feature.onboarding.resources.onboarding_connect_connected
+import pianoanchor.feature.onboarding.resources.onboarding_connect_continue
 import pianoanchor.feature.onboarding.resources.onboarding_connect_not_found
 import pianoanchor.feature.onboarding.resources.onboarding_connect_searching
+import pianoanchor.feature.onboarding.resources.onboarding_connect_sleep
 import pianoanchor.feature.onboarding.resources.onboarding_connect_title
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning_summary
@@ -181,7 +183,9 @@ internal fun ConnectionLine(device: MidiDevice?) {
 @Composable
 private fun ConnectLeft(state: OnboardingState) {
     Title(Res.string.onboarding_connect_title)
-    ConnectionLine(state.device ?: state.listed)
+    val piano = state.device ?: state.listed
+    ConnectionLine(piano)
+    if (piano != null) Text(stringResource(Res.string.onboarding_connect_continue))
 }
 
 @Composable
@@ -193,6 +197,7 @@ private fun ConnectRight(
         TextButton(onClick = actions.onOpenPianoList, modifier = Modifier.heightIn(min = TouchTarget)) {
             Text(stringResource(Res.string.onboarding_connect_not_found))
         }
+        Text(stringResource(Res.string.onboarding_connect_sleep))
     }
 }
 

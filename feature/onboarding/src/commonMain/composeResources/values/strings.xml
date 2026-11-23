@@ -3,6 +3,8 @@
     <string name="onboarding_connect_title">Press any key on your piano</string>
     <string name="onboarding_connect_searching">Searching for your piano…</string>
     <string name="onboarding_connect_connected">Connected · %1$s</string>
+    <string name="onboarding_connect_continue">Press any key to continue.</string>
+    <string name="onboarding_connect_sleep">Pianos turn Bluetooth off when they sit idle. Turn yours off and on again, then wait a few seconds.</string>
     <string name="onboarding_connect_not_found">Not found? Open the piano list</string>
     <string name="onboarding_echo_title">Hear it, then play it back</string>
     <string name="onboarding_echo_listen">Listen: your piano plays C, E, G.</string>
