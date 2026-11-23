@@ -4,6 +4,9 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.RunMode
 import pianoanchor.engine.grading.NoteValue
+import pianoanchor.engine.grading.Observation
+import pianoanchor.engine.grading.ResultsWords
+import pianoanchor.engine.grading.Tip
 import pianoanchor.engine.matcher.TempoRung
 
 /** What the results screen shows for one finished run. */
@@ -24,7 +27,9 @@ public sealed interface ResultsState {
      * note had its exact pitch, a [timing] and [length] tile; [hesitation] is null for a run stored before played
      * notes were kept. [mode] is [RunMode.PERFORM] for a perform take: the caption says "Performed".
      * [spot] is the window of bars that went worst, which Results offer to loop (null for a run with no findings, a
-     * perform take or an unknown passage); [rung] is the tempo-ladder rung the run was played on.
+     * perform take or an unknown passage); [rung] is the tempo-ladder rung the run was played on. [words] are what
+     * the screen says first (up to two observations and a tip); [shiftBeats] is how many beats a run that started
+     * late was off, to the nearest half beat.
      */
     public data class Ready(
         val passageTitle: String,
@@ -42,6 +47,8 @@ public sealed interface ResultsState {
         val mode: RunMode = RunMode.PRACTICE,
         val spot: BarRange? = null,
         val rung: TempoRung = TempoRung.WAIT,
+        val words: ResultsWords = ResultsWords(listOf(Observation.CLEAN), Tip.NEXT_TEMPO),
+        val shiftBeats: Double = 0.0,
     ) : ResultsState
 }
 

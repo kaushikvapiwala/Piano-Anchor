@@ -596,6 +596,16 @@ public object Tunables {
     public const val EAR_MAX_ANSWERS: Int = 2
 
     /**
+     * How many times a draw is repeated to get an item not yet in the set, before an equal one is accepted.
+     *
+     * Why: sets of a skill with few possible items (echo one note has five) can't always avoid repeats; a bounded
+     * retry keeps drawing finite while making repeats rare.
+     *
+     * Source: engineering choice, moved from EarViewModel in the M4 cleanup.
+     */
+    public const val EAR_MAX_REDRAWS: Int = 20
+
+    /**
      * The fewest items of a set that must end right (first try or recovered) for the band GOOD.
      *
      * Why: 3 of 4 right in the end is "recalled with slips".
@@ -772,4 +782,22 @@ public object Tunables {
      * Source: the course screen sketch (`docs/course/beginner-course.md`), a starting value.
      */
     public const val CONCEPT_CARD_FIELD_MAX_CHARS: Int = 120
+
+    /**
+     * How many beats a whole run's median onset deviation must reach for Results to say the run started early or late.
+     *
+     * Why: a whole run half a beat or more off means the start was missed, not uneven playing.
+     *
+     * Source: the owner's first timed run (shifted about 1.4 beats); a starting value.
+     */
+    public const val RESULTS_SHIFT_BEATS: Double = 0.5
+
+    /**
+     * The share of notes held right (percent) below which Results say the notes were short or long.
+     *
+     * Why: below this, note length is the main problem worth a sentence.
+     *
+     * Source: a starting value, to be tuned from dogfood.
+     */
+    public const val RESULTS_HELD_RIGHT_MIN_PERCENT: Int = 70
 }

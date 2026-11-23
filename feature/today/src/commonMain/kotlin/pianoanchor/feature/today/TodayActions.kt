@@ -5,8 +5,7 @@ import pianoanchor.engine.session.Card
 
 /** What the user can do on the [TodayScreen]; the composition root wires these to the ViewModel and navigation. */
 public data class TodayActions(
-    val onStart: (Card.PassageCard) -> Unit = {},
-    val onStartEar: (Card.Ear) -> Unit = {},
+    val onStart: (Card) -> Unit = {},
     val onSongs: () -> Unit = {},
     val onPianos: () -> Unit = {},
     val onSettings: () -> Unit = {},

@@ -27,14 +27,7 @@ class ConceptCardsTest {
         ConceptCards.all.forEach { assertNotNull(Curriculum.graph.byId(it.skillId), it.skillId) }
 
     @Test
-    fun `cards follow map order`() =
-        assertEquals(
-            Curriculum.graph.skills
-                .map { it.id }
-                .filter { it in courseIds }
-                .toSet(),
-            courseIds.toSet(),
-        ).also { assertEquals(courseIds, ConceptCards.all.map { it.skillId }) }
+    fun `cards follow map order`() = assertEquals(courseIds, ConceptCards.all.map { it.skillId })
 
     @Test
     fun `every field is one non-blank line within the length limit`() {
