@@ -1,5 +1,6 @@
 package pianoanchor.engine.content
 
+import pianoanchor.core.model.CardScene
 import pianoanchor.core.model.ConceptCard
 import pianoanchor.core.model.CurriculumUnit
 import pianoanchor.core.model.Passage
@@ -58,6 +59,9 @@ public object Curriculum {
 
     /** The concept card of [skillId], or null for a skill without one (More songs, ear skills). */
     public fun card(skillId: String): ConceptCard? = ConceptCards.all.firstOrNull { it.skillId == skillId }
+
+    /** The looping animation of a concept card, or null for a skill without one yet. */
+    public fun scene(skillId: String): CardScene? = CardScenes.all[skillId]
 
     /** The Try check of a course skill, or null for a skill without one (More songs, ear skills). */
     public fun tryCheck(skillId: String): TryCheck? = TryChecks.all[skillId]

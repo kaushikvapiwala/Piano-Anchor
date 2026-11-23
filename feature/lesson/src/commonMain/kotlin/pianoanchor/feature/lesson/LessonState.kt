@@ -1,5 +1,6 @@
 package pianoanchor.feature.lesson
 
+import pianoanchor.core.model.CardScene
 import pianoanchor.core.model.ConceptCard
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.Passage
@@ -44,6 +45,9 @@ public data class LessonState(
     val connection: LessonConnection,
     val countIn: Int? = null,
 ) {
+    /** The concept card's looping animation, or null while its unit has none. */
+    val scene: CardScene? get() = Curriculum.scene(skill.id)
+
     /** The concept's Try check; every course concept has one. */
     val check: TryCheck? get() = Curriculum.tryCheck(skill.id)
 

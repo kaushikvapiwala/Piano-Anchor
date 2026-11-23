@@ -265,13 +265,13 @@ per piece in content order. Cards are at least 56 dp high; the grid scrolls and 
 ## Lesson screen
 
 Landscape (915×412 dp), no rail. Left pane (about 40%): a back button and the concept's title, the four card fields
-(What, Why, How, When; static for now, animations come later) and the dot row. Right pane (about 60%): the content of
+(What, Why, How, When) with the concept's animation above them (see "Card animations") and the dot row. Right pane (about 60%): the content of
 the current step; only this pane changes between steps. A key strip runs along the bottom.
 
 - **Dots**: five tappable buttons (44 dp or more) with the step name under each; filled up to the current step, the
   current name in bold. Any dot jumps to its step. TalkBack reads "Step 3 of 5, Try, current". When the Try is a
   passage the Try dot reads "In Use" (TalkBack "Step 3 of 5, Try, in Use") and jumps to Use.
-- **Why**: the card's Why line and "Next". **See**: "Watch and listen: the keys light as they sound." with "Play again"
+- **Why**: the card's animation (when the concept has one; the left pane shows it in the other steps), the card's Why line and "Next". **See**: "Watch and listen: the keys light as they sound." with "Play again"
   (off while sounding) and "Skip"; a concept with nothing to hear says "Watch the hand" with "Next". **Try**: the
   per-check instruction, the progress ("3 of 8", "✓ Well done" when passed), "That was D♯4. Waiting for D4." after a
   wrong key (a polite live region) and a big count-in numeral for checks with a click; "Skip" is always there; a
@@ -282,6 +282,33 @@ the current step; only this pane changes between steps. A key strip runs along t
   held keys are blue, the key of a wrong press grey, and the expected key glows in the accent (always for a lit key or
   a sequence, after a wrong key for the rest).
 - The step is saved as it changes and the lesson reopens there; a finished lesson reopens at Why.
+
+## Card animations
+
+Each concept card has a short looping animation, shown on the lesson's Why step and in the card pane (`CardAnimation` in
+`feature/lesson`). A concept's animation is a scene: data in the engine's content (`CardScenes`), written in one shared
+vocabulary (`SceneAction`: light a key, show a finger, pose the hand, draw a staff note, highlight keys, pulse the beat,
+caption). One renderer draws every scene, so the animations stay consistent by construction. A concept that needs a
+new kind of action extends the vocabulary in its own spec and this section; it never draws ad hoc.
+
+- **Time**: every loop lasts exactly 4000 ms, followed by a 600 ms rest with everything faded, then repeats. Every cue
+  fades in and out over 150 ms with `FastOutSlowInEasing`; there is no other motion curve (the loop clock itself is
+  linear). Cues start inside the loop and end by its end.
+- **Reduce motion** (system animations off): the frame at the middle of the loop (2000 ms), not animated. TalkBack
+  reads the scene's description and nothing else of the stage.
+- **Stage**: 16:9. The keyboard is always the bottom 40% (white keys evenly across the width, black keys 60% as wide
+  and tall), the staff above it, the hand over the keys, the caption at the top and the beat dot in the top right.
+  The keyboard never mirrors in right-to-left layouts (pianos don't); captions follow the locale.
+- **Colours**, all from theme tokens so light and dark match: a lit key is the accent (60% opacity); a strong key is
+  the accent at full opacity with a 2 dp ring; a highlight is an outline in outline-variant; a finger number is an
+  accent chip with on-accent text; the staff uses the practice staff's colour; the hand is an outline in
+  on-surface-variant.
+- **Strokes**: one weight, 2 dp, for the hand, outlines, key borders and the staff.
+- **Hand**: a flat outline of a rounded palm and five finger arcs, the same in every scene, with the thumb over the
+  pose's key (mirrored for the left hand). A curved pose changes the finger arcs only.
+- **Captions**: at most 24 characters, one at a time, so they fit the narrow pane at font scale 2.0. They are content
+  text and not translated yet.
+- **Goldens**: every scene at its midpoint frame, light and dark (`CardScene_*` in `feature/lesson/screenshots/`).
 
 ## Pianos screen
 

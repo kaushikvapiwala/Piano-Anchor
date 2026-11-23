@@ -43,22 +43,20 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 1. **Automatic link latency** (spec #172; owner's hardware check; ADR 0025): timed runs measure the piano's link delay
     with Identity Request round trips; calibration leaves the onboarding and the first-run card; tap calibration becomes
     the optional "Fine-tune timing" with a 45 ms spread limit.
-2. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
-    every card's animation consistent, and the Unit 0 scenes.
-3. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
-4. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
-5. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
-6. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
+2. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
+3. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
+4. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
+5. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
     Today's warm-up, rated by mistakes into the review planner.
-7. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
+6. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
     loops save their attempts under the slice's id (`…#bars5-6`) and also set `Attempt.spot`, so the full-passage
     queries' spot filters never match a row, the loop's done-rung refresh always reads an empty set and `run N` counts
     loops apart from the piece. Save them under the piece's id and rely on `spot` alone (then drop the id suffix and
     `sourcePassageId`); this changes stored data and run numbers.
-8. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
+7. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
     mode by hand where it starts hints; give the run an effective level (OFF in perform) so `loadHints` and
     `startHintStep` read only that, and keep the Hint button's own guard.
-9. **Lesson Try: the landmark hint** (follow-up of #189; mechanical): the lesson's Try step still says "That was X.
+8. **Lesson Try: the landmark hint** (follow-up of #189; mechanical): the lesson's Try step still says "That was X.
     Waiting for Y." with its own key strip; share practice's wrong-key landmark line and strip colours (#190) with
     `feature/lesson`, through a shared UI module rather than a feature-to-feature dependency.
 

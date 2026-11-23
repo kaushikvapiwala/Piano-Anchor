@@ -784,6 +784,51 @@ public object Tunables {
     public const val CONCEPT_CARD_FIELD_MAX_CHARS: Int = 120
 
     /**
+     * How long every card animation loops, in milliseconds, before its rest ([CARD_SCENE_REST_MS]).
+     *
+     * Why: the course doc asks for 3-5 s, and one fixed length keeps every card's rhythm the same.
+     *
+     * Source: `docs/course/beginner-course.md`.
+     */
+    public const val CARD_SCENE_LOOP_MS: Int = pianoanchor.core.model.CARD_SCENE_LOOP_MS
+
+    /**
+     * How long a card animation rests with everything faded after its loop, in milliseconds.
+     *
+     * Why: a beat of stillness so the loop reads as a loop.
+     *
+     * Source: a starting value.
+     */
+    public const val CARD_SCENE_REST_MS: Int = 600
+
+    /**
+     * How long every cue of a card animation fades in and out, in milliseconds.
+     *
+     * Why: quick enough to feel crisp, slow enough not to flash.
+     *
+     * Source: Material motion short durations.
+     */
+    public const val CARD_SCENE_FADE_MS: Int = 150
+
+    /**
+     * The longest caption of a card animation, in characters.
+     *
+     * Why: fits the lesson's left pane at font scale 2.0.
+     *
+     * Source: a starting value.
+     */
+    public const val CARD_SCENE_CAPTION_MAX_CHARS: Int = pianoanchor.core.model.CARD_SCENE_CAPTION_MAX_CHARS
+
+    /**
+     * The longest description of a card animation, in characters.
+     *
+     * Why: TalkBack reads it like a card field, so it shares [CONCEPT_CARD_FIELD_MAX_CHARS]'s limit.
+     *
+     * Source: [CONCEPT_CARD_FIELD_MAX_CHARS].
+     */
+    public const val CARD_SCENE_DESCRIPTION_MAX_CHARS: Int = pianoanchor.core.model.CARD_SCENE_DESCRIPTION_MAX_CHARS
+
+    /**
      * How many beats a whole run's median onset deviation must reach for Results to say the run started early or late.
      *
      * Why: a whole run half a beat or more off means the start was missed, not uneven playing.
