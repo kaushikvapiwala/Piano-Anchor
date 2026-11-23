@@ -480,24 +480,7 @@ private fun TodayRoute(
                     }
 
                     is TodayTarget.Ear -> {
-                        // Only the Ear card yields this target.
                         onEar(Destination.Ear(target.device, target.skills))
-                    }
-                }
-            },
-            onStartEar = { card ->
-                when (val target = viewModel.target(card)) {
-                    is TodayTarget.Ear -> {
-                        onEar(Destination.Ear(target.device, target.skills))
-                    }
-
-                    TodayTarget.Pianos -> {
-                        onPianos()
-                    }
-
-                    is TodayTarget.Practice -> {
-                        // Only passage cards yield this target.
-                        onPianos()
                     }
                 }
             },

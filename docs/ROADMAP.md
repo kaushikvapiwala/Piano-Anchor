@@ -59,15 +59,12 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 9. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
 10. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
     Today's warm-up, rated by mistakes into the review planner.
-11. **One Today start action** (follow-up of the M4 cleanup; mechanical): the Ear card has its own `target` overload and
-    `onStartEar` action, so `MainActivity` repeats the `when (TodayTarget)` with branches that can't happen; give
-    `TodayViewModel` one `target(card)` and `TodayActions` one `onStart(card)`.
-12. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
+11. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
     loops save their attempts under the slice's id (`…#bars5-6`) and also set `Attempt.spot`, so the full-passage
     queries' spot filters never match a row, the loop's done-rung refresh always reads an empty set and `run N` counts
     loops apart from the piece. Save them under the piece's id and rely on `spot` alone (then drop the id suffix and
     `sourcePassageId`); this changes stored data and run numbers.
-13. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
+12. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
     mode by hand where it starts hints; give the run an effective level (OFF in perform) so `loadHints` and
     `startHintStep` read only that, and keep the Hint button's own guard.
 
