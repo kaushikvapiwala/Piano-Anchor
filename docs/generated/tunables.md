@@ -85,3 +85,4 @@ Every engine threshold, from the KDoc in `engine/src/commonMain/kotlin/pianoanch
 | `HINT_DELAY_DEFAULT_MS` | 1_500 | The Delayed-hint delay before the passage has any history, in milliseconds. | a middle value between the clamps for a learner we know nothing about yet. | spec #132; owner, M5 grill. |
 | `SPOT_LOOP_BARS` | 2 | How many consecutive bars a spot loop repeats. | long enough for musical context, short enough to repeat quickly. | owner, M5 grill (spec #134). |
 | `SPOT_LOOP_CLEAN_TARGET` | 2 | How many CLEAN spot loops in a row end a spot loop and offer the full passage again. | two clean loops in a row show the fix holds. | owner, M5 grill (spec #134). |
+| `CONCEPT_CARD_FIELD_MAX_CHARS` | 120 | The longest a concept card field (what, why, how, when) may be, in characters. | a field must fit two lines of the landscape card column at the default font scale. | the course screen sketch (`docs/course/beginner-course.md`), a starting value. |
