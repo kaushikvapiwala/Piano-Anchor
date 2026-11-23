@@ -32,11 +32,14 @@ private class Action(
  * At the same time a NoteOff goes before a NoteOn, so a repeated note is struck again cleanly.
  * Cancelled or failed midway, it sends a NoteOff (in NonCancellable) for every key still down, stopping quietly at
  * the first [MidiDeviceUnavailableException], then rethrows.
+ * [onStruck] is called after each NoteOn that was sent, so a caller whose device fails midway knows how many
+ * tones began.
  * @throws MidiDeviceUnavailableException when the device goes away while sending.
  */
 public suspend fun MidiOutputPort.playTones(
     device: MidiDevice,
     tones: List<Tone>,
+    onStruck: () -> Unit = {},
 ) {
     val actions =
         tones
@@ -56,7 +59,12 @@ public suspend fun MidiOutputPort.playTones(
                     NoteOff(0, CHANNEL, action.note, 0)
                 }
             send(device, MidiEncoder.encode(message))
-            if (action.on) down += action.note else down -= action.note
+            if (action.on) {
+                down += action.note
+                onStruck()
+            } else {
+                down -= action.note
+            }
         }
     } finally {
         withContext(NonCancellable) {

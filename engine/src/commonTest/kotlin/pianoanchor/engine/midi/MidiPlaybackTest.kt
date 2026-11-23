@@ -110,6 +110,14 @@ class MidiPlaybackTest {
         }
 
     @Test
+    fun onStruckCountsTheNotesBegun() =
+        runTest {
+            var struck = 0
+            piano.playTones(piano.device, two) { struck++ }
+            assertEquals(2, struck)
+        }
+
+    @Test
     fun cancellingAfterTheDeviceWentAwayStopsQuietly() =
         runTest {
             logSends()

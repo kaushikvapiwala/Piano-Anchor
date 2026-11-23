@@ -151,5 +151,25 @@ class EarGeneratorTest {
     fun `an item with no sounds has no tones`() =
         assertEquals(emptyList(), EarExercise.Echo(emptyList(), exactOctave = false).tones())
 
+    private fun echoNoteItems(): List<EarExercise> =
+        listOf(60, 62, 64, 65, 67).map { EarExercise.Echo(listOf(setOf(note(it))), true) }
+
+    @Test
+    fun `drawNew avoids items already drawn`() {
+        val all = echoNoteItems()
+        assertEquals(all[4], EarGenerator.drawNew(EarSkills.ECHO_NOTE.id, all.take(4), Random(1)))
+    }
+
+    @Test
+    fun `drawNew accepts a repeat when every possible item is drawn`() {
+        val all = echoNoteItems()
+        assertTrue(EarGenerator.drawNew(EarSkills.ECHO_NOTE.id, all, Random(1)) in all)
+    }
+
+    @Test
+    fun `drawNew rejects a skill that is not an ear skill`() {
+        assertFailsWith<IllegalArgumentException> { EarGenerator.drawNew("nope", emptyList(), Random(1)) }
+    }
+
     private fun note(n: Int) = pianoanchor.core.model.MidiNote(n)
 }

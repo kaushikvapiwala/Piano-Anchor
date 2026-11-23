@@ -83,6 +83,20 @@ class ResultsSummaryTest {
     }
 
     @Test
+    fun medianSignedDeviationIsPositiveForAShiftedLateRun() {
+        val shifted = summarise(listOf(note(c4, 1700), note(d4, 2700), note(e4, 3700)))
+        assertEquals(1700, shifted.timing?.medianSignedDeviationMs)
+
+        val early = summarise(listOf(note(c4, 0), note(d4, 900), note(e4, 1900)))
+        assertEquals(-100, early.timing?.medianSignedDeviationMs)
+
+        val even = summarise(listOf(note(c4, 0), note(d4, 1000)))
+        assertEquals(0, even.timing?.medianSignedDeviationMs)
+        val twoMiddle = summarise(listOf(note(c4, 10), note(d4, 1030)))
+        assertEquals(20, twoMiddle.timing?.medianSignedDeviationMs)
+    }
+
+    @Test
     fun offBeatTrueWithAnEarlyOrLateFinding() {
         assertTrue(summarise(listOf(note(c4, 0), note(d4, 1000), note(e4, 2500))).timing!!.offBeat)
         assertTrue(summarise(listOf(note(c4, 0), note(d4, 600), note(e4, 2000))).timing!!.offBeat)

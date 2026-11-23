@@ -28,6 +28,7 @@ import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.onboarding.OnboardingViewModel
 import pianoanchor.feature.practice.CalibrationSkips
 import pianoanchor.feature.practice.CalibrationViewModel
+import pianoanchor.feature.practice.PassagePlayer
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.feature.settings.SettingsViewModel
@@ -88,6 +89,7 @@ val appModule =
                 start.rung,
                 start.mode,
                 start.spot,
+                PassagePlayer(device, get(), get()),
             ) {
                 Uuid.random().toString()
             }

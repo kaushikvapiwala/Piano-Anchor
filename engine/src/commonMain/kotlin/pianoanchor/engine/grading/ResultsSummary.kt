@@ -24,12 +24,14 @@ private val LENGTH_KINDS = setOf(ErrorKind.TOO_SHORT, ErrorKind.TOO_LONG)
 
 /**
  * Timing of a timed run: the mean absolute onset deviation of the exact-pitch notes in whole milliseconds, whether any
- * note was early or late, and the [worst] early/late finding (largest deviation), null when none.
+ * note was early or late, the [worst] early/late finding (largest deviation), null when none, and the
+ * [medianSignedDeviationMs] (positive = late), which shows a whole run that started early or late.
  */
 public data class TimingSummary(
     val meanAbsDeviationMs: Int,
     val offBeat: Boolean,
     val worst: Finding?,
+    val medianSignedDeviationMs: Int = 0,
 )
 
 /** Note length of a timed run: the share of exact-pitch notes held right, and the [worst] length finding by ratio. */
@@ -120,13 +122,24 @@ public data class ResultsSummary(
                     .mapNotNull { (m, _) -> m.onsetDeviationNanos?.let { m.at to abs(it) } }
                     .toMap()
             val absolute = deviations.values
+            val signed = exact.mapNotNull { (m, _) -> m.onsetDeviationNanos }.sorted()
             val mean = if (absolute.isEmpty()) 0.0 else absolute.average() / NANOS_PER_MILLI
             val offBeat = analysis.findings.filter { it.kind in OFF_BEAT_KINDS }
             return TimingSummary(
                 meanAbsDeviationMs = mean.roundToInt(),
                 offBeat = offBeat.isNotEmpty(),
                 worst = offBeat.maxByOrNull { deviations.getValue(it.at) },
+                medianSignedDeviationMs = median(signed).roundToInt(),
             )
+        }
+
+        /** The median of [sorted] in ms (the middle two averaged); 0 when empty. */
+        private fun median(sorted: List<Long>): Double {
+            if (sorted.isEmpty()) return 0.0
+            val middle = sorted.size / 2
+            val odd = sorted.size % 2 == 1
+            val nanos = if (odd) sorted[middle].toDouble() else (sorted[middle - 1] + sorted[middle]) / 2.0
+            return nanos / NANOS_PER_MILLI
         }
 
         private fun length(
