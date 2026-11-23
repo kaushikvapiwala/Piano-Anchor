@@ -32,7 +32,11 @@ Own a piano the app does not support yet? Save a contribution kit: see `docs/con
   moderate+ vulnerabilities or a licence outside the permissive allow-list in
   `.github/workflows/security.yml`), CodeQL code scanning, and actionlint for workflow files.
   All except Dependency Review are required to merge; it can take up to 15 minutes, so it is advisory.
-  Fix anything it reports before merging.
+  Fix anything it reports before merging. The emulator end-to-end test (`.github/workflows/e2e.yml`) also
+  runs on every PR; keep it green.
+- **Dependabot** PRs skip the DCO check (a bot can't sign off). Patch and minor bumps get squash auto-merge
+  queued by `.github/workflows/dependabot-auto-merge.yml`, so they merge once the required checks pass;
+  major bumps wait for a maintainer.
 
 ## Releases
 

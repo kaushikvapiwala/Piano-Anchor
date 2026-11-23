@@ -67,6 +67,7 @@ Every engine threshold, from the KDoc in `engine/src/commonMain/kotlin/pianoanch
 | `EAR_ITEMS_PER_REVIEW` | 4 | How many items one ear review draws. | one draw is too noisy (a 50% guess rate on 2 choices). | owner, M4 grill. |
 | `EAR_MAX_REPLAYS` | 2 | How many times the learner may replay one ear item. | hear it again without turning it into a memory test. | owner, M4 grill. |
 | `EAR_MAX_ANSWERS` | 2 | How many answers one ear item allows in total. | one second chance, then the answer is shown. | owner, M4 grill. |
+| `EAR_MAX_REDRAWS` | 20 | How many times a draw is repeated to get an item not yet in the set, before an equal one is accepted. | sets of a skill with few possible items (echo one note has five) can't always avoid repeats; a bounded retry keeps drawing finite while making repeats rare. | engineering choice, moved from EarViewModel in the M4 cleanup. |
 | `EAR_GOOD_MIN_RIGHT` | 3 | The fewest items of a set that must end right (first try or recovered) for the band GOOD. | 3 of 4 right in the end is "recalled with slips". | owner, M4 grill. |
 | `EAR_CHORD_LENGTH_MS` | 800 | How long a chord of an ear item is held, in milliseconds. | a chord needs longer than a single note to judge its quality. | starting value. |
 | `PLAYBACK_NOTE_GAP_MS` | 500 | The gap between the starts of the notes the app plays (onboarding's C, E and G; an ear item), in milliseconds. | 500 ms gives a clear, unhurried arpeggio on any piano. | starting value; the mock's pacing. |
@@ -85,3 +86,5 @@ Every engine threshold, from the KDoc in `engine/src/commonMain/kotlin/pianoanch
 | `HINT_DELAY_DEFAULT_MS` | 1_500 | The Delayed-hint delay before the passage has any history, in milliseconds. | a middle value between the clamps for a learner we know nothing about yet. | spec #132; owner, M5 grill. |
 | `SPOT_LOOP_BARS` | 2 | How many consecutive bars a spot loop repeats. | long enough for musical context, short enough to repeat quickly. | owner, M5 grill (spec #134). |
 | `SPOT_LOOP_CLEAN_TARGET` | 2 | How many CLEAN spot loops in a row end a spot loop and offer the full passage again. | two clean loops in a row show the fix holds. | owner, M5 grill (spec #134). |
+| `RESULTS_SHIFT_BEATS` | 0.5 | How many beats a whole run's median onset deviation must reach for Results to say the run started early or late. | a whole run half a beat or more off means the start was missed, not uneven playing. | the owner's first timed run (shifted about 1.4 beats); a starting value. |
+| `RESULTS_HELD_RIGHT_MIN_PERCENT` | 70 | The share of notes held right (percent) below which Results say the notes were short or long. | below this, note length is the main problem worth a sentence. | a starting value, to be tuned from dogfood. |

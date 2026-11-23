@@ -74,3 +74,22 @@ notes were kept is not analysed and shows pitch only.
   the finding furthest from the written length, as held over written when long and written over held when short.
 - Hesitation: the number of hesitation findings. The longest pause is the largest gap before the step of those
   findings, with the note it came before, rounded once to the nearest millisecond; it is unknown when the previous step had no matched note.
+
+## Results in words
+`ResultsWordsRule.of` picks what Results say first, as keys; the screen holds the sentences. Every observation that
+applies is collected in this order and the first two are kept:
+
+1. Started late or early (timed runs): the median signed onset deviation of the exact-pitch notes is at least
+   `RESULTS_SHIFT_BEATS` (0.5) beats, one beat being 60 000 / tempo ms. The sign says late or early; a late start
+   names its shift rounded to the nearest half beat.
+2. Wrong notes: wrong, missed and incomplete-chord counts add up to more than zero.
+3. Notes short or long: the share held right is under `RESULTS_HELD_RIGHT_MIN_PERCENT` (70); the worst length
+   finding's kind picks which.
+4. Off the beat: some note was early or late, unless the run already started early or late.
+5. Paused: at least one hesitation, named by the note it came before.
+6. Clean: nothing applies, or the band is CLEAN; shown alone.
+
+Wait mode has no tempo, so it can only say wrong notes, paused or clean. One tip follows the first observation:
+started early or late, wait for the count-in; wrong notes, slow down; short, hold the full clicks; long, let go
+sooner; off the beat, listen to the click; paused, play that spot slowly; clean, try the next tempo. Both
+thresholds are starting values to tune from dogfood. The number tiles sit behind a collapsed "Details".
