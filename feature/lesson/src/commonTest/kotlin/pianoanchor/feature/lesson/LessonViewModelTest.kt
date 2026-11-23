@@ -449,6 +449,23 @@ class LessonViewModelTest {
         }
 
     @Test
+    fun aFirstBeatPlayedJustBeforeTheEndOfTheCountInCounts() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.STEADY_BEAT)
+            toTry(vm)
+            // At 60 BPM the count-in ends 5 s in: a press 100 ms early is the learner's first beat.
+            advanceTimeBy(4_900)
+            runCurrent()
+            press(60)
+            assertEquals(
+                1,
+                vm.state.value.tryProgress
+                    ?.done,
+            )
+            vm.close()
+        }
+
+    @Test
     fun theCountInShowsThreeTwoOne() =
         runTest(dispatcher) {
             val vm = viewModel(Skills.STEADY_BEAT)

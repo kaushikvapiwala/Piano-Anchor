@@ -94,9 +94,9 @@ public object SessionComposer {
      * Composes the session for [plan] over [curriculum], splitting [budget] by the SESSION_SHARE tunables.
      * [history] is keyed by passage id; a passage missing from it was never played. [learned] are the ids of every
      * learned skill (the plan lists only due and new ones); [graph] gives each skill its track. The cold open uses only
-     * passages whose skills are all learned. The lesson is the first course concept without a clean wait-mode run in
-     * [history]; the plan's new skills play no part. The song is a piece with no lock: played before new, then public
-     * domain before original, then curriculum order.
+     * passages whose skills are all learned, never the lesson's passage. The lesson is the first course concept without
+     * a clean wait-mode run in [history]; the plan's new skills play no part. The song is a piece with no lock: played
+     * before new, then public domain before original, then curriculum order.
      */
     public fun compose(
         plan: DailyPlan,
@@ -107,8 +107,8 @@ public object SessionComposer {
         graph: SkillGraph = curriculum.graph,
     ): Session {
         val (dueEar, dueOther) = plan.due.partition { graph.byId(it.skillId)?.track == Track.EAR }
-        val cold = coldOpen(dueOther, curriculum, history, learned)
         val lesson = lesson(curriculum, history, graph)
+        val cold = coldOpen(dueOther, curriculum, history, learned, lesson?.let { it.passage.id })
         val earSkills = dueEar.mapNotNull { graph.byId(it.skillId) } + plan.new.filter { it.track == Track.EAR }
         val used = listOfNotNull(cold?.passage, lesson?.passage).map { it.id }
         val song = song(curriculum, history, learned, used)
@@ -148,11 +148,13 @@ public object SessionComposer {
         curriculum: Curriculum,
         history: Map<String, PassageHistory>,
         learned: Set<String>,
+        lessonPassageId: String?,
     ): Card.ColdOpen? =
         due.firstNotNullOfOrNull { state ->
             curriculum.passages
                 .filter { passage ->
-                    state.skillId in passage.skills &&
+                    passage.id != lessonPassageId &&
+                        state.skillId in passage.skills &&
                         passage.skills.all { it in learned || it == state.skillId }
                 }.minWithOrNull(compareBy(nullsFirst()) { history[it.id]?.lastPlayed })
                 ?.let { passage ->

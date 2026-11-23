@@ -263,7 +263,7 @@ public class LessonViewModel(
         }
     }
 
-    /** Starts the click and counts one bar in ("3, 2, 1"), after which notes count. */
+    /** Starts the click and counts one bar in ("3, 2, 1"); notes count from half a beat before the first beat. */
     private suspend fun countIn(bpm: Int) {
         val beat = beatNanos(bpm)
         metronome.start(time.nowNanos() + beat, beat, BEATS_PER_BAR)
@@ -273,9 +273,15 @@ public class LessonViewModel(
         for (i in 1..BEATS_PER_BAR) {
             val numeral = BEATS_PER_BAR + 1 - i
             mutableState.update { it.copy(countIn = numeral.takeIf { n -> n < BEATS_PER_BAR }) }
-            delay(beatMs)
+            if (i < BEATS_PER_BAR) {
+                delay(beatMs)
+            } else {
+                // A first beat played a little early still counts: notes count from half a beat before it.
+                delay(beatMs - beatMs / 2)
+                accepting = true
+                delay(beatMs / 2)
+            }
         }
-        accepting = true
         mutableState.update { it.copy(countIn = null) }
     }
 

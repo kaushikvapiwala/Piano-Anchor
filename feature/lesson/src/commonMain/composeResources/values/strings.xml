@@ -35,7 +35,7 @@
     <string name="lesson_disconnected">The piano isn't connected. Go back and connect it to try this step.</string>
     <string name="lesson_use_play">Play %1$s in wait mode: the app waits for each right key.</string>
     <string name="lesson_use_play_it">Play it</string>
-    <string name="lesson_recap">You can now %1$s. Next: %2$s.</string>
+    <string name="lesson_recap">You’ve learned %1$s. Next: %2$s.</string>
     <string name="lesson_recap_done">You've finished the course!</string>
     <string name="lesson_next_lesson">Next lesson</string>
     <string name="lesson_done">Done</string>

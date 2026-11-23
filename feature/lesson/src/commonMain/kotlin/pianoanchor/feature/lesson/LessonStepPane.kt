@@ -219,7 +219,7 @@ private fun RecapPane(
             } else {
                 stringResource(
                     Res.string.lesson_recap,
-                    recap.learned.replaceFirstChar { it.lowercase() },
+                    recap.learned,
                     recap.nextTitle,
                 )
             },

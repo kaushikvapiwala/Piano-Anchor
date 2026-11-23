@@ -52,7 +52,7 @@ Every lesson has five steps:
 2. **See:** the app plays the idea while the keys light up and the cursor moves. The learner can skip it.
 3. **Try:** one small action, checked by the piano.
 4. **Use:** a tiny piece that uses the idea.
-5. **Recap:** one line: "You can now ___. Next: ___."
+5. **Recap:** one line: "You’ve learned ___. Next: ___."
 
 Rules:
 - **Hear it first:** every passage plays once before the learner tries it, and they can skip that.

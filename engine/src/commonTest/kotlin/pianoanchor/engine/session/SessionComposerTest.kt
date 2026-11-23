@@ -20,6 +20,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class SessionComposerTest {
@@ -90,6 +91,16 @@ class SessionComposerTest {
                 Curriculum.passages.first { done.id in it.skills }.id to
                     PassageHistory(null, emptySet(), cleanWait = true)
             }
+
+    @Test
+    fun theColdOpenNeverRepeatsTheLessonsPassage() {
+        // Middle C is due but has no clean wait-mode run, so it is also the lesson; its only playable passage is the
+        // lesson's, so there is no cold open rather than the same passage twice.
+        val plan = DailyPlan(listOf(state(Skills.MIDDLE_C, learned = true)), emptyList())
+        val cards = compose(plan, courseTickedBefore(Skills.MIDDLE_C)).cards
+        assertEquals(Skills.MIDDLE_C, cards.filterIsInstance<Card.Lesson>().single().skill)
+        assertTrue(cards.none { it is Card.ColdOpen })
+    }
 
     @Test
     fun coldOpenIsTheLowestRetrievabilityDueSkill() {

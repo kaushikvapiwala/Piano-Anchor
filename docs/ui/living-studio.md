@@ -276,7 +276,7 @@ the current step; only this pane changes between steps. A key strip runs along t
   per-check instruction, the progress ("3 of 8", "✓ Well done" when passed), "That was D♯4. Waiting for D4." after a
   wrong key (a polite live region) and a big count-in numeral for checks with a click; "Skip" is always there; a
   dropped piano is explained in place. **Use**: the first passage's title, "Play it" (opens Practice in wait mode, which
-  ends in Results with "Finish lesson") and "Next". **Recap**: "You can now <concept>. Next: <next concept>." with
+  ends in Results with "Finish lesson") and "Next". **Recap**: "You’ve learned <concept>. Next: <next concept>." with
   "Next lesson" and "Done", or "You've finished the course!" with "Done".
 - **Key strip**: whole octaves around the Try's notes (at least two; the whole keyboard for "every C"). Sounding or
   held keys are blue, the key of a wrong press grey, and the expected key glows in the accent (always for a lit key or

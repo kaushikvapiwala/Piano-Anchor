@@ -171,7 +171,7 @@ class LessonScreenTest {
                 }
             }
 
-            onNodeWithText("You can now steps and skips. Next: First tunes.").assertIsDisplayed()
+            onNodeWithText("You’ve learned Steps and skips. Next: First tunes.").assertIsDisplayed()
             onNodeWithText("Next lesson").performClick()
             onNodeWithText("Done").performClick()
             assertEquals(listOf("next", "done"), calls)
