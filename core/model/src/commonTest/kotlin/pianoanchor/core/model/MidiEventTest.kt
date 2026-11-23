@@ -70,6 +70,12 @@ class MidiEventTest {
     }
 
     @Test
+    fun linkResumedCarriesOnlyItsTimestamp() {
+        assertEquals(42L, LinkResumed(42).timestampNanos)
+        assertEquals(LinkResumed(7), LinkResumed(7))
+    }
+
+    @Test
     fun boundaryValuesAreAccepted() {
         assertEquals(15, NoteOn(0, 15, c4, 127).channel)
         assertEquals(1, NoteOn(0, 0, c4, 1).velocity)

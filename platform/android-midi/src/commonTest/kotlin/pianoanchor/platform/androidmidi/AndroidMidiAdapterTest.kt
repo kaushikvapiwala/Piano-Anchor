@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.ControlChange
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
@@ -314,7 +315,7 @@ class AndroidMidiAdapterTest {
             advanceTimeBy(1_000 + Tunables.BLE_LISTED_TIMEOUT_MS + 1)
             assertEquals(2, system.bluetoothClosed.get()) // the dead handle and the unlisted reopen
             system.listsOpenedBluetooth = true
-            ble.inputDevices.first { BLE_PIANO in it }
+            system.devices.first { list -> list.any { it.bluetoothAddress == BLE_ADDRESS } }
             assertEquals(1_000L + Tunables.BLE_LISTED_TIMEOUT_MS + 2_000, currentTime - dropped)
         }
 
@@ -323,7 +324,7 @@ class AndroidMidiAdapterTest {
         runTest {
             val ble = connectedBleAdapter()
             system.dropBluetooth(BLE_ADDRESS)
-            ble.inputDevices.first { BLE_PIANO in it }
+            system.devices.first { list -> list.any { it.bluetoothAddress == BLE_ADDRESS } }
             assertEquals(1, system.bluetoothClosed.get())
             ble.disconnect(BLE_PIANO)
             assertEquals(2, system.bluetoothClosed.get())
@@ -347,9 +348,9 @@ class AndroidMidiAdapterTest {
             system.dropBluetooth(BLE_ADDRESS)
             val dropped = currentTime
             advanceTimeBy(1_000 + 2_000 + 1)
-            assertFalse(ble.isListed())
+            assertTrue(system.devices.value.none { it.bluetoothAddress == BLE_ADDRESS }) // still held in the list
             system.opensSucceed = true
-            ble.inputDevices.first { BLE_PIANO in it }
+            system.devices.first { list -> list.any { it.bluetoothAddress == BLE_ADDRESS } }
             assertEquals(1_000L + 2_000 + 4_000, currentTime - dropped)
         }
 
@@ -363,7 +364,7 @@ class AndroidMidiAdapterTest {
             advanceTimeBy(1_000 + 1)
             assertEquals(1, system.bluetoothOpened.get())
             system.bluetoothState = null
-            ble.inputDevices.first { BLE_PIANO in it }
+            system.devices.first { list -> list.any { it.bluetoothAddress == BLE_ADDRESS } }
             assertEquals(1_000L + 2_000, currentTime - dropped)
         }
 
@@ -374,7 +375,7 @@ class AndroidMidiAdapterTest {
             repeat(2) {
                 system.dropBluetooth(BLE_ADDRESS)
                 val dropped = currentTime
-                ble.inputDevices.first { BLE_PIANO in it }
+                system.devices.first { list -> list.any { it.bluetoothAddress == BLE_ADDRESS } }
                 assertEquals(Tunables.BLE_RECONNECT_INITIAL_MS, currentTime - dropped)
             }
         }
@@ -406,7 +407,87 @@ class AndroidMidiAdapterTest {
         }
 
     @Test
-    fun eventsOfABluetoothDeviceCompleteOnADropAndWorkAgainAfterTheReopen() =
+    fun aDropReopenedWithinTheGraceChangesNoListingAndEmitsLinkResumed() =
+        runTest {
+            val ble = connectedBleAdapter()
+            val listings = mutableListOf<List<MidiDevice>>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                ble.inputDevices.collect { listings += it.filter { device -> device == BLE_PIANO } }
+            }
+            val events = mutableListOf<MidiEvent>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { ble.events(BLE_PIANO).toList(events) }
+            val first = system.devices.value.single { it.bluetoothAddress == BLE_ADDRESS }
+            system.deliver(first.systemId, NOTE_ON_C4, timestampNanos = Long.MAX_VALUE / 2)
+
+            system.dropBluetooth(BLE_ADDRESS)
+            system.devices.first { list -> list.any { it.bluetoothAddress == BLE_ADDRESS } }
+            val reopened = system.devices.value.single { it.bluetoothAddress == BLE_ADDRESS }
+            system.deliver(reopened.systemId, SUSTAIN_DOWN)
+
+            assertEquals(listOf(listOf(BLE_PIANO)), listings)
+            assertIs<NoteOn>(events[0])
+            val resumed = assertIs<LinkResumed>(events[1])
+            assertTrue(resumed.timestampNanos >= events[0].timestampNanos)
+            assertIs<ControlChange>(events[2])
+            assertEquals(3, events.size)
+            assertEquals(1, system.inputsClosed.get()) // the dead input, closed once
+            assertEquals(2, system.inputsOpened.get())
+        }
+
+    @Test
+    fun theNewLinkIsParsedAfreshWithoutTheDeadLinksRunningStatus() =
+        runTest {
+            val ble = connectedBleAdapter()
+            val events = mutableListOf<MidiEvent>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { ble.events(BLE_PIANO).toList(events) }
+            val first = system.devices.value.single { it.bluetoothAddress == BLE_ADDRESS }
+            system.deliver(first.systemId, NOTE_ON_C4) // leaves "note on" as the running status
+
+            system.dropBluetooth(BLE_ADDRESS)
+            system.devices.first { list -> list.any { it.bluetoothAddress == BLE_ADDRESS } }
+            val reopened = system.devices.value.single { it.bluetoothAddress == BLE_ADDRESS }
+            system.deliver(reopened.systemId, byteArrayOf(62, 90)) // data bytes with no status: nothing to decode
+            system.deliver(reopened.systemId, byteArrayOf(0x90.toByte(), 64, 90))
+
+            assertIs<NoteOn>(events[0])
+            assertIs<LinkResumed>(events[1])
+            assertEquals(64, assertIs<NoteOn>(events[2]).note.number)
+            assertEquals(3, events.size)
+        }
+
+    @Test
+    fun aPianoBackBeforeTheListsGraceEndsKeepsTheFlowOpenEvenWhenItsInputClosedEarlier() =
+        runTest {
+            val ble = connectedBleAdapter()
+            val listings = mutableListOf<List<MidiDevice>>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                ble.inputDevices.collect { listings += it.filter { device -> device == BLE_PIANO } }
+            }
+            val events = mutableListOf<MidiEvent>()
+            var completed = false
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                ble.events(BLE_PIANO).toList(events)
+                completed = true
+            }
+            system.bluetoothState = BluetoothUnavailableException.Reason.BLUETOOTH_OFF // no reopen by the app
+            system.closeBluetoothInput(BLE_ADDRESS) // the input closes first ...
+            advanceTimeBy(3_000)
+            system.unlistBluetooth(BLE_ADDRESS) // ... the system list drops the device 3 s later
+            advanceTimeBy(Tunables.BLE_DROP_GRACE_MS - 1_000) // past 5 s after the close, inside the list's grace
+            assertFalse(completed)
+
+            system.plugIn(
+                SystemDevice(200, Transport.BLUETOOTH, 1, 1, bluetoothAddress = BLE_ADDRESS, name = "Acme MIDI"),
+            )
+            runCurrent()
+
+            assertFalse(completed)
+            assertEquals(listOf(listOf(BLE_PIANO)), listings)
+            assertIs<LinkResumed>(events.single())
+        }
+
+    @Test
+    fun anInputThatClosesWhileTheDeviceStaysListedCompletesTheFlowAfterTheGrace() =
         runTest {
             val ble = connectedBleAdapter()
             var completed = false
@@ -414,14 +495,165 @@ class AndroidMidiAdapterTest {
                 ble.events(BLE_PIANO).toList()
                 completed = true
             }
-            system.dropBluetooth(BLE_ADDRESS)
+            system.closeBluetoothInput(BLE_ADDRESS) // the device itself is still listed, same handle
+            advanceTimeBy(Tunables.BLE_DROP_GRACE_MS - 1)
+            assertFalse(completed)
+            advanceTimeBy(2)
             assertTrue(completed)
-            ble.inputDevices.first { BLE_PIANO in it }
-            val events = mutableListOf<MidiEvent>()
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { ble.events(BLE_PIANO).toList(events) }
-            val reopened = system.devices.value.single { it.bluetoothAddress == BLE_ADDRESS }
-            system.deliver(reopened.systemId, NOTE_ON_C4)
-            assertEquals(1, events.size)
+        }
+
+    @Test
+    fun disconnectWhileTheDeadDeviceIsStillListedEndsTheFlowAtOnce() =
+        runTest {
+            val ble = connectedBleAdapter()
+            var completed = false
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                ble.events(BLE_PIANO).toList()
+                completed = true
+            }
+            system.closingUnlists = false
+            system.closeBluetoothInput(BLE_ADDRESS)
+            assertFalse(completed)
+            val start = currentTime
+
+            ble.disconnect(BLE_PIANO) // the system still lists the device afterwards
+
+            assertTrue(completed)
+            assertEquals(0, currentTime - start)
+        }
+
+    @Test
+    fun disconnectWhileWaitingForTheReopenEndsTheFlowAtOnce() =
+        runTest {
+            val ble = connectedBleAdapter()
+            var completed = false
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                ble.events(BLE_PIANO).toList()
+                completed = true
+            }
+            system.opensSucceed = false
+            system.dropBluetooth(BLE_ADDRESS)
+            assertFalse(completed)
+            val start = currentTime
+
+            ble.disconnect(BLE_PIANO)
+
+            assertTrue(completed)
+            assertEquals(0, currentTime - start)
+        }
+
+    @Test
+    fun aDropThatLastsBeyondTheGraceRemovesTheDeviceAndCompletesTheFlow() =
+        runTest {
+            val ble = connectedBleAdapter()
+            val listings = mutableListOf<List<MidiDevice>>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                ble.inputDevices.collect { listings += it.filter { device -> device == BLE_PIANO } }
+            }
+            var completed = false
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                ble.events(BLE_PIANO).toList()
+                completed = true
+            }
+            system.opensSucceed = false
+            system.dropBluetooth(BLE_ADDRESS)
+
+            advanceTimeBy(Tunables.BLE_DROP_GRACE_MS - 1)
+            assertEquals(listOf(listOf(BLE_PIANO)), listings)
+            assertFalse(completed)
+            advanceTimeBy(2)
+            assertEquals(listOf(listOf(BLE_PIANO), emptyList()), listings)
+            assertTrue(completed)
+        }
+
+    @Test
+    fun disconnectRemovesTheDeviceAtOnce() =
+        runTest {
+            val ble = connectedBleAdapter()
+            ble.disconnect(BLE_PIANO)
+            assertFalse(ble.isListed())
+        }
+
+    @Test
+    fun disconnectWhileTheDeviceIsHeldRemovesItAtOnce() =
+        runTest {
+            val ble = connectedBleAdapter()
+            val listings = mutableListOf<List<MidiDevice>>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                ble.inputDevices.collect { listings += it.filter { device -> device == BLE_PIANO } }
+            }
+            system.opensSucceed = false
+            system.dropBluetooth(BLE_ADDRESS)
+            assertEquals(listOf(listOf(BLE_PIANO)), listings) // held
+
+            ble.disconnect(BLE_PIANO)
+
+            assertEquals(listOf(listOf(BLE_PIANO), emptyList()), listings)
+            assertEquals(0, currentTime)
+        }
+
+    @Test
+    fun aDeviceTheReconnectingGaveUpOnIsRemovedAtOnce() =
+        runTest {
+            val ble = connectedBleAdapter()
+            system.opensSucceed = false
+            system.dropBluetooth(BLE_ADDRESS)
+            val dropped = currentTime
+            advanceTimeBy(Tunables.BLE_RECONNECT_GIVE_UP_MS + 1)
+            assertFalse(ble.isListed())
+            assertTrue(currentTime - dropped > Tunables.BLE_DROP_GRACE_MS)
+        }
+
+    @Test
+    fun aUsbDeviceThatLeavesIsRemovedAtOnce() =
+        runTest {
+            val listings = mutableListOf<List<MidiDevice>>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { adapter.inputDevices.toList(listings) }
+            system.unplug(PIANO.systemId)
+            assertEquals(listOf(listOf(piano), emptyList()), listings)
+            assertEquals(0, currentTime)
+        }
+
+    @Test
+    fun aBluetoothDeviceTheAdapterDoesNotKeepIsRemovedAtOnce() =
+        runTest {
+            val ble = bleAdapter()
+            system.plugIn(
+                SystemDevice(7, Transport.BLUETOOTH, 1, 1, bluetoothAddress = BLE_ADDRESS, name = "Acme MIDI"),
+            )
+            assertTrue(ble.isListed())
+            system.unplug(7)
+            assertFalse(ble.isListed())
+        }
+
+    @Test
+    fun cancellingWhileWaitingForTheReopenClosesTheInputOnce() =
+        runTest {
+            val ble = connectedBleAdapter()
+            val reader =
+                backgroundScope.launch(
+                    UnconfinedTestDispatcher(testScheduler),
+                ) { ble.events(BLE_PIANO).collect {} }
+            system.opensSucceed = false
+            system.dropBluetooth(BLE_ADDRESS)
+            advanceTimeBy(1_000)
+            reader.cancelAndJoin()
+            assertEquals(1, system.inputsClosed.get())
+        }
+
+    @Test
+    fun aDeviceThatIsBackButCannotBeReopenedEndsTheFlow() =
+        runTest {
+            val ble = connectedBleAdapter()
+            var completed = false
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                ble.events(BLE_PIANO).toList()
+                completed = true
+            }
+            system.inputsFail = true
+            system.dropBluetooth(BLE_ADDRESS)
+            system.devices.first { list -> list.any { it.bluetoothAddress == BLE_ADDRESS } }
+            assertTrue(completed)
         }
 
     private companion object {

@@ -1,10 +1,11 @@
 package pianoanchor.testing
 
+import kotlinx.coroutines.test.TestScope
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.ports.MidiInputPort
 
 class FakePianoInputContractTest : MidiInputPortContractTest() {
-    override fun createHarness(): InputHarness =
+    override fun createHarness(scope: TestScope): InputHarness =
         object : InputHarness {
             private val piano = FakePiano()
             override val port: MidiInputPort = piano

@@ -8,7 +8,10 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -28,6 +31,10 @@ internal class BluetoothConnections(
 ) {
     private val lock = Mutex()
     private val keepers = ConcurrentHashMap<String, Job>() // keep-alive job by device id
+    private val keptIds = MutableStateFlow(emptySet<String>())
+
+    /** The ids of the devices being kept connected (reopened after a drop), changing as they are added or forgotten. */
+    val kept: StateFlow<Set<String>> = keptIds
 
     /**
      * Opens the device at [address] and keeps it connected; true once device [id] is listed, false if it can't be
@@ -40,16 +47,26 @@ internal class BluetoothConnections(
     ): Boolean =
         lock.withLock {
             if (keepers.containsKey(id) && listed.first().lists(id)) return true
+            // Removed first, so the old job's cleanup leaves the id in `kept` while it is replaced.
             keepers.remove(id)?.cancelAndJoin()
-            val handle = openListed(id, address) ?: return false
+            val handle =
+                openListed(id, address) ?: run {
+                    keptIds.update { it - id }
+                    return false
+                }
             // Undispatched, so the job is inside its try block (which owns the handle) before anyone can cancel it.
             keepers[id] = scope.launch(start = CoroutineStart.UNDISPATCHED) { keepConnected(id, address, handle) }
+            keptIds.update { it + id }
             true
         }
 
     /** Stops reconnecting device [id] and closes it if open. No-op if unknown. */
     suspend fun disconnect(id: String) {
-        lock.withLock { keepers.remove(id)?.cancelAndJoin() }
+        lock.withLock {
+            val keeper = keepers.remove(id)
+            keptIds.update { it - id } // before the link closes, so the device list drops it at once
+            keeper?.cancelAndJoin()
+        }
     }
 
     /**
@@ -70,7 +87,11 @@ internal class BluetoothConnections(
                 } finally {
                     handle.close() // dead after a drop; closing on cancel disconnects
                 }
-                handle = reopen(id, address, policy) ?: return
+                handle =
+                    reopen(id, address, policy) ?: run {
+                        keptIds.update { it - id } // gave up: no longer kept, so the device list drops it at once
+                        return
+                    }
                 policy.reset()
             }
         } finally {

@@ -40,6 +40,7 @@
     <string name="practice_last_key_wrong">%1$s · waiting for %2$s</string>
     <string name="practice_announce_correct">Correct</string>
     <string name="practice_announce_wrong">Wrong, %1$s</string>
+    <string name="practice_link_resumed">The piano disconnected for a moment. Starting again.</string>
     <string name="practice_disconnected">Piano disconnected</string>
     <string name="practice_back_to_pianos">Back to pianos</string>
     <string name="practice_save_failed">Couldn't save this run.</string>

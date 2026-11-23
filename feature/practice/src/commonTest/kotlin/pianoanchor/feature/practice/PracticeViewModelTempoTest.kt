@@ -530,6 +530,81 @@ class PracticeViewModelTempoTest {
         }
 
     @Test
+    fun aResumedLinkDuringThePlayStartsTheRunOverAndSaysWhy() =
+        runPractice {
+            val vm = practice()
+            startRun(vm)
+            advance(countInMs)
+            press(c4)
+            assertEquals(RunPhase.PLAYING, vm.state.value.phase)
+
+            piano.dropLink()
+            runCurrent()
+
+            assertEquals(RunPhase.READY, vm.state.value.phase) // like restart(): the next key counts in again
+            assertEquals(TempoRung.P60, vm.state.value.rung)
+            assertTrue(vm.state.value.linkResumed)
+            assertEquals(emptyMap(), vm.state.value.liveMarks)
+            assertNull(metronome.running.value)
+            advance(runMs)
+            assertNull(attempts.get("attempt-1"))
+            assertNull(vm.state.value.finishedAttemptId)
+
+            press(c4)
+            assertEquals(RunPhase.COUNT_IN, vm.state.value.phase)
+            assertFalse(vm.state.value.linkResumed)
+        }
+
+    @Test
+    fun aResumedLinkDuringTheCountInStartsTheRunOver() =
+        runPractice {
+            val vm = practice()
+            startRun(vm)
+            advance(leadMs)
+            assertEquals(RunPhase.COUNT_IN, vm.state.value.phase)
+
+            piano.dropLink()
+            runCurrent()
+
+            assertEquals(RunPhase.READY, vm.state.value.phase)
+            assertTrue(vm.state.value.linkResumed)
+            assertNull(metronome.running.value)
+        }
+
+    @Test
+    fun aResumedLinkBeforeTheStartingKeyIsIgnored() =
+        runPractice {
+            val vm = practice()
+            vm.selectRung(TempoRung.P60)
+            runCurrent()
+
+            piano.dropLink()
+            runCurrent()
+
+            assertEquals(RunPhase.READY, vm.state.value.phase)
+            assertEquals(TempoRung.P60, vm.state.value.rung)
+            assertFalse(vm.state.value.linkResumed)
+        }
+
+    @Test
+    fun notesBufferedBehindAResumedLinkDoNotTouchTheNewRun() =
+        runPractice {
+            val vm = practice()
+            startRun(vm)
+            advance(countInMs)
+            press(c4)
+
+            piano.dropLink()
+            piano.press(d4) // delivered in the same batch as the resumed link
+            runCurrent()
+
+            assertEquals(RunPhase.READY, vm.state.value.phase)
+            assertTrue(vm.state.value.linkResumed)
+            assertNull(metronome.running.value)
+            assertEquals(emptyMap(), vm.state.value.liveMarks)
+        }
+
+    @Test
     fun selectingWaitGoesBackToWaitMode() =
         runPractice {
             val vm = practice()

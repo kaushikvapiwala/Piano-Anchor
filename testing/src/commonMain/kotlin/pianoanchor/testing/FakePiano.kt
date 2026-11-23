@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import pianoanchor.core.model.BluetoothUnavailableException
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
@@ -162,6 +163,17 @@ class FakePiano(
                 reconnects.remove(device.id)
                 list(device)
             }
+    }
+
+    /**
+     * The wired device's link drops and is reopened at once: it stays listed and its open `events` flows carry on,
+     * each getting a `LinkResumed` stamped now (as a real adapter does for a Bluetooth drop it rides out).
+     */
+    fun dropLink() {
+        if (device !in devices.value) return
+        parser.reset()
+        val resumed = LinkResumed(clock.nowNanos())
+        collectors.filter { it.deviceId == device.id }.forEach { it.channel.trySend(resumed) }
     }
 
     /**

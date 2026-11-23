@@ -67,3 +67,11 @@ public data class SysEx(
         payload.forEach { require(it in DATA_RANGE) { "payload byte must be in $DATA_RANGE, was $it" } }
     }
 }
+
+/**
+ * The device's link dropped and was reopened; messages sent during the gap were lost. Readers that need every
+ * message (a timed take) start over; readers that tolerate a gap (a wait-mode run, the monitor) ignore it.
+ */
+public data class LinkResumed(
+    override val timestampNanos: Long,
+) : MidiEvent

@@ -1,6 +1,7 @@
 package pianoanchor.platform.androidmidi
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import pianoanchor.core.model.BluetoothUnavailableException
 
 /**
@@ -9,7 +10,7 @@ import pianoanchor.core.model.BluetoothUnavailableException
  */
 internal interface MidiSystem {
     /** The current devices, then a new list on every add or remove. Never completes; reading it is cheap. */
-    val devices: Flow<List<SystemDevice>>
+    val devices: StateFlow<List<SystemDevice>>
 
     /**
      * Opens output port 0 of [device]. [onBytes] gets `(bytes, offset, count, timestampNanos)` on any thread;
