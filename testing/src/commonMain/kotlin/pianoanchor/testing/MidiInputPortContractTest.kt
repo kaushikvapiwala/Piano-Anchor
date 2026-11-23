@@ -4,6 +4,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import pianoanchor.core.model.ControlChange
@@ -32,23 +33,23 @@ abstract class MidiInputPortContractTest {
         /** The instrument sends these bytes now; returns after the adapter has handed the events to collectors. */
         suspend fun deliver(bytes: ByteArray)
 
-        /** Disconnects the device; returns after it left the device list and open `events` flows completed. */
+        /** Disconnects the device for good; returns after it left the device list and open `events` flows completed. */
         suspend fun unplug()
     }
 
-    protected abstract fun createHarness(): InputHarness
+    protected abstract fun createHarness(scope: TestScope): InputHarness
 
     @Test
     fun listsTheConnectedDevice() =
         runTest {
-            val h = createHarness()
+            val h = createHarness(this)
             assertTrue(h.device in h.port.inputDevices.first())
         }
 
     @Test
     fun unplugRemovesTheDevice() =
         runTest {
-            val h = createHarness()
+            val h = createHarness(this)
             h.unplug()
             assertFalse(h.device in h.port.inputDevices.first())
         }
@@ -56,7 +57,7 @@ abstract class MidiInputPortContractTest {
     @Test
     fun deliversEventsInArrivalOrder() =
         runTest {
-            val h = createHarness()
+            val h = createHarness(this)
             val events = collect(h)
             h.deliver(byteArrayOf(NOTE_ON, C4, VELOCITY))
             h.deliver(byteArrayOf(NOTE_OFF, C4, RELEASED))
@@ -74,7 +75,7 @@ abstract class MidiInputPortContractTest {
     @Test
     fun timestampsNeverGoBackwards() =
         runTest {
-            val h = createHarness()
+            val h = createHarness(this)
             val events = collect(h)
             repeat(EVENT_COUNT) { h.deliver(byteArrayOf(NOTE_ON, C4, VELOCITY)) }
             val stamps = events.map { it.timestampNanos }
@@ -85,7 +86,7 @@ abstract class MidiInputPortContractTest {
     @Test
     fun eventsCompleteWhenDeviceUnplugged() =
         runTest {
-            val h = createHarness()
+            val h = createHarness(this)
             var completed = false
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                 h.port.events(h.device).toList()
@@ -99,7 +100,7 @@ abstract class MidiInputPortContractTest {
     @Test
     fun messagesWithoutACollectorAreDropped() =
         runTest {
-            val h = createHarness()
+            val h = createHarness(this)
             h.deliver(byteArrayOf(NOTE_ON, C4, VELOCITY))
             val events = collect(h)
             h.deliver(byteArrayOf(CONTROL_CHANGE, SUSTAIN, PEDAL_DOWN))
@@ -110,13 +111,13 @@ abstract class MidiInputPortContractTest {
     @Test
     fun openingAnAbsentDeviceFails() =
         runTest {
-            val h = createHarness()
+            val h = createHarness(this)
             assertFailsWith<MidiDeviceUnavailableException> {
                 h.port.events(MidiDevice("missing", "x")).first()
             }
         }
 
-    private fun kotlinx.coroutines.test.TestScope.collect(h: InputHarness): MutableList<MidiEvent> {
+    protected fun TestScope.collect(h: InputHarness): MutableList<MidiEvent> {
         val events = mutableListOf<MidiEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             h.port.events(h.device).collect { events.add(it) }
@@ -124,7 +125,7 @@ abstract class MidiInputPortContractTest {
         return events
     }
 
-    private companion object {
+    protected companion object {
         const val NOTE_ON: Byte = 0x90.toByte()
         const val NOTE_OFF: Byte = 0x80.toByte()
         const val CONTROL_CHANGE: Byte = 0xB0.toByte()

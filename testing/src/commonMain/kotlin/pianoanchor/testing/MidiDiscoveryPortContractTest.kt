@@ -126,10 +126,10 @@ abstract class MidiDiscoveryPortContractTest {
             val h = connected()
             h.drop(h.device)
             val dropped = currentTime
-            assertFalse(h.device in h.input.inputDevices.first())
-            h.input.inputDevices.first { h.device in it }
+            assertFalse(h.device in h.output.outputDevices.first())
+            h.output.outputDevices.first { h.device in it }
             assertEquals(Tunables.BLE_RECONNECT_INITIAL_MS, currentTime - dropped)
-            assertTrue(h.device in h.output.outputDevices.first())
+            assertTrue(h.device in h.input.inputDevices.first())
         }
 
     @Test

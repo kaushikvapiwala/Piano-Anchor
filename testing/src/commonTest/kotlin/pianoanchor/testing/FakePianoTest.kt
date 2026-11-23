@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
@@ -26,6 +27,19 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class FakePianoTest {
     private val c4 = MidiNote.MIDDLE_C
+
+    @Test
+    fun droppingTheLinkResumesOpenFlowsAndIsIgnoredWhileUnplugged() =
+        runTest {
+            val piano = FakePiano()
+            val events = collect(piano)
+            piano.press(c4)
+            piano.dropLink()
+            assertEquals(listOf(NoteOn(0, 0, c4, 64), LinkResumed(0)), events)
+            piano.unplug()
+            piano.dropLink() // not connected: nothing to resume
+            assertEquals(2, events.size)
+        }
 
     @Test
     fun pressAndReleaseEmitNoteEvents() =

@@ -110,6 +110,27 @@ class PracticeViewModelSpotTest {
         }
 
     @Test
+    fun `a resumed link restarts a timed loop and keeps its streak`() =
+        runTest(dispatcher) {
+            val vm = loop(TempoRung.P85)
+            try {
+                val before = vm.state.value.spotLoop
+                tap(60) // the starting key: the count-in begins
+                assertEquals(RunPhase.COUNT_IN, vm.state.value.phase)
+
+                piano.dropLink()
+                runCurrent()
+
+                assertEquals(RunPhase.READY, vm.state.value.phase)
+                assertEquals(TempoRung.P70, vm.state.value.rung)
+                assertEquals(before, vm.state.value.spotLoop)
+                assertTrue(vm.state.value.linkResumed)
+            } finally {
+                vm.close() // a timed run's ticker never ends on a standing fake clock
+            }
+        }
+
+    @Test
     fun `a loop practises the slice, in practice mode`() =
         runTest(dispatcher) {
             val vm = loop(TempoRung.P85)

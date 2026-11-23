@@ -45,8 +45,6 @@ import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WEEKLY_GOAL_DAYS_RANGE
 import pianoanchor.feature.settings.resources.Res
 import pianoanchor.feature.settings.resources.settings_action_dismiss
-import pianoanchor.feature.settings.resources.settings_back
-import pianoanchor.feature.settings.resources.settings_back_glyph
 import pianoanchor.feature.settings.resources.settings_budget_label
 import pianoanchor.feature.settings.resources.settings_budget_option
 import pianoanchor.feature.settings.resources.settings_click
@@ -71,6 +69,7 @@ import pianoanchor.feature.settings.resources.settings_weekly_goal_fewer
 import pianoanchor.feature.settings.resources.settings_weekly_goal_fewer_glyph
 import pianoanchor.feature.settings.resources.settings_weekly_goal_more
 import pianoanchor.feature.settings.resources.settings_weekly_goal_more_glyph
+import pianoanchor.ui.shell.BackButton
 
 private val TouchTarget = 44.dp
 
@@ -122,19 +121,8 @@ public fun SettingsScreen(
 
 @Composable
 private fun TopBar(onBack: () -> Unit) {
-    val backLabel = stringResource(Res.string.settings_back)
     Row(modifier = Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        TextButton(
-            onClick = onBack,
-            modifier = Modifier.size(TouchTarget).semantics { contentDescription = backLabel },
-            contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
-        ) {
-            Text(
-                stringResource(Res.string.settings_back_glyph),
-                fontSize = 20.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+        BackButton(onClick = onBack)
         Text(
             stringResource(Res.string.settings_title),
             style = MaterialTheme.typography.headlineMedium,

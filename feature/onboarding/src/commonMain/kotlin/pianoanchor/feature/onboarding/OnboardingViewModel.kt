@@ -211,20 +211,9 @@ public class OnboardingViewModel(
                     mutableState.update { it.copy(pianoListHint = true) }
                 }
                 launch {
-                    var forget: Job? = null
                     input.inputDevices.collect { devices ->
-                        forget?.cancel()
-                        val listed = devices.firstOrNull()
-                        if (listed != null) {
-                            mutableState.update { it.copy(listed = listed) }
-                        } else {
-                            // A Bluetooth link often drops and comes back by itself: wait before saying it's gone.
-                            forget =
-                                launch {
-                                    delay(Tunables.ONBOARDING_LISTED_GRACE_MS)
-                                    mutableState.update { it.copy(listed = null) }
-                                }
-                        }
+                        // The input port keeps a dropped Bluetooth piano listed while it reopens, so no timer here.
+                        mutableState.update { it.copy(listed = devices.firstOrNull()) }
                         for (device in devices.filter { reading.add(it.id) }) {
                             launch {
                                 try {

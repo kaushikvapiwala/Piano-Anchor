@@ -174,6 +174,15 @@ class PracticeScreenTest {
         }
 
     @Test
+    fun aRunRestartedByAResumedLinkSaysWhy() =
+        runComposeUiTest {
+            show(PracticeState.start(Passages.CDE).copy(rung = TempoRung.P60, linkResumed = true))
+
+            onNodeWithText("The piano disconnected for a moment. Starting again.").assertExists()
+            onNodeWithText("Play any key to count in").assertExists()
+        }
+
+    @Test
     fun countInShowsTheBeatAndTheTimedStaffReadsTheCursor() =
         runComposeUiTest {
             show(PracticeState.start(Passages.CDE).copy(rung = TempoRung.P60, phase = RunPhase.COUNT_IN, beat = 2))

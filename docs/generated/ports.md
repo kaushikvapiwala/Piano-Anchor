@@ -96,8 +96,8 @@ Driven port: MIDI messages arriving from instruments. Contract: `pianoanchor.tes
 
 | Function | Description |
 |---|---|
-| `val inputDevices: Flow<List<MidiDevice>>` | Input devices currently available. Emits the current list as soon as it is collected, then a new list after every change. Never completes. |
-| `fun events(device: MidiDevice): Flow<MidiEvent>` | Opens [device] while collected and emits its messages in arrival order, each stamped in the `ClockPort` clock domain with non-decreasing timestamps. Messages that arrive while nobody collects are dropped. Completes normally when the device disconnects; cancelling the collector closes the device. Fails with [MidiDeviceUnavailableException] if [device] is not listed when collection starts. |
+| `val inputDevices: Flow<List<MidiDevice>>` | Input devices currently available. Emits the current list as soon as it is collected, then a new list after every change. Never completes. A Bluetooth device that drops stays listed for up to the adapter's drop grace (`Tunables.BLE_DROP_GRACE_MS`) while it is reopened. |
+| `fun events(device: MidiDevice): Flow<MidiEvent>` | Opens [device] while collected and emits its messages in arrival order, each stamped in the `ClockPort` clock domain with non-decreasing timestamps. Messages that arrive while nobody collects are dropped. A dropped Bluetooth device that is reopened within the grace period keeps the flow open and emits [pianoanchor.core.model.LinkResumed]; the flow completes normally when the device stays gone. Cancelling the collector closes the device. Fails with [MidiDeviceUnavailableException] if [device] is not listed when collection starts. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/MidiInputPortContractTest.kt`
 

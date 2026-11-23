@@ -30,8 +30,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -56,6 +58,7 @@ import pianoanchor.feature.practice.resources.practice_disconnected
 import pianoanchor.feature.practice.resources.practice_end_run
 import pianoanchor.feature.practice.resources.practice_hint
 import pianoanchor.feature.practice.resources.practice_hint_glyph
+import pianoanchor.feature.practice.resources.practice_link_resumed
 import pianoanchor.feature.practice.resources.practice_mode_perform
 import pianoanchor.feature.practice.resources.practice_mode_switch_perform
 import pianoanchor.feature.practice.resources.practice_mode_switch_perform_disabled
@@ -68,6 +71,7 @@ import pianoanchor.feature.practice.resources.practice_save_failed
 import pianoanchor.feature.practice.resources.practice_tempo_done
 import pianoanchor.feature.practice.resources.practice_tempo_percent
 import pianoanchor.feature.practice.resources.practice_tempo_wait
+import pianoanchor.ui.shell.BackButton
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
 
@@ -139,6 +143,7 @@ public fun PracticeScreen(
                 legend = state.showsVerdicts,
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 6.dp).fillMaxWidth().height(196.dp),
             )
+            if (state.linkResumed) LinkResumedLine(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
             if (state.rung != TempoRung.WAIT &&
                 !state.calibrationOffered
             ) {
@@ -148,6 +153,17 @@ public fun PracticeScreen(
             KeyStrip(state, modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth())
         }
     }
+}
+
+/** Says why a timed run started over by itself: the piano's link dropped and came back. */
+@Composable
+private fun LinkResumedLine(modifier: Modifier = Modifier) {
+    Text(
+        stringResource(Res.string.practice_link_resumed),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
+    )
 }
 
 @Composable
@@ -165,7 +181,7 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        BackButton(onBack)
+        BackButton(onClick = onBack)
         Column {
             Text(state.passage.title, fontFamily = displayFontFamily, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text(

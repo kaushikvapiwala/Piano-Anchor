@@ -34,8 +34,7 @@ How `:platform:android-midi` finds, connects and keeps Bluetooth LE MIDI pianos 
   in between), the handle is closed and `connect` fails; during reconnecting such an open counts as a failed
   attempt. A device that is already connected and listed is left as it is; one that is waiting to
   be reopened is opened again at once.
-- When the link drops, the device leaves the listings and running `events()` flows complete, as the MIDI port
-  contracts say. The adapter closes the dead handle and reopens the device after `BLE_RECONNECT_INITIAL_MS` (1 s),
+- When the link drops, the adapter rides it out (next section). The adapter closes the dead handle and reopens the device after `BLE_RECONNECT_INITIAL_MS` (1 s),
   doubling the wait up to `BLE_RECONNECT_MAX_MS` (30 s). No attempt starts later than `BLE_RECONNECT_GIVE_UP_MS`
   (5 min, counted over the waits) after the drop; then the adapter forgets the device. While Bluetooth is off or a
   permission is missing, an attempt is skipped but its wait still counts. After a successful reopen the device is
@@ -47,6 +46,29 @@ How `:platform:android-midi` finds, connects and keeps Bluetooth LE MIDI pianos 
 - Reconnecting runs in the scope the adapter was created with (an app-lived scope on Android; see ADR 0015).
 - Errors: a missing permission gives `BluetoothUnavailableException(PERMISSION_DENIED)`; Bluetooth off, no Bluetooth
   LE, or a scan the platform refuses gives `BLUETOOTH_OFF`.
+
+## Riding out a brief drop
+Android's link to some pianos drops for 1 to 3 s and comes back by itself, so the adapter hides short drops from
+its readers. It applies only to Bluetooth devices the adapter keeps connected (`connect` was called and
+`disconnect` was not); a USB device that leaves is gone at once, as is a Bluetooth device the user disconnected.
+- **Listing.** When a kept device leaves the system list, `inputDevices` goes on listing it for up to
+  `BLE_DROP_GRACE_MS` (5 s). If the system lists it again within that time (under the same id, with a new system
+  id) the listing never changes (the hold is shared, so a reader that starts during the gap sees the device too); if not, the device is removed when the grace ends. `disconnect`, or the
+  reconnecting giving up, removes it at once.
+- **Events.** When a kept device's input closes, `events()` stays open and waits for the system to list the device
+  again, up to `BLE_DROP_GRACE_MS` counted from the moment the system list drops it (the same moment the list's hold
+  starts, so a flow never ends while its device is still listed). It ends at once if the device stops being kept
+  (`disconnect`, or the reconnecting gave up). The parser starts afresh on the new link. It then opens the new input, emits `LinkResumed` and carries on with the
+  messages that follow. `LinkResumed` is stamped with the clock the platform stamps use, never earlier than the
+  last event, so stamps keep to the port's non-decreasing rule. If the device is not back in time, or its input can't
+  be opened, the flow completes as before. Cancelling the collector during the wait closes nothing a second time:
+  the old input was closed before the wait began.
+- **What readers do.** Messages sent in the gap are lost. The onboarding, Pianos, Today and Songs see nothing (the
+  list and the note stream carry on); the monitor shows no line; a wait-mode run carries on, as it only waits for
+  the next right note (keys and held notes are released at the resume); a timed run, whose take would be missing notes, is discarded unsaved and starts over like
+  Restart, saying "The piano disconnected for a moment. Starting again." until the next note. A spot loop restarts
+  its current loop and keeps its clean streak.
+- Assumption: a reopened device keeps its id, because ids come from the Bluetooth address.
 
 ## Still unverified (owner test T8 on the real piano)
 - The scan and connect glue on a phone; whether the piano needs re-pairing after a drop; which error codes the
