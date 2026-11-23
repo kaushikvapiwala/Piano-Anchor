@@ -23,15 +23,43 @@ class CardScenesTest {
             Skills.WHITE_KEY_NAMES,
         ).map { it.id }
 
+    private val unit1 =
+        listOf(
+            Skills.RH_C_POSITION,
+            Skills.STEPS_AND_SKIPS,
+            Skills.FINGER_NUMBER_TUNES,
+            Skills.BARS_AND_COUNTING,
+            Skills.STAFF_STEPS,
+            Skills.TREBLE_CLEF,
+            Skills.SOFT_AND_LOUD,
+        ).map { it.id }
+
     @Test
     fun `every Unit 0 skill has a scene`() = unit0.forEach { assertNotNull(Curriculum.scene(it), it) }
+
+    @Test
+    fun `every Unit 1 skill has a scene with a description`() =
+        unit1.forEach { assertTrue(checkNotNull(Curriculum.scene(it), { it }).description.isNotBlank(), it) }
+
+    @Test
+    fun `bars and counting shows eight beats with an accent on 1 and 5`() {
+        val pulses =
+            checkNotNull(
+                Curriculum.scene(Skills.BARS_AND_COUNTING.id),
+            ).cues.filter { it.action is SceneAction.Pulse }
+        assertEquals(
+            listOf(0, 4),
+            pulses.withIndex().filter { (it.value.action as SceneAction.Pulse).accent }.map { it.index },
+        )
+        assertEquals(8, pulses.size)
+    }
 
     @Test
     fun `no scene names an unknown skill`() =
         CardScenes.all.keys.forEach { assertNotNull(Curriculum.graph.byId(it), it) }
 
     @Test
-    fun `a skill without a scene yet gives none`() = assertNull(Curriculum.scene(Skills.RH_C_POSITION.id))
+    fun `a skill without a scene yet gives none`() = assertNull(Curriculum.scene(Skills.LH_C_POSITION.id))
 
     @Test
     fun `every scene has a description and something to see at the midpoint frame`() =

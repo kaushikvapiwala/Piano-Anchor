@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.v2.runComposeUiTest
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +29,8 @@ class LessonScreenTest {
             val state = lessonState(LessonStep.TRY, progress = sequenceProgress(60, 62))
             setContent { PianoAnchorTheme { LessonScreen(state, LessonActions()) } }
 
-            onNodeWithText(state.card.what).assertIsDisplayed()
+            // The card animation fills the top of the scrolling pane, so the text scrolls into view first.
+            onNodeWithText(state.card.what).performScrollTo().assertIsDisplayed()
             onNodeWithText("What").assertIsDisplayed()
             onNodeWithContentDescription("Step 3 of 5, Try, current").assertIsDisplayed()
             onNodeWithContentDescription("Step 1 of 5, Why").assertIsDisplayed()
