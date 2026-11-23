@@ -20,7 +20,7 @@ import pianoanchor.engine.content.Skills
 import pianoanchor.ui.shell.PianoAnchorTheme
 
 /**
- * Golden screenshots of the Unit 0 to Unit 2 card scenes at their midpoint frame in light and dark, plus a left-hand
+ * Golden screenshots of the Unit 0 to Unit 3 card scenes at their midpoint frame in light and dark, plus a left-hand
  * and a staff test scene. `./gradlew :feature:lesson:recordRoborazziAndroidHostTest` rewrites them under
  * `feature/lesson/screenshots/`; fastCheck verifies them.
  */
@@ -100,6 +100,18 @@ class CardAnimationScreenshotTest {
 
     @Test
     fun handsTogetherHeld() = skill(Skills.HANDS_TOGETHER_HELD.id)
+
+    @Test
+    fun cChord() = skill(Skills.C_CHORD.id)
+
+    @Test
+    fun gAndFChords() = skill(Skills.G_AND_F_CHORDS.id)
+
+    @Test
+    fun melodyAndChords() = skill(Skills.MELODY_AND_CHORDS.id)
+
+    @Test
+    fun sharpsAndFlats() = skill(Skills.SHARPS_AND_FLATS.id)
 
     @Test
     fun leftHandMirrorsTheRight() {
