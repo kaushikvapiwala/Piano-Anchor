@@ -40,50 +40,55 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Automatic link latency** (spec #172; owner's hardware check; ADR 0025): timed runs measure the piano's link delay
+1. **Fix the emulator end-to-end test** (CI; blocks every PR that runs it; likely from #214): `playsCdeTwiceAndCountsRuns`
+    plays C (shown correct) but "D correct" never appears (`WalkingSkeletonEndToEndTest.kt`, the `playCde` loop).
+    Find whether D's note is lost or not shown, and fix the cause; no emulator in cloud sessions, so push and read the
+    "Show failed tests" step of `.github/workflows/e2e.yml`. Once green, run that workflow on every PR (drop its `paths:`
+    filter) so it can become a required check.
+2. **Automatic link latency** (spec #172; owner's hardware check; ADR 0025): timed runs measure the piano's link delay
     with Identity Request round trips; calibration leaves the onboarding and the first-run card; tap calibration becomes
     the optional "Fine-tune timing" with a 45 ms spread limit.
-2. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
+3. **One shared back button** (review of the onboarding connect fix; mechanical): Settings, Practice, Ear and the
     Pianos screen each copy a TextButton with a "←" glyph and their own back strings. Move it to `ui/shell` with one
     string, hide the glyph from TalkBack (it now reads "Back" and the arrow), mirror it in right-to-left layouts and
     let it grow with the font scale instead of a fixed 44 dp width.
-3. **Connect step says what to do and why a piano may be missing** (spec #179; owner's hardware check): the step has no
+4. **Connect step says what to do and why a piano may be missing** (spec #179; owner's hardware check): the step has no
     button, and the owner looked for one; say under the connected line that a key press continues (e.g. "Press any
     key to continue"). A piano left idle turns its Bluetooth off (the owner's went quiet after about 15 minutes and
     only a power cycle brought it back), so the "Not found?" hint, and the Pianos screen when a scan finds nothing,
     should say a piano may have gone to sleep: turn it off and on again.
-4. **Beginner course: the new map** (spec #181): rebuild Units 0–3 to the course map (23 concepts), moving,
+5. **Beginner course: the new map** (spec #181): rebuild Units 0–3 to the course map (23 concepts), moving,
     keeping or dropping each existing passage; skill prerequisites suggest the next lesson but lock nothing.
-5. **Beginner course: concept cards** (spec #182; design in `docs/course/beginner-course.md`, ADR 0026) [#181]: a typed
+6. **Beginner course: concept cards** (spec #182; design in `docs/course/beginner-course.md`, ADR 0026) [#181]: a typed
     concept card (what, why, how, when) per concept in the curriculum, a content test that fails on an empty field,
     and the cards for all 23 concepts of the map.
-6. **Beginner course: Try checks** (spec #188) [#181]: one small piano-checked task per course concept and a pure
+7. **Beginner course: Try checks** (spec #188) [#181]: one small piano-checked task per course concept and a pure
     evaluator, for the lesson's Try step and the review quizzes.
-7. **Beginner course: five-step lesson screen** (spec #189) [#188]: Why → See → Try → Use → Recap in the landscape
+8. **Beginner course: five-step lesson screen** (spec #189) [#188]: Why → See → Try → Use → Recap in the landscape
     layout, resuming at the last step; Today's "Next" card and the course map ticks.
-8. **Beginner course: gentle practice feedback** (spec #190): grey wrong key with the right key glowing and one
+9. **Beginner course: gentle practice feedback** (spec #190): grey wrong key with the right key glowing and one
     landmark line, a visible "3, 2, 1, Play!", hear it first, and Unit 0 without the staff.
-9. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
+10. **Beginner course: card animations, Unit 0** (spec #191) [#189]: the shared scene model and renderer that keep
     every card's animation consistent, and the Unit 0 scenes.
-10. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
-11. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
-12. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
-13. **Beginner course: Results in words** (spec #187): say what happened (started late, notes held short, extra
+11. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
+12. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
+13. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
+14. **Beginner course: Results in words** (spec #187): say what happened (started late, notes held short, extra
     notes) and one tip; the numbers move behind "Details".
-14. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
+15. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
     Today's warm-up, rated by mistakes into the review planner.
-15. **Ear grading in the engine** (follow-up of the M4 cleanup; mechanical): `EarViewModel` decides an item's outcome
+16. **Ear grading in the engine** (follow-up of the M4 cleanup; mechanical): `EarViewModel` decides an item's outcome
     (first try, recovered, missed) and redraws repeated items with its own limit of 20; move both into `EarGrading` and
     `EarGenerator` (the limit into `Tunables`) so the rules sit under the engine's tests.
-16. **One Today start action** (follow-up of the M4 cleanup; mechanical): the Ear card has its own `target` overload and
+17. **One Today start action** (follow-up of the M4 cleanup; mechanical): the Ear card has its own `target` overload and
     `onStartEar` action, so `MainActivity` repeats the `when (TodayTarget)` with branches that can't happen; give
     `TodayViewModel` one `target(card)` and `TodayActions` one `onStart(card)`.
-17. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
+18. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
     loops save their attempts under the slice's id (`…#bars5-6`) and also set `Attempt.spot`, so the full-passage
     queries' spot filters never match a row, the loop's done-rung refresh always reads an empty set and `run N` counts
     loops apart from the piece. Save them under the piece's id and rely on `spot` alone (then drop the id suffix and
     `sourcePassageId`); this changes stored data and run numbers.
-18. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
+19. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
     mode by hand where it starts hints; give the run an effective level (OFF in perform) so `loadHints` and
     `startHintStep` read only that, and keep the Hint button's own guard.
 
