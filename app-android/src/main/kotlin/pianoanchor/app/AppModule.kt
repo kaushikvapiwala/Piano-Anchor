@@ -69,7 +69,7 @@ val appModule =
         single<SettingsRepositoryPort> { SqlSettingsRepositoryAdapter(get(), Dispatchers.IO) }
         single<UpdateCheckPort> { GitHubUpdateCheckAdapter(BuildConfig.VERSION_NAME, BuildConfig.UPDATE_REPOSITORY) }
         factory { LearnerModel(Curriculum.graph, get()) }
-        viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
+        viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
         viewModel { (device: MidiDevice, passageId: String, start: PracticeStart) ->
             val passage = requireNotNull(Curriculum.passage(passageId)) { "unknown passage $passageId" }
             PracticeViewModel(
@@ -122,5 +122,7 @@ val appModule =
             )
         }
         viewModel { SongsViewModel(get(), get(), get()) }
-        viewModel { TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
+        viewModel {
+            TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME)
+        }
     }

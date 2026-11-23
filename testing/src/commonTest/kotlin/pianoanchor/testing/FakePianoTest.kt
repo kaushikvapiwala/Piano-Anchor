@@ -228,6 +228,15 @@ class FakePianoTest {
     }
 
     @Test
+    fun connectDoesNotOpenAdvertisedDevicesWithoutAScanUnlessTheyAreBluetooth() =
+        runTest {
+            val piano = FakePiano()
+            val usb = MidiDevice("usb:A/B/1", "Wired")
+            piano.advertised = listOf(usb)
+            assertFailsWith<MidiDeviceUnavailableException> { piano.connect(usb) }
+        }
+
+    @Test
     fun connectingADroppedDeviceListsItAtOnceAndCancelsTheReconnect() =
         runTest {
             val piano = FakePiano()

@@ -6,13 +6,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,9 +71,13 @@ private val OnColdOpen = Color(0xFFF7F5F2)
 internal val CardShape = RoundedCornerShape(20.dp)
 private val BarHeight = 10.dp
 
+/** The right-hand pane (piano chip, practice days, update banner) in landscape. */
+private val SidePaneWidth = 280.dp
+
 /**
- * Today: a rail (Today, Songs, Pianos, Settings), the greeting with the piano chip and weekly goal dots, the day's
- * cards, the session bar and the practice-day line. Stateless; nothing animates, so screenshots stay still.
+ * Today, landscape: a rail (Today, Songs, Pianos, Settings), the plan (greeting, the day's cards, the session bar) in
+ * a scrolling column, and a side pane with the piano chip, weekly goal dots, practice-day line and update banner. An
+ * error card tops the plan. Both panes scroll. Stateless; nothing animates, so screenshots stay still.
  */
 @Composable
 public fun TodayScreen(
@@ -89,13 +94,13 @@ public fun TodayScreen(
                 onPianos = actions.onPianos,
                 onSettings = actions.onSettings,
             )
+            // Visual order, so TalkBack reads the plan first and the piano and practice days second.
             Column(
                 modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Header(state, actions.onPianos)
                 if (state.storageFailed) ErrorCard(actions.onRetry)
-                state.update?.let { UpdateBanner(it, actions) }
+                Header(state)
                 val session = state.session
                 if (session != null) {
                     if (state.caughtUp) {
@@ -108,13 +113,27 @@ public fun TodayScreen(
                         }
                     }
                     if (session.cards.isNotEmpty()) SessionBar(session)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+            Column(
+                modifier =
+                    Modifier
+                        .width(SidePaneWidth)
+                        .verticalScroll(rememberScrollState())
+                        .padding(end = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                PianoStatus(state, actions.onPianos)
+                if (state.session != null) {
                     Text(
                         stringResource(Res.string.today_practice_days, state.practicedDays, PRACTICE_WINDOW_DAYS),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 16.dp),
                     )
                 }
+                state.update?.let { UpdateBanner(it, actions) }
+                Spacer(Modifier.height(16.dp))
             }
         }
     }

@@ -9,6 +9,7 @@ import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.StrictnessProfile
 import pianoanchor.core.model.TICKS_PER_QUARTER
+import pianoanchor.engine.NANOS_PER_MILLI
 import pianoanchor.engine.analysis.timingToleranceNanos
 import pianoanchor.engine.profile
 import kotlin.math.abs
@@ -17,7 +18,6 @@ import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 private const val NANOS_PER_MINUTE = 60_000_000_000L
-private const val NANOS_PER_MILLI = 1_000_000.0
 private const val PERCENT = 100
 private const val PERCENT_60 = 60
 private const val PERCENT_70 = 70
@@ -44,6 +44,9 @@ public enum class TempoRung(
 
     /** The next slower rung; [WAIT] stays [WAIT] (there is nothing below it). */
     public fun below(): TempoRung = entries[(ordinal - 1).coerceAtLeast(0)]
+
+    /** Whether a perform run is possible at this rung: every rung but [WAIT], which has no clock. */
+    public val canPerform: Boolean get() = this != WAIT
 
     /**
      * The rung's tempo for [passage]: written tempo x percent / 100 rounded half up and clamped to
@@ -115,7 +118,7 @@ public class TempoJudge(
         return if (abs(deviation) <= tolerance) {
             LiveVerdict.Correct(ref)
         } else {
-            LiveVerdict.TimingOff(ref, (deviation / NANOS_PER_MILLI).roundToInt())
+            LiveVerdict.TimingOff(ref, (deviation / NANOS_PER_MILLI.toDouble()).roundToInt())
         }
     }
 

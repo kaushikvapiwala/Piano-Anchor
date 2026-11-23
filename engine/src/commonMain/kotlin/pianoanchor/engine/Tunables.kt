@@ -90,6 +90,18 @@ public object Tunables {
     public const val BLE_LISTED_TIMEOUT_MS: Long = 5_000
 
     /**
+     * How long, in milliseconds, Today waits for the remembered Bluetooth piano to connect in the background before
+     * it gives up for this start and shows "No piano".
+     *
+     * Why: opening a Bluetooth device by a stored address has no timeout of its own and holds the adapter's connect
+     * lock, so a piano that is switched off or out of range would keep the chip on "Connecting…" and block Pianos'
+     * Connect and Forget; a BLE link normally comes up in a few seconds, so 15 s allows a slow one.
+     *
+     * Source: initial guess, three times [BLE_LISTED_TIMEOUT_MS]; revisit after the T8 test.
+     */
+    public const val RECONNECT_LAST_PIANO_TIMEOUT_MS: Long = 15_000
+
+    /**
      * How many lines the note monitor keeps in its live log (newest first); older lines are dropped.
      *
      * Why: enough to read back the last phrase played, while bounding the work of redrawing the log.

@@ -1,13 +1,16 @@
 package pianoanchor.feature.today
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -16,15 +19,19 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.MemoryState
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.SkillState
+import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.core.ports.UpdateCheckPort
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.EarSkills
 import pianoanchor.engine.content.Skills
@@ -79,6 +86,7 @@ class TodayViewModelTest {
             LearnerModel(Curriculum.graph, learnerRepository),
             settings,
             attempts,
+            piano,
             piano,
             calibration,
             clock,
@@ -258,6 +266,134 @@ class TodayViewModelTest {
             assertEquals(TodayTarget.Pianos, vm.target(card))
         }
 
+    private val remembered = MidiDevice("ble:AA:BB:CC:DD:EE:01", "Casio CDP-S160")
+
+    /** A Today whose wired piano is unplugged, with [remembered] stored (or not) and advertising. */
+    private suspend fun TestScope.reconnecting(
+        remember: Boolean = true,
+        discovery: MidiDiscoveryPort = piano,
+    ): TodayViewModel {
+        piano.unplug()
+        piano.advertised = listOf(remembered)
+        if (remember) settings.update { it.copy(lastPiano = remembered) }
+        return TodayViewModel(
+            LearnerModel(Curriculum.graph, learnerRepository),
+            settings,
+            attempts,
+            piano,
+            discovery,
+            calibration,
+            clock,
+            TimeZone.UTC,
+            updateCheck,
+            INSTALLED,
+        )
+    }
+
+    @Test
+    fun theRememberedPianoIsReconnectedAndShownConnectingUntilItIsListed() =
+        runTest(dispatcher) {
+            val gate = CompletableDeferred<Unit>()
+            val vm =
+                reconnecting(
+                    discovery =
+                        object : MidiDiscoveryPort by piano {
+                            override suspend fun connect(device: MidiDevice) {
+                                gate.await()
+                                piano.connect(device)
+                            }
+                        },
+                )
+            runCurrent()
+            assertTrue(vm.state.value.connecting)
+            assertNull(vm.state.value.piano)
+
+            gate.complete(Unit)
+            runCurrent()
+
+            assertFalse(vm.state.value.connecting)
+            assertEquals(PianoChip(remembered, Transport.BLE, null), vm.state.value.piano)
+            assertEquals(listOf(remembered), piano.connectCalls)
+        }
+
+    @Test
+    fun aFailedReconnectLeavesNoPianoAndNoRetry() =
+        runTest(dispatcher) {
+            piano.bluetoothProblem = BluetoothUnavailableException.Reason.PERMISSION_DENIED
+            val vm = reconnecting()
+            runCurrent()
+            assertFalse(vm.state.value.connecting)
+            assertNull(vm.state.value.piano)
+            piano.bluetoothProblem = null
+            val unreachable =
+                reconnecting(
+                    discovery =
+                        object : MidiDiscoveryPort by piano {
+                            override suspend fun connect(device: MidiDevice) {
+                                piano.connectCalls += device
+                                throw MidiDeviceUnavailableException(device.id)
+                            }
+                        },
+                )
+            runCurrent()
+            assertFalse(unreachable.state.value.connecting)
+            assertNull(unreachable.state.value.piano)
+            assertEquals(listOf(remembered, remembered), piano.connectCalls)
+        }
+
+    @Test
+    fun aReconnectThatNeverReturnsGivesUpAfterTheTimeout() =
+        runTest(dispatcher) {
+            val vm =
+                reconnecting(
+                    discovery =
+                        object : MidiDiscoveryPort by piano {
+                            override suspend fun connect(device: MidiDevice) = awaitCancellation()
+                        },
+                )
+            runCurrent()
+            assertTrue(vm.state.value.connecting)
+
+            advanceTimeBy(Tunables.RECONNECT_LAST_PIANO_TIMEOUT_MS + 1)
+
+            assertFalse(vm.state.value.connecting)
+            assertNull(vm.state.value.piano)
+        }
+
+    @Test
+    fun aRememberedPianoThatIsAlreadyListedIsNotConnectedAgain() =
+        runTest(dispatcher) {
+            settings.update { it.copy(lastPiano = piano.device) }
+            val vm = viewModel()
+            assertFalse(vm.state.value.connecting)
+            assertEquals(
+                piano.device,
+                vm.state.value.piano
+                    ?.device,
+            )
+            assertEquals(emptyList(), piano.connectCalls)
+        }
+
+    @Test
+    fun nothingRememberedMeansNoConnect() =
+        runTest(dispatcher) {
+            val vm = reconnecting(remember = false)
+            runCurrent()
+            assertFalse(vm.state.value.connecting)
+            assertNull(vm.state.value.piano)
+            assertEquals(emptyList(), piano.connectCalls)
+        }
+
+    @Test
+    fun anUnreadableStoreSkipsTheReconnect() =
+        runTest(dispatcher) {
+            val vm = reconnecting(remember = false)
+            settings.failing = true
+            runCurrent()
+            assertFalse(vm.state.value.connecting)
+            assertEquals(emptyList(), piano.connectCalls)
+        }
+
     @Test
     fun theChipNamesTheConnectedPianoItsTransportAndLatency() =
         runTest(dispatcher) {
@@ -275,6 +411,7 @@ class TodayViewModelTest {
                     settings,
                     attempts,
                     ble,
+                    ble,
                     calibration,
                     clock,
                     TimeZone.UTC,
@@ -289,6 +426,7 @@ class TodayViewModelTest {
                     LearnerModel(Curriculum.graph, learnerRepository),
                     settings,
                     attempts,
+                    other,
                     other,
                     calibration,
                     clock,
@@ -378,6 +516,7 @@ class TodayViewModelTest {
                     settings,
                     attempts,
                     piano,
+                    piano,
                     calibration,
                     monday,
                     TimeZone.UTC,
@@ -448,6 +587,7 @@ class TodayViewModelTest {
                 settings,
                 attempts,
                 piano,
+                piano,
                 calibration,
                 twoAm,
                 TimeZone.UTC,
@@ -471,6 +611,7 @@ class TodayViewModelTest {
                 LearnerModel(Curriculum.graph, learnerRepository),
                 settings,
                 attempts,
+                piano,
                 piano,
                 calibration,
                 clock,
@@ -499,6 +640,7 @@ class TodayViewModelTest {
                 LearnerModel(Curriculum.graph, learnerRepository),
                 staleRead,
                 attempts,
+                piano,
                 piano,
                 calibration,
                 clock,

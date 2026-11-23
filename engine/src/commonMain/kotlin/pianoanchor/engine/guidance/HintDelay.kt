@@ -2,9 +2,8 @@ package pianoanchor.engine.guidance
 
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.StepCorrect
+import pianoanchor.engine.NANOS_PER_MILLI
 import pianoanchor.engine.Tunables
-
-private const val NANOS_PER_MS = 1_000_000L
 
 /** How long a Delayed hint waits (`docs/algorithms/guidance.md`). */
 public object HintDelay {
@@ -27,7 +26,7 @@ public object HintDelay {
         if (gaps.isEmpty()) return Tunables.HINT_DELAY_DEFAULT_MS
         val mid = gaps.size / 2
         val medianNanos = if (gaps.size % 2 == 1) gaps[mid].toDouble() else (gaps[mid - 1] + gaps[mid]) / 2.0
-        val scaled = (medianNanos / NANOS_PER_MS * Tunables.HINT_DELAY_FACTOR).toLong()
+        val scaled = (medianNanos / NANOS_PER_MILLI * Tunables.HINT_DELAY_FACTOR).toLong()
         return scaled.coerceIn(Tunables.HINT_DELAY_MIN_MS, Tunables.HINT_DELAY_MAX_MS)
     }
 }

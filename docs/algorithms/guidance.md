@@ -16,8 +16,9 @@ runs alike: hints are about knowing the notes, not the tempo.
 long as the fade count moves the level one step down; a run of KEEP_PRACTISING attempts as long as that count moves it
 one step up. Every move resets both counts, and a GOOD attempt breaks either streak without adding to one. The level
 stops at Full and at Off. Spot-loop attempts (those with a bar range) are skipped: they neither count nor break a
-streak. The practice screen reads the level when a run starts and keeps the band hidden until it has it, so a slow store
-never flashes the band before a Delayed or Off run.
+streak. The practice screen reads the level when its first run starts and keeps the band hidden until it has it, so a slow
+store never flashes the band before a Delayed or Off run. Later runs on the same screen reuse that read (the history
+can't change there); a failed read is tried again at the next start, and a failed save clears it.
 
 ## Delay rule
 `HintDelay.millis` pools the gaps between the `StepCorrect` events of the newest few runs (the events already carry

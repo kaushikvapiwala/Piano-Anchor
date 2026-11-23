@@ -59,6 +59,9 @@ class FakePiano(
             advertisedDevices.value = value
         }
 
+    /** Every device passed to [connect], in order, whether it succeeded or not. */
+    val connectCalls = mutableListOf<MidiDevice>()
+
     /** When set, [scan] and [connect] fail with [BluetoothUnavailableException] for this reason. */
     var bluetoothProblem: BluetoothUnavailableException.Reason? = null
 
@@ -123,10 +126,16 @@ class FakePiano(
             }
         }
 
-    /** Lists [device] if a [scan] found it; the fake connects at once. */
+    /**
+     * Lists [device] if a [scan] found it or it is [advertised] with a `ble:` id (opened without a scan); the fake
+     * connects at once.
+     */
     override suspend fun connect(device: MidiDevice) {
+        connectCalls += device
         requireBluetooth()
-        if (device.id !in scanned) throw MidiDeviceUnavailableException(device.id)
+        val openable =
+            device.id in scanned || (device.id.startsWith("ble:") && advertisedDevices.value.any { it.id == device.id })
+        if (!openable) throw MidiDeviceUnavailableException(device.id)
         reconnects.remove(device.id)?.cancel()
         connected += device.id
         list(device)

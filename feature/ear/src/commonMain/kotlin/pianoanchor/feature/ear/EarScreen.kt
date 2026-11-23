@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -82,6 +83,11 @@ import pianoanchor.ui.shell.pianoAnchorColors
 private val AnswerButton = 48.dp
 private val PillShape = RoundedCornerShape(24.dp)
 
+/** The panes split the width about 45/55, left to right. */
+private const val LEFT_PANE_WEIGHT = 0.45f
+private const val RIGHT_PANE_WEIGHT = 0.55f
+private val PaneGap = 24.dp
+
 /** The keys the echo strip draws, C4 to G4: MIDI note number and name. */
 private val KEYS =
     listOf(
@@ -93,9 +99,10 @@ private val KEYS =
     )
 
 /**
- * The ear-training screen (Living Studio, `docs/ui/living-studio.md`): back, the skill, "Item 2 of 4" with a progress
- * bar, then the item (two answer buttons for identify, the key strip for echo), Replay, the feedback line and, after
- * a wrong answer, Show me. At the end, the summary. Stateless: see [EarViewModel].
+ * The ear-training screen, landscape (Living Studio, `docs/ui/living-studio.md`): back, the skill, "Item 2 of 4"
+ * with a progress bar, then, on the left, Replay, the feedback line and, after a wrong answer, Show me; on the right
+ * the item (the answer buttons for identify, the key strip for echo). At the end, the summary. Stateless: see
+ * [EarViewModel].
  */
 @Composable
 public fun EarScreen(
@@ -104,20 +111,39 @@ public fun EarScreen(
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
-        Column(
-            modifier =
-                Modifier
-                    .safeDrawingPadding()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            val summary = state.summary
-            if (summary == null) {
-                Header(state, actions.onBack)
-                Item(state, actions)
-            } else {
-                Summary(state, summary, actions.onDone)
+        val summary = state.summary
+        val exercise = state.exercise
+        if (summary != null || exercise == null) {
+            Column(
+                modifier =
+                    Modifier
+                        .safeDrawingPadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                // Before the first item loads there is nothing to show but the header and its back button.
+                if (summary != null) Summary(state, summary, actions.onDone) else Header(state, actions.onBack)
+            }
+        } else {
+            // Landscape: the exercise (header, prompt, replay) on the left, the answer buttons or keys on the right.
+            Row(
+                modifier = Modifier.safeDrawingPadding().padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(PaneGap),
+            ) {
+                Column(
+                    modifier = Modifier.weight(LEFT_PANE_WEIGHT).fillMaxHeight().verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Header(state, actions.onBack)
+                    Exercise(state, exercise, actions)
+                }
+                Column(
+                    modifier = Modifier.weight(RIGHT_PANE_WEIGHT).fillMaxHeight().verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Answers(state, exercise, actions)
+                }
             }
         }
     }
@@ -160,36 +186,38 @@ private fun Header(
     )
 }
 
+/** The left pane under the header: the prompt, the feedback line and the replay or next controls. */
 @Composable
-private fun Item(
+private fun Exercise(
     state: EarState,
+    exercise: EarExercise,
     actions: EarActions,
 ) {
-    val exercise = state.exercise ?: return
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            val prompt =
-                when {
-                    state.playing -> Res.string.ear_listening
-                    exercise is EarExercise.Echo -> Res.string.ear_prompt_echo
-                    else -> Res.string.ear_prompt_identify
-                }
-            Text(
-                stringResource(prompt),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            )
-            when (exercise) {
-                is EarExercise.Identify -> Choices(exercise, state.answerShown, !state.playing, actions.onAnswer)
-                is EarExercise.Echo -> KeyStrip(exercise, state.answerShown)
-            }
-            Feedback(state.feedback)
-            Controls(state, actions)
+    val prompt =
+        when {
+            state.playing -> Res.string.ear_listening
+            exercise is EarExercise.Echo -> Res.string.ear_prompt_echo
+            else -> Res.string.ear_prompt_identify
         }
+    Text(
+        stringResource(prompt),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+    )
+    Feedback(state.feedback)
+    Controls(state, actions)
+}
+
+/** The right pane: what the learner answers with. */
+@Composable
+private fun Answers(
+    state: EarState,
+    exercise: EarExercise,
+    actions: EarActions,
+) {
+    when (exercise) {
+        is EarExercise.Identify -> Choices(exercise, state.answerShown, !state.playing, actions.onAnswer)
+        is EarExercise.Echo -> KeyStrip(exercise, state.answerShown)
     }
 }
 
@@ -200,14 +228,14 @@ private fun Choices(
     enabled: Boolean,
     onAnswer: (EarChoice) -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
         for (choice in exercise.choices) {
             val name = stringResource(choiceName(choice))
             val marked = answerShown && choice == exercise.answer
             val described = if (marked) stringResource(Res.string.ear_answer_marked, name) else name
             val modifier =
                 Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
                     .heightIn(min = AnswerButton)
                     .semantics { contentDescription = described }
             if (marked) {

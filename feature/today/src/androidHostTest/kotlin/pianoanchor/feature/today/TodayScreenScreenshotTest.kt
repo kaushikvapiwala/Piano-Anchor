@@ -24,7 +24,7 @@ import kotlin.time.Instant
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [SDK], qualifiers = "w411dp-h891dp-xxhdpi")
+@Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
 class TodayScreenScreenshotTest {
     private fun capture(
         name: String,
@@ -41,6 +41,12 @@ class TodayScreenScreenshotTest {
     private fun passage(id: String) = checkNotNull(Curriculum.passage("builtin:$id"))
 
     private val piano = PianoChip(MidiDevice("ble:AA:BB", "FP-30X"), Transport.BLE, latencyMs = 18)
+
+    @Test
+    fun storageError() = capture("storage_error", TodayState(storageFailed = true))
+
+    @Test
+    fun connectingPiano() = capture("connecting", TodayState(connecting = true, daysThisWeek = 2))
 
     @Test
     fun earCard() =

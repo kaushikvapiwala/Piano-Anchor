@@ -17,7 +17,7 @@ import pianoanchor.ui.shell.PianoAnchorTheme
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [SDK], qualifiers = "w411dp-h891dp-xxhdpi")
+@Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
 class OnboardingScreenScreenshotTest {
     private val piano = MidiDevice("usb:Roland/FP-30X", "FP-30X")
 

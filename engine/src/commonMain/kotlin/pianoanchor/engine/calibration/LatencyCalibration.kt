@@ -2,11 +2,11 @@ package pianoanchor.engine.calibration
 
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.PlayedNote
+import pianoanchor.engine.NANOS_PER_MILLI
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.matcher.beatNanos
 import kotlin.math.abs
 
-private const val NANOS_PER_MILLI = 1_000_000L
 private const val HALF = 2
 
 /**

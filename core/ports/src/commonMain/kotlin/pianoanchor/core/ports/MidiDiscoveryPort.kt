@@ -18,13 +18,14 @@ public interface MidiDiscoveryPort {
     public fun scan(): Flow<List<MidiDevice>>
 
     /**
-     * Connects [device], found by a [scan] of this adapter; returns once it is listed in
+     * Connects [device], which was found by a [scan] of this adapter, **or has a Bluetooth id this adapter can open
+     * directly** (`ble:<address>`, as an earlier run stored it); returns once it is listed in
      * [MidiInputPort.inputDevices] and [MidiOutputPort.outputDevices] under the same id (within
      * `Tunables.BLE_LISTED_TIMEOUT_MS` of opening). While the app runs, the adapter reopens it after a drop
      * (backoff from `Tunables.BLE_RECONNECT_INITIAL_MS` to `BLE_RECONNECT_MAX_MS`, giving up after
      * `BLE_RECONNECT_GIVE_UP_MS`); during a drop the device is not listed. Connecting a device that is already
      * connected and listed does nothing.
-     * @throws MidiDeviceUnavailableException if no scan of this adapter found [device], or it can't be opened.
+     * @throws MidiDeviceUnavailableException if [device] is neither, or it can't be opened.
      * @throws BluetoothUnavailableException if Bluetooth LE can't be used.
      */
     public suspend fun connect(device: MidiDevice)

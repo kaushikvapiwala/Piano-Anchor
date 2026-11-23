@@ -26,8 +26,10 @@ How `:platform:android-midi` finds, connects and keeps Bluetooth LE MIDI pianos 
 - Devices already listed when the scan starts (connected) are left out.
 
 ## Connect, drop, reconnect
-- `connect(device)` takes a device found by a scan of the same adapter (others are unknown and fail with
-  `MidiDeviceUnavailableException`), opens it through Android's BLE MIDI service and returns once the input and
+- `connect(device)` takes a device found by a scan of the same adapter, or one whose id is `ble:<ADDRESS>`: the
+  adapter reads the address from the id and opens it without a scan, as when the app reconnects the stored last
+  piano at start (any other unknown id, such as `usb:`, fails with `MidiDeviceUnavailableException`; so does an
+  address that does not answer). It opens the device through Android's BLE MIDI service and returns once the input and
   output listings show it. If it is not listed within `BLE_LISTED_TIMEOUT_MS` (5 s) of opening (the link dropped
   in between), the handle is closed and `connect` fails; during reconnecting such an open counts as a failed
   attempt. A device that is already connected and listed is left as it is; one that is waiting to

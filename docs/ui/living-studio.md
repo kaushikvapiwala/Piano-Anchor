@@ -3,6 +3,10 @@
 The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` and `PianoAnchorColors` in
 `ui/shell/src/commonMain/kotlin/pianoanchor/ui/shell/PianoAnchorTheme.kt`.
 
+- **Landscape only**: the Android app is locked to landscape, either way up (the manifest's `sensorLandscape`),
+  because the phone sits on the music rest. Reference layout 915×412 dp; content scrolls instead of clipping (also at
+  font scale 2.0). Every Android screen has a landscape layout; the desktop window keeps its own size. The
+  two-pane screens (onboarding, Ear, Pianos) split about 45/55, left to right, and TalkBack reads the left pane first.
 - **Material 3**, light and dark, following the system setting. Every screen is checked in both (screenshots).
 - **Palette** (the studio teal of the first screens is gone):
 
@@ -39,8 +43,7 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
 
 ## Practice screen (wait mode)
 
-Landscape: the phone sits on the music rest (`app-android` forces landscape while it is open). Reference layout
-915×412 dp; screenshots render at that size.
+Landscape (like every screen; see the lock above). Reference layout 915×412 dp; screenshots render at that size.
 
 - **Top bar** 52 dp with a divider: back (44 dp), title (Space Grotesk 700, 16 sp) and "Wait mode" (Inter 11 sp),
   the tempo ladder (30 dp chips, radius 15, 1.5 dp border; the selected rung in plum, see Tempo runs) and
@@ -161,7 +164,8 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
 
 ## Settings screen
 
-Portrait, opened from the 44 dp gear in the monitor's header (TalkBack "Settings"); back returns to the monitor.
+Landscape: one centred column, at most 600 dp wide, scrolling, with the back arrow and title at its top. Opened
+from the rail's gear (TalkBack "Settings"); back returns to the previous screen.
 Grouped rows under plum group titles, every target at least 44 dp, every change stored at once.
 
 - **Practice**: "Daily practice time" as a three-way segmented control (15, 20, 30 min; each segment is read as
@@ -178,8 +182,10 @@ Grouped rows under plum group titles, every target at least 44 dp, every change 
 
 ## Onboarding screen
 
-Shown once, on first launch, until `onboarded` is stored; then the app opens on Today. Portrait, page colour, one step at
-a time under "Step n of 4" (no accounts, no sign-in line).
+Shown once, on first launch, until `onboarded` is stored; then the app opens on Today. Landscape, page colour, one step at
+a time (no accounts, no sign-in line). Every step splits into a left pane (about 45%: the step title, the explanation
+and the picture or key strip, with four step dots and "Step n of 4" under it) and a right pane (about 55%: the controls,
+that is the connection line and buttons, the "Not found?" hint or the start-point cards). Each pane scrolls on its own.
 
 1. **Press any key on your piano**: the line "Searching for your piano…" becomes "Connected · FP-30X" (polite live
    region) as soon as a piano is listed (a Bluetooth piano once the scan has connected it), and the first note on any
@@ -198,11 +204,12 @@ a time under "Step n of 4" (no accounts, no sign-in line).
 
 ## Ear screen
 
-Portrait, opened by Today's Ear card; back (or Done) returns to Today after the piano is closed. Layout after the mock's
-Flashcards artboard: a back arrow (TalkBack "Back"), the skill title and "Skill 1 of 3", the counter "Item 2 of 4"
-(read out) with a progress bar, then a card.
-- **Identify** item: "Listen, then choose what you heard." and two outlined buttons of at least 48 dp with the choice
-  names. **Echo** item: "Listen, then play it back on your piano." and a strip of five keys (C4 to G4).
+Landscape, opened by Today's Ear card; back (or Done) returns to Today after the piano is closed. Two panes. Left
+(about 45%): a back arrow (TalkBack "Back"), the skill title and "Skill 1 of 3", the counter "Item 2 of 4" (read out)
+with a progress bar, the prompt, the feedback line and the Replay, Show me or Next buttons. Right (about 55%): the answer
+buttons or key strip. Each pane scrolls on its own; the summary is one scrolling column.
+- **Identify** item: "Listen, then choose what you heard." and the choices as outlined buttons of at least 48 dp, stacked in the
+  right pane. **Echo** item: "Listen, then play it back on your piano." and a strip of five keys (C4 to G4).
 - The prompt reads "Listening…" while the item sounds. **Replay (2 left)** plays it again (disabled when none are left).
 - A wrong answer says "Not quite. Listen again." (polite live region) and offers **Show me**. After a second wrong answer
   or Show me, the answer is shown: for identify the answer button is filled and carries a check mark, for echo the keys
@@ -212,25 +219,42 @@ Flashcards artboard: a back arrow (TalkBack "Back"), the skill title and "Skill 
 
 ## Songs screen
 
-Portrait, with the navigation rail (Songs selected; its glyph is a music note). A "Songs" heading, then one bordered
-card per unit in curriculum order, each with its pieces in content order. Rows are at least 56 dp.
+Landscape, with the navigation rail (Songs selected; its glyph is a music note). A "Songs" heading above an adaptive
+grid (cards at least 260 dp wide, so 2 to 3 columns): each unit's title spans the grid, followed by one bordered card
+per piece in content order. Cards are at least 56 dp high; the grid scrolls and the storage error spans it.
 
-- **Unlocked row**: the title and a progress line: "New", "rung 3 of 5" (the next rung to play, as on Today's Song
+- **Unlocked card**: the title and a progress line: "New", "rung 3 of 5" (the next rung to play, as on Today's Song
   card) or "✓ Mastered". Tapping opens Practice on that piece at its next rung (a mastered piece at its top rung);
   with no piano connected it opens Pianos.
-- **Locked row**: dimmed, with a lock and "Needs: <skill title>"; not tappable. TalkBack reads "Locked. Needs <skill
+- **Locked card**: dimmed, with a lock and "Needs: <skill title>"; not tappable. TalkBack reads "Locked. Needs <skill
   title>."
 - **Storage error**: an `errorContainer` card with Retry. The list reloads when the screen is opened again after a run.
 
+## Pianos screen
+
+Landscape: a header across the top (back arrow when it was opened from another screen, and the title; the settings gear
+lives on Today), then two panes. The left pane (about 45%) holds the error card, the devices list, the Scan button,
+the scanned pianos, the connection status, the practice, calibrate and record buttons and the contribution kit; the
+right pane (the rest) is the note log. Each pane scrolls on its own.
+
+The piano connected last through onboarding or Pianos is remembered. Its row on Pianos (when it is listed) has a
+"Forget" text button (TalkBack: "Forget FP-30X"): it disconnects the piano and stops Today reconnecting it.
+
 ## Today screen
 
-The start screen, portrait. A navigation rail (Today selected, Songs, Pianos, Settings gear; shared by Today and Songs as `AppNavRail`) on the left; every item has a
-text label. Reading order: the greeting by time of day ("Good morning" from 05:00, afternoon from 12:00, evening from
-18:00) and the line "Middle C is calling." naming the cold-open skill ("Ready when you are." with none); the piano
-chip (name, USB or BLE and the latency offset when calibrated, e.g. "FP-30X · BLE · 18 ms"; "No piano" opens Pianos)
-and the weekly goal dots (one per goal day, plum for each day practised since Monday); the cards; the session bar;
-"Practised 9 of the last 16 days".
+The start screen, landscape, in three panes read left to right: a navigation rail (Today selected, Songs, Pianos,
+Settings gear; shared by Today and Songs as `AppNavRail`; every item has a text label), the plan (a scrolling column
+that takes the rest of the width) and a side pane about 280 dp wide (it scrolls too). The plan holds the storage
+error card (always first), the greeting, the cards and the session bar; the side pane holds the piano chip, the
+weekly goal dots, "Practised 9 of the last 16 days" and the update banner.
 
+- **Greeting**: by time of day ("Good morning" from 05:00, afternoon from 12:00, evening from 18:00) and the line
+  "Middle C is calling." naming the cold-open skill ("Ready when you are." with none).
+- **Piano chip**: name, USB or BLE and the latency offset when calibrated, e.g. "FP-30X · BLE · 18 ms"; "No piano"
+  opens Pianos; "Connecting…" while the app reconnects the remembered piano in the background when Today opens, with
+  no scan and no dialog; if that fails the chip reads "No piano", with no error card and no retry until Today opens
+  again. Below it, the weekly goal dots (one per goal day, plum for each day practised since Monday).
+- TalkBack reads the plan first, then the side pane.
 - **Cold open** card: dark (`#2A2730`, light text, light button) with "Start cold open", the skill, its minutes and
   "n more to review". **New lesson**: surface with a border, "Begin" and the "why now" line. **Song**: "♩ = 72 · rung 3
   of 5" (wait mode reads "Wait mode · rung 1 of 5") and "Continue". Each opens Practice on the card's passage and
