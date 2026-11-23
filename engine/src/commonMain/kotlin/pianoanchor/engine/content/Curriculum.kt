@@ -4,6 +4,7 @@ import pianoanchor.core.model.ConceptCard
 import pianoanchor.core.model.CurriculumUnit
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.SkillGraph
+import pianoanchor.core.model.TryCheck
 
 /** The built-in content: units in teaching order, the skills they teach and every passage. */
 public object Curriculum {
@@ -57,4 +58,7 @@ public object Curriculum {
 
     /** The concept card of [skillId], or null for a skill without one (More songs, ear skills). */
     public fun card(skillId: String): ConceptCard? = ConceptCards.all.firstOrNull { it.skillId == skillId }
+
+    /** The Try check of a course skill, or null for a skill without one (More songs, ear skills). */
+    public fun tryCheck(skillId: String): TryCheck? = TryChecks.all[skillId]
 }
