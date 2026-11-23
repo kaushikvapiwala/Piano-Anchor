@@ -1,6 +1,7 @@
 package pianoanchor.engine.midi
 
 import pianoanchor.core.model.ControlChange
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.NoteOff
@@ -9,6 +10,7 @@ import pianoanchor.core.model.SysEx
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class MidiEncoderTest {
     private val t = 5L
@@ -44,6 +46,11 @@ class MidiEncoderTest {
             bytes(0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7),
             MidiEncoder.encode(SysEx(t, listOf(0x7E, 0x7F, 0x06, 0x01))),
         )
+    }
+
+    @Test
+    fun aResumedLinkIsNotAMessageAndHasNoBytes() {
+        assertFailsWith<IllegalArgumentException> { MidiEncoder.encode(LinkResumed(t)) }
     }
 
     @Test

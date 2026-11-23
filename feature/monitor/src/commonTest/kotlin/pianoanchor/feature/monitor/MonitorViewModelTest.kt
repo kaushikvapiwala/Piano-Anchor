@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.ControlChange
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
@@ -625,6 +626,18 @@ class MonitorViewModelTest {
     fun sysExIsLoggedWithItsFullLength() =
         runTest(dispatcher) {
             assertEquals("SysEx 2 bytes", SysEx(0, emptyList()).describe())
+        }
+
+    @Test
+    fun aResumedLinkIsNotLogged() =
+        runTest(dispatcher) {
+            val vm = selected()
+            play { piano.dropLink() }
+            assertTrue(
+                vm.state.value.log
+                    .isEmpty(),
+            )
+            assertEquals("Link resumed", LinkResumed(0).describe())
         }
 
     @Test

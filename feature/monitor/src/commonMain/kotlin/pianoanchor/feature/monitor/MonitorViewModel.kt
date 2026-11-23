@@ -19,6 +19,7 @@ import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.Instrument
 import pianoanchor.core.model.InstrumentIdentity
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
@@ -293,6 +294,7 @@ public class MonitorViewModel(
         }
 
     private fun onEvent(event: MidiEvent) {
+        if (event is LinkResumed) return // a reopened link: the monitor shows only what the piano sent
         mutableState.update {
             it.withLine(
                 LogLine(event.describe(), event.timestampNanos.millisAfter(selectedAtNanos)),
@@ -339,4 +341,5 @@ internal fun MidiEvent.describe(): String =
         is NoteOff -> "${note.name} ↑ $velocity"
         is ControlChange -> "CC$controller $value"
         is SysEx -> "SysEx ${payload.size + SYSEX_FRAME_BYTES} bytes"
+        is LinkResumed -> "Link resumed"
     }

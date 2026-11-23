@@ -23,6 +23,7 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.HintLevel
+import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
@@ -543,15 +544,42 @@ public class PracticeViewModel(
             scope: CoroutineScope,
             ended: CompletableDeferred<Unit>,
         ) {
-            if (ended.isCompleted) return // events already buffered when the tail ended
-            if (match.complete) return onTail(event, ended)
-            midi += event
-            if (event is NoteOn) {
-                onNoteOn(event)
-                if (match.complete) startTail(scope, ended)
-            } else {
-                updateKeys(event)
+            // Events already buffered when the tail ended are ignored.
+            when {
+                ended.isCompleted -> {}
+
+                event is LinkResumed -> {
+                    onLinkResumed(event, ended)
+                }
+
+                match.complete -> {
+                    onTail(event, ended)
+                }
+
+                else -> {
+                    midi += event
+                    if (event is NoteOn) {
+                        onNoteOn(event)
+                        if (match.complete) startTail(scope, ended)
+                    } else {
+                        updateKeys(event)
+                    }
+                }
             }
+        }
+
+        /**
+         * The link dropped and came back: wait mode loses nothing that matters (it waits for the next right key), but
+         * a key let go in the gap would stay lit and held notes would never end. Releases them all at the resume
+         * stamp; a take that was only waiting for its keys to come up ends here.
+         */
+        private fun onLinkResumed(
+            event: LinkResumed,
+            ended: CompletableDeferred<Unit>,
+        ) {
+            PlayedNotes.sounding(midi).forEach { midi += NoteOff(event.timestampNanos, 0, it, 0) }
+            mutableState.update { it.releasedAll() }
+            if (match.complete) end(ended)
         }
 
         /** After the completing NoteOn: keys up and pedal changes join the take until nothing sounds. */
@@ -614,6 +642,9 @@ public class PracticeViewModel(
         private val latencyOffsetNanos: Long?,
     ) {
         var startedAt: Instant? = null
+
+        /** True once the run has started over or its clock has ended: later events belong to someone else. */
+        private var finished = false
         private var judge: TempoJudge? = null
         private var startNanos = 0L
         private var firstBeatNanos = 0L
@@ -655,19 +686,45 @@ public class PracticeViewModel(
             scope: CoroutineScope,
             ended: CompletableDeferred<Boolean>,
         ) {
+            // A run that started over, or whose take is over, reads nothing more.
+            if (finished) return
+            if (event is NoteOn && mutableState.value.linkResumed) mutableState.update { it.copy(linkResumed = false) }
             updateKeys(event)
             val judge = judge
-            if (judge == null) {
-                // The key that starts the count-in is not graded and not part of the take; a pedal already down is.
-                if (event is NoteOn) {
-                    begin(event, scope, ended)
-                } else if (event !is NoteOff) {
-                    midi += event
+            when {
+                event is LinkResumed -> {
+                    onLinkResumed(judge)
                 }
-                return
+
+                // The key that starts the count-in is not graded and not part of the take; a pedal already down is.
+                judge == null && event is NoteOn -> {
+                    begin(event, scope, ended)
+                }
+
+                judge == null -> {
+                    if (event !is NoteOff) midi += event
+                }
+
+                else -> {
+                    midi += event
+                    if (event is NoteOn) onNoteOn(event, judge)
+                }
             }
-            midi += event
-            if (event is NoteOn) onNoteOn(event, judge)
+        }
+
+        /**
+         * The link dropped and came back: messages in the gap are lost. Before the starting key there is no take, so
+         * only the keys come up. Otherwise the take is meaningless: it is discarded unsaved and the run starts over
+         * like [restart] (same rung, mode and spot loop), saying why until the next note.
+         */
+        private fun onLinkResumed(judge: TempoJudge?) {
+            if (judge == null) {
+                mutableState.update { it.releasedAll() }
+            } else {
+                finished = true // this reader may still hold buffered events: the new run owns the piano's notes now
+                restart()
+                mutableState.update { it.copy(linkResumed = true) }
+            }
         }
 
         private suspend fun begin(
@@ -687,6 +744,7 @@ public class PracticeViewModel(
             if (mutableState.value.clickOn) click.start(metronome)
             scope.launch {
                 runClock(timing)
+                finished = true
                 ended.complete(true)
             }
         }
