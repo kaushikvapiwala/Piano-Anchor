@@ -1,17 +1,12 @@
 # Emulator end-to-end test (docs/adr/0021-emulator-end-to-end-tests.md): the C-D-E walking skeleton on a Gradle
-# Managed Device, fed by a virtual MIDI piano. Runs on main and nightly, and on the PRs that change the test itself;
-# ordinary PRs never run it. Not a required check. Actions are pinned to commit SHAs like the other workflows.
+# Managed Device, fed by a virtual MIDI piano. Runs on every PR, on main and nightly (ADR 0021). Actions are pinned to
+# commit SHAs like the other workflows.
 name: E2E
 
 on:
   push:
     branches: [main]
   pull_request:
-    paths:
-      - .github/workflows/e2e.yml
-      - app-android/src/androidTest/**
-      - app-android/src/debug/**
-      - app-android/build.gradle.kts
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
