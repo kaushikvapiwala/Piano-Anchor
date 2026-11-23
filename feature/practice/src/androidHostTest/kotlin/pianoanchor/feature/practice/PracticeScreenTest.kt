@@ -1,8 +1,15 @@
 package pianoanchor.feature.practice
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -18,10 +25,15 @@ import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.TimeSignature
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.guidance.wrongKeyHint
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.ui.shell.PianoAnchorTheme
+import pianoanchor.ui.shell.pianoAnchorColors
+import kotlin.math.abs
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** The practice screen's accessibility text, on Robolectric. */
 @OptIn(ExperimentalTestApi::class)
@@ -328,4 +340,178 @@ class PracticeScreenTest {
 
             onNodeWithText("Bar 3 is clean. Play the whole piece?").assertExists()
         }
+
+    private val start = PracticeState.start(Passages.CDE)
+
+    @Test
+    fun theHintLineIsShownAndAnnounced() =
+        runComposeUiTest {
+            val state = start.copy(hint = wrongKeyHint(played = 65, expected = 60), hintGlow = setOf(MidiNote(60)))
+            setContent { PianoAnchorTheme { PracticeScreen(state, {}, {}, {}, {}, {}) } }
+
+            onNodeWithText("That was F4. C is just left of the two black keys.")
+                .assertExists()
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+        }
+
+    @Test
+    fun everyLandmarkHasItsLine() =
+        runComposeUiTest {
+            val state = mutableStateOf(start)
+            setContent { PianoAnchorTheme { PracticeScreen(state.value, {}, {}, {}, {}, {}) } }
+            val lines =
+                listOf(
+                    wrongKeyHint(65, 62) to "That was F4. D is between the two black keys.",
+                    wrongKeyHint(60, 64) to "That was C4. E is just right of the two black keys.",
+                    wrongKeyHint(60, 65) to "That was C4. F is just left of the three black keys.",
+                    wrongKeyHint(60, 67) to "That was C4. G is in the three black keys, just left of the middle one.",
+                    wrongKeyHint(60, 69) to "That was C4. A is in the three black keys, just right of the middle one.",
+                    wrongKeyHint(60, 71) to "That was C4. B is just right of the three black keys.",
+                    wrongKeyHint(60, 61) to "That was C4. C♯ is the black key just right of C.",
+                    wrongKeyHint(72, 60) to "That was C5. Same letter, other octave: try C4.",
+                )
+            lines.forEach { (hint, text) ->
+                state.value = start.copy(hint = hint)
+                onNodeWithText(text).assertExists()
+            }
+        }
+
+    @Test
+    fun noHintLineWithoutAWrongKey() =
+        runComposeUiTest {
+            setContent { PianoAnchorTheme { PracticeScreen(start, {}, {}, {}, {}, {}) } }
+
+            onNodeWithText("That was", substring = true).assertDoesNotExist()
+        }
+
+    @Test
+    fun theCountInShowsThreeTwoOneThenPlay() =
+        runComposeUiTest {
+            val timed = start.copy(rung = TempoRung.P60)
+            val state = mutableStateOf(timed.copy(phase = RunPhase.COUNT_IN, beat = 1))
+            setContent { PianoAnchorTheme { PracticeScreen(state.value, {}, {}, {}, {}, {}) } }
+
+            onNodeWithText("3").assertDoesNotExist()
+            val seen = mutableListOf<String>()
+            for (beat in 2..4) {
+                state.value = timed.copy(phase = RunPhase.COUNT_IN, beat = beat)
+                val numeral = (5 - beat).toString()
+                onNodeWithText(numeral)
+                    .assertExists()
+                    .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Assertive))
+                seen += numeral
+            }
+            state.value = timed.copy(phase = RunPhase.PLAYING, beat = 1, playNow = true)
+            onNodeWithText("Play!").assertExists()
+            state.value = timed.copy(phase = RunPhase.PLAYING, beat = 2)
+            onNodeWithText("Play!").assertDoesNotExist()
+            assertEquals(listOf("3", "2", "1"), seen)
+        }
+
+    @Test
+    fun listenAndSkipCallBack() =
+        runComposeUiTest {
+            val calls = mutableListOf<String>()
+            val state = mutableStateOf(start.copy(canListen = true))
+            setContent {
+                PianoAnchorTheme {
+                    PracticeScreen(
+                        state.value,
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        onListen = { calls += "listen" },
+                        onSkipListening = { calls += "skip" },
+                    )
+                }
+            }
+
+            onNodeWithText("Listen").performClick()
+            state.value = start.copy(canListen = true, listening = true, demoStep = 1)
+            onNodeWithText("Skip").performClick()
+            assertEquals(listOf("listen", "skip"), calls)
+        }
+
+    @Test
+    fun aUnitZeroPassageHasNoStaff() =
+        runComposeUiTest {
+            val unit0 =
+                Curriculum.units
+                    .first { it.id == "unit-0" }
+                    .passages
+                    .first()
+            setContent {
+                PianoAnchorTheme {
+                    PracticeScreen(
+                        PracticeState.start(unit0).copy(staffHidden = true),
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                    )
+                }
+            }
+
+            onNodeWithContentDescription("Treble staff", substring = true).assertDoesNotExist()
+        }
+
+    @Test
+    fun aHiddenStaffStillSpeaksTheNextKey() =
+        runComposeUiTest {
+            val unit0 = PracticeState.start(Passages.CDE).copy(staffHidden = true)
+            val state = mutableStateOf(unit0)
+            setContent { PianoAnchorTheme { PracticeScreen(state.value, {}, {}, {}, {}, {}) } }
+
+            onNodeWithContentDescription("Waiting for C4.")
+                .assertExists()
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+            state.value = unit0.copy(steps = unit0.steps.map { it.copy(status = StepStatus.DONE) })
+            onNodeWithContentDescription("Done.").assertExists()
+        }
+
+    @Test
+    fun theCountInNumeralShowsWithoutAStaff() =
+        runComposeUiTest {
+            val state =
+                PracticeState
+                    .start(Passages.CDE)
+                    .copy(staffHidden = true, rung = TempoRung.P60, phase = RunPhase.COUNT_IN, beat = 3)
+            setContent { PianoAnchorTheme { PracticeScreen(state, {}, {}, {}, {}, {}) } }
+
+            onNodeWithText("2").assertIsDisplayed()
+        }
+
+    @Test
+    fun aWrongKeyWithoutAHintKeepsTheLastKeyLine() =
+        runComposeUiTest {
+            val wrong = start.copy(lastKey = KeyFlash(MidiNote(65), correct = false))
+            val state = mutableStateOf(wrong)
+            setContent { PianoAnchorTheme { PracticeScreen(state.value, {}, {}, {}, {}, {}) } }
+
+            onNodeWithText("F4 · waiting for C4").assertExists()
+            onNodeWithContentDescription("Wrong, F4").assertExists()
+            state.value = wrong.copy(hint = wrongKeyHint(65, 60))
+            onNodeWithText("F4 · waiting for C4").assertDoesNotExist()
+        }
+
+    @Test
+    fun theWrongKeyColourIsGreyNotRedInBothThemes() =
+        runComposeUiTest {
+            val colors = mutableListOf<Color>()
+            setContent {
+                for (dark in listOf(false, true)) {
+                    PianoAnchorTheme(darkTheme = dark) { colors += MaterialTheme.pianoAnchorColors.wrongKey }
+                }
+            }
+
+            assertEquals(2, colors.size)
+            colors.forEach {
+                assertTrue(abs(it.red - it.green) < GREY_TOLERANCE && abs(it.green - it.blue) < GREY_TOLERANCE)
+            }
+        }
 }
+
+private const val GREY_TOLERANCE = 0.02f

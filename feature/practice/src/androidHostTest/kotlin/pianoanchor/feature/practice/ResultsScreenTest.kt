@@ -3,7 +3,11 @@ package pianoanchor.feature.practice
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -16,6 +20,9 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.RunMode
 import pianoanchor.engine.grading.NoteValue
+import pianoanchor.engine.grading.Observation
+import pianoanchor.engine.grading.ResultsWords
+import pianoanchor.engine.grading.Tip
 import pianoanchor.ui.shell.PianoAnchorTheme
 import kotlin.test.assertEquals
 
@@ -78,6 +85,83 @@ class ResultsScreenTest {
         }
 
     @Test
+    fun theWordsAndTheTipShowAndTheTilesWaitBehindDetails() =
+        runComposeUiTest {
+            val words = ResultsWords(listOf(Observation.STARTED_LATE, Observation.NOTES_SHORT), Tip.WAIT_FOR_COUNT_IN)
+            val state = ready.copy(band = Band.GOOD, tempoBpm = 48, words = words, shiftBeats = 1.5)
+            setContent { PianoAnchorTheme { ResultsScreen(state, onBack = {}, onTryAgain = {}, onRetry = {}) } }
+
+            onNodeWithText("You started about 1.5 beats late.").assertExists()
+            onNodeWithText("Notes were short.").assertExists()
+            onNodeWithText("Wait for 3, 2, 1, then play on the next click.").assertExists()
+            onNodeWithContentDescription("Pitch: 3 of 3 correct, every note right").assertDoesNotExist()
+            onNodeWithText("Details").assertIsDisplayed()
+            onNodeWithText("Details").performClick()
+            onNodeWithContentDescription("Pitch: 3 of 3 correct, every note right").assertExists()
+        }
+
+    @Test
+    fun detailsToggleReportsItsStateToTalkBack() =
+        runComposeUiTest {
+            setContent { PianoAnchorTheme { ResultsScreen(ready, onBack = {}, onTryAgain = {}, onRetry = {}) } }
+
+            onNodeWithText(
+                "Details",
+            ).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"))
+            onNodeWithText("Details").performClick()
+            onNodeWithText(
+                "Details",
+            ).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expanded"))
+            onNodeWithText("Details").performClick()
+            onNodeWithText(
+                "Details",
+            ).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"))
+        }
+
+    @Test
+    fun everyObservationAndTipReadsAsASentence() =
+        runComposeUiTest {
+            val sentences =
+                mapOf(
+                    Observation.STARTED_EARLY to "You started before the count-in ended.",
+                    Observation.WRONG_NOTES to "2 notes weren't right.",
+                    Observation.NOTES_LONG to "Notes were held too long.",
+                    Observation.OFF_BEAT to "Some notes came off the beat.",
+                    Observation.PAUSED to "You paused a few times.",
+                    Observation.CLEAN to "Clean run!",
+                )
+            var state by mutableStateOf<ResultsState>(ready.copy(wrongNotes = 2))
+            setContent { PianoAnchorTheme { ResultsScreen(state, onBack = {}, onTryAgain = {}, onRetry = {}) } }
+            for ((observation, text) in sentences) {
+                state = ready.copy(wrongNotes = 2, words = ResultsWords(listOf(observation), Tip.NEXT_TEMPO))
+                onNodeWithText(text).assertExists()
+            }
+            val tips =
+                mapOf(
+                    Tip.SLOW_DOWN to "Slow down: wait mode lets you take your time.",
+                    Tip.HOLD_FULL_CLICKS to "Hold each note for its full clicks.",
+                    Tip.LET_GO_SOONER to "Let go when the next click comes.",
+                    Tip.LISTEN_TO_CLICK to "Listen for the click and land with it.",
+                    Tip.PRACTISE_THE_PAUSE to "Play that spot slowly a few times.",
+                    Tip.NEXT_TEMPO to "Try the next tempo.",
+                )
+            for ((tip, text) in tips) {
+                state = ready.copy(words = ResultsWords(listOf(Observation.CLEAN), tip))
+                onNodeWithText(text).assertExists()
+            }
+        }
+
+    @Test
+    fun aPauseNamesTheNoteItCameBefore() =
+        runComposeUiTest {
+            val words = ResultsWords(listOf(Observation.PAUSED), Tip.PRACTISE_THE_PAUSE)
+            val state = ready.copy(words = words, hesitation = HesitationTile(1, Pause(14, "D4")))
+            setContent { PianoAnchorTheme { ResultsScreen(state, onBack = {}, onTryAgain = {}, onRetry = {}) } }
+
+            onNodeWithText("You paused before D4.").assertExists()
+        }
+
+    @Test
     fun aOneBarSpotReadsLoopBar() =
         runComposeUiTest {
             setContent {
@@ -111,6 +195,7 @@ class ResultsScreenTest {
         runComposeUiTest {
             setContent { PianoAnchorTheme { ResultsScreen(ready, onBack = {}, onTryAgain = {}, onRetry = {}) } }
 
+            onNodeWithText("Details").performClick()
             onNodeWithContentDescription("Pitch: 3 of 3 correct, every note right").assertExists()
         }
 
@@ -127,6 +212,7 @@ class ResultsScreenTest {
             setContent { PianoAnchorTheme { ResultsScreen(timed, onBack = {}, onTryAgain = {}, onRetry = {}) } }
 
             onNodeWithText("C-D-E · run 1 · ♩ = 72").assertExists()
+            onNodeWithText("Details").performClick()
             onNodeWithContentDescription("Timing: within 31 milliseconds on average, late at note 6").assertExists()
             onNodeWithContentDescription("Note length: 86 percent of notes held right, half note held short")
                 .assertExists()
@@ -138,6 +224,7 @@ class ResultsScreenTest {
         runComposeUiTest {
             var state by mutableStateOf<ResultsState>(ready)
             setContent { PianoAnchorTheme { ResultsScreen(state, onBack = {}, onTryAgain = {}, onRetry = {}) } }
+            onNodeWithText("Details").performClick()
 
             fun check(
                 tile: ResultsState.Ready,

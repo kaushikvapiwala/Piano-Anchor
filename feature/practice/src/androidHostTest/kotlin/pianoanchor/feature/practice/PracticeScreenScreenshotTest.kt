@@ -11,7 +11,9 @@ import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.ScoreNoteRef
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.guidance.wrongKeyHint
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.ui.shell.PianoAnchorTheme
 
@@ -60,6 +62,48 @@ class PracticeScreenScreenshotTest {
             ),
         )
 
+    @Test
+    fun wrongKeyInWaitModeWithTheLandmarkHint() =
+        capture(
+            "wrong_key_hint",
+            start.copy(
+                keysDown = setOf(f4),
+                flash = KeyFlash(f4, correct = false),
+                lastKey = KeyFlash(f4, correct = false),
+                wrongKeys = setOf(f4),
+                hint = wrongKeyHint(played = 65, expected = 60),
+                hintGlow = setOf(MidiNote(60)),
+            ),
+        )
+
+    @Test
+    fun unitZeroPracticeWithoutAStaff() =
+        capture(
+            "unit_zero",
+            PracticeState
+                .start(
+                    Curriculum.units
+                        .first { it.id == "unit-0" }
+                        .passages
+                        .first(),
+                ).copy(
+                    hintLevel = HintLevel.OFF,
+                    hintVisible = false,
+                ),
+        )
+
+    @Test
+    fun hearItFirst() =
+        capture(
+            "hear_first",
+            start.copy(
+                canListen = true,
+                listening = true,
+                demoStep = 1,
+                demoKeys = setOf(MidiNote(62)),
+            ),
+        )
+
     private val off = start.copy(hintLevel = HintLevel.OFF, hintVisible = false)
 
     @Test
@@ -78,7 +122,7 @@ class PracticeScreenScreenshotTest {
     fun timedRungReady() = capture("timed_ready", timed)
 
     @Test
-    fun countIn() = capture("count_in", timed.copy(phase = RunPhase.COUNT_IN, beat = 3))
+    fun countInShowsTheNumeralTwo() = capture("count_in", timed.copy(phase = RunPhase.COUNT_IN, beat = 3))
 
     @Test
     fun playingWithOneTimingOffMark() =

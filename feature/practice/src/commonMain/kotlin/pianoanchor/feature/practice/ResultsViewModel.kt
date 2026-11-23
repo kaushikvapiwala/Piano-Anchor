@@ -31,6 +31,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.grading.HesitationSummary
 import pianoanchor.engine.grading.LengthSummary
 import pianoanchor.engine.grading.ResultsSummary
+import pianoanchor.engine.grading.ResultsWordsRule
 import pianoanchor.engine.grading.TimingSummary
 import pianoanchor.engine.grading.noteNumber
 import pianoanchor.engine.grading.noteValue
@@ -92,6 +93,7 @@ public class ResultsViewModel(
                 }
             }
         val summary = analysed?.first
+        val words = ResultsWordsRule.of(summary ?: waitSummary(attempt), attempt.tempoBpm, attempt.band)
         return ResultsState.Ready(
             passageTitle = passage?.title ?: attempt.passageId,
             runNumber = attempts.countStartedBefore(attempt.passageId, attempt.startedAt) + 1,
@@ -109,8 +111,34 @@ public class ResultsViewModel(
             mode = attempt.mode,
             spot = analysed?.second,
             rung = rung,
+            words = words,
+            shiftBeats = shiftBeats(summary?.timing, attempt.tempoBpm),
         )
     }
+
+    /** What an attempt with no analysis says: its own counts, no timing, length or pauses. */
+    private fun waitSummary(attempt: Attempt) =
+        ResultsSummary(
+            correctPitches = attempt.stepCount,
+            scoreNotes = attempt.stepCount,
+            timing = null,
+            length = null,
+            hesitation = null,
+            wrongNotes = attempt.wrongNotes,
+            incompleteChords = attempt.incompleteChords,
+        )
+
+    private fun shiftBeats(
+        timing: TimingSummary?,
+        tempoBpm: Int?,
+    ): Double =
+        if (timing == null ||
+            tempoBpm == null
+        ) {
+            0.0
+        } else {
+            ResultsWordsRule.shiftBeats(timing.medianSignedDeviationMs, tempoBpm)
+        }
 
     /** The learner's strictness profile, read on each load; Standard when the settings can't be read. */
     private suspend fun storedStrictness(): StrictnessProfile =

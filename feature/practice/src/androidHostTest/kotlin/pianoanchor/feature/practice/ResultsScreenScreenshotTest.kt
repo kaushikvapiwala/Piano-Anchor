@@ -10,6 +10,9 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.RunMode
 import pianoanchor.engine.grading.NoteValue
+import pianoanchor.engine.grading.Observation
+import pianoanchor.engine.grading.ResultsWords
+import pianoanchor.engine.grading.Tip
 import pianoanchor.ui.shell.PianoAnchorTheme
 
 /**
@@ -32,6 +35,8 @@ class ResultsScreenScreenshotTest {
             incompleteChords = 0,
         )
 
+    private val wrongNotes = ResultsWords(listOf(Observation.WRONG_NOTES), Tip.SLOW_DOWN)
+
     private fun capture(
         name: String,
         state: ResultsState,
@@ -48,11 +53,14 @@ class ResultsScreenScreenshotTest {
     fun everyNoteRight() = capture("clean", clean)
 
     @Test
-    fun oneWrongNote() = capture("good", clean.copy(band = Band.GOOD, wrongNotes = 1))
+    fun oneWrongNote() = capture("good", clean.copy(band = Band.GOOD, wrongNotes = 1, words = wrongNotes))
 
     @Test
     fun keepPractising() =
-        capture("keep_practising", clean.copy(band = Band.KEEP_PRACTISING, wrongNotes = 2, incompleteChords = 1))
+        capture(
+            "keep_practising",
+            clean.copy(band = Band.KEEP_PRACTISING, wrongNotes = 2, incompleteChords = 1, words = wrongNotes),
+        )
 
     @Test
     fun timedRunWithAllFourTiles() =

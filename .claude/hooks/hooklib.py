@@ -14,10 +14,20 @@ def project_root(event: dict) -> Path:
     return Path(os.environ.get("CLAUDE_PROJECT_DIR") or event.get("cwd") or ".").resolve()
 
 
+FAILURE_REPORT = re.compile(r"^FAILURE:", re.MULTILINE)
+# JVM environment echoes and detekt report paths: printed even under --quiet, never the cause.
+NOISE = re.compile(r"Picked up \w+:.*\n?|^Successfully generated \w+ at .*\n?", re.MULTILINE)
+
+
 def failure_summary(output: str, limit: int = 4000) -> str:
-    """Gradle's "What went wrong" sections (one per failed task), else the tail of the output."""
+    """Gradle's "What went wrong" sections (one per failed task), then what the quiet build printed before its
+    failure report (failed tests, compiler errors), cut to `limit`; without sections, the tail of the output."""
     sections = [s.strip() for s in WHAT_WENT_WRONG.findall(output)]
-    return ("\n\n".join(sections) if sections else output)[-limit:]
+    if not sections:
+        return output[-limit:]
+    before, *report = FAILURE_REPORT.split(output, maxsplit=1)
+    details = NOISE.sub("", before).strip() if report else ""
+    return "\n\n".join([*sections, details] if details else sections)[:limit]
 
 
 def gradle(root: Path, *args: str) -> str | None:
