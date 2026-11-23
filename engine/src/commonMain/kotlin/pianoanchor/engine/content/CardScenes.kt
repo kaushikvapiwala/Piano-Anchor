@@ -215,11 +215,10 @@ internal object CardScenes {
             SceneStage(60..72, staff = SceneStaff.TREBLE),
             listOf(
                 cue(STAFF_AT_MS, STAFF_END_MS - STAFF_AT_MS, SceneAction.StaffNote(G_ABOVE_MIDDLE_C)),
-                cue(STAFF_AT_MS, STAFF_END_MS - STAFF_AT_MS, Highlight(setOf(G_ABOVE_MIDDLE_C))),
                 cue(STAFF_AT_MS, STAFF_END_MS - STAFF_AT_MS, LightKey(G_ABOVE_MIDDLE_C, strong = true)),
                 cue(STAFF_AT_MS, STAFF_END_MS - STAFF_AT_MS, Caption("G")),
             ),
-            "The treble clef circles the line of the note G, and that G lights up on the keys.",
+            "The note G appears on the second line of the treble staff, and that G lights up on the keys.",
         )
 
     private val softAndLoud =
