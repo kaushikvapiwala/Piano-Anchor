@@ -55,6 +55,9 @@ jobs:
           find app-android/build/outputs/androidTest-results -name 'TEST-*.xml' -print0 |
             xargs -0 -r awk '/<testcase/ { name = $0 } /<failure/ { print name; on = 1 } on { print } /<\/failure>/ { on = 0 }' ||
             echo "No test results found."
+          # The app's own log lines (MIDI, Bluetooth, storage glue) around the failure.
+          find app-android/build/outputs/androidTest-results -name 'logcat-*.txt' -print0 |
+            xargs -0 -r grep -h 'PianoAnchor\|AndroidRuntime' | tail -n 200 || true
       - name: Upload test reports on failure
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
