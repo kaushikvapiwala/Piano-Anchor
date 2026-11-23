@@ -107,16 +107,16 @@ public class TodayViewModel(
         }
     }
 
-    /** Where tapping [card] leads: Practice on its passage and rung, or Pianos when no piano is connected. */
-    public fun target(card: Card.PassageCard): TodayTarget {
+    /**
+     * Where tapping [card] leads: Practice on a passage card's passage and rung, the ear screen with an Ear card's
+     * skills, or Pianos when no piano is connected.
+     */
+    public fun target(card: Card): TodayTarget {
         val piano = mutableState.value.piano ?: return TodayTarget.Pianos
-        return TodayTarget.Practice(piano.device, card.passage.id, card.rung, card.mode)
-    }
-
-    /** Where tapping the Ear [card] leads: the ear screen with its skills, or Pianos when no piano is connected. */
-    public fun target(card: Card.Ear): TodayTarget {
-        val piano = mutableState.value.piano ?: return TodayTarget.Pianos
-        return TodayTarget.Ear(piano.device, card.skills)
+        return when (card) {
+            is Card.PassageCard -> TodayTarget.Practice(piano.device, card.passage.id, card.rung, card.mode)
+            is Card.Ear -> TodayTarget.Ear(piano.device, card.skills)
+        }
     }
 
     private suspend fun loadToday() {
