@@ -66,6 +66,7 @@ import pianoanchor.feature.monitor.resources.monitor_scan
 import pianoanchor.feature.monitor.resources.monitor_scanned
 import pianoanchor.feature.monitor.resources.monitor_scanning
 import pianoanchor.feature.monitor.resources.monitor_select_device
+import pianoanchor.feature.monitor.resources.monitor_sleep_hint
 import pianoanchor.feature.monitor.resources.monitor_status_connected
 import pianoanchor.feature.monitor.resources.monitor_status_none
 import pianoanchor.feature.monitor.resources.monitor_status_reconnecting
@@ -120,6 +121,7 @@ private fun LazyListScope.devices(
 ) {
     item { SectionTitle(Res.string.monitor_devices) }
     if (state.devices.isEmpty()) item { Text(stringResource(Res.string.monitor_no_devices)) }
+    if (state.sleepHint) item { Text(stringResource(Res.string.monitor_sleep_hint)) }
     items(state.devices, key = { "listed-${it.id}" }) { device ->
         DeviceRow(
             device,

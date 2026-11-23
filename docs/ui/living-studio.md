@@ -217,8 +217,10 @@ that is the connection line and buttons, the "Not found?" hint or the start-poin
 1. **Press any key on your piano**: the line "Searching for your piano…" becomes "Connected · FP-30X" (polite live
    region) as soon as a piano is listed (a Bluetooth piano once the scan has connected it), and the first note on any
    listed input picks that piano. A listed piano that drops keeps the line for 5 s, since a Bluetooth link often
-   comes back by itself. After 30 s without a note, the button "Not found? Open the piano list" opens Pianos,
-   with the Bluetooth pianos the search connected still connected; the back button or gesture returns here.
+   comes back by itself. While the line names a piano, plain text under it says "Press any key to continue." (the
+   first note moves on; there is no Continue button). After 30 s without a note, the button "Not found? Open the piano list" opens Pianos,
+   with the Bluetooth pianos the search connected still connected; the back button or gesture returns here. Under that
+   button a line explains that pianos turn Bluetooth off when idle and need switching off and on again.
 2. **Hear it, then play it back**: a card with five keys (C to G, C, E and G in the primary container colour). The piano
    plays C4, E4, G4 (500 ms apart, velocity 80), the card says "Play C, E, G" and any octave counts. A piano with no MIDI
    output skips the playing; the keys are then read as "C, play this key". A match says "You just played your first chord
@@ -262,7 +264,9 @@ per piece in content order. Cards are at least 56 dp high; the grid scrolls and 
 Landscape: a header across the top (back arrow when it was opened from another screen, and the title; the settings gear
 lives on Today), then two panes. The left pane (about 45%) holds the error card, the devices list, the Scan button,
 the scanned pianos, the connection status, the practice, calibrate and record buttons and the contribution kit; the
-right pane (the rest) is the note log. Each pane scrolls on its own.
+right pane (the rest) is the note log. Each pane scrolls on its own. When a Bluetooth scan ends with no piano found
+and none listed, a line under "No piano found" says pianos turn Bluetooth off when idle and need switching off and on
+again; it goes when a scan starts or a piano is listed.
 
 The piano connected last through onboarding or Pianos is remembered. Its row on Pianos (when it is listed) has a
 "Forget" text button (TalkBack: "Forget FP-30X"): it disconnects the piano and stops Today reconnecting it.

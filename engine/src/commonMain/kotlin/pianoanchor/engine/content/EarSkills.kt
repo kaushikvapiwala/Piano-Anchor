@@ -7,7 +7,7 @@ import pianoanchor.core.model.Track
 public object EarSkills {
     /** Playing back one note heard, on the exact key. */
     public val ECHO_NOTE: Skill =
-        Skill("ear-echo-note", "Echo one note", setOf(Skills.KB_MIDDLE_C.id), Track.EAR)
+        Skill("ear-echo-note", "Echo one note", setOf(Skills.MIDDLE_C.id), Track.EAR)
 
     /** Telling whether the second of two notes is higher or lower. */
     public val HIGHER_LOWER: Skill =
@@ -32,7 +32,7 @@ public object EarSkills {
 
     /** Playing back five notes heard, in any octave. */
     public val ECHO_FIVE: Skill =
-        Skill("ear-echo-five", "Echo five notes", setOf(CHORD_QUALITY.id, Skills.RH_SKIPS.id), Track.EAR)
+        Skill("ear-echo-five", "Echo five notes", setOf(CHORD_QUALITY.id, Skills.STEPS_AND_SKIPS.id), Track.EAR)
 
     /** All eight, in teaching order. */
     public val all: List<Skill> =

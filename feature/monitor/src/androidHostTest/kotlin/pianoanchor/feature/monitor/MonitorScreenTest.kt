@@ -47,6 +47,22 @@ class MonitorScreenTest {
         }
 
     @Test
+    fun sleepHintShowsOnlyWhenSet() =
+        runComposeUiTest {
+            var state by mutableStateOf(MonitorState())
+            setContent { PianoAnchorTheme { MonitorScreen(state, MonitorActions()) } }
+            val hint =
+                "Pianos turn Bluetooth off when they sit idle. " +
+                    "Turn yours off and on again, then wait a few seconds."
+
+            onNodeWithText(hint).assertDoesNotExist()
+            state = MonitorState(sleepHint = true)
+
+            onNodeWithText("No piano found", substring = true).assertExists()
+            onNodeWithText(hint).assertExists()
+        }
+
+    @Test
     fun nullCallbacksHideTheButtons() =
         runComposeUiTest {
             setContent {

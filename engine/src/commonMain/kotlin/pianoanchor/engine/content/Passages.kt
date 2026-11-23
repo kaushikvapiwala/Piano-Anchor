@@ -9,7 +9,7 @@ import pianoanchor.core.model.RightsStatus
 public object Passages {
     /**
      * C4 – D4 – E4 in 4/4 at 80 BPM: two quarter notes, then a half note that closes the phrase. The first
-     * `rh-c-position` passage in unit 0.
+     * `rh-c-position` passage in unit 1.
      */
     public val CDE: Passage =
         Passage(

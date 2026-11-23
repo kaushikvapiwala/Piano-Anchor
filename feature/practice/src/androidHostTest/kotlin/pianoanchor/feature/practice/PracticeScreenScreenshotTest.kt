@@ -89,6 +89,7 @@ class PracticeScreenScreenshotTest {
                 ).copy(
                     hintLevel = HintLevel.OFF,
                     hintVisible = false,
+                    staffHidden = true,
                 ),
         )
 

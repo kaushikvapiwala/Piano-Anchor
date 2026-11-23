@@ -14,7 +14,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | BLE MIDI | MIDI over Bluetooth Low Energy. A BLE MIDI piano is found by a scan and must be connected from the app (`MidiDiscoveryPort`); pairing in the system settings pairs only Bluetooth audio. |
 | Chord window | The `CHORD_CLUSTER_MS` span from a step's first pressed note in which its other notes must follow; the matcher reports an incomplete chord when it runs out. |
 | Cold check | The first saved attempt on a learner day that exercises a skill, in any mode and at any tempo; it becomes the skill's review for that day, rated from its band (`docs/algorithms/learner-model.md`). Later attempts that day change nothing. |
-| Concept card | A concept's four required lines in the beginner course: what it is, why it exists, how it's used and when you meet it (`docs/course/beginner-course.md`). |
+| Concept card | A concept's four required lines in the beginner course: what it is, why it exists, how it's used and when you meet it (`docs/course/beginner-course.md`); the type is `ConceptCard`. |
 | Contract test | Abstract test in `testing/` that every implementation of a port must pass. |
 | Daily budget | The minutes of practice the learner wants per day: 15, 20 (default) or 30 (`DailyBudget` in `Settings`). |
 | Difficulty | FSRS: how hard an item is for this learner, 1 (easy) to 10 (hard); part of `MemoryState` (`docs/algorithms/scheduler.md`). |
@@ -31,6 +31,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Landmark hint | The one plain line shown after a wrong key in wait mode: how to find the key to play from the groups of two and three black keys (`wrongKeyHint`, `docs/algorithms/wrong-key-hint.md`). |
 | Lesson step | One of a beginner lesson's five steps: Why (the concept card), See (the app plays it), Try (one action the piano checks), Use (a tiny piece), Recap. |
 | Perform run | An attempt played in perform mode: one take at a timed rung with no hints and no live verdicts (`mode` PERFORM). |
+| Try check | The small piano-checked task of a course concept, such as "play every C" or "hold C for 2 clicks"; the type is `TryCheck`, evaluated by `TryRun` (`docs/algorithms/try-checks.md`). |
 | Unaided run | A perform run with no hint shown (`Attempt.unaided`); always the case for a perform run. `Review.unaided` also holds for ear sets and placement. A skill needs one unaided recalled check before it counts as learned (`docs/algorithms/learner-model.md`). |
 | Aided run | An attempt with `hintShown` true: the key band showed at some point (Full level, a Delayed hint that fired, or the Hint button). |
 | Hesitation | A pause before a note that is much longer than the music asks for, without a wrong note. |
@@ -57,7 +58,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Note monitor | The Pianos screen (`:feature:monitor`), reached from Today's rail: pick a piano, watch its live notes, record a session and export it as a fixture. |
 | Onset | When a step starts, in ticks from the start of the passage (`Step.onsetTicks`); onsets strictly increase. |
 | Passage | A piece of music to practise (`Passage` in `:core:model`): a stable id, a title, its steps, a time signature and a written tempo. |
-| Piece | A passage marked `piece` (`Passage.piece`): a tune or song, listed on the Songs screen with its tempo-ladder progress, as opposed to an exercise. `Pieces.list` gives each a status: locked, new, in progress or mastered. |
+| Piece | A passage marked `piece` (`Passage.piece`): a tune or song, listed on the Songs screen with its tempo-ladder progress, as opposed to an exercise. `Pieces.list` gives each a status: new, in progress or mastered. Nothing is locked. |
 | Placement | Starting a learner past the early units (`LearnerModel.place`): each skill of the units before the chosen start gets a GOOD review with attempt id `placement` and counts as learned, without counting as a cold check. Chosen in the onboarding's last step. |
 | Performance analyser | `PerformanceAnalyser` in `:engine`: aligns a take's played notes to the passage, fits its tempo and reports findings of every error kind (`docs/algorithms/performance-analysis.md`). |
 | Played note | One key as played (`PlayedNote` in `:core:model`): pitch, onset velocity, key down, key up and when it stopped sounding, paired from MIDI events by `PlayedNotes.from`. |

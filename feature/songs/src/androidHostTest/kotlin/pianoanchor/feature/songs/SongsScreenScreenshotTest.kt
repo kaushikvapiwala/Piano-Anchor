@@ -1,14 +1,11 @@
 package pianoanchor.feature.songs
 
 import com.github.takahirom.roborazzi.captureRoboImage
-import kotlinx.datetime.LocalDate
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import pianoanchor.core.model.MemoryState
-import pianoanchor.core.model.SkillState
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Pieces
 import pianoanchor.engine.matcher.TempoRung
@@ -36,19 +33,6 @@ class SongsScreenScreenshotTest {
         }
     }
 
-    private fun learned(skillId: String) =
-        SkillState(
-            skillId = skillId,
-            memory = MemoryState(stability = 2.0, difficulty = 5.0),
-            introducedDay = LocalDate(2026, 11, 1),
-            lastReviewDay = LocalDate(2026, 11, 10),
-            dueDay = LocalDate(2026, 11, 20),
-            cleanColdChecks = 0,
-            recalledColdChecks = 0,
-            unaidedRecalledChecks = 0,
-            learned = true,
-        )
-
     private fun played(
         id: String,
         vararg rungs: TempoRung,
@@ -58,13 +42,6 @@ class SongsScreenScreenshotTest {
         return passage.id to PassageHistory(Instant.fromEpochSeconds(1), tempos, cleanWait = true)
     }
 
-    // The five-finger and both-hands skills are learned, the chord skills are not: chord pieces are locked.
-    private val states =
-        Curriculum.graph.skills.filterNot { it.id.startsWith("chord-") }.associate {
-            it.id to
-                learned(it.id)
-        }
-
     private val history =
         mapOf(
             played("lightly-row", TempoRung.P60, TempoRung.P70),
@@ -72,10 +49,10 @@ class SongsScreenScreenshotTest {
         )
 
     @Test
-    fun lockedNewInProgressAndMastered() =
+    fun newInProgressAndMastered() =
         capture(
             "mixed",
-            SongsState(pieces = Pieces.list(Curriculum, Curriculum.graph, states, history)),
+            SongsState(pieces = Pieces.list(Curriculum, history)),
         )
 
     @Test

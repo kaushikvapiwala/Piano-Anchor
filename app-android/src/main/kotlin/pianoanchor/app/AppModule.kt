@@ -123,7 +123,7 @@ val appModule =
                 get(),
             )
         }
-        viewModel { SongsViewModel(get(), get(), get()) }
+        viewModel { SongsViewModel(get(), get()) }
         viewModel {
             TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME)
         }

@@ -22,6 +22,11 @@ public data class MonitorState(
     val error: MonitorError? = null,
     val instrument: Instrument? = null,
     val lastPiano: MidiDevice? = null,
+    /**
+     * True after a Bluetooth scan ended with no new piano while no piano is listed; cleared when a scan starts or a
+     * piano appears.
+     */
+    val sleepHint: Boolean = false,
 )
 
 /** The link to the selected device. */

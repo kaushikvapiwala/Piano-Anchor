@@ -50,6 +50,9 @@ class MonitorScreenScreenshotTest {
     fun empty() = capture("empty", MonitorState())
 
     @Test
+    fun sleepHint() = capture("sleep_hint", MonitorState(sleepHint = true))
+
+    @Test
     fun scanning() = capture("scanning", MonitorState(devices = listOf(usbPiano), scanning = true))
 
     @Test

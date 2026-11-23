@@ -17,6 +17,7 @@ import pianoanchor.engine.matcher.TempoRung
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.time.Instant
 
@@ -47,7 +48,7 @@ class SessionComposerTest {
         learned: Set<String> = learnedWithPrerequisites(plan),
     ) = SessionComposer.compose(plan, Curriculum, budget, history, learned)
 
-    /** The learned skills of [plan]'s due list and everything they build on, so the pieces they need are open. */
+    /** The learned skills of [plan]'s due list and everything they build on. */
     private fun learnedWithPrerequisites(plan: DailyPlan): Set<String> {
         val result = HashSet<String>()
 
@@ -63,8 +64,8 @@ class SessionComposerTest {
         return result
     }
 
-    /** Skills that open hot-cross-buns, and nothing else a piece needs. */
-    private val openingHotCrossBuns = setOf(Skills.RH_C_POSITION.id, Skills.RHYTHM_QUARTER.id)
+    /** One learned skill, enough for a song: pieces are open whatever is learned. */
+    private val oneLearnedSkill = setOf(Skills.RH_C_POSITION.id)
 
     private fun songOf(session: Session) = session.cards.filterIsInstance<Card.Song>().singleOrNull()
 
@@ -80,30 +81,32 @@ class SessionComposerTest {
 
     @Test
     fun coldOpenIsTheLowestRetrievabilityDueSkill() {
-        val plan = DailyPlan(listOf(state(Skills.KB_FIND_C), state(Skills.KB_MIDDLE_C)), emptyList())
+        val plan = DailyPlan(listOf(state(Skills.HIGH_AND_LOW), state(Skills.MIDDLE_C)), emptyList())
         val session = compose(plan)
         val cold = assertIs<Card.ColdOpen>(session.cards.first())
-        assertEquals(Skills.KB_FIND_C, cold.skill)
-        assertEquals(listOf(state(Skills.KB_MIDDLE_C)), session.moreDue)
+        assertEquals(Skills.HIGH_AND_LOW, cold.skill)
+        assertEquals(listOf(state(Skills.MIDDLE_C)), session.moreDue)
     }
 
     @Test
     fun coldOpenPassageIsTheLeastRecentlyPlayed() {
-        val plan = DailyPlan(listOf(state(Skills.KB_MIDDLE_C)), emptyList())
-        val march = passage("middle-c-march")
+        val plan = DailyPlan(listOf(state(Skills.BLACK_KEY_GROUPS)), emptyList())
+        val up = passage("twos-and-threes")
+        val down = passage("twos-and-threes-down")
         val which = passage("which-c-is-middle")
-        val history = mapOf(march.id to played(100), which.id to played(50))
+        val history = mapOf(up.id to played(100), down.id to played(75), which.id to played(50))
         val cold = assertIs<Card.ColdOpen>(compose(plan, history).cards.first())
         assertEquals(which, cold.passage)
         assertEquals(Instant.fromEpochSeconds(50), cold.lastPlayed)
         // Never played beats played; a tie goes to curriculum order.
-        assertEquals(march, assertIs<Card.ColdOpen>(compose(plan, mapOf(which.id to played(50))).cards.first()).passage)
-        assertEquals(march, assertIs<Card.ColdOpen>(compose(plan).cards.first()).passage)
+        val someUnplayed = mapOf(down.id to played(75), which.id to played(50))
+        assertEquals(up, assertIs<Card.ColdOpen>(compose(plan, someUnplayed).cards.first()).passage)
+        assertEquals(RunMode.PRACTICE, assertIs<Card.ColdOpen>(compose(plan).cards.first()).mode)
     }
 
     @Test
     fun coldOpenRungIsTheHighestCleanRung() {
-        val plan = DailyPlan(listOf(state(Skills.KB_MIDDLE_C)), emptyList())
+        val plan = DailyPlan(listOf(state(Skills.MIDDLE_C)), emptyList())
         val march = passage("middle-c-march")
         val clean = played(1, TempoRung.P60.bpm(march)!!, TempoRung.P85.bpm(march)!!, 1)
         val cold =
@@ -122,7 +125,7 @@ class SessionComposerTest {
 
     @Test
     fun coldOpenIsPerformAtATimedRungAndPracticeAtWait() {
-        val plan = DailyPlan(listOf(state(Skills.KB_MIDDLE_C)), emptyList())
+        val plan = DailyPlan(listOf(state(Skills.MIDDLE_C)), emptyList())
         val march = passage("middle-c-march")
         val history =
             mapOf(
@@ -136,21 +139,43 @@ class SessionComposerTest {
     }
 
     @Test
+    fun coldOpenStaysWithPassagesWhoseSkillsAreAllLearned() {
+        val half = passage("half-and-quarter")
+        val plan = DailyPlan(listOf(state(Skills.QUARTER_AND_HALF, learned = true)), emptyList())
+        // hot-cross-buns also lists quarter-and-half and was never played, but it needs unit 1 skills.
+        val cold = assertIs<Card.ColdOpen>(compose(plan, mapOf(half.id to played(1))).cards.first())
+        assertEquals(half, cold.passage)
+
+        val melody = DailyPlan(listOf(state(Skills.MELODY_AND_CHORDS, learned = true)), emptyList())
+        val seen = listOf("hold-and-sing", "lightly-row-with-chords", "ode-to-joy-with-chords")
+        val history = seen.mapIndexed { i, id -> passage(id).id to played(10L + i) }.toMap()
+        val chosen = assertIs<Card.ColdOpen>(compose(melody, history).cards.first()).passage
+        // The Saints (needs more-inversions) was never played, yet the least recent learned-only passage wins.
+        assertEquals(passage("hold-and-sing"), chosen)
+    }
+
+    @Test
     fun lessonNamesItsPrerequisites() {
-        val plan = DailyPlan(emptyList(), listOf(Skills.RH_TUNES))
+        val plan = DailyPlan(emptyList(), listOf(Skills.FINGER_NUMBER_TUNES))
         val lesson = assertIs<Card.Lesson>(compose(plan).cards.first())
-        assertEquals(Skills.RH_TUNES, lesson.skill)
-        assertEquals(setOf(Skills.RH_SKIPS, Skills.RHYTHM_HALF), lesson.unlockedBy.toSet())
+        assertEquals(Skills.FINGER_NUMBER_TUNES, lesson.skill)
+        assertEquals(setOf(Skills.STEPS_AND_SKIPS), lesson.unlockedBy.toSet())
         assertEquals(TempoRung.WAIT, lesson.rung)
         assertEquals(RunMode.PRACTICE, lesson.mode)
-        assertEquals(Curriculum.units.flatMap { it.passages }.first { Skills.RH_TUNES.id in it.skills }, lesson.passage)
+        assertEquals(
+            Curriculum.units
+                .flatMap {
+                    it.passages
+                }.first { Skills.FINGER_NUMBER_TUNES.id in it.skills },
+            lesson.passage,
+        )
     }
 
     @Test
     fun songPicksTheNextRungAboveTheHighestClean() {
-        val plan = DailyPlan(listOf(state(Skills.RH_TUNES, learned = true)), emptyList())
+        val plan = DailyPlan(listOf(state(Skills.RH_C_POSITION, learned = true)), emptyList())
         val song = compose(plan).cards.filterIsInstance<Card.Song>().single()
-        // A traditional piece of the latest unit with a learned skill, at the first rung with nothing clean.
+        // The first public domain piece in curriculum order, at the first rung with nothing clean.
         assertEquals("builtin:hot-cross-buns", song.passage.id)
         assertEquals(RunMode.PRACTICE, song.mode)
         assertEquals(TempoRung.WAIT, song.rung)
@@ -168,7 +193,7 @@ class SessionComposerTest {
 
     @Test
     fun songMovesOnWhenTheTraditionalPieceIsCleanAndFallsBackToAnyPiece() {
-        val plan = DailyPlan(listOf(state(Skills.RH_TUNES, learned = true)), emptyList())
+        val plan = DailyPlan(listOf(state(Skills.FINGER_NUMBER_TUNES, learned = true)), emptyList())
         val hot = passage("hot-cross-buns")
         val history = mapOf(hot.id to played(1, TempoRung.P100.bpm(hot)!!))
         val song = compose(plan, history).cards.filterIsInstance<Card.Song>().single()
@@ -178,7 +203,7 @@ class SessionComposerTest {
     @Test
     fun songComesFromTheLearnedSkillsEvenWhenNothingIsDueOrNew() {
         val plan = DailyPlan(emptyList(), emptyList())
-        val session = compose(plan, learned = openingHotCrossBuns)
+        val session = compose(plan, learned = oneLearnedSkill)
         val song = session.cards.single()
         assertIs<Card.Song>(song)
         assertEquals("builtin:hot-cross-buns", song.passage.id)
@@ -189,36 +214,47 @@ class SessionComposerTest {
     @Test
     fun songSkipsThePassagesOfTheColdOpenAndTheLesson() {
         val hot = passage("hot-cross-buns")
-        // RHYTHM_HALF's first passage is hot-cross-buns, the only open piece: the lesson uses it.
-        val lessonPlan = DailyPlan(emptyList(), listOf(Skills.RHYTHM_HALF))
-        val lessonSession = compose(lessonPlan, learned = openingHotCrossBuns)
-        assertEquals(hot, assertIs<Card.Lesson>(lessonSession.cards.single()).passage)
-        assertNull(songOf(lessonSession))
-        // Every other RH_STEPS passage was played, so the cold open is the never-played hot-cross-buns.
-        val coldPlan = DailyPlan(listOf(state(Skills.RH_STEPS)), emptyList())
+        val mary = passage("mary-had-a-little-lamb")
+        // The first passage of finger-number-tunes is hot-cross-buns, the first piece: the lesson uses it.
+        val lessonPlan = DailyPlan(emptyList(), listOf(Skills.FINGER_NUMBER_TUNES))
+        val lessonSession = compose(lessonPlan, learned = oneLearnedSkill)
+        assertEquals(hot, assertIs<Card.Lesson>(lessonSession.cards.first()).passage)
+        assertEquals(mary, songOf(lessonSession)?.passage)
+        // Every other finger-number-tunes passage was played, so the cold open is the never-played hot-cross-buns.
+        val coldPlan = DailyPlan(listOf(state(Skills.FINGER_NUMBER_TUNES, learned = true)), emptyList())
         val history =
             Curriculum.units
                 .flatMap { it.passages }
-                .filter { Skills.RH_STEPS.id in it.skills && it != hot }
+                .filter { Skills.FINGER_NUMBER_TUNES.id in it.skills && it != hot }
                 .associate { it.id to played(1) }
-        val coldSession = compose(coldPlan, history, learned = openingHotCrossBuns)
-        assertEquals(hot, assertIs<Card.ColdOpen>(coldSession.cards.single()).passage)
-        assertNull(songOf(coldSession))
+        val coldSession = compose(coldPlan, history)
+        assertEquals(hot, assertIs<Card.ColdOpen>(coldSession.cards.first()).passage)
+        assertEquals(mary, songOf(coldSession)?.passage)
     }
 
     @Test
-    fun aChordExerciseIsNeverTheSong() {
-        // Chord exercises of the newest unit are open, but they are not pieces and every piece is locked.
-        val session = compose(DailyPlan(emptyList(), emptyList()), learned = setOf(Skills.HANDS_HELD_BASS.id))
-        assertEquals(emptyList(), session.cards)
+    fun theSongIsAlwaysAPiece() {
+        val everyPieceButOneClean =
+            Curriculum.passages
+                .filter { it.piece && it.id != "builtin:four-chord-walk" }
+                .associate { it.id to played(1, TempoRung.P100.bpm(it)!!) }
+        val song = songOf(compose(DailyPlan(emptyList(), emptyList()), learned = oneLearnedSkill))
+        assertEquals(true, song?.passage?.piece)
+        // The exercises of unit 3 are open too, but are never offered.
+        val last =
+            songOf(compose(DailyPlan(emptyList(), emptyList()), everyPieceButOneClean, learned = oneLearnedSkill))
+        assertEquals("builtin:four-chord-walk", last?.passage?.id)
     }
 
     @Test
-    fun aLockedPieceIsSkippedForAnOpenOneInAnEarlierUnit() {
-        val plan = DailyPlan(emptyList(), emptyList())
-        // Learning chord-triads' prerequisite opens the chord exercises; hot-cross-buns is the only open piece.
-        val learned = openingHotCrossBuns + Skills.HANDS_HELD_BASS.id
-        assertEquals("builtin:hot-cross-buns", songOf(compose(plan, learned = learned))?.passage?.id)
+    fun noPieceIsLockedBySkillsNotYetLearned() {
+        // Only the first skill is learned, yet a piece from the last unit is offered once the others are clean.
+        val history =
+            Curriculum.passages
+                .filter { it.piece && it.id != "builtin:when-the-saints-go-marching-in" }
+                .associate { it.id to played(1, TempoRung.P100.bpm(it)!!) }
+        val song = songOf(compose(DailyPlan(emptyList(), emptyList()), history, learned = oneLearnedSkill))
+        assertEquals("builtin:when-the-saints-go-marching-in", song?.passage?.id)
     }
 
     @Test
@@ -253,12 +289,13 @@ class SessionComposerTest {
     fun aPieceCleanAtFullTempoIsNotOffered() {
         val hot = passage("hot-cross-buns")
         val history = mapOf(hot.id to played(1, TempoRung.P100.bpm(hot)!!))
-        assertNull(songOf(compose(DailyPlan(emptyList(), emptyList()), history, learned = openingHotCrossBuns)))
+        val song = songOf(compose(DailyPlan(emptyList(), emptyList()), history, learned = oneLearnedSkill))
+        assertNotEquals(hot, song?.passage)
     }
 
     @Test
     fun noLearnedSkillMeansNoSong() {
-        val session = compose(DailyPlan(emptyList(), listOf(Skills.KB_BLACK_GROUPS)), learned = emptySet())
+        val session = compose(DailyPlan(emptyList(), listOf(Skills.BLACK_KEY_GROUPS)), learned = emptySet())
         assertNull(songOf(session))
         assertEquals(1, session.cards.size)
     }
@@ -266,7 +303,8 @@ class SessionComposerTest {
     @Test
     fun aCleanWaitRunMovesTheSongToTheFirstTimedRung() {
         val plan = DailyPlan(emptyList(), emptyList())
-        val learned = learnedWithPrerequisites(DailyPlan(listOf(state(Skills.RH_TUNES, learned = true)), emptyList()))
+        val learned =
+            learnedWithPrerequisites(DailyPlan(listOf(state(Skills.FINGER_NUMBER_TUNES, learned = true)), emptyList()))
         val first = assertIs<Card.PassageCard>(compose(plan, learned = learned).cards.single())
         val history = mapOf(first.passage.id to PassageHistory(null, emptySet(), cleanWait = true))
         assertEquals(
@@ -279,8 +317,8 @@ class SessionComposerTest {
     fun minutesSumToTheBudget() {
         val plan =
             DailyPlan(
-                listOf(state(Skills.KB_MIDDLE_C), state(Skills.RH_TUNES, learned = true)),
-                listOf(Skills.KB_FIND_C),
+                listOf(state(Skills.MIDDLE_C), state(Skills.FINGER_NUMBER_TUNES, learned = true)),
+                listOf(Skills.HIGH_AND_LOW),
             )
         val twenty = compose(plan)
         assertEquals(listOf(5, 8, 7), listOf(twenty.reviewMinutes, twenty.lessonMinutes, twenty.songMinutes))
@@ -295,20 +333,20 @@ class SessionComposerTest {
 
     @Test
     fun missingCardSharesItsMinutes() {
-        val plan = DailyPlan(listOf(state(Skills.KB_MIDDLE_C)), emptyList())
+        val plan = DailyPlan(listOf(state(Skills.MIDDLE_C)), emptyList())
         val session = compose(plan, everyUnitClean)
         assertEquals(1, session.cards.size)
         assertEquals(DailyBudget.MIN_20.minutes, session.reviewMinutes)
         assertEquals(0, session.lessonMinutes)
         assertEquals(0, session.songMinutes)
-        val noSong = compose(DailyPlan(listOf(state(Skills.KB_MIDDLE_C)), listOf(Skills.KB_FIND_C)), everyUnitClean)
+        val noSong = compose(DailyPlan(listOf(state(Skills.MIDDLE_C)), listOf(Skills.HIGH_AND_LOW)), everyUnitClean)
         // Review 0.20 : lesson 0.35 of 20 minutes.
         assertEquals(listOf(7, 13), listOf(noSong.reviewMinutes, noSong.lessonMinutes))
     }
 
     @Test
     fun nothingDueGivesNoColdOpen() {
-        val session = compose(DailyPlan(emptyList(), listOf(Skills.KB_BLACK_GROUPS)))
+        val session = compose(DailyPlan(emptyList(), listOf(Skills.BLACK_KEY_GROUPS)))
         assertEquals(1, session.cards.count { it is Card.Lesson })
         assertEquals(0, session.cards.count { it is Card.ColdOpen })
         assertEquals(0, session.reviewMinutes)
@@ -316,7 +354,8 @@ class SessionComposerTest {
 
     @Test
     fun everythingCleanGivesNoSong() {
-        val session = compose(DailyPlan(listOf(state(Skills.RH_TUNES, learned = true)), emptyList()), everyUnitClean)
+        val session =
+            compose(DailyPlan(listOf(state(Skills.FINGER_NUMBER_TUNES, learned = true)), emptyList()), everyUnitClean)
         assertEquals(0, session.cards.count { it is Card.Song })
     }
 
@@ -332,9 +371,9 @@ class SessionComposerTest {
     fun skillsWithoutPassagesOrUnknownToTheCurriculumAreSkipped() {
         val orphan = Skill("orphan", "Orphan", emptySet())
         val unknownLearned = state(orphan, learned = true)
-        val plan = DailyPlan(listOf(unknownLearned, state(Skills.HANDS_HELD_BASS)), emptyList())
+        val plan = DailyPlan(listOf(unknownLearned, state(Skills.HANDS_TOGETHER_HELD, learned = true)), emptyList())
         val cold = assertIs<Card.ColdOpen>(compose(plan).cards.first())
-        assertEquals(Skills.HANDS_HELD_BASS, cold.skill)
+        assertEquals(Skills.HANDS_TOGETHER_HELD, cold.skill)
         assertEquals(listOf(unknownLearned), compose(plan).moreDue)
     }
 
@@ -366,11 +405,11 @@ class SessionComposerTest {
 
     @Test
     fun `ear skills never become the cold open or lesson`() {
-        val plan = DailyPlan(listOf(state(earA), state(Skills.KB_MIDDLE_C)), listOf(earB, Skills.KB_FIND_C))
+        val plan = DailyPlan(listOf(state(earA), state(Skills.MIDDLE_C)), listOf(earB, Skills.HIGH_AND_LOW))
         val session = composeEar(plan)
-        assertEquals(Skills.KB_MIDDLE_C, assertIs<Card.ColdOpen>(session.cards.first()).skill)
+        assertEquals(Skills.MIDDLE_C, assertIs<Card.ColdOpen>(session.cards.first()).skill)
         assertEquals(
-            Skills.KB_FIND_C,
+            Skills.HIGH_AND_LOW,
             session.cards
                 .filterIsInstance<Card.Lesson>()
                 .single()
@@ -394,7 +433,7 @@ class SessionComposerTest {
         // 20 minutes with only the ear card: it takes everything, so all three fit.
         assertEquals(3, assertIs<Card.Ear>(composeEar(plan).cards.single()).skills.size)
         // With a review and a lesson too, 15% of 20 minutes is 3 minutes at 1 per skill.
-        val busy = DailyPlan(listOf(state(Skills.KB_MIDDLE_C), state(earA)), listOf(Skills.KB_FIND_C, earB, earC))
+        val busy = DailyPlan(listOf(state(Skills.MIDDLE_C), state(earA)), listOf(Skills.HIGH_AND_LOW, earB, earC))
         val session = composeEar(busy, DailyBudget.MIN_15, everyUnitClean)
         val ear = session.cards.filterIsInstance<Card.Ear>().single()
         assertEquals(session.earMinutes, ear.minutes)
@@ -413,7 +452,7 @@ class SessionComposerTest {
 
     @Test
     fun `no ear skills gives no ear card and shares its minutes`() {
-        val plan = DailyPlan(listOf(state(Skills.KB_MIDDLE_C)), listOf(Skills.KB_FIND_C))
+        val plan = DailyPlan(listOf(state(Skills.MIDDLE_C)), listOf(Skills.HIGH_AND_LOW))
         val session = compose(plan, everyUnitClean)
         assertEquals(0, session.cards.count { it is Card.Ear })
         assertEquals(0, session.earMinutes)
@@ -424,8 +463,8 @@ class SessionComposerTest {
     fun `minutes sum to the budget with four shares`() {
         val plan =
             DailyPlan(
-                listOf(state(Skills.KB_MIDDLE_C), state(Skills.RH_TUNES, learned = true), state(earA)),
-                listOf(Skills.KB_FIND_C),
+                listOf(state(Skills.MIDDLE_C), state(Skills.FINGER_NUMBER_TUNES, learned = true), state(earA)),
+                listOf(Skills.HIGH_AND_LOW),
             )
         for (budget in DailyBudget.entries) {
             val s = composeEar(plan, budget)
