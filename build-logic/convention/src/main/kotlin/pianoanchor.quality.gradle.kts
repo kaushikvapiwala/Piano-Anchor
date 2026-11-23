@@ -31,6 +31,15 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEa
     compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
 }
 
+// A failed test prints its name, message and test-code stack frames even under --quiet: the Stop hook and Claude
+// Code sessions (GRADLE_OPTS in .claude/settings.json) run Gradle quietly, which otherwise shows only the report path.
+tasks.withType<AbstractTestTask>().configureEach {
+    testLogging.quiet {
+        events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
+
 // Per-module fast gate. `./gradlew fastCheck` runs it in every module; koverVerify runs the JVM tests it measures.
 tasks.register("fastCheck") {
     group = "verification"
