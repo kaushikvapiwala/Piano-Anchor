@@ -137,14 +137,8 @@ public data class ResultsSummary(
         private fun median(sorted: List<Long>): Double {
             if (sorted.isEmpty()) return 0.0
             val middle = sorted.size / 2
-            val nanos =
-                if (sorted.size % 2 ==
-                    1
-                ) {
-                    sorted[middle].toDouble()
-                } else {
-                    (sorted[middle - 1] + sorted[middle]) / 2.0
-                }
+            val odd = sorted.size % 2 == 1
+            val nanos = if (odd) sorted[middle].toDouble() else (sorted[middle - 1] + sorted[middle]) / 2.0
             return nanos / NANOS_PER_MILLI
         }
 
