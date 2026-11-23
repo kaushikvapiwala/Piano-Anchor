@@ -820,6 +820,15 @@ public object Tunables {
     public const val CARD_SCENE_CAPTION_MAX_CHARS: Int = pianoanchor.core.model.CARD_SCENE_CAPTION_MAX_CHARS
 
     /**
+     * The longest description of a card animation, in characters.
+     *
+     * Why: TalkBack reads it like a card field, so it shares [CONCEPT_CARD_FIELD_MAX_CHARS]'s limit.
+     *
+     * Source: [CONCEPT_CARD_FIELD_MAX_CHARS].
+     */
+    public const val CARD_SCENE_DESCRIPTION_MAX_CHARS: Int = pianoanchor.core.model.CARD_SCENE_DESCRIPTION_MAX_CHARS
+
+    /**
      * How many beats a whole run's median onset deviation must reach for Results to say the run started early or late.
      *
      * Why: a whole run half a beat or more off means the start was missed, not uneven playing.

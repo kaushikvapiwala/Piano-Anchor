@@ -36,7 +36,7 @@ class CardAnimationScreenshotTest {
             val theme = if (dark) "dark" else "light"
             captureRoboImage("screenshots/CardScene_${name}_$theme.png") {
                 PianoAnchorTheme(darkTheme = dark) {
-                    CardFrame(scene, CARD_SCENE_MIDPOINT_MS, Modifier.padding(8.dp))
+                    CardFrame(scene, { CARD_SCENE_MIDPOINT_MS }, Modifier.padding(8.dp))
                 }
             }
         }
@@ -68,7 +68,12 @@ class CardAnimationScreenshotTest {
     @Test
     fun leftHandMirrorsTheRight() {
         val right = checkNotNull(Curriculum.scene(Skills.HAND_SHAPE.id))
-        capture("test_left_hand", right.copy(stage = right.stage.copy(hand = SceneHand.LEFT)))
+        val cues =
+            right.cues.map {
+                val pose = it.action as? SceneAction.HandPose
+                if (pose == null) it else it.copy(action = pose.copy(overNote = 67))
+            }
+        capture("test_left_hand", right.copy(stage = right.stage.copy(hand = SceneHand.LEFT), cues = cues))
     }
 
     @Test

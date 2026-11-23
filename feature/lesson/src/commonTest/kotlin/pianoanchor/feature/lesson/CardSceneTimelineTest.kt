@@ -1,8 +1,11 @@
 package pianoanchor.feature.lesson
 
 import pianoanchor.core.model.CARD_SCENE_LOOP_MS
+import pianoanchor.core.model.CardScene
 import pianoanchor.core.model.SceneAction
 import pianoanchor.core.model.SceneCue
+import pianoanchor.core.model.SceneStaff
+import pianoanchor.core.model.SceneStage
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
@@ -51,8 +54,21 @@ class CardSceneTimelineTest {
     @Test
     fun theHighCsStayLitOnceLit() {
         val high = checkNotNull(Curriculum.scene(Skills.HIGH_AND_LOW.id))
-        assertEquals(setOf(36, 48, 60), litKeysAt(high, CARD_SCENE_MIDPOINT_MS))
+        assertEquals(setOf(36, 48, 60, 72, 84), litKeysAt(high, CARD_SCENE_MIDPOINT_MS))
         assertEquals(setOf(36, 48, 60, 72, 84), litKeysAt(high, 3500))
+    }
+
+    @Test
+    fun repeatedStaffNotesGetTheirOwnSlots() {
+        val cues =
+            listOf(
+                SceneCue(1000, 500, SceneAction.StaffNote(60)),
+                SceneCue(0, 500, SceneAction.StaffNote(60)),
+                SceneCue(2000, 500, SceneAction.StaffNote(67)),
+                SceneCue(2000, 500, SceneAction.Pulse()),
+            )
+        val scene = CardScene(SceneStage(60..72, staff = SceneStaff.TREBLE), cues, "A test scene.")
+        assertEquals(listOf(1f / 6, 3f / 6, 5f / 6), listOf(cues[1], cues[0], cues[2]).map { staffSlot(scene, it) })
     }
 
     @Test

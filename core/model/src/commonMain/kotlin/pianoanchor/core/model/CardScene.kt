@@ -1,5 +1,8 @@
 package pianoanchor.core.model
 
+// The three limits below live here, not in the engine's `Tunables`, because `CardScene` checks them in `init` and
+// `core/model` can't see the engine; `Tunables` aliases them and explains why.
+
 /** Every card animation loops for exactly this long, in milliseconds, before its rest (see the engine's `Tunables`). */
 public const val CARD_SCENE_LOOP_MS: Int = 4000
 
@@ -10,6 +13,13 @@ public const val CARD_SCENE_CAPTION_MAX_CHARS: Int = 24
 public const val CARD_SCENE_DESCRIPTION_MAX_CHARS: Int = 120
 
 private val FINGERS = 1..5
+private const val SEMITONES = 12
+private val BLACK_PITCH_CLASSES = setOf(1, 3, 6, 8, 10)
+
+/** The white keys beyond the thumb's key a hand spans: the four other fingers each take one. */
+private const val FINGERS_BEYOND_THUMB = 4
+
+private fun isBlack(note: Int) = note % SEMITONES in BLACK_PITCH_CLASSES
 
 /** What the stage shows: a keyboard of [keys] (MIDI notes, white-key aligned), optionally a staff and a hand. */
 public data class SceneStage(
@@ -19,6 +29,9 @@ public data class SceneStage(
 ) {
     init {
         require(!keys.isEmpty()) { "a scene stage needs at least one key" }
+        require(
+            !isBlack(keys.first) && !isBlack(keys.last),
+        ) { "a scene stage's keyboard starts and ends on a white key" }
     }
 }
 
@@ -122,6 +135,7 @@ public data class CardScene(
             is SceneAction.HandPose -> {
                 requireHand()
                 requireKeys(action.overNote)
+                requireWholeHand(action.overNote)
             }
 
             is SceneAction.StaffNote -> {
@@ -144,6 +158,17 @@ public data class CardScene(
                 }
             }
         }
+    }
+
+    /** The hand reaches [FINGERS_BEYOND_THUMB] white keys past [overNote], rightwards for the right hand. */
+    private fun requireWholeHand(overNote: Int) {
+        val beyond =
+            if (stage.hand == SceneHand.RIGHT) {
+                stage.keys.count { it > overNote && !isBlack(it) }
+            } else {
+                stage.keys.count { it < overNote && !isBlack(it) }
+            }
+        require(beyond >= FINGERS_BEYOND_THUMB) { "the hand over $overNote does not fit on the keys ${stage.keys}" }
     }
 
     private fun requireKeys(vararg notes: Int) =

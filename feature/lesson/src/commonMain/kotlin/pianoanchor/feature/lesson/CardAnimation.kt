@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -63,11 +62,11 @@ internal fun CardAnimation(
     modifier: Modifier = Modifier,
     reduceMotion: Boolean = rememberReduceMotion(),
 ) {
-    val timeMs =
-        if (reduceMotion) {
-            CARD_SCENE_MIDPOINT_MS
-        } else {
-            val clock by rememberInfiniteTransition(label = "card scene").animateFloat(
+    if (reduceMotion) {
+        CardFrame(scene, { CARD_SCENE_MIDPOINT_MS }, modifier)
+    } else {
+        val clock =
+            rememberInfiniteTransition(label = "card scene").animateFloat(
                 initialValue = 0f,
                 targetValue = CARD_SCENE_CYCLE_MS.toFloat(),
                 animationSpec =
@@ -77,16 +76,16 @@ internal fun CardAnimation(
                     ),
                 label = "card scene clock",
             )
-            clock.toInt()
-        }
-    CardFrame(scene, timeMs, modifier)
+        // The clock is read inside the draw scope, so a frame redraws the canvas without recomposing.
+        CardFrame(scene, { clock.value.toInt() }, modifier)
+    }
 }
 
-/** One frame of [scene] at [timeMs] of its cycle. */
+/** One frame of [scene] at the time [timeMs] gives (ms into its cycle), read only when drawing. */
 @Composable
 internal fun CardFrame(
     scene: CardScene,
-    timeMs: Int,
+    timeMs: () -> Int,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.pianoAnchorColors
@@ -98,7 +97,6 @@ internal fun CardFrame(
     val captionStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, color = ink)
     val chipStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = palette.onAccent)
     val measurer = rememberTextMeasurer()
-    val active = activeActions(scene, timeMs)
     Canvas(
         modifier
             .fillMaxWidth()
@@ -108,6 +106,7 @@ internal fun CardFrame(
                 role = Role.Image
             },
     ) {
+        val active = activeActions(scene, timeMs())
         val stage = Stage(size, scene.stage.keys)
         drawRoundRect(colors.tile, cornerRadius = CornerRadius(size.height * STAGE_CORNER_SHARE))
         scene.stage.staff?.let { drawStaff(it, stage, colors.staffLine) }
@@ -239,7 +238,7 @@ private fun DrawScope.drawAction(
         }
 
         is SceneAction.StaffNote -> {
-            drawStaffNote(action, scene, stage, alpha, palette)
+            drawStaffNote(active.cue, scene, stage, alpha, palette)
         }
     }
 }

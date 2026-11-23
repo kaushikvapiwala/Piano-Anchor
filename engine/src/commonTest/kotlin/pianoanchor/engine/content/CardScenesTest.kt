@@ -45,7 +45,18 @@ class CardScenesTest {
     fun `the model limits match the tunables`() {
         assertEquals(Tunables.CARD_SCENE_LOOP_MS, CARD_SCENE_LOOP_MS)
         assertEquals(Tunables.CARD_SCENE_CAPTION_MAX_CHARS, CARD_SCENE_CAPTION_MAX_CHARS)
-        assertEquals(Tunables.CONCEPT_CARD_FIELD_MAX_CHARS, CARD_SCENE_DESCRIPTION_MAX_CHARS)
+        assertEquals(Tunables.CARD_SCENE_DESCRIPTION_MAX_CHARS, CARD_SCENE_DESCRIPTION_MAX_CHARS)
+        assertEquals(Tunables.CONCEPT_CARD_FIELD_MAX_CHARS, Tunables.CARD_SCENE_DESCRIPTION_MAX_CHARS)
+    }
+
+    @Test
+    fun `every C is lit by the midpoint frame of high and low`() {
+        val cues = checkNotNull(Curriculum.scene(Skills.HIGH_AND_LOW.id)).cues
+        val mid = CARD_SCENE_LOOP_MS / 2
+        listOf(36, 48, 60, 72, 84).forEach { c ->
+            val lit = cues.filter { (it.action as? SceneAction.LightKey)?.note == c }
+            assertTrue(lit.any { mid > it.atMs && mid < it.atMs + it.lengthMs }, "C $c")
+        }
     }
 
     @Test

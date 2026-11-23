@@ -1,5 +1,6 @@
 package pianoanchor.engine.content
 
+import pianoanchor.core.model.CARD_SCENE_LOOP_MS
 import pianoanchor.core.model.CardScene
 import pianoanchor.core.model.SceneAction
 import pianoanchor.core.model.SceneAction.Caption
@@ -22,7 +23,8 @@ private const val POSE_FLAT_MS = 750
 private const val POSE_CURVED_AT_MS = POSE_FLAT_MS - POSE_OVERLAP_MS
 private const val CAPTION_END_MS = 3800
 private const val GROUP_MS = 800
-private const val C_MS = 700
+private const val C_MS = 400
+private const val C_END_MS = CARD_SCENE_LOOP_MS - 100
 private const val NAME_MS = 500
 private const val FIRST_NAME_MS = 250
 private const val LONG_BEATS = 2
@@ -55,7 +57,7 @@ internal object CardScenes {
                 cue(0, POSE_FLAT_MS, SceneAction.HandPose(curved = false, overNote = MIDDLE_C)),
                 cue(
                     POSE_CURVED_AT_MS,
-                    4000 - POSE_CURVED_AT_MS,
+                    CARD_SCENE_LOOP_MS - POSE_CURVED_AT_MS,
                     SceneAction.HandPose(curved = true, overNote = MIDDLE_C),
                 ),
                 cue(800, CAPTION_END_MS - 800, Caption("Curved, like a ball")),
@@ -91,7 +93,7 @@ internal object CardScenes {
     private val highAndLow =
         CardScene(
             SceneStage(36..84),
-            CS.mapIndexed { i, c -> cue(300 + i * C_MS, 3900 - (300 + i * C_MS), LightKey(c)) } +
+            CS.mapIndexed { i, c -> cue(300 + i * C_MS, C_END_MS - (300 + i * C_MS), LightKey(c)) } +
                 cue(300, 3600, Caption("Every C")),
             "Every C lights up from the lowest to the highest and stays lit.",
         )

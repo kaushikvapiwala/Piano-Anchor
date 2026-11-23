@@ -56,8 +56,8 @@ class CardAnimationTest {
     fun theFrameAtATimeShowsTheLitKeysOfTheCuesActiveThen() =
         runComposeUiTest {
             val frame = frames()
-            val lit = frame { CardFrame(scene, CARD_SCENE_MIDPOINT_MS) }
-            val rest = frame { CardFrame(scene, CARD_SCENE_LOOP_MS) }
+            val lit = frame { CardFrame(scene, { CARD_SCENE_MIDPOINT_MS }) }
+            val rest = frame { CardFrame(scene, { CARD_SCENE_LOOP_MS }) }
             assertFalse(lit.contentEquals(rest))
         }
 
@@ -66,7 +66,7 @@ class CardAnimationTest {
         runComposeUiTest {
             val frame = frames()
             val held = frame { CardAnimation(scene, reduceMotion = true) }
-            val mid = frame { CardFrame(scene, CARD_SCENE_MIDPOINT_MS) }
+            val mid = frame { CardFrame(scene, { CARD_SCENE_MIDPOINT_MS }) }
             assertContentEquals(mid, held)
         }
 
@@ -81,8 +81,16 @@ class CardAnimationTest {
     fun theAnimationRunsWhenMotionIsAllowed() =
         runComposeUiTest {
             mainClock.autoAdvance = false
-            setContent { PianoAnchorTheme { CardAnimation(scene, Modifier.testTag("moving"), reduceMotion = false) } }
-            mainClock.advanceTimeBy(1000)
-            onNodeWithContentDescription(scene.description).assertIsDisplayed()
+            setContent {
+                PianoAnchorTheme {
+                    Box(Modifier.size(320.dp, 200.dp).testTag("moving")) { CardAnimation(scene, reduceMotion = false) }
+                }
+            }
+            // Middle C is lit by the first strong cue (800-1500 ms) and dark between the two (1500-1800 ms).
+            mainClock.advanceTimeBy(1100)
+            val lit = pixels("moving")
+            mainClock.advanceTimeBy(550)
+            val dark = pixels("moving")
+            assertFalse(lit.contentEquals(dark))
         }
 }

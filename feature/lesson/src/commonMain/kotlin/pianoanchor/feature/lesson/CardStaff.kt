@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
 import pianoanchor.core.model.CardScene
 import pianoanchor.core.model.SceneAction
+import pianoanchor.core.model.SceneCue
 import pianoanchor.core.model.SceneStaff
 import kotlin.math.abs
 
@@ -83,7 +84,7 @@ internal fun DrawScope.drawStaff(
 
 /** A note on the staff: an accent notehead (hollow from a half note), with ledger lines, spread along the staff. */
 internal fun DrawScope.drawStaffNote(
-    action: SceneAction.StaffNote,
+    cue: SceneCue,
     scene: CardScene,
     stage: Stage,
     alpha: Float,
@@ -91,8 +92,8 @@ internal fun DrawScope.drawStaffNote(
 ) {
     val staff = checkNotNull(scene.stage.staff)
     val geometry = StaffGeometry(stage, staff)
-    val notes = scene.cues.map { it.action }.filterIsInstance<SceneAction.StaffNote>()
-    val slot = (notes.indexOf(action) + 0.5f) / notes.size
+    val action = cue.action as SceneAction.StaffNote
+    val slot = staffSlot(scene, cue)
     val x = stage.size.width * (NOTE_AREA_START + NOTE_AREA_WIDTH * slot)
     val position = position(action.note)
     val width = geometry.unit * NOTEHEAD_WIDTH_UNITS

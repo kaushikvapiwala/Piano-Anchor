@@ -30,12 +30,33 @@ class CardSceneTest {
         scene(
             cue(SceneAction.LightKey(60, finger = 1, strong = true)),
             cue(SceneAction.ShowFinger(5)),
-            cue(SceneAction.HandPose(curved = true, overNote = 60)),
+            cue(SceneAction.HandPose(curved = true, overNote = 67)),
             cue(SceneAction.Highlight(setOf(61, 63))),
             cue(SceneAction.Pulse(accent = true)),
             cue(SceneAction.Caption("Middle C")),
             cue(SceneAction.StaffNote(62), at = CARD_SCENE_LOOP_MS - 500),
             stage = SceneStage(60..67, SceneStaff.GRAND, SceneHand.LEFT),
+        )
+    }
+
+    @Test
+    fun `a keyboard starting or ending on a black key fails`() {
+        assertFailsWith<IllegalArgumentException> { SceneStage(61..67) }
+        assertFailsWith<IllegalArgumentException> { SceneStage(60..66) }
+        SceneStage(60..60)
+    }
+
+    @Test
+    fun `a hand pose needs four white keys beyond its key in the hands direction`() {
+        invalid(cue(SceneAction.HandPose(curved = false, overNote = 62)))
+        scene(cue(SceneAction.HandPose(curved = false, overNote = 60)))
+        invalid(
+            cue(SceneAction.HandPose(curved = false, overNote = 60)),
+            stage = SceneStage(60..67, hand = SceneHand.LEFT),
+        )
+        scene(
+            cue(SceneAction.HandPose(curved = false, overNote = 67)),
+            stage = SceneStage(60..67, hand = SceneHand.LEFT),
         )
     }
 
