@@ -112,8 +112,9 @@ public object SessionComposer {
      * learned skill (the plan lists only due and new ones); [graph] gives each skill its track. The cold open uses only
      * passages whose skills are all learned, never the lesson's passage. The lesson is the first course concept without
      * a clean wait-mode run in [history]; the plan's new skills play no part. Up to QUIZ_MAX_PER_DAY of the due core
-     * skills that have a quiz come first as a Quizzes card (seeded by [day] and the skill id, so a day's quiz is
-     * stable); the cold open picks from the other due skills. The quizzes' minutes are part of the Review segment.
+     * skills that have a quiz (fewer by [quizzesDone], the quizzes already recorded that day) come first as a Quizzes
+     * card (seeded by [day] and the skill id, so a day's quiz is stable); the cold open takes the other due skills.
+     * The quizzes' minutes are part of the Review segment.
      * The song is a piece with no lock: played before new, then public domain before original, then curriculum order.
      */
     public fun compose(
@@ -124,10 +125,11 @@ public object SessionComposer {
         learned: Set<String>,
         day: LocalDate,
         graph: SkillGraph = curriculum.graph,
+        quizzesDone: Int = 0,
     ): Session {
         val (dueEar, dueNotEar) = plan.due.partition { graph.byId(it.skillId)?.track == Track.EAR }
         val taught = CourseProgress.ticked(curriculum, history)
-        val quizzes = quizzes(dueNotEar, graph, taught, day)
+        val quizzes = quizzes(dueNotEar, graph, taught, day, Tunables.QUIZ_MAX_PER_DAY - quizzesDone)
         val quizzed = quizzes.map { it.skillId }.toSet()
         val dueOther = dueNotEar.filter { it.skillId !in quizzed }
         val lesson = lesson(curriculum, history, graph)
@@ -169,17 +171,18 @@ public object SessionComposer {
         )
     }
 
-    /** The quizzes of the most overdue due core skills that have one, at most QUIZ_MAX_PER_DAY. */
+    /** The quizzes of the most overdue due core skills that have one, at most [allowance]. */
     private fun quizzes(
         due: List<SkillState>,
         graph: SkillGraph,
         taught: Set<String>,
         day: LocalDate,
+        allowance: Int,
     ): List<Quiz> =
         due
             .filter { graph.byId(it.skillId)?.track == Track.CORE }
             .mapNotNull { QuizMaker.make(it.skillId, taught, Random(seed(day, it.skillId))) }
-            .take(Tunables.QUIZ_MAX_PER_DAY)
+            .take(allowance.coerceAtLeast(0))
 
     private fun seed(
         day: LocalDate,

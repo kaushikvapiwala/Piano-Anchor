@@ -132,6 +132,17 @@ public class LearnerModel(
             .filter { it.attemptId.startsWith(EAR_ATTEMPT_ID_PREFIX) && it.day >= from }
             .mapTo(HashSet()) { it.day }
 
+    /**
+     * How many review quizzes were recorded on [day] (attempt id starting with [QUIZ_ATTEMPT_ID_PREFIX]). Throws
+     * StorageUnavailableException like the repository.
+     */
+    public suspend fun quizzesOn(day: LocalDate): Int =
+        repository
+            .states()
+            .keys
+            .flatMap { repository.reviews(it) }
+            .count { it.attemptId.startsWith(QUIZ_ATTEMPT_ID_PREFIX) && it.day == day }
+
     /** Stores [review] unless the skill ([before] is its state) has a review that day already: the first one counts. */
     private suspend fun recordColdCheck(
         before: SkillState?,

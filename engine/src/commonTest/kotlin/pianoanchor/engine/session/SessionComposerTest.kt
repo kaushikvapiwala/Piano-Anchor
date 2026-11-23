@@ -57,7 +57,16 @@ class SessionComposerTest {
         plan: DailyPlan,
         history: Map<String, PassageHistory> = emptyMap(),
         budget: DailyBudget = DailyBudget.MIN_20,
-    ) = SessionComposer.compose(plan, Curriculum, budget, history, learnedWithPrerequisites(plan), day)
+        quizzesDone: Int = 0,
+    ) = SessionComposer.compose(
+        plan,
+        Curriculum,
+        budget,
+        history,
+        learnedWithPrerequisites(plan),
+        day,
+        quizzesDone = quizzesDone,
+    )
 
     /** The learned skills of [plan]'s due list and everything they build on. */
     private fun learnedWithPrerequisites(plan: DailyPlan): Set<String> {
@@ -561,6 +570,19 @@ class SessionComposerTest {
     fun `a day's quiz is stable`() {
         val plan = DailyPlan(listOf(state(Skills.WHITE_KEY_NAMES)), emptyList())
         assertEquals(composeWithQuizzes(plan).cards.first(), composeWithQuizzes(plan).cards.first())
+    }
+
+    @Test
+    fun `quizzes already done today count against the daily cap`() {
+        val plan =
+            DailyPlan(
+                listOf(state(Skills.MIDDLE_C), state(Skills.HIGH_AND_LOW), state(Skills.STEADY_BEAT)),
+                emptyList(),
+            )
+        val one = assertIs<Card.Quizzes>(composeWithQuizzes(plan, quizzesDone = 2).cards.first())
+        assertEquals(listOf(Skills.MIDDLE_C.id), quizSkills(one))
+        assertTrue(composeWithQuizzes(plan, quizzesDone = 3).cards.none { it is Card.Quizzes })
+        assertTrue(composeWithQuizzes(plan, quizzesDone = 5).cards.none { it is Card.Quizzes })
     }
 
     @Test

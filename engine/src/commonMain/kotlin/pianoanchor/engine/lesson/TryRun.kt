@@ -195,6 +195,11 @@ private fun TryState.pressFindAll(
 ): TryState {
     val targets = targets(find)
     return when {
+        // The right letter outside the range isn't a mistake (the prompt names no range): it counts nothing.
+        note !in find.range && note % NOTES_PER_OCTAVE == find.pitchClass -> {
+            this
+        }
+
         note !in targets -> {
             wrong(note)
         }

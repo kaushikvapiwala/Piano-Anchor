@@ -16,8 +16,8 @@ itself (hold length, the beat-1 accent).
 - **Any key:** the first press finishes; the app cannot see fingers and trusts the learner.
 - **Play key:** the right note finishes; another key is wrong and the run waits. `lit` only says whether the strip glows it.
 - **Find all:** every key of a pitch class in a range, once each, in any order. A repeat counts nothing. A key of
-  another pitch class (or outside the range) is wrong and `expected` is the unfound target nearest to it (the lower one
-  on a tie). The range is the 88-key piano (A0 to C8), so "every C" is 8 keys; using the connected piano's range is a
+  another pitch class is wrong and `expected` is the unfound target nearest to it (the lower one on a tie); a key of the
+  right pitch class outside the range counts nothing either way (a quiz's "Play every F" names no range). The range is the 88-key piano (A0 to C8), so "every C" is 8 keys; using the connected piano's range is a
   later follow-up.
 - **Sequence:** like wait mode: the next note is expected, a wrong note waits.
 - **Repeat:** each press of the note counts, however it is timed; other keys are wrong.

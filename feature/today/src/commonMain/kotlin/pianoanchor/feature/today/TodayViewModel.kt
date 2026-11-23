@@ -144,6 +144,7 @@ public class TodayViewModel(
                     history,
                     learner.learnedSkills(),
                     learnerDay(now, zone),
+                    quizzesDone = learner.quizzesOn(learnerDay(now, zone)),
                 )
             mutableState.update {
                 it.copy(

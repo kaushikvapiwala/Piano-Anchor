@@ -920,6 +920,15 @@ public object Tunables {
     public const val QUIZ_MAX_PER_DAY: Int = 3
 
     /**
+     * The click tempo, in beats per minute, of the review quizzes that use one (hold, clicks, beat-1 accent).
+     *
+     * Why: one click a second keeps every clicked quiz, count-in included, within QUIZ_SECONDS.
+     *
+     * Source: the quiz spec (#195).
+     */
+    public const val QUIZ_BPM: Int = 60
+
+    /**
      * The time one review quiz is budgeted, in seconds; Today's Quizzes card takes `ceil(count * this / 60)` minutes.
      *
      * Why: the upper bound of "10-20 s" in the course doc, so the budget never runs short.

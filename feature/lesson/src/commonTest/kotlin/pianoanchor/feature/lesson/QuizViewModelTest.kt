@@ -259,6 +259,23 @@ class QuizViewModelTest {
         }
 
     @Test
+    fun `skipping during a count-in stops the click at once`() =
+        runTest(dispatcher) {
+            val beat = Quiz(Skills.STEADY_BEAT.id, TryCheck.Repeat(60, 2, 60), QuizPrompt.ClickTimes(60, 2))
+            val vm = viewModel(listOf(beat, three[0]))
+            assertNotNull(metronome.running.value)
+            vm.skip()
+            runCurrent()
+            assertNull(metronome.running.value)
+            assertNull(vm.state.value.countIn)
+            assertEquals(2, vm.state.value.number)
+            // The skipped quiz's count-in never opens the next quiz to notes early, nor shows its numerals.
+            advanceTimeBy(5_000)
+            runCurrent()
+            assertNull(vm.state.value.countIn)
+        }
+
+    @Test
     fun `leaving closes the piano and the click and starts nothing more`() =
         runTest(dispatcher) {
             val beat = Quiz(Skills.STEADY_BEAT.id, TryCheck.Repeat(60, 2, 60), QuizPrompt.ClickTimes(60, 2))

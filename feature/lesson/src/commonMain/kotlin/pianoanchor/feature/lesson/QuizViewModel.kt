@@ -143,6 +143,9 @@ public class QuizViewModel(
 
     private fun settle(skipped: Boolean) {
         settling = true
+        // The quiz is over: stop its count-in and click now, not when the next quiz starts.
+        accepting = false
+        work?.cancel()
         finishing = viewModelScope.launch { finish(skipped) }
     }
 

@@ -10,7 +10,6 @@ private const val NOTES_PER_OCTAVE = 12
 private const val MIDDLE_C = 60
 private const val C_BELOW_MIDDLE_C = 48
 private const val G_ABOVE_MIDDLE_C = 67
-private const val QUIZ_BPM = 60
 private const val HOLD_HALF_CLICKS = 2
 private const val HOLD_WHOLE_CLICKS = 4
 private const val CLICK_TIMES = 4
@@ -193,10 +192,10 @@ public object QuizMaker {
             is QuizPrompt.PlayKey -> TryCheck.PlayKey(prompt.note, lit = false)
             is QuizPrompt.SkipUpFrom -> TryCheck.Sequence(listOf(prompt.note, whiteAbove(prompt.note, SKIP_WHITE_KEYS)))
             is QuizPrompt.StepUpFrom -> TryCheck.Sequence(listOf(prompt.note, whiteAbove(prompt.note, 1)))
-            is QuizPrompt.HoldFor -> TryCheck.Hold(prompt.note, prompt.clicks, QUIZ_BPM)
-            is QuizPrompt.ClickTimes -> TryCheck.Repeat(prompt.note, prompt.times, QUIZ_BPM)
+            is QuizPrompt.HoldFor -> TryCheck.Hold(prompt.note, prompt.clicks, Tunables.QUIZ_BPM)
+            is QuizPrompt.ClickTimes -> TryCheck.Repeat(prompt.note, prompt.times, Tunables.QUIZ_BPM)
             is QuizPrompt.SoftThenLoud -> TryCheck.SoftThenLoud(prompt.note)
-            is QuizPrompt.AccentBeatOne -> TryCheck.StressBeatOne(prompt.note, ACCENT_BARS, QUIZ_BPM)
+            is QuizPrompt.AccentBeatOne -> TryCheck.StressBeatOne(prompt.note, ACCENT_BARS, Tunables.QUIZ_BPM)
             is QuizPrompt.ChordOf -> TryCheck.Chord(chordNotes(prompt.name))
         }
 
