@@ -64,22 +64,20 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 9. **Beginner course: card animations, Unit 1** (spec #192) [#191]: the Unit 1 scenes.
 10. **Beginner course: card animations, Unit 2** (spec #193) [#191]: the Unit 2 scenes.
 11. **Beginner course: card animations, Unit 3** (spec #194) [#191]: the Unit 3 scenes.
-12. **Beginner course: Results in words** (spec #187): say what happened (started late, notes held short, extra
-    notes) and one tip; the numbers move behind "Details".
-13. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
+12. **Beginner course: review quizzes** (spec #195) [#189]: 10–20 s piano-checked quizzes of due concepts, up to 3 in
     Today's warm-up, rated by mistakes into the review planner.
-14. **Ear grading in the engine** (follow-up of the M4 cleanup; mechanical): `EarViewModel` decides an item's outcome
+13. **Ear grading in the engine** (follow-up of the M4 cleanup; mechanical): `EarViewModel` decides an item's outcome
     (first try, recovered, missed) and redraws repeated items with its own limit of 20; move both into `EarGrading` and
     `EarGenerator` (the limit into `Tunables`) so the rules sit under the engine's tests.
-15. **One Today start action** (follow-up of the M4 cleanup; mechanical): the Ear card has its own `target` overload and
+14. **One Today start action** (follow-up of the M4 cleanup; mechanical): the Ear card has its own `target` overload and
     `onStartEar` action, so `MainActivity` repeats the `when (TodayTarget)` with branches that can't happen; give
     `TodayViewModel` one `target(card)` and `TodayActions` one `onStart(card)`.
-16. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
+15. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
     loops save their attempts under the slice's id (`…#bars5-6`) and also set `Attempt.spot`, so the full-passage
     queries' spot filters never match a row, the loop's done-rung refresh always reads an empty set and `run N` counts
     loops apart from the piece. Save them under the piece's id and rely on `spot` alone (then drop the id suffix and
     `sourcePassageId`); this changes stored data and run numbers.
-17. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
+16. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
     mode by hand where it starts hints; give the run an effective level (OFF in perform) so `loadHints` and
     `startHintStep` read only that, and keep the Hint button's own guard.
 

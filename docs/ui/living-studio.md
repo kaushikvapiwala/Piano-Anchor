@@ -138,8 +138,13 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
 - **Header**: back (44 dp), the caption "C-D-E · run 3 · wait mode" (Inter 11 sp, secondary) and the headline, a
   heading (Space Grotesk 700, 22 sp) chosen by band: "Every note right." (clean), "Mostly right. A few slips to
   tidy." (good), "Let's go slower and try again." (keep practising). The run number counts the passage's older runs.
+- **In words**: under the header, up to two plain sentences about the run ("You started about 1.5 beats late.",
+  "Notes were short.") and one tip in a highlighted line ("Wait for 3, 2, 1, then play on the next click."); a clean
+  run says "Clean run!" alone (`docs/algorithms/grading.md`, "Results in words").
+- **Details**: a toggle below the words, collapsed every time Results open; TalkBack reads "Expanded" or
+  "Collapsed". The tiles below show only when it is open.
 - **Caption**: "C-D-E · run 3 · ♩ = 72" for a timed run, "… · wait mode" otherwise.
-- **Tiles**: the mock's 4-column grid, filled left to right: **Pitch**, **Timing**, **Note length**, **Hesitation**
+- **Tiles** (behind Details): the mock's 4-column grid, filled left to right: **Pitch**, **Timing**, **Note length**, **Hesitation**
   (white, dark `#2A2730`, radius 16, padding 10/12, 1 dp shadow; label, value in Space Grotesk 700 22 sp, detail line).
   A wait-mode run shows Pitch and Hesitation, a timed run all four; a missing tile leaves its column blank, not a
   placeholder (a run stored before played notes were kept shows Pitch only).

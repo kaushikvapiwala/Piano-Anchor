@@ -763,4 +763,22 @@ public object Tunables {
      * Source: owner, M5 grill (spec #134).
      */
     public const val SPOT_LOOP_CLEAN_TARGET: Int = 2
+
+    /**
+     * How many beats a whole run's median onset deviation must reach for Results to say the run started early or late.
+     *
+     * Why: a whole run half a beat or more off means the start was missed, not uneven playing.
+     *
+     * Source: the owner's first timed run (shifted about 1.4 beats); a starting value.
+     */
+    public const val RESULTS_SHIFT_BEATS: Double = 0.5
+
+    /**
+     * The share of notes held right (percent) below which Results say the notes were short or long.
+     *
+     * Why: below this, note length is the main problem worth a sentence.
+     *
+     * Source: a starting value, to be tuned from dogfood.
+     */
+    public const val RESULTS_HELD_RIGHT_MIN_PERCENT: Int = 70
 }

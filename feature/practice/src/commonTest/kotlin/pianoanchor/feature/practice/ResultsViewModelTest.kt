@@ -24,6 +24,9 @@ import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.grading.NoteValue
+import pianoanchor.engine.grading.Observation
+import pianoanchor.engine.grading.ResultsWords
+import pianoanchor.engine.grading.Tip
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeSettingsRepository
@@ -167,8 +170,37 @@ class ResultsViewModelTest {
                     stepCount = 3,
                     wrongNotes = 1,
                     incompleteChords = 0,
+                    words = ResultsWords(listOf(Observation.WRONG_NOTES), Tip.SLOW_DOWN),
                 ),
                 vm.state.value,
+            )
+        }
+
+    @Test
+    fun `state carries the words and the shift of a late start`() =
+        runTest(dispatcher) {
+            val notes = listOf(played(C4, 1700, 900), played(D4, 2700, 900), played(E4, 3700, 900))
+            val vm = results("a-1", attempt("a-1", 100, tempoBpm = 60, band = Band.GOOD, playedNotes = notes))
+
+            val state = assertIs<ResultsState.Ready>(vm.state.value)
+            assertEquals(Observation.STARTED_LATE, state.words.observations.first())
+            assertEquals(Tip.WAIT_FOR_COUNT_IN, state.words.tip)
+            assertEquals(1.5, state.shiftBeats)
+        }
+
+    @Test
+    fun `words of a wait-mode run with wrong notes and of a clean run`() =
+        runTest(dispatcher) {
+            val slip = listOf(WrongNote(0, 1, MidiNote(C4)))
+            val wrong = results("a-1", attempt("a-1", 100, wrongNotes = 1, band = Band.GOOD, events = slip))
+            assertEquals(
+                ResultsWords(listOf(Observation.WRONG_NOTES), Tip.SLOW_DOWN),
+                assertIs<ResultsState.Ready>(wrong.state.value).words,
+            )
+            val clean = results("a-2", attempt("a-2", 101))
+            assertEquals(
+                ResultsWords(listOf(Observation.CLEAN), Tip.NEXT_TEMPO),
+                assertIs<ResultsState.Ready>(clean.state.value).words,
             )
         }
 
