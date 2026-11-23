@@ -512,6 +512,66 @@ class OnboardingViewModelTest {
         }
 
     @Test
+    fun `a Bluetooth piano connected for the search and picked is remembered`() =
+        runTest(dispatcher) {
+            val ble = MidiDevice("ble:AA", "Bluetooth Piano")
+            val blePiano = FakePiano(device = ble)
+            blePiano.unplug()
+            blePiano.advertised = listOf(ble)
+            OnboardingViewModel(
+                blePiano,
+                blePiano,
+                blePiano,
+                LearnerModel(Curriculum.graph, learnerRepository),
+                settings,
+                clock,
+                TimeZone.UTC,
+            ).scanBluetooth()
+            runCurrent()
+            assertNull(settings.settings.first().lastPiano)
+
+            blePiano.press(C4)
+            runCurrent()
+
+            assertEquals(ble, settings.settings.first().lastPiano)
+        }
+
+    @Test
+    fun `a wired piano is not remembered`() =
+        runTest(dispatcher) {
+            val vm = connectAndListen()
+            assertNull(settings.settings.first().lastPiano)
+            assertEquals(piano.device, vm.state.value.device)
+        }
+
+    @Test
+    fun `an unwritable store does not stop the echo of a remembered Bluetooth piano`() =
+        runTest(dispatcher) {
+            val ble = MidiDevice("ble:AA", "Bluetooth Piano")
+            val blePiano = FakePiano(device = ble)
+            blePiano.unplug()
+            blePiano.advertised = listOf(ble)
+            val vm =
+                OnboardingViewModel(
+                    blePiano,
+                    blePiano,
+                    blePiano,
+                    LearnerModel(Curriculum.graph, learnerRepository),
+                    settings,
+                    clock,
+                    TimeZone.UTC,
+                )
+            vm.scanBluetooth()
+            runCurrent()
+            settings.failing = true
+
+            blePiano.press(C4)
+            runCurrent()
+
+            assertEquals(ble, vm.state.value.device)
+        }
+
+    @Test
     fun `scanning without Bluetooth leaves the search running`() =
         runTest(dispatcher) {
             piano.bluetoothProblem = BluetoothUnavailableException.Reason.BLUETOOTH_OFF

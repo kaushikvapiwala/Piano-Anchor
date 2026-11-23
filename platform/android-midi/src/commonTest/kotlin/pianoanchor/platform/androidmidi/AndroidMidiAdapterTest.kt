@@ -1,8 +1,10 @@
 package pianoanchor.platform.androidmidi
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -10,6 +12,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.currentTime
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.ControlChange
@@ -211,6 +214,56 @@ class AndroidMidiAdapterTest {
         runTest {
             system.scansFail = true
             assertFailsWith<BluetoothUnavailableException> { bleAdapter().scan().toList() }
+        }
+
+    @Test
+    fun connectOpensAKnownBluetoothAddressWithoutAScan() =
+        runTest {
+            val ble = bleAdapter()
+            system.advertise(BluetoothAdvertisement(BLE_ADDRESS, BLE_PIANO.name))
+            ble.connect(BLE_PIANO)
+            assertTrue(ble.isListed())
+        }
+
+    @Test
+    fun connectWithoutAScanKeepsTheListingWaitAndFailsWhenTheDeviceIsNotThere() =
+        runTest {
+            val ble = bleAdapter()
+            assertFailsWith<MidiDeviceUnavailableException> { ble.connect(BLE_PIANO) }
+            system.advertise(BluetoothAdvertisement(BLE_ADDRESS, BLE_PIANO.name))
+            system.listsOpenedBluetooth = false
+            val start = currentTime
+            assertFailsWith<MidiDeviceUnavailableException> { ble.connect(BLE_PIANO) }
+            assertEquals(Tunables.BLE_LISTED_TIMEOUT_MS, currentTime - start)
+        }
+
+    @Test
+    fun connectStillNeedsAScanForADeviceThatIsNotBluetooth() =
+        runTest {
+            val ble = bleAdapter()
+            val usb = MidiDevice("usb:Roland/FP-30X/123", "FP-30X")
+            assertFailsWith<MidiDeviceUnavailableException> { ble.connect(usb) }
+            assertFailsWith<MidiDeviceUnavailableException> { ble.connect(MidiDevice("sys:7", "Other")) }
+        }
+
+    @Test
+    fun cancellingAConnectThatNeverOpensLeavesTheAdapterFreeForTheNextOne() =
+        runTest {
+            val ble = bleAdapter()
+            system.advertise(BluetoothAdvertisement(BLE_ADDRESS, BLE_PIANO.name))
+            system.bluetoothOpenGate = CompletableDeferred()
+            val stuck = launch { ble.connect(BLE_PIANO) }
+            runCurrent()
+            stuck.cancelAndJoin()
+
+            system.bluetoothOpenGate = null
+            ble.connect(BLE_PIANO)
+            ble.disconnect(BLE_PIANO)
+
+            assertTrue(stuck.isCancelled)
+            assertEquals(1, system.bluetoothOpened.get())
+            assertEquals(1, system.bluetoothClosed.get())
+            assertFalse(ble.isListed())
         }
 
     @Test

@@ -3,6 +3,7 @@ package pianoanchor.feature.monitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -28,6 +29,7 @@ import pianoanchor.engine.midi.MidiParser
 import pianoanchor.testing.FakeClock
 import pianoanchor.testing.FakeInstrumentRepository
 import pianoanchor.testing.FakePiano
+import pianoanchor.testing.FakeSettingsRepository
 import pianoanchor.testing.FakeWallClock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -58,10 +60,11 @@ class MonitorViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private val instruments = FakeInstrumentRepository()
+    private val settings = FakeSettingsRepository()
     private val wallClock = FakeWallClock(Instant.parse("2026-11-12T10:00:00Z"))
 
     private fun viewModel(input: MidiInputPort = piano) =
-        MonitorViewModel(input, piano, piano, instruments, clock, wallClock, APP_VERSION)
+        MonitorViewModel(input, piano, piano, instruments, settings, clock, wallClock, APP_VERSION)
 
     private fun TestScope.monitor(): MonitorViewModel = viewModel().also { runCurrent() }
 

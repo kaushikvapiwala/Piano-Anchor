@@ -4,17 +4,18 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -47,12 +48,16 @@ import pianoanchor.ui.shell.AppNavRail
 import pianoanchor.ui.shell.RailDestination
 
 private val RowMinHeight = 56.dp
+
+/** The narrowest a piece card gets: the grid fits 2 to 3 of them beside the rail. */
+private val MinCardWidth = 260.dp
 private val CardShape = RoundedCornerShape(20.dp)
 
 /**
- * Songs: the rail with Songs selected, then every piece in a card per unit, in curriculum order. A row shows the
- * title and the progress ("rung 3 of 5", "Mastered", "New"); a locked row shows a lock and the skill it needs and
- * cannot be tapped. Stateless; nothing animates, so screenshots stay still.
+ * Songs, landscape: the rail with Songs selected, then a heading over an adaptive grid with a card per piece under
+ * its unit's heading, in curriculum order. A card shows the title and the progress ("rung 3 of 5", "Mastered",
+ * "New"); a locked card shows a lock and the skill it needs and cannot be tapped. Stateless; nothing animates, so
+ * screenshots stay still.
  */
 @Composable
 public fun SongsScreen(
@@ -69,20 +74,31 @@ public fun SongsScreen(
                 onPianos = actions.onPianos,
                 onSettings = actions.onSettings,
             )
-            Column(
-                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            // Title, error and unit headings span the grid; the pieces flow into 2 to 3 columns in visual order.
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(MinCardWidth),
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    stringResource(Res.string.songs_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
-                if (state.storageFailed) ErrorCard(actions.onRetry)
-                state.pieces?.groupBy { it.unitTitle }?.forEach { (unitTitle, pieces) ->
-                    UnitSection(unitTitle, pieces, actions.onOpen)
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text(stringResource(Res.string.songs_title), style = MaterialTheme.typography.headlineMedium)
                 }
-                Spacer(Modifier.height(8.dp))
+                if (state.storageFailed) {
+                    item(span = { GridItemSpan(maxLineSpan) }) { ErrorCard(actions.onRetry) }
+                }
+                state.pieces?.groupBy { it.unitTitle }?.forEach { (unitTitle, pieces) ->
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            unitTitle,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    items(pieces, key = { it.passage.id }) { PieceCard(it, actions.onOpen) }
+                }
             }
         }
     }
@@ -108,31 +124,7 @@ private fun ErrorCard(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun UnitSection(
-    unitTitle: String,
-    pieces: List<PieceView>,
-    onOpen: (PieceView) -> Unit,
-) {
-    OutlinedCard(
-        shape = CardShape,
-        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(vertical = 8.dp)) {
-            Text(
-                unitTitle,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            pieces.forEach { PieceRow(it, onOpen) }
-        }
-    }
-}
-
-@Composable
-private fun PieceRow(
+private fun PieceCard(
     piece: PieceView,
     onOpen: (PieceView) -> Unit,
 ) {
@@ -150,20 +142,28 @@ private fun PieceRow(
                 role = Role.Button
             }
         }
-    Column(
-        modifier = modifier.fillMaxWidth().heightIn(min = RowMinHeight).padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+    OutlinedCard(
+        shape = CardShape,
+        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Text(
-            piece.passage.title,
-            style = MaterialTheme.typography.titleMedium,
-            color = if (locked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            progress,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Column(
+            modifier = modifier.fillMaxWidth().heightIn(min = RowMinHeight).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+        ) {
+            Text(
+                piece.passage.title,
+                style = MaterialTheme.typography.titleMedium,
+                color =
+                    if (locked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                progress,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

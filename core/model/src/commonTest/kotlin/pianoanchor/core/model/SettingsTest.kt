@@ -3,6 +3,7 @@ package pianoanchor.core.model
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class SettingsTest {
     @Test
@@ -26,6 +27,13 @@ class SettingsTest {
     fun strictnessDefaultsToStandard() {
         assertEquals(Strictness.STANDARD, Settings().strictness)
         assertEquals(Strictness.STRICT, Settings(strictness = Strictness.STRICT).strictness)
+    }
+
+    @Test
+    fun noPianoIsRememberedByDefault() {
+        assertNull(Settings().lastPiano)
+        val piano = MidiDevice("ble:AA:BB", "FP-30X")
+        assertEquals(piano, Settings(lastPiano = piano).lastPiano)
     }
 
     @Test

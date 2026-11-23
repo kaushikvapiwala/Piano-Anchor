@@ -4,6 +4,8 @@
     <string name="today_greeting_evening">Good evening</string>
     <string name="today_calling">%1$s is calling.</string>
     <string name="today_ready">Ready when you are.</string>
+    <string name="today_piano_connecting">Connecting…</string>
+    <string name="today_piano_connecting_description">Connecting to your piano. Opens Pianos.</string>
     <string name="today_piano_none">No piano</string>
     <string name="today_piano_none_description">No piano. Opens Pianos.</string>
     <string name="today_transport_usb">USB</string>

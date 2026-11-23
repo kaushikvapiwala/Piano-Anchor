@@ -20,6 +20,7 @@ import pianoanchor.engine.kit.ContributionKitCodec
 import pianoanchor.testing.FakeClock
 import pianoanchor.testing.FakeInstrumentRepository
 import pianoanchor.testing.FakePiano
+import pianoanchor.testing.FakeSettingsRepository
 import pianoanchor.testing.FakeWallClock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -53,7 +54,16 @@ class MonitorIdentityTest {
     private fun bytes(vararg v: Int) = ByteArray(v.size) { v[it].toByte() }
 
     private fun TestScope.selected(): MonitorViewModel =
-        MonitorViewModel(piano, piano, piano, instruments, clock, wallClock, APP_VERSION).also {
+        MonitorViewModel(
+            piano,
+            piano,
+            piano,
+            instruments,
+            FakeSettingsRepository(),
+            clock,
+            wallClock,
+            APP_VERSION,
+        ).also {
             runCurrent()
             it.select(piano.device)
             runCurrent()

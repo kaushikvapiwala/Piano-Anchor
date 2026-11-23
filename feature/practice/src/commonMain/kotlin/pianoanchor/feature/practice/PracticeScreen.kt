@@ -28,11 +28,14 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
@@ -210,7 +213,7 @@ private fun ModeSwitch(
     state: PracticeState,
     onSelectMode: (RunMode) -> Unit,
 ) {
-    val canPerform = state.rung != TempoRung.WAIT
+    val canPerform = state.rung.canPerform
     val practice = stringResource(Res.string.practice_mode_switch_practice)
     val perform = stringResource(Res.string.practice_mode_switch_perform)
     val performDescription =
@@ -245,14 +248,41 @@ private fun ModeSegment(
             enabled -> colors.onSurfaceVariant
             else -> colors.onSurfaceVariant.copy(alpha = DISABLED_ALPHA)
         }
+    Pill(
+        label = label,
+        description = description,
+        selected = selected,
+        enabled = enabled,
+        shape = shape,
+        borderColor = if (selected) colors.primary else colors.outline,
+        textColor = textColor,
+        onClick = { onSelectMode(mode) },
+    )
+}
+
+/** The 30 dp radio pill behind [ModeSegment] and [TempoChip]: [selected] fills it plum, [minWidth] widens it. */
+@Composable
+private fun Pill(
+    label: String,
+    description: String,
+    selected: Boolean,
+    enabled: Boolean,
+    shape: Shape,
+    borderColor: Color,
+    textColor: Color,
+    onClick: () -> Unit,
+    minWidth: Dp = Dp.Unspecified,
+) {
+    val colors = MaterialTheme.colorScheme
     Box(
         modifier =
             Modifier
                 .minimumInteractiveComponentSize()
-                .selectable(selected = selected, enabled = enabled, role = Role.RadioButton) { onSelectMode(mode) }
+                .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
                 .semantics { contentDescription = description }
                 .height(30.dp)
-                .border(1.5.dp, if (selected) colors.primary else colors.outline, shape)
+                .widthIn(min = minWidth)
+                .border(1.5.dp, borderColor, shape)
                 .background(if (selected) colors.primary else colors.background, shape)
                 .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
@@ -319,21 +349,17 @@ private fun TempoChip(
             done -> doneColor
             else -> colors.onSurfaceVariant
         }
-    Box(
-        modifier =
-            Modifier
-                .minimumInteractiveComponentSize()
-                .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-                .semantics { contentDescription = description }
-                .height(30.dp)
-                .widthIn(min = 44.dp)
-                .border(1.5.dp, borderColor, shape)
-                .background(if (selected) colors.primary else colors.background, shape)
-                .padding(horizontal = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = textColor)
-    }
+    Pill(
+        label = label,
+        description = description,
+        selected = selected,
+        enabled = true,
+        shape = shape,
+        borderColor = borderColor,
+        textColor = textColor,
+        onClick = onClick,
+        minWidth = 44.dp,
+    )
 }
 
 /**
