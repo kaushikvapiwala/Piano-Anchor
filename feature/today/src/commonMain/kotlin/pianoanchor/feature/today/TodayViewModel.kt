@@ -136,7 +136,7 @@ public class TodayViewModel(
             val weekStart = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
             val from = minOf(weekStart, windowStart)
-            val days = attempts.practiceDays(from, zone) + learner.earDays(from)
+            val days = attempts.practiceDays(from, zone) + learner.reviewDays(from)
             val session =
                 SessionComposer.compose(
                     plan,

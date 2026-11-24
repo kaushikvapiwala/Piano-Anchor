@@ -16,6 +16,7 @@ import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiTransport
+import pianoanchor.core.model.Rating
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.engine.Tunables
@@ -121,6 +122,17 @@ class TodayViewModelTest : TodayViewModelFixture() {
     fun aDayWithOnlyAnEarReviewCountsAsAPracticeDay() =
         runTest(dispatcher) {
             earReviewOn(today)
+            val vm = viewModel()
+
+            assertEquals(1, vm.state.value.daysThisWeek)
+            assertEquals(1, vm.state.value.practicedDays)
+        }
+
+    @Test
+    fun aQuizOnlyDayCountsAsAPracticeDay() =
+        runTest(dispatcher) {
+            LearnerModel(Curriculum.graph, learnerRepository)
+                .recordQuiz(EarSkills.ECHO_NOTE.id, Rating.GOOD, today, "q")
             val vm = viewModel()
 
             assertEquals(1, vm.state.value.daysThisWeek)

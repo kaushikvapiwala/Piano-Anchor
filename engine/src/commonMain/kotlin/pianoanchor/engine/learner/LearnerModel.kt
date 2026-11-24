@@ -121,16 +121,19 @@ public class LearnerModel(
     }
 
     /**
-     * The learner days from [from] on (inclusive) with at least one ear-set review (attempt id starting with
-     * [EAR_ATTEMPT_ID_PREFIX]); empty when none. Throws StorageUnavailableException like the repository.
+     * The learner days from [from] on (inclusive) with at least one ear-set review or review quiz (attempt id
+     * starting with [EAR_ATTEMPT_ID_PREFIX] or [QUIZ_ATTEMPT_ID_PREFIX]); empty when none. Throws
+     * StorageUnavailableException like the repository.
      */
-    public suspend fun earDays(from: LocalDate): Set<LocalDate> =
+    public suspend fun reviewDays(from: LocalDate): Set<LocalDate> =
         repository
             .states()
             .keys
             .flatMap { repository.reviews(it) }
-            .filter { it.attemptId.startsWith(EAR_ATTEMPT_ID_PREFIX) && it.day >= from }
-            .mapTo(HashSet()) { it.day }
+            .filter {
+                (it.attemptId.startsWith(EAR_ATTEMPT_ID_PREFIX) || it.attemptId.startsWith(QUIZ_ATTEMPT_ID_PREFIX)) &&
+                    it.day >= from
+            }.mapTo(HashSet()) { it.day }
 
     /**
      * How many review quizzes were recorded on [day] (attempt id starting with [QUIZ_ATTEMPT_ID_PREFIX]). Throws
