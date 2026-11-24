@@ -745,4 +745,13 @@ class ResultsViewModelTest {
             assertNull(ready.spot)
             assertEquals("Sight-reading level 1", ready.passageTitle)
         }
+
+    @Test
+    fun sightCleanRunGivesNoNextTempoTip() =
+        runTest(dispatcher) {
+            learnSight(Skills.STAFF_STEPS)
+            val vm = results("s-1", sightAttempt("s-1", 100, 1, Band.CLEAN))
+
+            assertNull(assertIs<ResultsState.Ready>(vm.state.value).words.tip)
+        }
 }

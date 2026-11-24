@@ -40,6 +40,7 @@ import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.SessionComposer
 import pianoanchor.engine.session.passageHistories
 import pianoanchor.engine.sight.SightLevels
+import pianoanchor.engine.sight.SightReadingGenerator
 import pianoanchor.engine.sight.SightStaircase
 import pianoanchor.engine.update.isNewer
 import kotlin.math.roundToInt
@@ -48,7 +49,6 @@ import kotlin.time.Clock
 private const val MORNING_FROM_HOUR = 5
 private const val AFTERNOON_FROM_HOUR = 12
 private const val EVENING_FROM_HOUR = 18
-private const val SIGHT_PREFIX = "sight:"
 private const val NANOS_PER_MILLI = 1_000_000.0
 
 /**
@@ -142,7 +142,7 @@ public class TodayViewModel(
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
             val from = minOf(weekStart, windowStart)
             val days = attempts.practiceDays(from, zone) + learner.reviewDays(from)
-            val sightAttempts = attempts.attemptsWithPassagePrefix(SIGHT_PREFIX)
+            val sightAttempts = attempts.attemptsWithPassagePrefix(SightReadingGenerator.ID_PREFIX)
             val learned = learner.learnedSkills()
             val session =
                 SessionComposer.compose(
@@ -154,7 +154,7 @@ public class TodayViewModel(
                     learnerDay(now, zone),
                     quizzesDone = learner.quizzesOn(learnerDay(now, zone)),
                     sightLevel = SightStaircase.level(sightAttempts, SightLevels.open(learned)),
-                    sightDoneToday = sightAttempts.any { it.startedAt.toLocalDateTime(zone).date == today },
+                    sightDoneToday = sightAttempts.any { learnerDay(it.startedAt, zone) == learnerDay(now, zone) },
                 )
             mutableState.update {
                 it.copy(

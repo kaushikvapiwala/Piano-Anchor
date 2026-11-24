@@ -395,6 +395,15 @@ abstract class AttemptRepositoryPortContractTest {
             assertFailsWith<IllegalArgumentException> { repository.attemptsWithPassagePrefix("") }
             assertFailsWith<IllegalArgumentException> { repository.attemptsWithPassagePrefix("  ") }
         }
+
+    @Test
+    fun attemptsWithPassagePrefixBreaksStartTiesById() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-2", startedAtSeconds = 1_000, passageId = "sight:1:20"))
+            repository.save(attempt("a-1", startedAtSeconds = 1_000, passageId = "sight:1:21"))
+            assertEquals(listOf("a-1", "a-2"), repository.attemptsWithPassagePrefix("sight:").map { it.id })
+        }
 }
 
 private const val TEMPO_A = 48

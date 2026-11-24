@@ -581,4 +581,27 @@ class TodayViewModelTest : TodayViewModelFixture() {
                 assertNotNull(sightCard(early)).passage.id,
             )
         }
+
+    @Test
+    fun noSightCardAfterMidnightBeforeTheLearnerDayStarts() =
+        runTest(dispatcher) {
+            givenStates(skillState(Skills.STAFF_STEPS.id, dueDay = LocalDate(2026, 12, 1), learned = true))
+            // Played at 23:00 on the 17th; at 01:00 on the 18th it is still the same learner day.
+            playedOn("2026-11-17", id = "s-1", passageId = "sight:1:1", hour = "23")
+            val vm =
+                TodayViewModel(
+                    LearnerModel(Curriculum.graph, learnerRepository),
+                    settings,
+                    attempts,
+                    piano,
+                    piano,
+                    calibration,
+                    FakeWallClock(Instant.parse("2026-11-18T01:00:00Z")),
+                    TimeZone.UTC,
+                    updateCheck,
+                    INSTALLED,
+                ).also { runCurrent() }
+
+            assertNull(sightCard(vm))
+        }
 }

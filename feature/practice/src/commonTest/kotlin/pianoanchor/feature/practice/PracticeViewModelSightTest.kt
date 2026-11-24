@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.RunMode
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
@@ -128,5 +129,27 @@ class PracticeViewModelSightTest {
             runCurrent()
             assertEquals(RunMode.PRACTICE, vm.state.value.mode)
             assertTrue(vm.state.value.sightReading)
+        }
+
+    @Test
+    fun aWrongKeyShowsTheLandmarkLineButLightsNoKey() =
+        runTest(dispatcher) {
+            val vm = practice()
+            val wrong =
+                sight.steps
+                    .first()
+                    .pitches
+                    .first()
+                    .number + 1
+
+            clock.advanceNanos(300_000_000)
+            piano.press(MidiNote(wrong))
+            runCurrent()
+
+            assertNotNull(vm.state.value.hint)
+            assertTrue(
+                vm.state.value.hintGlow
+                    .isEmpty(),
+            )
         }
 }

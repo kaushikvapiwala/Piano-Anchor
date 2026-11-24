@@ -31,8 +31,10 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.grading.HesitationSummary
 import pianoanchor.engine.grading.LengthSummary
 import pianoanchor.engine.grading.ResultsSummary
+import pianoanchor.engine.grading.ResultsWords
 import pianoanchor.engine.grading.ResultsWordsRule
 import pianoanchor.engine.grading.TimingSummary
+import pianoanchor.engine.grading.Tip
 import pianoanchor.engine.grading.noteNumber
 import pianoanchor.engine.grading.noteValue
 import pianoanchor.engine.guidance.SpotFinder
@@ -103,7 +105,7 @@ public class ResultsViewModel(
                 }
             }
         val summary = analysed?.first
-        val words = ResultsWordsRule.of(summary ?: waitSummary(attempt), attempt.tempoBpm, attempt.band)
+        val words = wordsOf(summary ?: waitSummary(attempt), attempt, sight != null)
         return ResultsState.Ready(
             passageTitle = passage?.title ?: attempt.passageId,
             runNumber = runNumber(attempt, sight),
@@ -137,7 +139,7 @@ public class ResultsViewModel(
     private suspend fun sightOutcome(attempt: Attempt): SightOutcome? {
         val (level, _) = SightReadingGenerator.parse(attempt.passageId) ?: return null
         val open = SightLevels.open(learner.learnedSkills())
-        val all = attempts.attemptsWithPassagePrefix(SIGHT_PREFIX)
+        val all = attempts.attemptsWithPassagePrefix(SightReadingGenerator.ID_PREFIX)
         val upTo = all.takeWhile { it.id != attempt.id } + attempt
         val before = upTo.dropLast(1)
         val now = SightStaircase.level(upTo, open)
@@ -230,7 +232,6 @@ public class ResultsViewModel(
 }
 
 private const val MILLIS_PER_TENTH = 100
-private const val SIGHT_PREFIX = "sight:"
 
 /** What an attempt with no analysis says: its own counts, no timing, length or pauses. */
 private fun waitSummary(attempt: Attempt) =
@@ -243,3 +244,13 @@ private fun waitSummary(attempt: Attempt) =
         wrongNotes = attempt.wrongNotes,
         incompleteChords = attempt.incompleteChords,
     )
+
+/** What Results say; a sight-reading run has no tempo to try next, so it gets no tip in that case. */
+private fun wordsOf(
+    summary: ResultsSummary,
+    attempt: Attempt,
+    sight: Boolean,
+): ResultsWords {
+    val words = ResultsWordsRule.of(summary, attempt.tempoBpm, attempt.band)
+    return if (sight && words.tip == Tip.NEXT_TEMPO) words.copy(tip = null) else words
+}

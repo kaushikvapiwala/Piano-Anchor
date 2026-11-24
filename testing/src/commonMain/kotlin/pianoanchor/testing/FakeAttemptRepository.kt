@@ -92,7 +92,7 @@ class FakeAttemptRepository : AttemptRepositoryPort {
         require(prefix.isNotBlank()) { "prefix must not be blank" }
         return attempts.value.values
             .filter { it.passageId.startsWith(prefix) }
-            .sortedBy { it.startedAt }
+            .sortedWith(compareBy({ it.startedAt }, { it.id }))
     }
 
     private fun failIfFailing(operation: String) {

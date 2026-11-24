@@ -591,6 +591,7 @@ public class PracticeViewModel(
                     flash = flash,
                     lastKey = flash,
                 ).withHint(note, flash.correct, needed, advanced)
+                .let { state -> if (sight) state.copy(hintGlow = emptySet()) else state }
         }
         flashTimer?.cancel()
         flashTimer =

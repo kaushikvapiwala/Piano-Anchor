@@ -180,19 +180,19 @@ private fun caption(state: ResultsState.Ready): String =
     if (state.sight != null) {
         stringResource(Res.string.results_sight_caption, state.sight.level.toString())
     } else if (state.tempoBpm == null) {
-        stringResource(Res.string.results_caption, state.passageTitle, state.runNumber.toString())
+        stringResource(Res.string.results_caption, state.passageTitle, checkNotNull(state.runNumber).toString())
     } else if (state.mode == RunMode.PERFORM) {
         stringResource(
             Res.string.results_caption_performed,
             state.passageTitle,
-            state.runNumber.toString(),
+            checkNotNull(state.runNumber).toString(),
             state.tempoBpm.toString(),
         )
     } else {
         stringResource(
             Res.string.results_caption_tempo,
             state.passageTitle,
-            state.runNumber.toString(),
+            checkNotNull(state.runNumber).toString(),
             state.tempoBpm.toString(),
         )
     }
@@ -276,14 +276,16 @@ private fun Words(state: ResultsState.Ready) {
         for (observation in state.words.observations) {
             Text(observationText(observation, state), style = MaterialTheme.typography.bodyMedium)
         }
-        Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
-            Text(
-                stringResource(tipText(state.words.tip)),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            )
+        state.words.tip?.let { tip ->
+            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                Text(
+                    stringResource(tipText(tip)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
         }
     }
 }
