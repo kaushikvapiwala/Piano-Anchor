@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
+import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.MidiNote
@@ -30,6 +31,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -63,6 +65,7 @@ class PracticeViewModelSpotTest {
     private fun TestScope.loop(
         rung: TempoRung = TempoRung.WAIT,
         spot: BarRange? = range,
+        pieceId: String = whole.id,
     ): PracticeViewModel =
         PracticeViewModel(
             piano.device,
@@ -80,6 +83,7 @@ class PracticeViewModelSpotTest {
             rung,
             RunMode.PERFORM,
             spot,
+            pieceId = pieceId,
         ) {
             "attempt-${++ids}"
         }.also { runCurrent() }
@@ -143,6 +147,51 @@ class PracticeViewModelSpotTest {
         }
 
     @Test
+    fun aSpotLoopWithoutItsPieceIdIsRejected() =
+        runTest(dispatcher) {
+            assertFailsWith<IllegalArgumentException> { loop(pieceId = whole.slice(range).id) }
+        }
+
+    @Test
+    fun spotLoopSavesUnderThePieceIdWithItsSpot() =
+        runTest(dispatcher) {
+            loop()
+            playLoop()
+
+            val saved = assertNotNull(attempts.get("attempt-1"))
+            assertEquals(whole.id, saved.passageId)
+            assertEquals(range, saved.spot)
+            assertEquals(saved.startedAt, attempts.lastPlayed(whole.id))
+        }
+
+    @Test
+    fun spotLoopShowsThePieceDoneRungs() =
+        runTest(dispatcher) {
+            val bpm = checkNotNull(TempoRung.P60.bpm(whole))
+            attempts.save(
+                Attempt(
+                    id = "old-1",
+                    passageId = whole.id,
+                    deviceId = piano.device.id,
+                    startedAt = Instant.fromEpochSeconds(1_000),
+                    durationNanos = 1,
+                    stepCount = 12,
+                    wrongNotes = 0,
+                    incompleteChords = 0,
+                    accuracy = 1.0,
+                    band = Band.CLEAN,
+                    events = emptyList(),
+                    tempoBpm = bpm,
+                    playedNotes = emptyList(),
+                ),
+            )
+            val vm = loop()
+            playLoop()
+
+            assertEquals(setOf(TempoRung.P60), vm.state.value.doneRungs)
+        }
+
+    @Test
     fun `loops restart without Results and carry spot`() =
         runTest(dispatcher) {
             val vm = loop()
@@ -151,7 +200,7 @@ class PracticeViewModelSpotTest {
             assertNull(vm.state.value.finishedAttemptId)
             val saved = assertNotNull(attempts.get("attempt-1"))
             assertEquals(range, saved.spot)
-            assertEquals("test:whole#bars2-3", saved.passageId)
+            assertEquals("test:whole", saved.passageId)
             assertEquals(RunMode.PRACTICE, saved.mode)
             // The next loop is already waiting for its first step.
             assertEquals(

@@ -215,6 +215,44 @@ class DesktopDatabaseDriverTest {
             assertContains(plan, "attempt_started")
         }
     }
+
+    @Test
+    fun migration11MovesSpotAttemptsToThePieceId() {
+        file.parentFile.mkdirs()
+        // The committed version-11 schema file: spot loops were saved under the slice's id.
+        File("src/commonMain/sqldelight/databases/11.db").copyTo(file)
+        JdbcSqliteDriver("jdbc:sqlite:${file.path}").use { old ->
+            fun insert(
+                id: String,
+                passageId: String,
+                spot: String,
+            ) = old.exec(
+                "INSERT INTO attempt(id, passage_id, device_id, started_at_ms, duration_nanos, step_count, " +
+                    "wrong_notes, incomplete_chords, accuracy, band, spot_first_bar, spot_last_bar) " +
+                    "VALUES ('$id', '$passageId', 'd', 1, 1, 1, 0, 0, 1.0, 'CLEAN', $spot)",
+            )
+            insert("a-1", "p1#bars5-6", "5, 6")
+            insert("a-2", "p1#bars5-6", "NULL, NULL")
+            insert("a-3", "p1", "5, 6")
+            old.exec("PRAGMA user_version = 11")
+        }
+
+        createPianoAnchorDatabaseDriver(file).use { driver ->
+            val ids =
+                driver
+                    .executeQuery(
+                        identifier = null,
+                        sql = "SELECT passage_id FROM attempt ORDER BY id",
+                        mapper = { cursor ->
+                            val found = mutableListOf<String>()
+                            while (cursor.next().value) found += cursor.getString(0).orEmpty()
+                            QueryResult.Value(found)
+                        },
+                        parameters = 0,
+                    ).value
+            assertEquals(listOf("p1", "p1#bars5-6", "p1"), ids)
+        }
+    }
 }
 
 // EXPLAIN QUERY PLAN rows are (id, parent, notused, detail).

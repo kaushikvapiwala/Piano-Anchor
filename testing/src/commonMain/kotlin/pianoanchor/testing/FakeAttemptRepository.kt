@@ -41,7 +41,7 @@ class FakeAttemptRepository : AttemptRepositoryPort {
         return attempts.map { all ->
             failIfFailing("recent")
             all.values
-                .filter { it.passageId == passageId }
+                .filter { it.passageId == passageId && it.spot == null }
                 .sortedByDescending { it.startedAt }
                 .take(limit)
         }
@@ -52,7 +52,7 @@ class FakeAttemptRepository : AttemptRepositoryPort {
         before: Instant,
     ): Int {
         failIfFailing("countStartedBefore")
-        return attempts.value.values.count { it.passageId == passageId && it.startedAt < before }
+        return attempts.value.values.count { it.passageId == passageId && it.spot == null && it.startedAt < before }
     }
 
     override suspend fun cleanTempos(passageId: String): Set<Int> {

@@ -92,6 +92,7 @@ val appModule =
                 start.mode,
                 start.spot,
                 PassagePlayer(device, get(), get()),
+                passageId,
             ) {
                 Uuid.random().toString()
             }

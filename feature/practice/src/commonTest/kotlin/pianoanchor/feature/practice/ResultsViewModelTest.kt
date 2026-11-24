@@ -445,6 +445,25 @@ class ResultsViewModelTest {
         }
 
     @Test
+    fun aSpotLoopAttemptIsNotAnalysedAgainstTheWholePiece() =
+        runTest(dispatcher) {
+            val state = assertIs<ResultsState.Ready>(results("a-1", lateRun().copy(spot = BarRange(1, 1))).state.value)
+
+            assertNull(state.timing)
+            assertNull(state.spot)
+        }
+
+    @Test
+    fun runNumberSkipsSpotLoops() =
+        runTest(dispatcher) {
+            val loops = (0 until 5).map { attempt("l-$it", 300L + it).copy(spot = BarRange(1, 1)) }
+            val vm =
+                results("a-4", attempt("a-1", 100), attempt("a-2", 200), *loops.toTypedArray(), attempt("a-4", 400))
+
+            assertEquals(3, (vm.state.value as ResultsState.Ready).runNumber)
+        }
+
+    @Test
     fun theRunNumberIsCountedWithoutLoadingTheHistory() =
         runTest(dispatcher) {
             listOf(attempt("a-1", 100), attempt("a-2", 200)).forEach { attempts.save(it) }

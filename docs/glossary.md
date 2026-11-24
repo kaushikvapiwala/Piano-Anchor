@@ -100,7 +100,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Written tempo | The tempo a passage states, in quarter notes per minute (`Passage.tempoBpm`, 20–300); tempo rungs are percentages of it. |
 | Wrong note | `WrongNote`: a key pressed that isn't in the current step; progress is unchanged. |
 | Session | Today's plan as cards plus a bar of Review, Lesson and Song minutes, composed by `SessionComposer` from the daily plan and the daily budget. |
-| Spot loop | A run of the 2 worst bars of a passage (`Attempt.spot`, `SpotFinder`), one tempo rung below the run it came from, repeated until two clean loops in a row. Saved as practice, never a cold check or hint-fading input. |
+| Spot loop | A run of the 2 worst bars of a passage (`Attempt.spot`, `SpotFinder`), one tempo rung below the run it came from, repeated until two clean loops in a row. Saved under the piece's id with `spot` set; counts as playing the piece (last-played date) but never a run number, cold check, hint-fading input or clean-run record. |
 | Cold open | The first card of a session: the most overdue due skill's passage, played with no hints as a review. |
 | Card | One item of Today: a cold open, a new lesson (with a "why now" line) or a song, each opening Practice on a passage and tempo rung. |
 | Ticked | A course concept the learner has passed: any of its passages has a clean wait-mode run (`CourseProgress.ticked`). A timed-only clean run doesn't tick. Songs shows a tick on its pieces; nothing is locked by it. |

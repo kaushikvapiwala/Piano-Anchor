@@ -148,6 +148,49 @@ abstract class AttemptRepositoryPortContractTest {
             assertEquals(0, repository.countBefore(beforeSeconds = 9_000, passageId = "unknown"))
         }
 
+    @Suppress("MagicNumber") // Epoch seconds of the scenario.
+    @Test
+    fun countStartedBeforeIgnoresSpotAttempts() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-1", startedAtSeconds = 1_000))
+            repository.save(attempt("a-2", startedAtSeconds = 2_000, spot = BarRange(1, 2)))
+            assertEquals(1, repository.countBefore(beforeSeconds = 9_000))
+        }
+
+    @Suppress("MagicNumber") // Epoch seconds of the scenario.
+    @Test
+    fun recentListsOnlyFullRuns() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-1", startedAtSeconds = 1_000))
+            repository.save(attempt("a-2", startedAtSeconds = 2_000, spot = BarRange(1, 2)))
+            repository.save(attempt("a-3", startedAtSeconds = 3_000, spot = BarRange(1, 2)))
+            assertEquals(listOf("a-1"), repository.recent("c-d-e", limit = 2).first().map { it.id })
+        }
+
+    @Suppress("MagicNumber") // Epoch seconds of the scenario.
+    @Test
+    fun lastPlayedCountsSpotAttempts() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-1", startedAtSeconds = 1_000))
+            repository.save(attempt("a-2", startedAtSeconds = 2_000, spot = BarRange(1, 2)))
+            assertEquals(Instant.fromEpochSeconds(2_000), repository.lastPlayed("c-d-e"))
+        }
+
+    @Suppress("MagicNumber") // Epoch seconds and calendar dates of the scenario.
+    @Test
+    fun practiceDaysCountSpotAttempts() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-1", startedAtSeconds = 0, spot = BarRange(1, 2)))
+            assertEquals(
+                setOf(LocalDate(1970, 1, 1)),
+                repository.practiceDays(LocalDate(1970, 1, 1), TimeZone.UTC),
+            )
+        }
+
     @Test
     fun countStartedBeforeIsZeroWhenNothingIsStored() =
         runTest {
