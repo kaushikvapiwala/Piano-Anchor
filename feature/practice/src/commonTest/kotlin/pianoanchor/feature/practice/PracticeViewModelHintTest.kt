@@ -355,6 +355,32 @@ class PracticeViewModelHintTest {
         }
 
     @Test
+    fun aPerformTakeOnADelayedPassageShowsNoHintButSavesTheLevel() =
+        runTest(dispatcher) {
+            store(*delayedHistory)
+            val vm = practice()
+            vm.selectRung(TempoRung.P60)
+            vm.selectMode(RunMode.PERFORM)
+            runCurrent()
+            val beatMs = 1_250L
+            piano.press(c4) // the key that starts the count-in
+            piano.release(c4)
+            runCurrent()
+            tick(Tunables.TEMPO_COUNT_IN_LEAD_MS + 4 * beatMs)
+
+            repeat(3) {
+                tick(beatMs) // each step waits past the delay unplayed
+                assertFalse(vm.state.value.hintVisible)
+            }
+            tick(4 * beatMs)
+
+            val saved = assertNotNull(attempts.get("attempt-1"))
+            assertEquals(RunMode.PERFORM, saved.mode)
+            assertEquals(HintLevel.DELAYED, saved.hintLevel)
+            assertFalse(saved.hintShown)
+        }
+
+    @Test
     fun anUnreadableStoreStartsAtFull() =
         runTest(dispatcher) {
             store(*offHistory)

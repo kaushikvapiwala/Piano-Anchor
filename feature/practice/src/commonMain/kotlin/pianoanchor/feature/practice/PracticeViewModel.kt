@@ -144,9 +144,12 @@ public class PracticeViewModel(
     /** True once the learner toggled the click here: the stored choice, if read later, no longer applies. */
     private var clickToggled = false
 
-    /** The key-hint level of the run in progress and the delay of its Delayed hints (read when the run starts). */
+    /** The key-hint level the passage starts at (saved with the attempt) and the delay of its Delayed hints. */
     private var hintLevel = HintLevel.FULL
     private var hintDelayMillis = Tunables.HINT_DELAY_DEFAULT_MS
+
+    /** The level the run in progress actually shows hints at: [hintLevel], or OFF in a perform take. */
+    private var runHintLevel = HintLevel.FULL
 
     /** The level and delay of the first successful history read, null until then. */
     private var hintCache: Pair<HintLevel, Long>? = null
@@ -314,21 +317,21 @@ public class PracticeViewModel(
             if (history != null) hintCache = hintLevel to hintDelayMillis
         }
         // A perform run gets no hint at all, whatever the level the passage would start at.
-        val aided = hintLevel == HintLevel.FULL && mutableState.value.showsVerdicts
+        runHintLevel = if (mutableState.value.showsVerdicts) hintLevel else HintLevel.OFF
+        val aided = runHintLevel == HintLevel.FULL
         hintShown = aided
         mutableState.update { it.copy(hintLevel = hintLevel, hintVisible = aided) }
     }
 
     /**
-     * A new step is waiting: its band shows at once at FULL, otherwise not, and at DELAYED shows after
-     * [hintDelayMillis] unless a key press cancels the timer first. A timed step already answered (played early) gets
-     * no timer.
+     * A new step is waiting: its band shows at once when the run's level ([runHintLevel]) is FULL, otherwise not, and
+     * at DELAYED shows after [hintDelayMillis] unless a key press cancels the timer first. A timed step already
+     * answered (played early) gets no timer.
      */
     private fun startHintStep(answered: Boolean = false) {
         hintTimer?.cancel()
-        val practice = mutableState.value.showsVerdicts
-        mutableState.update { it.copy(hintVisible = practice && hintLevel == HintLevel.FULL) }
-        if (!practice || hintLevel != HintLevel.DELAYED || answered) return
+        mutableState.update { it.copy(hintVisible = runHintLevel == HintLevel.FULL) }
+        if (runHintLevel != HintLevel.DELAYED || answered) return
         hintTimer =
             viewModelScope.launch {
                 delay(hintDelayMillis)
