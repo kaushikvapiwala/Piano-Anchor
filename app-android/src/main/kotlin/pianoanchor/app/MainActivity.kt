@@ -572,6 +572,10 @@ private fun TodayRoute(
                         )
                     }
 
+                    is TodayTarget.SightReading -> {
+                        onPractice(Destination.Practice(target.device, target.passageId, from = Destination.Today))
+                    }
+
                     TodayTarget.Pianos -> {
                         onPianos()
                     }

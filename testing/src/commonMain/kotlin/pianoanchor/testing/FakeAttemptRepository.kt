@@ -87,6 +87,14 @@ class FakeAttemptRepository : AttemptRepositoryPort {
             .filterTo(LinkedHashSet()) { it >= from }
     }
 
+    override suspend fun attemptsWithPassagePrefix(prefix: String): List<Attempt> {
+        failIfFailing("attemptsWithPassagePrefix")
+        require(prefix.isNotBlank()) { "prefix must not be blank" }
+        return attempts.value.values
+            .filter { it.passageId.startsWith(prefix) }
+            .sortedBy { it.startedAt }
+    }
+
     private fun failIfFailing(operation: String) {
         if (failing) throw StorageUnavailableException("$operation failed")
     }

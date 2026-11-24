@@ -17,6 +17,8 @@
     <string name="today_card_cold_open">Cold open</string>
     <string name="today_card_lesson">New lesson</string>
     <string name="today_card_song">Song</string>
+    <string name="today_card_sight">Sight-reading</string>
+    <string name="today_card_sight_detail">One unseen exercise · %1$s min</string>
     <string name="today_card_detail">%1$s · %2$s min</string>
     <string name="today_card_more_due">%1$s more to review</string>
     <string name="today_card_why_now">Why now: you have learned %1$s.</string>
@@ -34,7 +36,8 @@
     <string name="today_action_cold_open_perform">Perform cold open</string>
     <string name="today_action_lesson">Begin</string>
     <string name="today_action_song">Continue</string>
-    <string name="today_session_bar">Today's %1$s minutes: review %2$s, lesson %3$s, song %4$s, ear %5$s</string>
+    <string name="today_action_sight">Start sight-reading</string>
+    <string name="today_session_bar">Today's %1$s minutes: review %2$s, lesson %3$s, song %4$s, sight-reading %5$s, ear %6$s</string>
     <string name="today_caught_up">All caught up. Play a song or come back tomorrow.</string>
     <string name="today_error_storage">Couldn't load today's plan.</string>
     <string name="today_action_retry">Retry</string>

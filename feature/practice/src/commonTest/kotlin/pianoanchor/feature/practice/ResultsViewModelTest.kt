@@ -11,24 +11,32 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.MatchEvent
+import pianoanchor.core.model.MemoryState
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.RunMode
+import pianoanchor.core.model.Skill
+import pianoanchor.core.model.SkillState
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.content.Skills
 import pianoanchor.engine.grading.NoteValue
 import pianoanchor.engine.grading.Observation
 import pianoanchor.engine.grading.ResultsWords
 import pianoanchor.engine.grading.Tip
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
+import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeSettingsRepository
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.AfterTest
@@ -66,6 +74,8 @@ class ResultsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val attempts = FakeAttemptRepository()
     private val settings = FakeSettingsRepository()
+    private val learnerRepository = FakeLearnerRepository()
+    private val learner = LearnerModel(Curriculum.graph, learnerRepository)
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -114,7 +124,7 @@ class ResultsViewModelTest {
         rung: TempoRung = TempoRung.WAIT,
     ): ResultsViewModel {
         saved.forEach { attempts.save(it) }
-        return ResultsViewModel(id, rung, attempts, settings, dispatcher).also { runCurrent() }
+        return ResultsViewModel(id, rung, attempts, settings, learner, dispatcher).also { runCurrent() }
     }
 
     // 60 BPM is 1000 ms a beat: Standard's band is max(60 ms, 125 ms) = 125 ms, Gentle's max(90 ms, 187.5 ms).
@@ -480,6 +490,7 @@ class ResultsViewModelTest {
                     TempoRung.WAIT,
                     countOnly,
                     FakeSettingsRepository(),
+                    learner,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -516,6 +527,7 @@ class ResultsViewModelTest {
                     TempoRung.WAIT,
                     slow,
                     FakeSettingsRepository(),
+                    learner,
                     dispatcher,
                 ).also { runCurrent() }
             assertEquals(ResultsState.Loading, vm.state.value)
@@ -537,6 +549,7 @@ class ResultsViewModelTest {
                     TempoRung.WAIT,
                     attempts,
                     FakeSettingsRepository(),
+                    learner,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -561,6 +574,7 @@ class ResultsViewModelTest {
                     TempoRung.WAIT,
                     countFails,
                     FakeSettingsRepository(),
+                    learner,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -578,6 +592,7 @@ class ResultsViewModelTest {
                     TempoRung.WAIT,
                     attempts,
                     FakeSettingsRepository(),
+                    learner,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -606,6 +621,7 @@ class ResultsViewModelTest {
                     TempoRung.WAIT,
                     firstHangs,
                     FakeSettingsRepository(),
+                    learner,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -630,6 +646,7 @@ class ResultsViewModelTest {
                     TempoRung.WAIT,
                     attempts,
                     FakeSettingsRepository(),
+                    learner,
                     analysis,
                 ).also { runCurrent() }
             assertEquals(ResultsState.Loading, vm.state.value)
@@ -637,5 +654,95 @@ class ResultsViewModelTest {
             analysis.runQueued()
             runCurrent()
             assertEquals(TimingTile(0, null, calibrated = false), (vm.state.value as ResultsState.Ready).timing)
+        }
+
+    private suspend fun learnSight(vararg skills: Skill) =
+        learnerRepository.replaceStates(
+            skills.map {
+                SkillState(
+                    skillId = it.id,
+                    memory = MemoryState(stability = 2.0, difficulty = 5.0),
+                    introducedDay = LocalDate(2026, 11, 1),
+                    lastReviewDay = LocalDate(2026, 11, 10),
+                    dueDay = LocalDate(2026, 12, 1),
+                    cleanColdChecks = 0,
+                    recalledColdChecks = 0,
+                    unaidedRecalledChecks = 0,
+                    learned = true,
+                )
+            },
+        )
+
+    private fun sightAttempt(
+        id: String,
+        seconds: Long,
+        seed: Int,
+        band: Band,
+    ) = attempt(id, seconds, passageId = "sight:1:$seed", band = band)
+
+    private fun sightOutcome(vm: ResultsViewModel) = assertNotNull(assertIs<ResultsState.Ready>(vm.state.value).sight)
+
+    @Test
+    fun sightLevelUpLine() =
+        runTest(dispatcher) {
+            learnSight(Skills.STAFF_STEPS, Skills.TREBLE_CLEF)
+            val vm =
+                results(
+                    "s-2",
+                    sightAttempt("s-1", 100, 1, Band.CLEAN),
+                    sightAttempt("s-2", 200, 2, Band.CLEAN),
+                )
+
+            assertEquals(SightOutcome(level = 1, change = SightChange.UP, newLevel = 2), sightOutcome(vm))
+        }
+
+    @Test
+    fun sightLevelDownLine() =
+        runTest(dispatcher) {
+            learnSight(Skills.STAFF_STEPS, Skills.TREBLE_CLEF)
+            val vm =
+                results(
+                    "s-3",
+                    sightAttempt("s-1", 100, 1, Band.CLEAN),
+                    sightAttempt("s-2", 200, 2, Band.CLEAN),
+                    sightAttempt("s-3", 300, 3, Band.KEEP_PRACTISING),
+                )
+
+            assertEquals(SightOutcome(level = 1, change = SightChange.DOWN, newLevel = 1), sightOutcome(vm))
+        }
+
+    @Test
+    fun sightStaysWhenTheStreakIsNotYetComplete() =
+        runTest(dispatcher) {
+            learnSight(Skills.STAFF_STEPS, Skills.TREBLE_CLEF)
+            val vm = results("s-1", sightAttempt("s-1", 100, 1, Band.CLEAN))
+
+            assertEquals(SightOutcome(level = 1, change = SightChange.STAYS, newLevel = 1), sightOutcome(vm))
+        }
+
+    @Test
+    fun sightReplayLine() =
+        runTest(dispatcher) {
+            learnSight(Skills.STAFF_STEPS, Skills.TREBLE_CLEF)
+            val vm =
+                results(
+                    "s-2",
+                    sightAttempt("s-1", 100, 1, Band.GOOD),
+                    sightAttempt("s-2", 200, 1, Band.CLEAN),
+                )
+
+            assertEquals(SightChange.REPLAY, sightOutcome(vm).change)
+        }
+
+    @Test
+    fun sightHasNoRunNumber() =
+        runTest(dispatcher) {
+            learnSight(Skills.STAFF_STEPS)
+            val vm = results("s-1", sightAttempt("s-1", 100, 1, Band.GOOD))
+
+            val ready = assertIs<ResultsState.Ready>(vm.state.value)
+            assertNull(ready.runNumber)
+            assertNull(ready.spot)
+            assertEquals("Sight-reading level 1", ready.passageTitle)
         }
 }

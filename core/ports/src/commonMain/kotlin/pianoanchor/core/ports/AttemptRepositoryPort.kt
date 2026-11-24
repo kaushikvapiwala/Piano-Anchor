@@ -73,4 +73,10 @@ public interface AttemptRepositoryPort {
         from: LocalDate,
         zone: TimeZone,
     ): Set<LocalDate>
+
+    /**
+     * Attempts whose passage id starts with [prefix], oldest first by [Attempt.startedAt]; empty when none. Throws
+     * [IllegalArgumentException] for a blank prefix, [StorageUnavailableException] when the store can't be read.
+     */
+    public suspend fun attemptsWithPassagePrefix(prefix: String): List<Attempt>
 }

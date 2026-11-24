@@ -36,8 +36,12 @@ import pianoanchor.engine.grading.TimingSummary
 import pianoanchor.engine.grading.noteNumber
 import pianoanchor.engine.grading.noteValue
 import pianoanchor.engine.guidance.SpotFinder
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.profile
+import pianoanchor.engine.sight.SightLevels
+import pianoanchor.engine.sight.SightReadingGenerator
+import pianoanchor.engine.sight.SightStaircase
 
 /**
  * The results of the run saved as [attemptId] in [attempts]: [ResultsState.Loading] until it is read, then
@@ -46,12 +50,16 @@ import pianoanchor.engine.profile
  * (Practice passes it, so rungs that share a tempo stay distinct). The run is analysed with the strictness stored
  * in [settings] (Standard if unreadable), on [analysisDispatcher], off the main thread, so a long passage doesn't
  * stall the screen as it opens.
+ *
+ * A daily sight-reading exercise has no run number and no spot loop; [ResultsState.Ready.sight] says how it moved the
+ * level, from the staircase over the attempts up to and before this one, capped at the level [learner] has opened.
  */
 public class ResultsViewModel(
     private val attemptId: String,
     private val rung: TempoRung,
     private val attempts: AttemptRepositoryPort,
     private val settings: SettingsRepositoryPort,
+    private val learner: LearnerModel,
     private val analysisDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<ResultsState>(ResultsState.Loading)
@@ -83,7 +91,8 @@ public class ResultsViewModel(
 
     private suspend fun load(): ResultsState {
         val attempt = attempts.get(attemptId) ?: return ResultsState.NotFound
-        val passage = Curriculum.passage(attempt.passageId)
+        val passage = Curriculum.passage(attempt.passageId) ?: SightReadingGenerator.fromId(attempt.passageId)
+        val sight = sightOutcome(attempt)
         val strictness = storedStrictness()
         val analysed =
             // A loop's notes and steps are the slice's, not the piece's: no analysis against the whole piece.
@@ -97,7 +106,7 @@ public class ResultsViewModel(
         val words = ResultsWordsRule.of(summary ?: waitSummary(attempt), attempt.tempoBpm, attempt.band)
         return ResultsState.Ready(
             passageTitle = passage?.title ?: attempt.passageId,
-            runNumber = attempts.countStartedBefore(attempt.passageId, attempt.startedAt) + 1,
+            runNumber = runNumber(attempt, sight),
             band = attempt.band,
             // Wait mode moves on only when a step is right, so a finished run has every step correct.
             correctSteps = summary?.correctPitches ?: attempt.stepCount,
@@ -114,20 +123,33 @@ public class ResultsViewModel(
             rung = rung,
             words = words,
             shiftBeats = shiftBeats(summary?.timing, attempt.tempoBpm),
+            sight = sight,
         )
     }
 
-    /** What an attempt with no analysis says: its own counts, no timing, length or pauses. */
-    private fun waitSummary(attempt: Attempt) =
-        ResultsSummary(
-            correctPitches = attempt.stepCount,
-            scoreNotes = attempt.stepCount,
-            timing = null,
-            length = null,
-            hesitation = null,
-            wrongNotes = attempt.wrongNotes,
-            incompleteChords = attempt.incompleteChords,
-        )
+    /** One more than the passage's runs started before [attempt]; none for a sight-reading exercise. */
+    private suspend fun runNumber(
+        attempt: Attempt,
+        sight: SightOutcome?,
+    ): Int? = if (sight == null) attempts.countStartedBefore(attempt.passageId, attempt.startedAt) + 1 else null
+
+    /** How [attempt] moved the sight-reading level; null when it is not a sight-reading exercise. */
+    private suspend fun sightOutcome(attempt: Attempt): SightOutcome? {
+        val (level, _) = SightReadingGenerator.parse(attempt.passageId) ?: return null
+        val open = SightLevels.open(learner.learnedSkills())
+        val all = attempts.attemptsWithPassagePrefix(SIGHT_PREFIX)
+        val upTo = all.takeWhile { it.id != attempt.id } + attempt
+        val before = upTo.dropLast(1)
+        val now = SightStaircase.level(upTo, open)
+        val change =
+            when {
+                before.any { it.passageId == attempt.passageId } -> SightChange.REPLAY
+                now > SightStaircase.level(before, open) -> SightChange.UP
+                now < SightStaircase.level(before, open) -> SightChange.DOWN
+                else -> SightChange.STAYS
+            }
+        return SightOutcome(level, change, now)
+    }
 
     private fun shiftBeats(
         timing: TimingSummary?,
@@ -158,7 +180,9 @@ public class ResultsViewModel(
         attempt: Attempt,
         findings: List<Finding>,
     ): BarRange? {
-        val offered = attempt.mode == RunMode.PRACTICE && attempt.band != Band.CLEAN
+        val offered =
+            attempt.mode == RunMode.PRACTICE && attempt.band != Band.CLEAN &&
+                SightReadingGenerator.parse(attempt.passageId) == null
         return if (offered) SpotFinder.worst(passage, attempt, findings) else null
     }
 
@@ -206,3 +230,16 @@ public class ResultsViewModel(
 }
 
 private const val MILLIS_PER_TENTH = 100
+private const val SIGHT_PREFIX = "sight:"
+
+/** What an attempt with no analysis says: its own counts, no timing, length or pauses. */
+private fun waitSummary(attempt: Attempt) =
+    ResultsSummary(
+        correctPitches = attempt.stepCount,
+        scoreNotes = attempt.stepCount,
+        timing = null,
+        length = null,
+        hesitation = null,
+        wrongNotes = attempt.wrongNotes,
+        incompleteChords = attempt.incompleteChords,
+    )

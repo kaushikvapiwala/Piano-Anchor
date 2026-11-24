@@ -126,6 +126,9 @@ public object SightReadingGenerator {
         seed: Long,
     ): String = "$ID_PREFIX:$level:$seed"
 
+    /** The exercise an id names (see [parse]); null for any other id. */
+    public fun fromId(id: String): Passage? = parse(id)?.let { (level, seed) -> passage(level, seed) }
+
     /** level and seed of a "sight:<level>:<seed>" id; null for any other id. */
     public fun parse(id: String): Pair<Int, Long>? {
         val parts = id.split(':')

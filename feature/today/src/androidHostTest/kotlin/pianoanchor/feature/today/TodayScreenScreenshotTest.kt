@@ -16,6 +16,7 @@ import pianoanchor.engine.content.Skills
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.Session
+import pianoanchor.engine.sight.SightReadingGenerator
 import pianoanchor.ui.shell.PianoAnchorTheme
 import kotlin.time.Instant
 
@@ -84,6 +85,31 @@ class TodayScreenScreenshotTest {
                         songMinutes = 6,
                         earMinutes = 3,
                         moreDue = emptyList(),
+                    ),
+                piano = piano,
+                daysThisWeek = 3,
+                practicedDays = 9,
+            ),
+        )
+
+    @Test
+    fun sightReadingCard() =
+        capture(
+            "sight_card",
+            TodayState(
+                session =
+                    Session(
+                        cards =
+                            listOf(
+                                Card.Song(passage("hot-cross-buns"), TempoRung.P70, 14),
+                                Card.SightReading(2, SightReadingGenerator.passage(2, SIGHT_SEED), 4),
+                            ),
+                        reviewMinutes = 0,
+                        lessonMinutes = 0,
+                        songMinutes = 14,
+                        earMinutes = 0,
+                        moreDue = emptyList(),
+                        sightMinutes = 4,
                     ),
                 piano = piano,
                 daysThisWeek = 3,
@@ -193,6 +219,8 @@ class TodayScreenScreenshotTest {
 
 /** Android API level the screenshots render with (the newest Robolectric supports). */
 private const val SDK = 36
+
+private const val SIGHT_SEED = 20_000L
 
 // Skills as the goldens show them, fixed here so renaming curriculum skills doesn't redraw the Today screen.
 private val RIGHT_HAND_STEPS = Skill("rh-steps", "Right hand steps", emptySet())

@@ -41,6 +41,8 @@ private const val COUNT_IN_NUMERALS = 3
  * ([PassagePlayer]); [listening] while it does, with [demoStep] the step sounding and [demoKeys] its keys.
  * A Unit 0 passage hides the staff ([staffHidden], set by the ViewModel) and glows every next key while a run is
  * under way. [played] is true once a key was pressed in the run (the Listen button then goes).
+ * A [sightReading] exercise runs in wait mode from the staff alone: the screen hides the tempo chips, the perform
+ * switch and the Hint button.
  */
 public data class PracticeState(
     val passage: Passage,
@@ -73,6 +75,7 @@ public data class PracticeState(
     val demoKeys: Set<MidiNote> = emptySet(),
     val staffHidden: Boolean = false,
     val played: Boolean = false,
+    val sightReading: Boolean = false,
 ) {
     init {
         require(steps.size == passage.steps.size) {

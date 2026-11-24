@@ -21,6 +21,7 @@ import pianoanchor.engine.lesson.QuizMaker
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.Session
+import pianoanchor.engine.sight.SightReadingGenerator
 import pianoanchor.ui.shell.PianoAnchorTheme
 import kotlin.random.Random
 import kotlin.test.assertEquals
@@ -84,6 +85,21 @@ class TodayScreenTest {
             onNodeWithText("Quick quizzes · 2").assertIsDisplayed()
             onNodeWithText("About 1 min, checked by your piano").assertIsDisplayed()
             onNodeWithText("Start quizzes").performClick()
+
+            assertEquals(listOf<Card>(card), started)
+        }
+
+    @Test
+    fun theSightReadingCardShowsAndOpensTheExercise() =
+        runComposeUiTest {
+            val card = Card.SightReading(3, SightReadingGenerator.passage(3, 1), 2)
+            val started = mutableListOf<Card>()
+            val state = TodayState(session = Session(listOf(card), 0, 0, 0, 0, emptyList(), sightMinutes = 2))
+            setContent { PianoAnchorTheme { TodayScreen(state, TodayActions(onStart = { started += it })) } }
+
+            onNodeWithText("Sight-reading").assertIsDisplayed()
+            onNodeWithText("One unseen exercise · 2 min").assertIsDisplayed()
+            onNodeWithText("Start sight-reading").performClick()
 
             assertEquals(listOf<Card>(card), started)
         }

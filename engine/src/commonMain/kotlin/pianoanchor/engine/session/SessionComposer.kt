@@ -16,6 +16,7 @@ import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.lesson.QuizMaker
 import pianoanchor.engine.matcher.TempoRung
+import pianoanchor.engine.sight.SightReadingGenerator
 import kotlin.random.Random
 import kotlin.time.Instant
 
@@ -74,6 +75,19 @@ public sealed interface Card {
         override val mode: RunMode = RunMode.PRACTICE
     }
 
+    /**
+     * One unseen exercise of the staircase [level] (`docs/algorithms/sight-reading.md`), played in wait mode from the
+     * staff alone: no hints, no hear-first.
+     */
+    public data class SightReading(
+        val level: Int,
+        override val passage: Passage,
+        override val minutes: Int = 0,
+    ) : PassageCard {
+        override val rung: TempoRung = TempoRung.WAIT
+        override val mode: RunMode = RunMode.PRACTICE
+    }
+
     /** The piece in progress at its next tempo rung. */
     public data class Song(
         override val passage: Passage,
@@ -85,9 +99,9 @@ public sealed interface Card {
 }
 
 /**
- * Today's session: the [cards] in order, the minutes of the Review, Lesson, Song and Ear segments (0 for a missing
- * card; they sum to the budget unless there are no cards) and the due skills beyond the cold open, [moreDue], practised
- * from the Review segment in plan order.
+ * Today's session: the [cards] in order, the minutes of the Review, Lesson, Song, Ear and Sight-reading segments (0
+ * for a missing card; they sum to the budget unless there are no cards) and the due skills beyond the cold open,
+ * [moreDue], practised from the Review segment in plan order.
  */
 public data class Session(
     val cards: List<Card>,
@@ -96,13 +110,15 @@ public data class Session(
     val songMinutes: Int,
     val earMinutes: Int,
     val moreDue: List<SkillState>,
+    val sightMinutes: Int = 0,
 )
 
 private const val SEED_PRIME = 31L
 private const val SECONDS_PER_MINUTE = 60
 
-/** The index of the Ear segment among the shares. */
-private const val EAR_SEGMENT = 3
+/** The indices of the Sight-reading and Ear segments among the shares. */
+private const val SIGHT_SEGMENT = 3
+private const val EAR_SEGMENT = 4
 
 /** Turns a daily plan into Today's cards and session bar (`docs/algorithms/session-composer.md`). Pure. */
 public object SessionComposer {
@@ -116,6 +132,8 @@ public object SessionComposer {
      * card (seeded by [day] and the skill id, so a day's quiz is stable); the cold open takes the other due skills.
      * The quizzes' minutes are part of the Review segment.
      * The song is a piece with no lock: played before new, then public domain before original, then curriculum order.
+     * A Sight-reading card follows the song when [sightLevel] is at least 1 (0 means closed) and [sightDoneToday] is
+     * false: the exercise of that level seeded by [day]'s epoch day.
      */
     public fun compose(
         plan: DailyPlan,
@@ -126,6 +144,8 @@ public object SessionComposer {
         day: LocalDate,
         graph: SkillGraph = curriculum.graph,
         quizzesDone: Int = 0,
+        sightLevel: Int = 0,
+        sightDoneToday: Boolean = false,
     ): Session {
         val (dueEar, dueNotEar) = plan.due.partition { graph.byId(it.skillId)?.track == Track.EAR }
         val taught = CourseProgress.ticked(curriculum, history)
@@ -137,17 +157,25 @@ public object SessionComposer {
         val earSkills = dueEar.mapNotNull { graph.byId(it.skillId) } + plan.new.filter { it.track == Track.EAR }
         val used = listOfNotNull(cold?.passage, lesson?.passage).map { it.id }
         val song = song(curriculum, history, learned, used)
+        val sight =
+            if (sightLevel >= 1 && !sightDoneToday) {
+                Card.SightReading(sightLevel, SightReadingGenerator.passage(sightLevel, day.toEpochDays()))
+            } else {
+                null
+            }
         val shares =
             listOf(
                 Tunables.SESSION_SHARE_REVIEW.takeIf { cold != null } ?: 0.0,
                 Tunables.SESSION_SHARE_LESSON.takeIf { lesson != null } ?: 0.0,
                 Tunables.SESSION_SHARE_SONG.takeIf { song != null } ?: 0.0,
+                Tunables.SESSION_SHARE_SIGHT.takeIf { sight != null } ?: 0.0,
                 Tunables.SESSION_SHARE_EAR.takeIf { earSkills.isNotEmpty() } ?: 0.0,
             )
         val quizMinutes = quizMinutes(quizzes.size)
         val minutes = split((budget.minutes - quizMinutes).coerceAtLeast(0), shares)
         val (coldMinutes, lessonMinutes, songMinutes) = minutes
         val review = coldMinutes + quizMinutes
+        val sightMinutes = minutes[SIGHT_SEGMENT]
         val earMinutes = minutes[EAR_SEGMENT]
         val ear =
             Card
@@ -159,6 +187,7 @@ public object SessionComposer {
                 cold?.copy(minutes = coldMinutes),
                 lesson?.copy(minutes = lessonMinutes),
                 song?.copy(minutes = songMinutes),
+                sight?.copy(minutes = sightMinutes),
                 ear,
             )
         return Session(
@@ -168,6 +197,7 @@ public object SessionComposer {
             songMinutes,
             earMinutes,
             dueOther.filter { state -> state.skillId != cold?.let { it.skill.id } },
+            sightMinutes,
         )
     }
 
