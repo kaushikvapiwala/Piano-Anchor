@@ -6,3 +6,7 @@ where every value carries `Why:` and `Source:` in its KDoc (enforced by `archite
 
 One file per engine area (matcher, analysis, learner model, scheduler, session composer) is added together
 with the code it explains. Update the note in the same PR whenever the approach changes.
+
+## Index
+
+- `docs/algorithms/sight-reading.md`: the generated sight-reading exercises and the staircase that picks their level.

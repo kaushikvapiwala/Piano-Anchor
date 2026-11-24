@@ -976,4 +976,33 @@ public object Tunables {
      * Source: owner's probe 2026-11-15 (ADR 0025): one-way 10 to 16 ms; starting value, owner-approved 2026-11-24.
      */
     public const val CALIBRATION_BLE_DEFAULT_MS: Long = 15
+
+    /**
+     * How many bars a sight-reading exercise has.
+     *
+     * Why: short enough to read at one glance, long enough for a phrase.
+     *
+     * Source: owner decision 2026-11-24.
+     */
+    public const val SIGHT_BARS: Int = 4
+
+    /**
+     * How many clean first plays in a row move the sight-reading staircase up one level (one KEEP_PRACTISING
+     * moves it down one).
+     *
+     * Why: a 2-up/1-down staircase settles near 70% clean first plays, hard enough to stretch and easy enough to
+     * keep going.
+     *
+     * Source: Levitt (1971), transformed up-down methods.
+     */
+    public const val SIGHT_UP_STREAK: Int = 2
+
+    /**
+     * The written tempo of a sight-reading exercise, in quarter notes per minute.
+     *
+     * Why: a placeholder: sight-reading runs in wait mode, which ignores tempo, but a passage must state one.
+     *
+     * Source: matches the course's slow default.
+     */
+    public const val SIGHT_TEMPO_BPM: Int = 72
 }

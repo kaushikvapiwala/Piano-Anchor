@@ -82,6 +82,8 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Step | One moment in a passage: the keys to press together (one note, or a chord) at its onset, each with a written length in ticks (`ScoreNote`). Wait mode reads only its pitches. |
 | Strictness | The learner's Settings choice of Gentle, Standard (default) or Strict: it scales the timing tolerance and the CLEAN and GOOD accuracy bands of the next run (`StrictnessProfile`, `docs/algorithms/grading.md`). |
 | Skill graph | The skills and their prerequisites as a validated acyclic graph (`SkillGraph`); `unlocked` lists the skills a learner may start next. See `docs/algorithms/learner-model.md`. |
+| Sight level | One of the eight rungs of the sight-reading staircase, 1 to 8 (`SightLevel`); a level opens only once its skill, and every skill before it, is learned (`SightLevels.open`). |
+| Sight-reading staircase | The rule that picks the level of the next generated exercise: up one after 2 clean first plays in a row, down one after a keep-practising first play, derived from saved attempts (`SightStaircase`, `docs/algorithms/sight-reading.md`). |
 | Sustain pedal | The right (damper) pedal, sent as control change 64; values 64–127 hold every released note sounding until it drops below 64. |
 | SysEx | System Exclusive: a variable-length, vendor-specific MIDI message framed by 0xF0 and 0xF7. |
 | Track | A strand of the curriculum a skill belongs to (`Track`: core, songs, ear). All tracks share one skill graph, one due list and one daily budget; new skills rotate between tracks (`docs/algorithms/learner-model.md`). |
