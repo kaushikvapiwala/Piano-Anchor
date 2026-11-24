@@ -174,8 +174,8 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
     detail counts the same findings (wrong, missed, incomplete chords), so it never says "every note right" next to a
     value below full.
   - Timing: "±31 ms" (mean deviation), in the timing orange when any note was early or late, else blue; detail "in
-    time", "late at note 6" or "early at note 3" (notes numbered from 1 in score order). A run played without a latency
-    offset adds " · not calibrated" to the detail.
+    time", "late at note 6" or "early at note 3" (notes numbered from 1 in score order). Only an attempt stored before the link
+    delay was measured automatically has no latency offset; it adds " · not calibrated" to the detail.
   - Note length: "86%" of notes held right; detail "every note held right", "half note held short" or "note 4 held
     long" (a note value is named only for whole, half and quarter notes).
   - Hesitation: "no pauses", "1 pause", "2 pauses"; detail the longest pause, "1.4 s before D4".

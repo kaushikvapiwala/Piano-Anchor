@@ -15,6 +15,7 @@ import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
+import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.engine.Tunables
@@ -199,7 +200,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
             assertEquals(Skills.MIDDLE_C, card.skill)
         }
 
-    private val remembered = MidiDevice("ble:AA:BB:CC:DD:EE:01", "Casio CDP-S160")
+    private val remembered = MidiDevice("ble:AA:BB:CC:DD:EE:01", "Casio CDP-S160", MidiTransport.BLUETOOTH)
 
     /** A Today whose wired piano is unplugged, with [remembered] stored (or not) and advertising. */
     private suspend fun TestScope.reconnecting(
@@ -337,7 +338,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
     @Test
     fun theChipReadsBluetoothAndUncalibratedPianos() =
         runTest(dispatcher) {
-            val ble = FakePiano(device = MidiDevice("ble:AA:BB", "Casio"))
+            val ble = FakePiano(device = MidiDevice("ble:AA:BB", "Casio", MidiTransport.BLUETOOTH))
             val vm =
                 TodayViewModel(
                     LearnerModel(Curriculum.graph, learnerRepository),

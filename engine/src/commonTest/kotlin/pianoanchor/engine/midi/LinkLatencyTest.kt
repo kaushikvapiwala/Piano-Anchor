@@ -1,6 +1,7 @@
 package pianoanchor.engine.midi
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
@@ -54,10 +55,18 @@ class LinkLatencyTest {
         piano.replyTo = {
             val delay = delays[n++ % delays.size]
             first?.let { piano.play(bytes(it)) }
-            piano.clock.advanceNanos(delay * ms)
-            bytes(identityReply)
+            reply(delay)
+            null
         }
     }
+
+    /** The piano's Identity Reply, stamped [delayMs] after the request was sent (the clock stands still). */
+    private fun reply(delayMs: Long) =
+        piano.play(
+            bytes(identityReply),
+            stampNanos =
+                piano.clock.nowNanos() + delayMs * ms,
+        )
 
     private suspend fun measure(input: MidiInputPort = piano) =
         measureLinkLatencyNanos(piano.device, input, piano, piano.clock)
@@ -67,15 +76,15 @@ class LinkLatencyTest {
         runTest {
             answerAfter(listOf(30, 21, 40))
             assertEquals(10_500_000L, measure())
-            assertEquals(Tunables.CALIBRATION_PING_COUNT, piano.sent.size)
+            assertEquals(1 + Tunables.CALIBRATION_PING_COUNT, piano.sent.size) // a warm-up and the timed pings
         }
 
     @Test
     fun aSilentPianoGivesNullAfterOneTimeout() =
         runTest {
             assertNull(measure())
-            assertEquals(1, piano.sent.size)
-            assertEquals(Tunables.CALIBRATION_PING_TIMEOUT_MS, currentTime)
+            assertEquals(2, piano.sent.size) // the warm-up and the first timed ping, which ends it
+            assertEquals(2 * Tunables.CALIBRATION_PING_TIMEOUT_MS, currentTime)
         }
 
     @Test
@@ -83,12 +92,8 @@ class LinkLatencyTest {
         runTest {
             var n = 0
             piano.replyTo = {
-                if (n++ < 2) {
-                    piano.clock.advanceNanos(20 * ms)
-                    bytes(identityReply)
-                } else {
-                    null
-                }
+                if (n++ < 2) reply(20)
+                null
             }
             assertNull(measure())
             assertEquals(3, piano.sent.size)
@@ -106,11 +111,37 @@ class LinkLatencyTest {
         runTest {
             var n = 0
             piano.replyTo = {
-                piano.clock.advanceNanos(10 * ms)
-                if (n++ == 0) piano.play(bytes(identityReply), stampNanos = piano.clock.nowNanos() - 20 * ms)
-                bytes(identityReply)
+                // The first timed ping (the second request) first gets a reply stamped before its send.
+                if (n++ == 1) piano.play(bytes(identityReply), stampNanos = piano.clock.nowNanos() - 20 * ms)
+                reply(10)
+                null
             }
             assertEquals(5_000_000L, measure())
+        }
+
+    @Test
+    fun aReaderThatConnectsLateStillGivesTheTimedPings() =
+        runTest {
+            // The first reply (to the warm-up) arrives before the input is open and is lost.
+            val slow =
+                object : MidiInputPort by piano {
+                    override fun events(device: MidiDevice): Flow<MidiEvent> =
+                        piano.events(device).onStart { delay(100) }
+                }
+            answerAfter(listOf(30, 21, 40))
+            assertEquals(10_500_000L, measure(slow))
+        }
+
+    @Test
+    fun aQueuedReplyFromAnEarlierPingIsNotCounted() =
+        runTest {
+            piano.replyTo = {
+                reply(20)
+                // A duplicate that would read as a 2 ms round trip to the next ping.
+                reply(2)
+                null
+            }
+            assertEquals(10_000_000L, measure())
         }
 
     @Test
@@ -152,7 +183,7 @@ class LinkLatencyTest {
                         flow { throw MidiDeviceUnavailableException(device.id) }
                 }
             assertNull(measure(unreadable))
-            assertEquals(1, piano.sent.size)
+            assertEquals(2, piano.sent.size)
             assertEquals(0, currentTime)
         }
 
@@ -161,8 +192,8 @@ class LinkLatencyTest {
         runTest {
             piano.replyTo = {
                 piano.press(MidiNote(60))
-                piano.clock.advanceNanos(20 * ms)
-                bytes(identityReply)
+                reply(20)
+                null
             }
             assertEquals(10_000_000L, measure())
         }

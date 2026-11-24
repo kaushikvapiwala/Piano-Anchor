@@ -100,9 +100,10 @@ public object Grader {
      * are already rebased so 0 is the written time of tick 0. Accuracy is the score notes without a finding over the
      * score notes plus the `EXTRA_NOTE` and `MISTOUCH` findings (`docs/algorithms/grading.md`); an extra or brushed key
      * adds to the denominator but doesn't spoil the score note it points at. The attempt keeps no match events;
-     * [Attempt.durationNanos] is when the last key came up (0 if before tick 0). [latencyOffsetNanos] (null when
-     * uncalibrated) is subtracted from the notes' times before they are analysed; the attempt stores it and the notes
-     * as played. [strictness] sets the early/late tolerance and the bands.
+     * [Attempt.durationNanos] is when the last key came up (0 if before tick 0). [latencyOffsetNanos] (null means none,
+     * as for attempts stored before the link delay was measured) is subtracted from the notes' times before they are
+     * analysed; the attempt stores it and the notes as played. [strictness] sets the early/late tolerance and the
+     * bands.
      */
     public fun timedAttempt(
         id: String,

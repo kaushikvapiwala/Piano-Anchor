@@ -87,8 +87,8 @@ import kotlin.time.Instant
  * offset a tap calibration stored in [calibration], else the one [measureLinkLatencyNanos] finds over [output] before
  * the run opens the input (measured once per ViewModel), else the default of the piano's transport. Wait mode
  * measures nothing. The attempt records the offset used.
- * The ViewModel starts on [initialRung] (wait mode by default) in [initialMode] (practice by default), so
- * returning from a calibration lands on the rung and mode the learner had picked.
+ * The ViewModel starts on [initialRung] (wait mode by default) in [initialMode] (practice by default); a
+ * spot loop starts one rung below [initialRung].
  *
  * [selectMode] switches between practice and perform (`docs/algorithms/guidance.md`). A perform run needs a timed
  * rung: no hint ever shows, the live verdicts (marks, tags, the key strip's text, wrong-key colours) stay hidden, and
@@ -831,7 +831,7 @@ public class PracticeViewModel(
             startNanos = firstBeatNanos + beatsPerBar * beatNanos
             val timing = TempoJudge(passage, bpm, startNanos, latencyOffsetNanos, strictness)
             judge = timing
-            endNanos = timing.endNanos + (latencyOffsetNanos).coerceAtLeast(0)
+            endNanos = timing.endNanos + latencyOffsetNanos.coerceAtLeast(0)
             mutableState.update { it.copy(keysDown = it.keysDown + starter.note) }
             val click = ClickPattern(firstBeatNanos, beatNanos, beatsPerBar)
             pattern = click

@@ -14,6 +14,7 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.MemoryState
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.SkillState
@@ -45,7 +46,7 @@ abstract class TodayViewModelFixture {
     protected val settings = FakeSettingsRepository(Settings(dailyBudget = DailyBudget.MIN_20, weeklyGoalDays = 4))
     protected val attempts = FakeAttemptRepository()
     protected val calibration = FakeCalibrationRepository()
-    protected val piano = FakePiano(device = MidiDevice("usb:Roland/FP-30X", "FP-30X"))
+    protected val piano = FakePiano(device = MidiDevice("usb:Roland/FP-30X", "FP-30X", MidiTransport.USB))
     protected val clock = FakeWallClock(now)
     protected val updateCheck = FakeUpdateCheck()
 

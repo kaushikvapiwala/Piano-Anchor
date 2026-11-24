@@ -13,17 +13,21 @@ large.
 `measureLinkLatencyNanos(device, input, output, clock)` (`engine/src/commonMain/kotlin/pianoanchor/engine/midi/LinkLatency.kt`) times the MIDI Identity
 Request round trip (`docs/protocols/midi-identity.md`):
 
-1. It opens a reader on the piano's input, then sends `IdentityCodec.REQUEST` up to `CALIBRATION_PING_COUNT` times, one
-   after another. Each send is noted on the `ClockPort` clock.
-2. Each request waits up to `CALIBRATION_PING_TIMEOUT_MS` for a SysEx that `IdentityCodec.parseReply` accepts, and
+1. It opens a reader on the piano's input, then sends one warm-up `IdentityCodec.REQUEST` and waits up to
+   `CALIBRATION_PING_TIMEOUT_MS` for a reply. The input may still be opening (the adapter's `events` suspends while the
+   port opens), so the first reply can arrive before anyone listens and be lost. The warm-up's reply, or its absence,
+   is not counted and does not end the measurement.
+   Then it sends `CALIBRATION_PING_COUNT` timed requests, one after another. Before each request (the warm-up too) it
+   discards replies still queued, and it notes the `ClockPort` time right after the send returns.
+2. Each timed request waits up to `CALIBRATION_PING_TIMEOUT_MS` for a SysEx that `IdentityCodec.parseReply` accepts, and
    takes the reply's timestamp minus the send time as the round trip. Android stamps incoming MIDI when it arrives,
    so the stamp is already free of delivery jitter. Any other message is ignored, and so is a round trip of zero or
    less (a late reply to an earlier request).
 3. The result is half the smallest round trip. The smallest is the one with the least queueing, so it is the closest
    to the true one-way delay; half assumes the two directions take equally long.
-4. No reply to a request ends the measurement with null: a piano that is silent once will not answer later, so the
-   wait is paid once (300 ms). A piano with no MIDI output, or a send that fails because the piano went away, gives
-   null at once.
+4. No reply to a timed request ends the measurement with null: a piano that is silent will not answer later, so the
+   wait is paid twice at most (the warm-up and the first timed request, 600 ms). A piano with no MIDI output, or a
+   send that fails because the piano went away (warm-up included), gives null at once.
 5. The reader is closed before the function returns. An input has one reader at a time, so the run's own reader opens
    only after the measurement has finished.
 
@@ -44,7 +48,7 @@ The owner's probe on a Bluetooth LE piano gave a smallest round trip of 21 ms (m
 `TempoJudge` and `Grader.timedAttempt` subtract it from played times. The attempt keeps its played notes as played and
 stores the offset used (`Attempt.latencyOffsetNanos`), so Results subtract the same value later. The learner sees no
 message about which of the three applied. The measurement is not stored: it follows a link that changed, and the
-store keeps meaning "a tap result". A timed run on a piano without a tap result starts about 0.3 s later.
+store keeps meaning "a tap result". A timed run on a piano without a tap result starts about 0.3 s later on a piano that answers, up to 0.6 s on a silent one.
 
 ## Tap calibration ("Fine-tune timing")
 `LatencyCalibration.clickTimes` lays out `CALIBRATION_CLICKS` clicks at `CALIBRATION_BPM` (60 BPM, one click a

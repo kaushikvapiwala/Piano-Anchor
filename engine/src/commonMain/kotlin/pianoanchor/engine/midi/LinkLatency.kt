@@ -21,11 +21,14 @@ private const val HALF = 2
 
 /**
  * Half the smallest Identity Request round trip to [device], in nanoseconds, or null when the piano never answered
- * (`docs/algorithms/latency-calibration.md`). Sends `Tunables.CALIBRATION_PING_COUNT` requests one after another and
- * times each from the send on [clock] to the reply's timestamp; a reply stamped no later than its send is ignored.
- * The first request that gets no reply within `Tunables.CALIBRATION_PING_TIMEOUT_MS` ends it with null, as does a
- * [device] without an output or a send that fails with [MidiDeviceUnavailableException]. The reader it opens on
- * [input] is closed before this returns, so the caller can open the input next.
+ * (`docs/algorithms/latency-calibration.md`). It first sends one warm-up request and waits up to
+ * `Tunables.CALIBRATION_PING_TIMEOUT_MS` for a reply, because the input may still be opening and lose the first
+ * reply; whether that reply comes or not, it is not counted and does not end the measurement. Then it sends
+ * `Tunables.CALIBRATION_PING_COUNT` timed requests one after another and times each from the moment its send
+ * returned on [clock] to the reply's timestamp; replies queued before a request are discarded and a reply stamped no
+ * later than its send is ignored. The first timed request that gets no reply within the timeout ends it with null,
+ * as does a [device] without an output or any send that fails with [MidiDeviceUnavailableException]. The reader it
+ * opens on [input] is closed before this returns, so the caller can open the input next.
  */
 public suspend fun measureLinkLatencyNanos(
     device: MidiDevice,
@@ -52,29 +55,35 @@ public suspend fun measureLinkLatencyNanos(
             }
         try {
             val roundTrips = ArrayList<Long>()
+            pingOnce(device, output, replies, clock) // warm-up: the input may not be open yet
             repeat(Tunables.CALIBRATION_PING_COUNT) {
-                val sent = clock.nowNanos()
-                roundTrips += pingOnce(device, output, replies, sent) ?: return@coroutineScope null
+                roundTrips += pingOnce(device, output, replies, clock) ?: return@coroutineScope null
             }
             roundTrips.min() / HALF
+        } catch (_: MidiDeviceUnavailableException) {
+            null
         } finally {
             reader.cancelAndJoin()
         }
     }
 }
 
-/** One round trip in nanoseconds, or null if the send failed or no usable reply came in time. */
+/**
+ * One round trip in nanoseconds, or null if no usable reply came in time. Replies already queued are dropped first and
+ * the clock is read right after the send returns.
+ * @throws MidiDeviceUnavailableException if the send fails.
+ */
 private suspend fun pingOnce(
     device: MidiDevice,
     output: MidiOutputPort,
     replies: Channel<Long>,
-    sent: Long,
+    clock: ClockPort,
 ): Long? {
-    try {
-        output.send(device, IdentityCodec.REQUEST)
-    } catch (_: MidiDeviceUnavailableException) {
-        return null
+    while (replies.tryReceive().isSuccess) {
+        // Discard replies to earlier requests.
     }
+    output.send(device, IdentityCodec.REQUEST)
+    val sent = clock.nowNanos()
     return withTimeoutOrNull(Tunables.CALIBRATION_PING_TIMEOUT_MS) {
         var roundTrip = 0L
         while (roundTrip <= 0) {

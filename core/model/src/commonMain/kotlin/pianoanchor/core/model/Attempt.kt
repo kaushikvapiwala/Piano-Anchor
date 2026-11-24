@@ -14,7 +14,7 @@ public enum class Band { CLEAN, GOOD, KEEP_PRACTISING }
  * [MIN_TEMPO_BPM]..[MAX_TEMPO_BPM], null for wait mode. [playedNotes] are the take's notes, rebased so 0 is the written
  * time of tick 0 for a timed run and the first NoteOn for wait mode (empty for attempts stored before they were kept).
  * [latencyOffsetNanos] is the piano's latency offset the run was judged with (positive: its notes arrive late), kept so
- * Results recompute the same verdicts; null when the run was played uncalibrated, and for wait mode. [playedNotes]
+ * Results recompute the same verdicts; null for wait mode and for timed attempts stored before the link delay was measured automatically. [playedNotes]
  * stay as played: the offset is subtracted only when they are analysed. [hintLevel] is the key-hint level the run
  * started at and [hintShown] whether any hint was shown during it (see [HintLevel]); attempts stored before hints
  * faded are FULL and shown. [mode] is how the run was played (attempts stored before perform mode are PRACTICE). [spot]

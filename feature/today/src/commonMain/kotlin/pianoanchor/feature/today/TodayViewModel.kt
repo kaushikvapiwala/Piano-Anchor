@@ -21,6 +21,7 @@ import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
+import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Settings
@@ -243,10 +244,10 @@ public class TodayViewModel(
 }
 
 private fun transportOf(device: MidiDevice): Transport? =
-    when {
-        device.id.startsWith("usb:") -> Transport.USB
-        device.id.startsWith("ble:") -> Transport.BLE
-        else -> null
+    when (device.transport) {
+        MidiTransport.USB -> Transport.USB
+        MidiTransport.BLUETOOTH -> Transport.BLE
+        MidiTransport.OTHER -> null
     }
 
 private fun greetingAt(hour: Int): Greeting =

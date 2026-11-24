@@ -70,8 +70,11 @@ class PracticeViewModelCalibrationTest {
     /** The piano answers each Identity Request [roundTripMs] later, so the measured link delay is half of that. */
     private fun answerWithRoundTrip(roundTripMs: Long) {
         piano.replyTo = {
-            clock.advanceNanos(roundTripMs * ms)
-            identityReply.map { it.toByte() }.toByteArray()
+            piano.play(
+                identityReply.map { it.toByte() }.toByteArray(),
+                stampNanos = clock.nowNanos() + roundTripMs * ms,
+            )
+            null
         }
     }
 
@@ -199,13 +202,13 @@ class PracticeViewModelCalibrationTest {
         }
 
     @Test
-    fun aSilentPianoWaitsOneTimeoutThenRunsOnTheTransportDefault() =
+    fun aSilentPianoWaitsTwoTimeoutsThenRunsOnTheTransportDefault() =
         runPractice {
             val vm = practice(initialRung = TempoRung.P60)
             press(c4) // dropped: the link is still being measured
             assertNull(metronome.running.value)
 
-            advanceTimeBy(Tunables.CALIBRATION_PING_TIMEOUT_MS)
+            advanceTimeBy(2 * Tunables.CALIBRATION_PING_TIMEOUT_MS) // the warm-up and the first timed ping
             runCurrent()
             press(c4)
 
@@ -254,7 +257,7 @@ class PracticeViewModelCalibrationTest {
             vm.selectRung(TempoRung.P60)
             runCurrent()
 
-            assertEquals(Tunables.CALIBRATION_PING_COUNT, sentAfterFirst)
+            assertEquals(1 + Tunables.CALIBRATION_PING_COUNT, sentAfterFirst) // a warm-up and the timed pings
             assertEquals(sentAfterFirst, piano.sent.size)
         }
 
