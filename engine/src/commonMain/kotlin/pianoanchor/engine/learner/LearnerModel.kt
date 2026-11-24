@@ -34,6 +34,9 @@ internal const val EAR_ATTEMPT_ID_PREFIX: String = "ear:"
 /** The prefix of the attempt id of a review recorded from a review quiz. */
 internal const val QUIZ_ATTEMPT_ID_PREFIX: String = "quiz:"
 
+/** The attempt-id prefixes of reviews that make a learner day a practice day ([LearnerModel.reviewDays]). */
+private val REVIEW_DAY_PREFIXES: List<String> = listOf(EAR_ATTEMPT_ID_PREFIX, QUIZ_ATTEMPT_ID_PREFIX)
+
 /** The rating of a cold check from the band of the run: never EASY (`docs/algorithms/learner-model.md`). */
 public fun Band.toRating(): Rating =
     when (this) {
@@ -130,10 +133,8 @@ public class LearnerModel(
             .states()
             .keys
             .flatMap { repository.reviews(it) }
-            .filter {
-                (it.attemptId.startsWith(EAR_ATTEMPT_ID_PREFIX) || it.attemptId.startsWith(QUIZ_ATTEMPT_ID_PREFIX)) &&
-                    it.day >= from
-            }.mapTo(HashSet()) { it.day }
+            .filter { review -> review.day >= from && REVIEW_DAY_PREFIXES.any { review.attemptId.startsWith(it) } }
+            .mapTo(HashSet()) { it.day }
 
     /**
      * How many review quizzes were recorded on [day] (attempt id starting with [QUIZ_ATTEMPT_ID_PREFIX]). Throws
