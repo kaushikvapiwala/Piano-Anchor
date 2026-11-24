@@ -211,9 +211,6 @@ class PracticeScreenScreenshotTest {
                 saveFailed = true,
             ),
         )
-
-    @Test
-    fun calibrateCard() = capture("calibrate_card", timed.copy(calibrationOffered = true))
 }
 
 /** Android API level the Robolectric tests run with (the newest Robolectric supports). */

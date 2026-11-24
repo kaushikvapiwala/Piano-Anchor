@@ -20,6 +20,7 @@ import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
+import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.model.NoteOn
 import pianoanchor.engine.Tunables
 import java.io.IOException
@@ -35,7 +36,8 @@ import kotlin.test.assertTrue
 class AndroidMidiAdapterTest {
     private val system = FakeMidiSystem(PIANO)
     private val adapter = AndroidMidiAdapter(system, CoroutineScope(Job()))
-    private val piano = MidiDevice(id = "usb:Acme/Stage Piano/SN1", name = "Acme Stage Piano")
+    private val piano =
+        MidiDevice(id = "usb:Acme/Stage Piano/SN1", name = "Acme Stage Piano", transport = MidiTransport.USB)
 
     private fun TestScope.collect(device: MidiDevice = piano): MutableList<MidiEvent> {
         val events = mutableListOf<MidiEvent>()
@@ -203,8 +205,8 @@ class AndroidMidiAdapterTest {
             val found = bleAdapter().scan().toList().last()
             assertEquals(
                 listOf(
-                    MidiDevice("ble:AA:BB:CC:00:00:01", FALLBACK_DEVICE_NAME),
-                    MidiDevice("ble:AA:BB:CC:00:00:02", FALLBACK_DEVICE_NAME),
+                    MidiDevice("ble:AA:BB:CC:00:00:01", FALLBACK_DEVICE_NAME, MidiTransport.BLUETOOTH),
+                    MidiDevice("ble:AA:BB:CC:00:00:02", FALLBACK_DEVICE_NAME, MidiTransport.BLUETOOTH),
                 ),
                 found,
             )
@@ -658,7 +660,7 @@ class AndroidMidiAdapterTest {
 
     private companion object {
         const val BLE_ADDRESS = "AA:BB:CC:DD:EE:01"
-        val BLE_PIANO = MidiDevice("ble:$BLE_ADDRESS", "Acme MIDI")
+        val BLE_PIANO = MidiDevice("ble:$BLE_ADDRESS", "Acme MIDI", MidiTransport.BLUETOOTH)
         val NOTE_ON_C4 = byteArrayOf(0x90.toByte(), 60, 100)
         val SUSTAIN_DOWN = byteArrayOf(0xB0.toByte(), 64, 127)
     }

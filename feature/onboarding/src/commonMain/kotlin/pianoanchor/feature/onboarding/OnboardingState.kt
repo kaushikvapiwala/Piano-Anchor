@@ -11,9 +11,6 @@ public enum class OnboardingStep {
     /** The piano plays C-E-G and the learner echoes it. */
     ECHO,
 
-    /** The tap calibration (the screen embeds `CalibrationScreen`). */
-    CALIBRATE,
-
     /** Unit 0 or "I can already play". */
     START_POINT,
 }

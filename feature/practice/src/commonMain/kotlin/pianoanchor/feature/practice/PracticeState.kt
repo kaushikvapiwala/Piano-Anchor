@@ -25,8 +25,6 @@ private const val COUNT_IN_NUMERALS = 3
  * where a timed run is (always [RunPhase.READY] in wait mode); [beat] is the beat in the bar for the pulse (1-based, 0
  * before the first click and outside a run); [clickOn] is whether the metronome clicks; [liveMarks] are the live
  * judge's verdicts so far. In a timed run [currentStep] is the cursor and only that step is [StepStatus.WAITING].
- * [calibrationOffered] is true while the screen offers to calibrate the piano's timing before a timed run (the run
- * waits for Calibrate or Skip).
  *
  * Key hints (`docs/algorithms/guidance.md`): [hintLevel] is the level the run started at and [hintVisible] whether the
  * amber band shows on the waiting step's keys right now (the screen keeps it false until the run's level is read).
@@ -61,7 +59,6 @@ public data class PracticeState(
     val beat: Int = 0,
     val clickOn: Boolean = true,
     val liveMarks: Map<ScoreNoteRef, LiveMark> = emptyMap(),
-    val calibrationOffered: Boolean = false,
     val hintLevel: HintLevel = HintLevel.FULL,
     val hintVisible: Boolean = true,
     val mode: RunMode = RunMode.PRACTICE,
@@ -136,7 +133,7 @@ public data class PracticeState(
     /** Whether the Listen button shows: the run has not started and nothing is playing. */
     val showsListen: Boolean
         get() =
-            canListen && !listening && !played && phase == RunPhase.READY && currentStep == 0 && !calibrationOffered &&
+            canListen && !listening && !played && phase == RunPhase.READY && currentStep == 0 &&
                 !saveFailed && finishedAttemptId == null && connection == PracticeConnection.CONNECTED
 
     public companion object {

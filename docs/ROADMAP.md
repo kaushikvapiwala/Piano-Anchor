@@ -40,30 +40,27 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Automatic link latency** (spec #172; owner's hardware check; ADR 0025): timed runs measure the piano's link delay
-    with Identity Request round trips; calibration leaves the onboarding and the first-run card; tap calibration becomes
-    the optional "Fine-tune timing" with a 45 ms spread limit.
-2. **Spot attempts under the piece's id** (spec #243; follow-up of the M5 cleanup; run numbering decided): spot
+1. **Spot attempts under the piece's id** (spec #243; follow-up of the M5 cleanup; run numbering decided): spot
     loops save their attempts under the slice's id (`…#bars5-6`) and also set `Attempt.spot`, so the full-passage
     queries' spot filters never match a row, the loop's done-rung refresh always reads an empty set and `run N` counts
     loops apart from the piece. Save them under the piece's id and rely on `spot` alone (then drop the id suffix and
     `sourcePassageId`); this changes stored data and run numbers.
-3. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
+2. **One hint level for the run** (follow-up of the M5 cleanup; mechanical): `PracticeViewModel` still checks perform
     mode by hand where it starts hints; give the run an effective level (OFF in perform) so `loadHints` and
     `startHintStep` read only that, and keep the Hint button's own guard.
-4. **Lesson Try: the landmark hint** (follow-up of #189 and #195; mechanical): the lesson's Try step still says "That
+3. **Lesson Try: the landmark hint** (follow-up of #189 and #195; mechanical): the lesson's Try step still says "That
     was X. Waiting for Y."; use the quiz screen's landmark line (`QuizHint.kt`) there too, and move that text, now copied
     from `feature/practice`, into one shared UI module instead of two copies.
-5. **Quizzes count as practice days** (spec #244; follow-up of #195; owner decided they count): Today's weekly dots and day
+4. **Quizzes count as practice days** (spec #244; follow-up of #195; owner decided they count): Today's weekly dots and day
     line count ear reviews (`ear:` attempt ids) but not review quizzes (`quiz:` ids), so a day with only quizzes shows as
     missed. A quiz-only day counts; lesson-only days stay out (lessons store no dated record).
-6. **Sight-reading generator and staircase (M6.1)** (spec #245): a seeded generator of 4-bar unseen exercises over 8
+5. **Sight-reading generator and staircase (M6.1)** (spec #245): a seeded generator of 4-bar unseen exercises over 8
     levels opened by learned skills, and a 2-up/1-down level rule derived from saved `sight:` attempts.
-7. **Daily sight-reading card (M6.2)** (spec #246) [#245]: Today's Sight-reading card (10% of the budget, after the
+6. **Daily sight-reading card (M6.2)** (spec #246) [#245]: Today's Sight-reading card (10% of the budget, after the
     song), played in wait mode from the staff only; Results say how the level moved.
-8. **Played placement test (M6.3)** (spec #247): onboarding's "Test me" plays one piece per unit and starts the
+7. **Played placement test (M6.3)** (spec #247): onboarding's "Test me" plays one piece per unit and starts the
     learner at the first unit not passed; the start-unit list goes; placed skills tick their lessons.
-9. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
+8. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
     and the key of G; the pedal and legato; scales with thumb-under. Built like units 0–3 (concept cards, five-step
     lessons, Try checks); each unit adds sight-reading levels.
 

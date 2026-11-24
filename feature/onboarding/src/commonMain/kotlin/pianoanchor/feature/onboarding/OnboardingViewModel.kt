@@ -48,11 +48,11 @@ private val CHORD = listOf(MidiNote(60), MidiNote(64), MidiNote(67))
 /**
  * First-launch onboarding (`docs/ui/living-studio.md`): the first note on any listed [input] picks the piano (while
  * [discovery] connects the Bluetooth pianos it finds, and the one picked is stored as `lastPiano` in [settings]);
- * the piano plays C-E-G through [output] and the learner echoes it; the route then hosts the tap calibration; the
+ * the piano plays C-E-G through [output] and the learner echoes it; the
  * start point places the skills of the units before it with [learner] and stores `onboarded` in [settings]. The day follows [clock] in [zone].
  *
- * An input has one reader at a time: [close] returns once the piano is closed, and the next session or the
- * calibration starts only after the reader before it has closed. When the ViewModel is cleared, [cleanup] runs
+ * An input has one reader at a time: [close] returns once the piano is closed, and the next session starts only after
+ * the reader before it has closed. When the ViewModel is cleared, [cleanup] runs
  * [release], which disconnects the Bluetooth pianos connected for the search that were not chosen.
  */
 @Suppress("TooManyFunctions") // One small function per step of the flow, as in PracticeViewModel.
@@ -109,20 +109,13 @@ public class OnboardingViewModel(
     }
 
     /**
-     * Leaves the echo for the calibration once it passed, or after `ONBOARDING_MISSES_BEFORE_SKIP` misses (Skip);
-     * ignored otherwise. Closes the piano first: the calibration opens it.
+     * Leaves the echo for the start point once it passed, or after `ONBOARDING_MISSES_BEFORE_SKIP` misses (Skip);
+     * ignored otherwise. Closes the piano first, so the next screen can open it.
      */
-    public fun continueToCalibration() {
+    public fun continueToStartPoint() {
         val current = state.value
         if (current.step != OnboardingStep.ECHO || !(current.echo == EchoPhase.PASSED || current.canSkipEcho)) return
-        launchSession { mutableState.update { it.copy(step = OnboardingStep.CALIBRATE) } }
-    }
-
-    /** The calibration is over (done or skipped): on to the start point. */
-    public fun calibrationFinished() {
-        mutableState.update {
-            if (it.step == OnboardingStep.CALIBRATE) it.copy(step = OnboardingStep.START_POINT) else it
-        }
+        launchSession { mutableState.update { it.copy(step = OnboardingStep.START_POINT) } }
     }
 
     /**

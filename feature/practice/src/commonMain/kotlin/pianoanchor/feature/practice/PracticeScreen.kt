@@ -46,9 +46,6 @@ import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_back_to_pianos
 import pianoanchor.feature.practice.resources.practice_beat
-import pianoanchor.feature.practice.resources.practice_calibrate
-import pianoanchor.feature.practice.resources.practice_calibrate_offer
-import pianoanchor.feature.practice.resources.practice_calibrate_skip
 import pianoanchor.feature.practice.resources.practice_click_glyph
 import pianoanchor.feature.practice.resources.practice_click_off
 import pianoanchor.feature.practice.resources.practice_click_on
@@ -82,8 +79,7 @@ import pianoanchor.ui.shell.pianoAnchorColors
  * Stateless: see [PracticeViewModel]. [onBack] leaves the run (the back button, "End run" and the disconnected card's
  * "Back to pianos"); [onSelectRung] picks a rung of the tempo ladder (discarding the run); [onToggleClick] mutes or
  * unmutes the metronome; [onHint] shows the key band on the waiting step (the
- * lightbulb button); [onRetrySave] and [onDiscard] are the save-failed card's Retry and Discard; [onCalibrate] and
- * [onSkipCalibration] are the calibrate card's Calibrate and Skip, shown while [PracticeState.calibrationOffered].
+ * lightbulb button); [onRetrySave] and [onDiscard] are the save-failed card's Retry and Discard.
  * A spot loop ([PracticeState.spotLoop]) shows its progress as the subtitle and the last loop's result under the
  * staff; its "bars are clean" card has [onPlayWhole] ("Play it") and [onKeepLooping].
  * Under the staff one line says how to find the right key after a wrong one ("landmark hint"), with the Listen button
@@ -99,8 +95,6 @@ public fun PracticeScreen(
     onRetrySave: () -> Unit,
     onDiscard: () -> Unit,
     modifier: Modifier = Modifier,
-    onCalibrate: () -> Unit = {},
-    onSkipCalibration: () -> Unit = {},
     onHint: () -> Unit = {},
     onSelectMode: (RunMode) -> Unit = {},
     onPlayWhole: () -> Unit = {},
@@ -118,15 +112,13 @@ public fun PracticeScreen(
                     onBack,
                     onRetrySave,
                     onDiscard,
-                    onCalibrate,
-                    onSkipCalibration,
                     onPlayWhole,
                     onKeepLooping,
                 )
                 StaffArea(state)
                 HintRow(state, onListen, onSkipListening, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
                 if (state.linkResumed) LinkResumedLine(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
-                if (state.rung != TempoRung.WAIT && !state.calibrationOffered) {
+                if (state.rung != TempoRung.WAIT) {
                     RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
                 }
                 state.spotLoop?.lastLoop?.let {
@@ -146,15 +138,13 @@ public fun PracticeScreen(
     }
 }
 
-/** The cards above the staff: disconnected, save failed, calibrate offer and the clean spot loop. */
+/** The cards above the staff: disconnected, save failed and the clean spot loop. */
 @Composable
 private fun StatusCards(
     state: PracticeState,
     onBack: () -> Unit,
     onRetrySave: () -> Unit,
     onDiscard: () -> Unit,
-    onCalibrate: () -> Unit,
-    onSkipCalibration: () -> Unit,
     onPlayWhole: () -> Unit,
     onKeepLooping: () -> Unit,
 ) {
@@ -171,16 +161,6 @@ private fun StatusCards(
             CardAction(stringResource(Res.string.practice_retry), onRetrySave),
             CardAction(stringResource(Res.string.practice_discard), onDiscard),
             modifier = CARD_MODIFIER,
-        )
-    }
-    if (state.calibrationOffered) {
-        MessageCard(
-            stringResource(Res.string.practice_calibrate_offer, CalibrationState.DURATION_SECONDS.toString()),
-            CardAction(stringResource(Res.string.practice_calibrate), onCalibrate),
-            CardAction(stringResource(Res.string.practice_calibrate_skip), onSkipCalibration),
-            modifier = CARD_MODIFIER,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         )
     }
     state.spotLoop?.takeIf { it.offerFull }?.let { loop ->

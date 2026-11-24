@@ -37,7 +37,7 @@ class OnboardingScreenTest {
     private fun androidx.compose.ui.test.ComposeUiTest.show(state: OnboardingState) =
         setContent {
             PianoAnchorTheme {
-                OnboardingScreen(state, actions, calibration = { Text("calibrating ${it.name}") })
+                OnboardingScreen(state, actions)
             }
         }
 
@@ -48,7 +48,7 @@ class OnboardingScreenTest {
 
             onNodeWithText("Press any key on your piano").assertExists()
             onNodeWithText("Searching for your piano…").assertExists()
-            onNodeWithText("Step 1 of 4").assertExists()
+            onNodeWithText("Step 1 of 3").assertExists()
             onNodeWithText("Press any key to continue.").assertDoesNotExist()
             onNodeWithText(SLEEP_LINE).assertExists()
             onNodeWithText("Not found? Open the piano list").performClick()
@@ -117,7 +117,7 @@ class OnboardingScreenTest {
         }
 
     @Test
-    fun successContinuesToTheCalibration() =
+    fun successContinuesToTheStartPoint() =
         runComposeUiTest {
             show(OnboardingState(OnboardingStep.ECHO, piano, echo = EchoPhase.PASSED))
 
@@ -128,11 +128,11 @@ class OnboardingScreenTest {
         }
 
     @Test
-    fun theCalibrationStepHostsTheCalibrationScreen() =
+    fun theStartPointIsStepThreeOfThree() =
         runComposeUiTest {
-            show(OnboardingState(OnboardingStep.CALIBRATE, piano))
+            show(OnboardingState(OnboardingStep.START_POINT, piano))
 
-            onNodeWithText("calibrating FP-30X").assertExists()
+            onNodeWithText("Step 3 of 3").assertExists()
         }
 
     @Test
@@ -165,7 +165,6 @@ class OnboardingScreenTest {
                         OnboardingScreen(
                             OnboardingState(OnboardingStep.START_POINT, piano, storageFailed = true),
                             actions,
-                            calibration = {},
                         )
                     }
                 }

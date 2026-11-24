@@ -28,7 +28,7 @@ class OnboardingScreenScreenshotTest {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             captureRoboImage("screenshots/OnboardingScreen_${name}_$theme.png") {
-                PianoAnchorTheme(darkTheme = dark) { OnboardingScreen(state, OnboardingActions(), calibration = {}) }
+                PianoAnchorTheme(darkTheme = dark) { OnboardingScreen(state, OnboardingActions()) }
             }
         }
     }

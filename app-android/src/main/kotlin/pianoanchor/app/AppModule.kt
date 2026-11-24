@@ -30,7 +30,6 @@ import pianoanchor.feature.lesson.LessonViewModel
 import pianoanchor.feature.lesson.QuizViewModel
 import pianoanchor.feature.monitor.MonitorViewModel
 import pianoanchor.feature.onboarding.OnboardingViewModel
-import pianoanchor.feature.practice.CalibrationSkips
 import pianoanchor.feature.practice.CalibrationViewModel
 import pianoanchor.feature.practice.PassagePlayer
 import pianoanchor.feature.practice.PracticeViewModel
@@ -63,7 +62,6 @@ val appModule =
         single<ClockPort> { AndroidClockAdapter() }
         single<Clock> { Clock.System }
         single<TimeZone> { TimeZone.currentSystemDefault() }
-        single { CalibrationSkips() }
         single<MetronomePort> { AndroidMetronomeAdapter(androidContext(), get()) }
         single<TonePort> { AndroidToneAdapter(androidContext()) }
         single { createPianoAnchorDatabaseDriver(androidContext()) }

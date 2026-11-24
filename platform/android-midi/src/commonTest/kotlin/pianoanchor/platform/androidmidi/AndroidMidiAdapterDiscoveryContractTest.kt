@@ -3,6 +3,7 @@ package pianoanchor.platform.androidmidi
 import kotlinx.coroutines.CoroutineScope
 import pianoanchor.core.model.BluetoothUnavailableException.Reason
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
@@ -16,8 +17,10 @@ class AndroidMidiAdapterDiscoveryContractTest : MidiDiscoveryPortContractTest() 
             override val discovery: MidiDiscoveryPort = adapter
             override val input: MidiInputPort = adapter
             override val output: MidiOutputPort = adapter
-            override val device = MidiDevice(id = "ble:AA:BB:CC:DD:EE:01", name = "Acme MIDI")
-            override val other = MidiDevice(id = "ble:AA:BB:CC:DD:EE:02", name = "Other MIDI")
+            override val device =
+                MidiDevice(id = "ble:AA:BB:CC:DD:EE:01", name = "Acme MIDI", transport = MidiTransport.BLUETOOTH)
+            override val other =
+                MidiDevice(id = "ble:AA:BB:CC:DD:EE:02", name = "Other MIDI", transport = MidiTransport.BLUETOOTH)
 
             override suspend fun advertise(device: MidiDevice) =
                 system.advertise(BluetoothAdvertisement(device.id.removePrefix("ble:"), device.name))

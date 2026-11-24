@@ -65,6 +65,16 @@ class LatencyCalibrationTest {
     }
 
     @Test
+    fun aSpreadOf40MsIsAcceptedAndOf50MsIsTooUneven() {
+        fun alternating(gap: Int) = clicks.mapIndexed { i, click -> tap(click + (if (i % 2 == 0) 0 else gap) * ms) }
+        assertEquals(
+            CalibrationResult.Accepted(40 * ms, 40 * ms),
+            LatencyCalibration.evaluate(clicks, alternating(80)),
+        )
+        assertEquals(CalibrationResult.TooUneven(50 * ms), LatencyCalibration.evaluate(clicks, alternating(100)))
+    }
+
+    @Test
     fun tooFewTapsGiveTooFewTaps() {
         val taps = clicks.drop(warmup).take(Tunables.CALIBRATION_MIN_TAPS - 1).map { tap(it + 38 * ms) }
         assertEquals(CalibrationResult.TooFewTaps(7), LatencyCalibration.evaluate(clicks, taps))

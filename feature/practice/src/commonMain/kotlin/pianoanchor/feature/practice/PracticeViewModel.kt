@@ -43,6 +43,7 @@ import pianoanchor.core.ports.CalibrationRepositoryPort
 import pianoanchor.core.ports.ClockPort
 import pianoanchor.core.ports.MetronomePort
 import pianoanchor.core.ports.MidiInputPort
+import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.analysis.PlayedNotes
@@ -61,6 +62,8 @@ import pianoanchor.engine.matcher.TempoJudge
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.matcher.WaitModeMatcher
 import pianoanchor.engine.matcher.beatNanos
+import pianoanchor.engine.midi.defaultLinkLatencyNanos
+import pianoanchor.engine.midi.measureLinkLatencyNanos
 import pianoanchor.engine.profile
 import kotlin.math.abs
 import kotlin.time.Clock
@@ -80,9 +83,10 @@ import kotlin.time.Instant
  * [PracticeState.clickOn] and [toggleClick] writes it back (a store that fails leaves the choice in force for this
  * screen only).
  *
- * A timed run reads the piano's latency offset from [calibration] when it starts and subtracts it from played times
- * (`docs/algorithms/latency-calibration.md`). A piano without one gets [PracticeState.calibrationOffered] instead of a
- * run, until [skipCalibration] (remembered in [calibrationSkips] for the app session) or a calibration elsewhere.
+ * A timed run subtracts the piano's link delay from played times (`docs/algorithms/latency-calibration.md`): the
+ * offset a tap calibration stored in [calibration], else the one [measureLinkLatencyNanos] finds over [output] before
+ * the run opens the input (measured once per ViewModel), else the default of the piano's transport. Wait mode
+ * measures nothing. The attempt records the offset used.
  * The ViewModel starts on [initialRung] (wait mode by default) in [initialMode] (practice by default), so
  * returning from a calibration lands on the rung and mode the learner had picked.
  *
@@ -99,6 +103,7 @@ public class PracticeViewModel(
     private val device: MidiDevice,
     private val passage: Passage,
     private val input: MidiInputPort,
+    private val output: MidiOutputPort,
     private val attempts: AttemptRepositoryPort,
     private val calibration: CalibrationRepositoryPort,
     private val metronome: MetronomePort,
@@ -107,7 +112,6 @@ public class PracticeViewModel(
     private val learner: LearnerModel,
     private val zone: TimeZone,
     private val settings: SettingsRepositoryPort,
-    private val calibrationSkips: CalibrationSkips = CalibrationSkips(),
     initialRung: TempoRung = TempoRung.WAIT,
     initialMode: RunMode = RunMode.PRACTICE,
     private val spot: BarRange? = null,
@@ -123,6 +127,7 @@ public class PracticeViewModel(
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
 
     private var run: Job? = null
+    private var linkOffset: Long? = null
     private var flashTimer: Job? = null
 
     /** The passage playing for the learner, if any. */
@@ -329,15 +334,6 @@ public class PracticeViewModel(
     }
 
     /**
-     * Plays the timed rung uncalibrated (offset 0) after the calibration card, which stays away for this piano until
-     * the app restarts.
-     */
-    public fun skipCalibration() {
-        calibrationSkips.skip(device.id)
-        restart()
-    }
-
-    /**
      * Switches the metronome on or off, also while a run is in progress: the pattern keeps its timing, so turning the
      * click back on rejoins the beat. The choice is stored in the settings; if that fails it still holds until this
      * screen closes.
@@ -419,17 +415,20 @@ public class PracticeViewModel(
             try {
                 calibration.latencyOffsetNanos(device.id)
             } catch (_: StorageUnavailableException) {
-                return runTimed(bpm, offsetNanos = null) // can't tell: play uncalibrated rather than block the run
+                null // can't tell: measure rather than block the run
             }
-        if (stored == null && !calibrationSkips.isSkipped(device.id)) {
-            return mutableState.update { it.copy(calibrationOffered = true) }
-        }
-        runTimed(bpm, stored)
+        runTimed(bpm, stored ?: linkOffsetNanos())
     }
+
+    /** The measured link delay, else the transport's default; found once, before the first timed run's reader opens. */
+    private suspend fun linkOffsetNanos(): Long =
+        linkOffset ?: (
+            measureLinkLatencyNanos(device, input, output, time) ?: defaultLinkLatencyNanos(device.transport)
+        ).also { linkOffset = it }
 
     private suspend fun runTimed(
         bpm: Int,
-        offsetNanos: Long?,
+        offsetNanos: Long,
     ) {
         val timed = TimedRun(bpm, offsetNanos)
         val finished =
@@ -733,7 +732,7 @@ public class PracticeViewModel(
      */
     private inner class TimedRun(
         private val bpm: Int,
-        private val latencyOffsetNanos: Long?,
+        private val latencyOffsetNanos: Long,
     ) {
         var startedAt: Instant? = null
 
@@ -830,9 +829,9 @@ public class PracticeViewModel(
             startedAt = clock.now()
             firstBeatNanos = time.nowNanos() + Tunables.TEMPO_COUNT_IN_LEAD_MS.milliseconds.inWholeNanoseconds
             startNanos = firstBeatNanos + beatsPerBar * beatNanos
-            val timing = TempoJudge(passage, bpm, startNanos, latencyOffsetNanos ?: 0, strictness)
+            val timing = TempoJudge(passage, bpm, startNanos, latencyOffsetNanos, strictness)
             judge = timing
-            endNanos = timing.endNanos + (latencyOffsetNanos ?: 0).coerceAtLeast(0)
+            endNanos = timing.endNanos + (latencyOffsetNanos).coerceAtLeast(0)
             mutableState.update { it.copy(keysDown = it.keysDown + starter.note) }
             val click = ClickPattern(firstBeatNanos, beatNanos, beatsPerBar)
             pattern = click
