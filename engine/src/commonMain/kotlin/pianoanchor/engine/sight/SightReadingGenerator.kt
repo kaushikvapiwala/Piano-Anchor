@@ -215,8 +215,8 @@ public object SightReadingGenerator {
             index: Int,
         ): Boolean {
             val s = slots[slot]
-            val onC = (slot != 0 && slot != slots.lastIndex) || index == 0
-            return onC && (!s.first || chordClasses.isEmpty() || RIGHT_HAND[index] % OCTAVE in chordClasses[s.bar])
+            val edgeOnC = (slot != 0 && slot != slots.lastIndex) || index == 0
+            return edgeOnC && (!s.first || chordClasses.isEmpty() || RIGHT_HAND[index] % OCTAVE in chordClasses[s.bar])
         }
 
         fun extend(path: List<Int>): List<Int> =
