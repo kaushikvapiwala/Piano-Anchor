@@ -43,13 +43,14 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 1. **Keys during the link measurement** (follow-up of #172; needs an owner decision): before the first timed run,
     Practice spends about 0.3 s (0.6 s for a silent piano) measuring the link delay while showing the ready state, and
     a key pressed then is dropped. Either show a short "getting ready" state or hand those notes on to the run.
-2. **Daily sight-reading card (M6.2)** (spec #246) [#245]: Today's Sight-reading card (10% of the budget, after the
-    song), played in wait mode from the staff only; Results say how the level moved.
-3. **Played placement test (M6.3)** (spec #247): onboarding's "Test me" plays one piece per unit and starts the
+2. **Played placement test (M6.3)** (spec #247): onboarding's "Test me" plays one piece per unit and starts the
     learner at the first unit not passed; the start-unit list goes; placed skills tick their lessons.
-4. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
+3. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
     and the key of G; the pedal and legato; scales with thumb-under. Built like units 0–3 (concept cards, five-step
     lessons, Try checks); each unit adds sight-reading levels.
+4. **Lighter sight-reading level query** (follow-up of #246): Today and sight Results load every saved sight
+    attempt with all its MIDI events (one events query per row, `instr` scan) just to derive the level. Add a
+    port query that returns only passage id, band and start time, with an index-friendly range on passage id.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
@@ -91,7 +92,7 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2, M3.3 settings, M3.4 Today, M3.5 onboarding, M3.6 update check and M3.7 release pipeline done; v0.1.0 and the dogfood are the owner's) | Dogfood (`docs/RELEASING.md`): the owner uses the released APK; Today's practice-day line shows 14 practice days within 16, and no open `dogfood` issue is labelled `blocker` |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (✅ done: tracks in the daily plan #151, ear #152, songs and chords #153, the contribute-a-piano kit #154) | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting (✅ done: M5.1 hint fading, M5.2 perform mode, M5.3 spot loops and M5.4 unaided pass and strictness) | Unaided pass required before "learned" |
-| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245) done; specced: #246–#247 | Placement reproducible |
+| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245) and M6.2 (daily sight-reading card, #246) done; specced: #247 | Placement reproducible |
 | M7 | Heatmaps, recordings, calibration report | Predicted vs observed retention plotted |
 | M8 | Optional Google Drive sync | Round-trip sync between two devices |
 | M9 | Kids (ages 6–8+): research pass, age-appropriate content | — |
