@@ -10,8 +10,8 @@ internal fun Passage.barCount(): Int = barOf(steps.lastIndex)
 
 /**
  * The steps of this passage inside [range], rebased so the first bar starts at tick 0. The slice keeps the time
- * signature, tempo, rights, title and skills; its id gets a `#bars<first>-<last>` suffix so attempts stay
- * attributable. Throws [IllegalArgumentException] when no step is in [range].
+ * signature, tempo, rights, title and skills; its id gets a `#bars<first>-<last>` suffix to tell it apart in memory
+ * (attempts are saved under the piece's id). Throws [IllegalArgumentException] when no step is in [range].
  */
 public fun Passage.slice(range: BarRange): Passage {
     val inside = steps.filterIndexed { i, _ -> barOf(i) in range.first..range.last }

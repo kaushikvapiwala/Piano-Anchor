@@ -64,8 +64,8 @@ After a run, Results can offer to loop the stretch that went worst.
   the time signature, tempo, rights and skills. Its in-memory id gets a `#bars5-6` suffix; it never reaches storage.
 - **Loop run.** Practice opens on the slice in practice mode, one tempo rung below the run's (wait mode stays wait),
   at the key-hint level the piece has reached (read from the whole piece's attempts, not the loop's).
-  Each finished loop is graded and saved as usual under the piece's own id with `spot` set, then the next one starts at once; a short line
-  says "Clean" or what went wrong. After `SPOT_LOOP_CLEAN_TARGET` CLEAN loops in a row the screen asks whether to play
+  Each finished loop is graded and saved as usual under the piece's own id with `spot` set, then the next one starts
+  at once; a short line says "Clean" or what went wrong. After `SPOT_LOOP_CLEAN_TARGET` CLEAN loops in a row the screen asks whether to play
   the whole piece ("Play it" opens the full passage at the original rung) or keep looping (the streak restarts). Any
   loop that is not clean resets the streak.
 - **Not a review.** An attempt with `spot` set is never a cold check (`LearnerModel.record` skips it), does not count
