@@ -123,7 +123,7 @@ private sealed interface Destination {
     ) : Destination
 
     /**
-     * Practising [passageId] on [device], starting on [rung] (a card's, or the one picked before a calibration);
+     * Practising [passageId] on [device], starting on [rung] (a card's);
      * back returns to the screen that opened it ([from]): Today, Songs or the monitor. With [spot], it loops those
      * bars of the passage one rung below [rung] (a spot loop); "Play it" then plays the whole passage at [rung].
      * [fromLesson] is the concept whose lesson opened it: Results then offers "Finish lesson".
@@ -160,7 +160,7 @@ private sealed interface Destination {
         val skills: List<Skill>,
     ) : Destination
 
-    /** Calibrating [device]'s latency; [returnTo] is the Practice or the monitor to return to. */
+    /** Calibrating [device]'s latency; [returnTo] is where to return to. */
     data class Calibrate(
         val device: MidiDevice,
         val returnTo: Destination,
@@ -257,12 +257,6 @@ private fun PracticeDestination(
             current,
             onBack = { go(current.from) },
             onFinished = { id, rung -> go(Destination.Results(id, rung, current)) },
-            onCalibrate = {
-                rung,
-                mode,
-                ->
-                go(Destination.Calibrate(current.device, current.copy(rung = rung, mode = mode)))
-            },
             onPlayWhole = { rung -> go(current.copy(rung = rung, spot = null)) },
         )
     }
@@ -304,7 +298,6 @@ private fun PracticeRoute(
     practice: Destination.Practice,
     onBack: () -> Unit,
     onFinished: (attemptId: String, rung: TempoRung) -> Unit,
-    onCalibrate: (TempoRung, RunMode) -> Unit,
     onPlayWhole: (TempoRung) -> Unit,
 ) {
     val viewModel: PracticeViewModel =
@@ -333,9 +326,6 @@ private fun PracticeRoute(
         onToggleClick = viewModel::toggleClick,
         onRetrySave = viewModel::retrySave,
         onDiscard = viewModel::discardRun,
-        // A spot loop is one rung below the run's: calibrating returns to the run's rung, which the loop lowers again.
-        onCalibrate = { leave { onCalibrate(state.spotLoop?.fullRung ?: state.rung, state.mode) } },
-        onSkipCalibration = viewModel::skipCalibration,
         onHint = viewModel::showHint,
         onSelectMode = viewModel::selectMode,
         onPlayWhole = { state.spotLoop?.let { loop -> leave { onPlayWhole(loop.fullRung) } } },
@@ -501,9 +491,8 @@ private fun ResultsRoute(
 }
 
 /**
- * The first-launch onboarding. Its ViewModel lives as long as the route. The calibration step hosts the calibration
- * screen on the connected piano (the onboarding has closed it first); Done or leaving it moves on, after closing the
- * piano again. Leaving for the piano list closes the piano too (one reader per input) and leaves the Bluetooth pianos
+ * The first-launch onboarding. Its ViewModel lives as long as the route. Leaving for the piano list closes the piano
+ * (one reader per input) and leaves the Bluetooth pianos
  * the search connected connected, so the list shows them without a new scan.
  */
 @Composable
@@ -526,23 +515,9 @@ private fun OnboardingRoute(
         OnboardingActions(
             onOpenPianoList = { scope.launch { viewModel.handOverToPianoList() }.invokeOnCompletion { onPianos() } },
             onReplay = viewModel::replay,
-            onContinue = viewModel::continueToCalibration,
+            onContinue = viewModel::continueToStartPoint,
             onStart = viewModel::start,
         ),
-        calibration = { device ->
-            val calibration: CalibrationViewModel =
-                koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) { parametersOf(device) }
-            val calibrationState by calibration.state.collectAsState()
-            val leave = { scope.launch { calibration.close() }.invokeOnCompletion { viewModel.calibrationFinished() } }
-            BackHandler { leave() }
-            CalibrationScreen(
-                calibrationState,
-                onStart = calibration::start,
-                onRetrySave = calibration::retrySave,
-                onDone = { leave() },
-                onCancel = { leave() },
-            )
-        },
     )
 }
 

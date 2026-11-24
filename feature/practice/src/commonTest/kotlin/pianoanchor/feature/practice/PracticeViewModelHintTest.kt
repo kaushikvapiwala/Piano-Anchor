@@ -50,9 +50,10 @@ import kotlin.time.Instant
 class PracticeViewModelHintTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = FakeClock(5_000_000_000)
-    private val piano = FakePiano(clock)
+
+    // No MIDI output: a timed run takes the transport default at once instead of measuring the link.
+    private val piano = FakePiano(clock).apply { inputOnly = true }
     private val attempts = FakeAttemptRepository()
-    private val skips = CalibrationSkips().apply { skip(piano.device.id) }
     private val c4 = MidiNote(60)
     private val d4 = MidiNote(62)
     private val e4 = MidiNote(64)
@@ -99,6 +100,7 @@ class PracticeViewModelHintTest {
             piano.device,
             Passages.CDE,
             piano,
+            piano,
             store,
             FakeCalibrationRepository(),
             FakeMetronome(clock),
@@ -107,7 +109,6 @@ class PracticeViewModelHintTest {
             LearnerModel(Curriculum.graph, FakeLearnerRepository()),
             TimeZone.UTC,
             FakeSettingsRepository(),
-            skips,
         ) {
             "attempt-${++ids}"
         }.also { runCurrent() }
@@ -118,6 +119,7 @@ class PracticeViewModelHintTest {
             piano.device,
             Passages.CDE.slice(BarRange(1, 1)),
             piano,
+            piano,
             attempts,
             FakeCalibrationRepository(),
             FakeMetronome(clock),
@@ -126,7 +128,6 @@ class PracticeViewModelHintTest {
             LearnerModel(Curriculum.graph, FakeLearnerRepository()),
             TimeZone.UTC,
             FakeSettingsRepository(),
-            skips,
             TempoRung.WAIT,
             RunMode.PRACTICE,
             BarRange(1, 1),

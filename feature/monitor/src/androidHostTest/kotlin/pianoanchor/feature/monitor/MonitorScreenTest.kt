@@ -43,7 +43,7 @@ class MonitorScreenTest {
             setContent { PianoAnchorTheme { MonitorScreen(MonitorState(), MonitorActions()) } }
 
             onNodeWithText("Practice").assertExists()
-            onNodeWithText("Calibrate timing").assertExists()
+            onNodeWithText("Fine-tune timing").assertExists()
         }
 
     @Test
@@ -72,7 +72,7 @@ class MonitorScreenTest {
             }
 
             onNodeWithText("Practice").assertDoesNotExist()
-            onNodeWithText("Calibrate timing").assertDoesNotExist()
+            onNodeWithText("Fine-tune timing").assertDoesNotExist()
         }
 
     @Test

@@ -226,39 +226,6 @@ class PracticeScreenTest {
             onNodeWithText("C4 · wrong note").assertExists()
         }
 
-    @Test
-    fun theCalibrateCardOffersCalibrateAndSkip() =
-        runComposeUiTest {
-            var calibrate = 0
-            var skip = 0
-            val timed = PracticeState.start(Passages.CDE).copy(rung = TempoRung.P60)
-            val state = mutableStateOf(timed)
-            setContent {
-                PianoAnchorTheme {
-                    PracticeScreen(
-                        state.value,
-                        {},
-                        {},
-                        {},
-                        {},
-                        {},
-                        onCalibrate = { calibrate++ },
-                        onSkipCalibration = { skip++ },
-                    )
-                }
-            }
-            onNodeWithText("Calibrate timing · about 16 s").assertDoesNotExist()
-
-            state.value = timed.copy(calibrationOffered = true)
-            onNodeWithText("Calibrate timing · about 16 s").assertExists()
-            onNodeWithText("Play any key to count in").assertDoesNotExist() // nothing reads the piano meanwhile
-            onNodeWithText("Calibrate").performClick()
-            onNodeWithText("Skip").performClick()
-
-            assertEquals(1, calibrate)
-            assertEquals(1, skip)
-        }
-
     private val spot =
         PracticeState.start(Passages.CDE).copy(spotLoop = SpotLoopState(BarRange(5, 6), fullRung = TempoRung.P85))
 

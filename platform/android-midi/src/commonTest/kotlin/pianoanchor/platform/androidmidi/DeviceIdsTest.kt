@@ -1,5 +1,6 @@
 package pianoanchor.platform.androidmidi
 
+import pianoanchor.core.model.MidiTransport
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -73,5 +74,13 @@ class DeviceIdsTest {
         assertEquals("Acme Stage Piano", nameOf(PIANO))
         assertEquals("Stage Piano", nameOf(PIANO.copy(name = "")))
         assertEquals(FALLBACK_DEVICE_NAME, nameOf(PIANO.copy(name = null, product = null)))
+    }
+
+    @Test
+    fun devicesReportTheirTransport() {
+        fun transportOf(device: SystemDevice) = identify(listOf(device)).single().device.transport
+        assertEquals(MidiTransport.USB, transportOf(PIANO))
+        assertEquals(MidiTransport.BLUETOOTH, transportOf(bluetooth))
+        assertEquals(MidiTransport.OTHER, transportOf(PIANO.copy(transport = Transport.OTHER)))
     }
 }

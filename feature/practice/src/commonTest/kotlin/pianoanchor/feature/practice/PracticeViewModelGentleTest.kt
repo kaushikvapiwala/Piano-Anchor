@@ -13,6 +13,7 @@ import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.HintLevel
+import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PassageComplete
@@ -49,8 +50,10 @@ class PracticeViewModelGentleTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = FakeClock(5_000_000_000)
     private val piano = FakePiano(clock)
+
+    // Not listed as an output: a timed run takes the transport default at once instead of measuring the link.
+    private val noOutput = FakePiano(clock, MidiDevice("no-output", "No output"))
     private val attempts = FakeAttemptRepository()
-    private val skips = CalibrationSkips().apply { skip(piano.device.id) }
     private val tone = FakeTone()
     private val c4 = MidiNote(60)
     private val d4 = MidiNote(62)
@@ -75,6 +78,7 @@ class PracticeViewModelGentleTest {
             piano.device,
             passage,
             piano,
+            noOutput,
             store,
             FakeCalibrationRepository(),
             FakeMetronome(clock),
@@ -83,7 +87,6 @@ class PracticeViewModelGentleTest {
             LearnerModel(Curriculum.graph, FakeLearnerRepository()),
             TimeZone.UTC,
             FakeSettingsRepository(),
-            skips,
             rung,
             player = player,
         ) {

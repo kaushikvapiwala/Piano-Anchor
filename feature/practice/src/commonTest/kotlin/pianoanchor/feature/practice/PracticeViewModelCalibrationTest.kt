@@ -10,7 +10,10 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
+import pianoanchor.core.model.Band
+import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
@@ -29,23 +32,21 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 import kotlin.time.Instant
 
-/** The latency offset in practice: the calibrate card, and what a stored offset does to a timed run. */
+/** The link offset of a timed run: stored tap result, else measured, else the transport default. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class PracticeViewModelCalibrationTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = FakeClock(5_000_000_000)
-    private val piano = FakePiano(clock)
+    private var piano = FakePiano(clock)
+    private val identityReply = intArrayOf(0xF0, 0x7E, 0x10, 0x06, 0x02, 0x41, 0x19, 0x00, 0x02, 0x00, 0, 1, 2, 3, 0xF7)
     private val attempts = FakeAttemptRepository()
     private val calibration = FakeCalibrationRepository()
     private val learnerRepository = FakeLearnerRepository()
     private val learner = LearnerModel(Curriculum.graph, learnerRepository)
-    private val skips = CalibrationSkips()
     private val metronome = FakeMetronome(clock)
     private val settings = FakeSettingsRepository()
     private val wallClock = FakeWallClock(Instant.parse("2026-11-13T09:00:00Z"))
@@ -66,10 +67,22 @@ class PracticeViewModelCalibrationTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun TestScope.practice(): PracticeViewModel =
+    /** The piano answers each Identity Request [roundTripMs] later, so the measured link delay is half of that. */
+    private fun answerWithRoundTrip(roundTripMs: Long) {
+        piano.replyTo = {
+            piano.play(
+                identityReply.map { it.toByte() }.toByteArray(),
+                stampNanos = clock.nowNanos() + roundTripMs * ms,
+            )
+            null
+        }
+    }
+
+    private fun TestScope.practice(initialRung: TempoRung = TempoRung.WAIT): PracticeViewModel =
         PracticeViewModel(
             piano.device,
             Passages.CDE,
+            piano,
             piano,
             attempts,
             calibration,
@@ -79,7 +92,7 @@ class PracticeViewModelCalibrationTest {
             learner,
             TimeZone.UTC,
             settings,
-            calibrationSkips = skips,
+            initialRung = initialRung,
         ) {
             "attempt-1"
         }.also {
@@ -139,35 +152,139 @@ class PracticeViewModelCalibrationTest {
         hold(e4, heldMs = 1_800, restMs = runMs)
     }
 
+    private suspend fun attemptOffset() = assertNotNull(attempts.get("attempt-1")).latencyOffsetNanos
+
     @Test
-    fun startingOnARungKeepsItAndIsReadyToPlayWhenCalibrated() =
+    fun aStoredTapResultWinsAndNothingIsMeasured() =
         runPractice {
             calibration.setLatencyOffsetNanos(piano.device.id, 38 * ms)
-            val vm =
-                PracticeViewModel(
-                    piano.device,
-                    Passages.CDE,
-                    piano,
-                    attempts,
-                    calibration,
-                    metronome,
-                    clock,
-                    wallClock,
-                    learner,
-                    TimeZone.UTC,
-                    settings,
-                    calibrationSkips = skips,
-                    initialRung = TempoRung.P70,
-                ) { "attempt-1" }.also {
-                    opened += it
-                    runCurrent()
-                }
+            answerWithRoundTrip(40)
+            val vm = practice()
 
-            assertEquals(TempoRung.P70, vm.state.value.rung)
-            assertEquals(RunPhase.READY, vm.state.value.phase)
-            assertFalse(vm.state.value.calibrationOffered)
-            press(c4)
+            playCde(vm, lateMs = 38)
+
+            assertEquals(38 * ms, attemptOffset())
+            assertEquals(0, piano.sent.size)
+        }
+
+    @Test
+    fun aMeasuredLinkDelayReachesTheJudgeAndTheAttempt() =
+        runPractice {
+            answerWithRoundTrip(40) // half is 20 ms
+            val vm = practice()
+
+            // Every key reaches the app 20 ms late: on time once the measured delay is subtracted.
+            playCde(vm, lateMs = 20)
+
+            assertEquals(
+                ScoreNoteRef(0, c4) to LiveMark.Correct,
+                vm.state.value.liveMarks.entries
+                    .first()
+                    .toPair(),
+            )
+            val attempt = assertNotNull(attempts.get("attempt-1"))
+            assertEquals(20 * ms, attempt.latencyOffsetNanos)
+            assertEquals(1.0, attempt.accuracy)
+            assertEquals(Band.CLEAN, attempt.band)
+        }
+
+    @Test
+    fun theMeasurementClosesItsReaderBeforeTheRunOpensTheInput() =
+        runPractice {
+            answerWithRoundTrip(40)
+            val vm = practice()
+
+            vm.selectRung(TempoRung.P60)
+            runCurrent()
+            press(c4) // the starting key: read by the run, so the measurement's reader is gone
+
             assertNotNull(metronome.running.value)
+        }
+
+    @Test
+    fun aSilentPianoWaitsTwoTimeoutsThenRunsOnTheTransportDefault() =
+        runPractice {
+            val vm = practice(initialRung = TempoRung.P60)
+            press(c4) // dropped: the link is still being measured
+            assertNull(metronome.running.value)
+
+            advanceTimeBy(2 * Tunables.CALIBRATION_PING_TIMEOUT_MS) // the warm-up and the first timed ping
+            runCurrent()
+            press(c4)
+
+            assertNotNull(metronome.running.value)
+            assertEquals(TempoRung.P60, vm.state.value.rung)
+        }
+
+    @Test
+    fun aBluetoothPianoWithoutAnOutputUsesTheBluetoothDefault() =
+        runPractice {
+            piano = FakePiano(clock, MidiDevice("ble:AA", "Bluetooth piano", MidiTransport.BLUETOOTH))
+            piano.inputOnly = true
+            val vm = practice()
+
+            playCde(vm, lateMs = 0)
+            assertEquals(15 * ms, attemptOffset())
+        }
+
+    @Test
+    fun aUsbPianoWithoutAnOutputUsesNoOffset() =
+        runPractice {
+            piano = FakePiano(clock, MidiDevice("usb:A", "USB piano", MidiTransport.USB))
+            piano.inputOnly = true
+            val vm = practice()
+
+            playCde(vm, lateMs = 200)
+
+            assertEquals(0L, attemptOffset())
+            assertEquals(
+                LiveMark.TimingOff(200),
+                vm.state.value.liveMarks
+                    .getValue(ScoreNoteRef(0, c4)),
+            )
+        }
+
+    @Test
+    fun theLinkIsMeasuredOnceForTwoTakes() =
+        runPractice {
+            answerWithRoundTrip(40)
+            val vm = practice()
+            playCde(vm, lateMs = 20)
+            val sentAfterFirst = piano.sent.size
+
+            vm.restart()
+            runCurrent()
+            vm.selectRung(TempoRung.P60)
+            runCurrent()
+
+            assertEquals(1 + Tunables.CALIBRATION_PING_COUNT, sentAfterFirst) // a warm-up and the timed pings
+            assertEquals(sentAfterFirst, piano.sent.size)
+        }
+
+    @Test
+    fun waitModeMeasuresNothing() =
+        runPractice {
+            answerWithRoundTrip(40)
+            val vm = practice()
+            listOf(c4, d4, e4).forEach {
+                clock.advanceNanos(300 * ms)
+                press(it)
+            }
+            assertEquals(0, piano.sent.size)
+            assertNull(assertNotNull(attempts.get("attempt-1")).latencyOffsetNanos)
+            assertEquals(RunPhase.READY, vm.state.value.phase)
+        }
+
+    @Test
+    fun aStoreThatCannotBeReadFallsBackToMeasuring() =
+        runPractice {
+            calibration.failing = true
+            answerWithRoundTrip(40)
+            val vm = practice()
+
+            playCde(vm, lateMs = 20)
+
+            assertEquals(20 * ms, attemptOffset())
         }
 
     @Test
@@ -195,137 +312,18 @@ class PracticeViewModelCalibrationTest {
         }
 
     @Test
-    fun uncalibratedTimedRungShowsTheCalibrateCard() =
-        runPractice {
-            val vm = practice()
-            assertFalse(vm.state.value.calibrationOffered) // wait mode has no offset to ask for
-
-            vm.selectRung(TempoRung.P60)
-            runCurrent()
-
-            assertTrue(vm.state.value.calibrationOffered)
-            assertEquals(RunPhase.READY, vm.state.value.phase)
-            press(c4) // no reader is open while the card waits
-            assertNull(metronome.running.value)
-
-            vm.selectRung(TempoRung.WAIT)
-            runCurrent()
-            assertFalse(vm.state.value.calibrationOffered)
-        }
-
-    @Test
-    fun aCalibratedPianoGetsNoCard() =
-        runPractice {
-            calibration.setLatencyOffsetNanos(piano.device.id, 38 * ms)
-            val vm = practice()
-
-            vm.selectRung(TempoRung.P60)
-            runCurrent()
-
-            assertFalse(vm.state.value.calibrationOffered)
-            press(c4)
-            assertNotNull(metronome.running.value)
-        }
-
-    @Test
-    fun skipHidesItForTheSession() =
-        runPractice {
-            val vm = practice()
-            vm.selectRung(TempoRung.P60)
-            runCurrent()
-
-            vm.skipCalibration()
-            runCurrent()
-
-            assertFalse(vm.state.value.calibrationOffered)
-            assertEquals(TempoRung.P60, vm.state.value.rung)
-            press(c4)
-            assertNotNull(metronome.running.value) // the run starts, uncalibrated
-
-            // A new screen for the same piano in the same session: still no card.
-            val again = practice()
-            again.selectRung(TempoRung.P70)
-            runCurrent()
-            assertFalse(again.state.value.calibrationOffered)
-        }
-
-    @Test
-    fun aStoreThatCannotBeReadPlaysUncalibratedWithoutTheCard() =
-        runPractice {
-            calibration.failing = true
-            val vm = practice()
-
-            vm.selectRung(TempoRung.P60)
-            runCurrent()
-            press(c4)
-            advance(countInMs + runMs)
-
-            assertFalse(vm.state.value.calibrationOffered)
-            assertNull(attempts.get("attempt-1")?.latencyOffsetNanos)
-        }
-
-    @Test
-    fun offsetShiftsLiveVerdictsAndGrading() =
+    fun aStoredOffsetShiftsLiveVerdictsAndGrading() =
         runPractice {
             calibration.setLatencyOffsetNanos(piano.device.id, 200 * ms)
             val vm = practice()
 
-            // Every key reaches the app 200 ms late, as this piano's does: on time once the offset is subtracted.
             playCde(vm, lateMs = 200)
 
             assertEquals(
-                ScoreNoteRef(0, c4) to LiveMark.Correct,
-                vm.state.value.liveMarks.entries
-                    .first()
-                    .toPair(),
-            )
-            val attempt = assertNotNull(attempts.get("attempt-1"))
-            assertEquals(1.0, attempt.accuracy)
-            assertEquals(pianoanchor.core.model.Band.CLEAN, attempt.band)
-        }
-
-    @Test
-    fun withoutAnOffsetTheSameTakeIsLate() =
-        runPractice {
-            skips.skip(piano.device.id)
-            val vm = practice()
-
-            playCde(vm, lateMs = 200)
-
-            val mark =
+                LiveMark.Correct,
                 vm.state.value.liveMarks
-                    .getValue(ScoreNoteRef(0, c4))
-            assertEquals(LiveMark.TimingOff(200), mark)
-            assertTrue(assertNotNull(attempts.get("attempt-1")).accuracy < 1.0)
-        }
-
-    @Test
-    fun attemptStoresTheOffsetUsed() =
-        runPractice {
-            calibration.setLatencyOffsetNanos(piano.device.id, 38 * ms)
-            val calibrated = practice()
-            playCde(calibrated, lateMs = 0)
-            assertEquals(38 * ms, attempts.get("attempt-1")?.latencyOffsetNanos)
-        }
-
-    @Test
-    fun anAttemptAfterSkippingStoresNoOffset() =
-        runPractice {
-            skips.skip(piano.device.id)
-            val vm = practice()
-            playCde(vm, lateMs = 0)
-            assertNull(assertNotNull(attempts.get("attempt-1")).latencyOffsetNanos)
-        }
-
-    @Test
-    fun waitModeIgnoresTheOffset() =
-        runPractice {
-            calibration.setLatencyOffsetNanos(piano.device.id, 38 * ms)
-            val vm = practice()
-            listOf(c4, d4, e4).forEach {
-                clock.advanceNanos(300 * ms)
-                press(it)
-            }
-            assertNull(assertNotNull(attempts.get("attempt-1")).latencyOffsetNanos)
+                    .getValue(ScoreNoteRef(0, c4)),
+            )
+            assertEquals(1.0, assertNotNull(attempts.get("attempt-1")).accuracy)
         }
 }

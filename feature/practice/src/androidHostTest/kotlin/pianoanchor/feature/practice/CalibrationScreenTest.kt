@@ -33,7 +33,7 @@ class CalibrationScreenTest {
             var starts = 0
             setContent { PianoAnchorTheme { CalibrationScreen(CalibrationState(), { starts++ }, {}, {}, {}) } }
 
-            onNodeWithText("Calibrate timing").assertExists()
+            onNodeWithText("Fine-tune timing").assertExists()
             onNodeWithText("Play any key on each click. 16 clicks, about 16 seconds.").assertExists()
             onNodeWithText("Start").performClick()
 
@@ -61,6 +61,7 @@ class CalibrationScreenTest {
             setContent { PianoAnchorTheme { CalibrationScreen(state.value, {}, {}, { dones++ }, {}) } }
 
             onNodeWithText("Your piano answers 38 ms after the click. Saved.").assertExists()
+            onNodeWithText("Spread ± 5 ms").assertExists()
             onNodeWithText("Done").performClick()
             assertEquals(1, dones)
 
@@ -76,9 +77,11 @@ class CalibrationScreenTest {
             val state = mutableStateOf(done(CalibrationResult.TooUneven(60 * ms)))
             setContent { PianoAnchorTheme { CalibrationScreen(state.value, { tries++ }, {}, {}, { cancels++ }) } }
 
-            onNodeWithText("Taps were uneven").assertExists()
+            onNodeWithText("Taps were uneven: keep the spread within ± 45 ms").assertExists()
+            onNodeWithText("Spread ± 60 ms").assertExists()
             state.value = done(CalibrationResult.TooFewTaps(3))
             onNodeWithText("Too few taps").assertExists()
+            onNodeWithText("Spread", substring = true).assertDoesNotExist()
             state.value = done(CalibrationResult.OutOfRange(450 * ms))
             onNodeWithText("That's more than 0.4 s: check the connection").assertExists()
             onNodeWithText("Retry").assertDoesNotExist()

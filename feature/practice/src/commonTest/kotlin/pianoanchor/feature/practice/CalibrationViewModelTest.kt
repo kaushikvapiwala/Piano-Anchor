@@ -334,7 +334,7 @@ class CalibrationViewModelTest {
             vm.start()
             runCurrent()
             clicks.forEachIndexed { i, click ->
-                advanceTo(click + (if (i % 2 == 0) 5 else 70) * ms)
+                advanceTo(click + (if (i % 2 == 0) 5 else 120) * ms)
                 tap()
             }
             advanceTo(clicks.last() + beat)

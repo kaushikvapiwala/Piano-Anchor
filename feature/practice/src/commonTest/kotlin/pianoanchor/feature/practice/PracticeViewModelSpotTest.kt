@@ -41,10 +41,11 @@ import kotlin.time.Instant
 class PracticeViewModelSpotTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = FakeClock(5_000_000_000)
-    private val piano = FakePiano(clock)
+
+    // No MIDI output: a timed run takes the transport default at once instead of measuring the link.
+    private val piano = FakePiano(clock).apply { inputOnly = true }
     private val attempts = FakeAttemptRepository()
     private val learnerRepository = FakeLearnerRepository()
-    private val skips = CalibrationSkips().apply { skip(piano.device.id) }
     private val ms = 1_000_000L
     private var ids = 0
 
@@ -67,6 +68,7 @@ class PracticeViewModelSpotTest {
             piano.device,
             spot?.let { whole.slice(it) } ?: whole,
             piano,
+            piano,
             attempts,
             FakeCalibrationRepository(),
             FakeMetronome(clock),
@@ -75,7 +77,6 @@ class PracticeViewModelSpotTest {
             LearnerModel(Curriculum.graph, learnerRepository),
             TimeZone.UTC,
             FakeSettingsRepository(),
-            skips,
             rung,
             RunMode.PERFORM,
             spot,

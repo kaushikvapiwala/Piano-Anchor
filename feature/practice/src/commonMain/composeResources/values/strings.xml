@@ -148,10 +148,7 @@
     <string name="practice_spot_keep_looping">Keep looping</string>
     <string name="results_not_found">Couldn't find this run</string>
     <string name="results_unavailable">Couldn't load this run.</string>
-    <string name="practice_calibrate_offer">Calibrate timing · about %1$s s</string>
-    <string name="practice_calibrate">Calibrate</string>
-    <string name="practice_calibrate_skip">Skip</string>
-    <string name="calibration_title">Calibrate timing</string>
+    <string name="calibration_title">Fine-tune timing</string>
     <string name="calibration_intro">Play any key on each click. %1$s clicks, about %2$s seconds.</string>
     <string name="calibration_start">Start</string>
     <string name="calibration_get_ready">Get ready</string>
@@ -160,7 +157,8 @@
     <string name="calibration_counter_description">%1$s of %2$s taps</string>
     <string name="calibration_accepted_after">Your piano answers %1$s ms after the click. Saved.</string>
     <string name="calibration_accepted_before">Your piano answers %1$s ms before the click. Saved.</string>
-    <string name="calibration_uneven">Taps were uneven</string>
+    <string name="calibration_uneven">Taps were uneven: keep the spread within ± %1$s ms</string>
+    <string name="calibration_spread">Spread ± %1$s ms</string>
     <string name="calibration_too_few">Too few taps</string>
     <string name="calibration_out_of_range">That's more than %1$s s: check the connection</string>
     <string name="calibration_save_failed">Couldn't save the result.</string>

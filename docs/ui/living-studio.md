@@ -129,27 +129,27 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
 - **Key strip text** in a timed run: "E4 · on time", "E4 · late, 92 ms", "E4 · early, 40 ms", "F4 · wrong note".
   TalkBack announces "Correct", "Late, 92 ms", "Early, 40 ms" or "Wrong, F4". The staff reads "… Cursor on D4."
 
-## Calibration screen
+## Calibration screen (Fine-tune timing)
 
 Landscape like practice, 915×412 dp, page colour and a card (radius 20) with pill buttons (44 dp high).
 
-- **Header**: back (44 dp, same as Cancel), the title "Calibrate timing" (heading, Space Grotesk 700 22 sp) and the
+- **Header**: back (44 dp, same as Cancel), the title "Fine-tune timing" (heading, Space Grotesk 700 22 sp) and the
   line "Play any key on each click. 16 clicks, about 16 seconds."
 - **Start**: one pill button in the card. It plays the click pattern (no accent).
 - **Running**: a pulse dot (filled for half a beat after each click), "Get ready" while the warm-up clicks play and
   then "Play a key on each click", and the tap counter "7 / 12" (taps on the counted clicks). TalkBack reads the
   counter as "7 of 12 taps".
-- **Accepted**: "Your piano answers 38 ms after the click. Saved." ("before" when negative) and Done. The line is a
-  polite live region, so TalkBack reads it when it appears.
-- **Any other result**: one line ("Taps were uneven", "Too few taps" or "That's more than 0.4 s: check the connection")
-  with Try again and Cancel. A dropped piano shows the "Piano disconnected" card above Start.
+- **Accepted**: "Your piano answers 38 ms after the click. Saved." ("before" when negative), the line "Spread ± 5 ms"
+  under it, and Done. The result line is a polite live region, so TalkBack reads it when it appears.
+- **Any other result**: one line ("Taps were uneven: keep the spread within ± 45 ms" with "Spread ± 60 ms" under it,
+  "Too few taps" or "That's more than 0.4 s: check the connection") with Try again and Cancel. A dropped piano shows the "Piano disconnected" card above Start.
 - **Accepted but not saved**: "Couldn't save the result." with Retry (filled; saves the same offset again, as often
   as needed), Try again (outlined; a new 16-click run) and Cancel (outlined). Success shows the Accepted line and Done.
 
-The **calibrate card** on the practice screen (secondary container colour, under the top bar) reads "Calibrate timing ·
-about 16 s" with Calibrate and Skip. It shows when a timed rung is selected on a piano with no stored offset; the run
-waits for the choice. Skip plays uncalibrated and hides the card for that piano until the app restarts. The monitor's
-"Calibrate timing" button (next to Practice, enabled while connected) opens the same screen and returns to the monitor.
+Tap calibration is optional: a timed run measures the piano's link delay itself (`docs/algorithms/latency-calibration.md`)
+and shows nothing about it, so the practice screen has no calibrate card. The monitor's "Fine-tune timing" button (next to
+Practice, enabled while connected) opens this screen and returns to the monitor; a stored result is used instead of the
+measurement.
 
 ## Results screen
 
@@ -174,8 +174,8 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
     detail counts the same findings (wrong, missed, incomplete chords), so it never says "every note right" next to a
     value below full.
   - Timing: "±31 ms" (mean deviation), in the timing orange when any note was early or late, else blue; detail "in
-    time", "late at note 6" or "early at note 3" (notes numbered from 1 in score order). A run played without a latency
-    offset adds " · not calibrated" to the detail.
+    time", "late at note 6" or "early at note 3" (notes numbered from 1 in score order). Only an attempt stored before the link
+    delay was measured automatically has no latency offset; it adds " · not calibrated" to the detail.
   - Note length: "86%" of notes held right; detail "every note held right", "half note held short" or "note 4 held
     long" (a note value is named only for whole, half and quarter notes).
   - Hesitation: "no pauses", "1 pause", "2 pauses"; detail the longest pause, "1.4 s before D4".
@@ -211,7 +211,7 @@ Grouped rows under plum group titles, every target at least 44 dp, every change 
 
 Shown once, on first launch, until `onboarded` is stored; then the app opens on Today. Landscape, page colour, one step at
 a time (no accounts, no sign-in line). Every step splits into a left pane (about 45%: the step title, the explanation
-and the picture or key strip, with four step dots and "Step n of 4" under it) and a right pane (about 55%: the controls,
+and the picture or key strip, with three step dots and "Step n of 3" under it) and a right pane (about 55%: the controls,
 that is the connection line and buttons, the "Not found?" hint or the start-point cards). Each pane scrolls on its own.
 
 1. **Press any key on your piano**: the line "Searching for your piano…" becomes "Connected · FP-30X" (polite live
@@ -225,9 +225,7 @@ that is the connection line and buttons, the "Not found?" hint or the start-poin
    plays C4, E4, G4 (500 ms apart, velocity 80), the card says "Play C, E, G" and any octave counts. A piano with no MIDI
    output skips the playing; the keys are then read as "C, play this key". A match says "You just played your first chord
    by ear." with Continue; a miss says "Close! Start again from C." with Replay, and Skip joins it after three misses.
-3. **Calibration**: the calibration screen, hosted in place (`docs/algorithms/latency-calibration.md`). Back or Cancel
-   skips it and stores no offset.
-4. **Where do you want to start?**: "Start at the beginning" (Unit 0, filled card) or, under "I can already play", Unit 1
+3. **Where do you want to start?**: "Start at the beginning" (Unit 0, filled card) or, under "I can already play", Unit 1
    or Unit 2 (title and a one-line summary of what it assumes). Each card is one 44 dp-high-or-more button. A failed save
    shows the `errorContainer` card "Couldn't save your start point. Tap one to try again."
 

@@ -402,11 +402,12 @@ public object Tunables {
     /**
      * The largest median absolute deviation of the paired taps, in milliseconds, that a calibration accepts.
      *
-     * Why: above this the taps were not locked to the beat, so their median says little about the piano.
+     * Why: above this the taps were not locked to the beat, so their median says little about the piano. Careful
+     * learners tapping to a click spread 20 to 35 ms on this measure, so 30 ms rejected normal people.
      *
-     * Source: starting value, owner-agreed in the M1 grill; calibrated in M7.
+     * Source: owner hardware check 2026-11-15 (ADR 0025), which raised it from 30 ms; calibrated in M7.
      */
-    public const val CALIBRATION_MAX_SPREAD_MS: Long = 30
+    public const val CALIBRATION_MAX_SPREAD_MS: Long = 45
 
     /**
      * The largest latency offset, in milliseconds either way, that a calibration stores.
@@ -945,4 +946,34 @@ public object Tunables {
      * Source: a starting value.
      */
     public val QUIZ_RANGE: IntRange = 48..84
+
+    /**
+     * How many Identity Requests the automatic link measurement sends; it keeps the smallest round trip.
+     *
+     * Why: the smallest of several round trips is the one with the least queueing, so closest to the true link delay;
+     * eight take about 0.3 s on a Bluetooth link.
+     *
+     * Source: starting value, owner-approved 2026-11-24 (ADR 0025); the owner's probe had min 21 ms, median 33 ms.
+     */
+    public const val CALIBRATION_PING_COUNT: Int = 8
+
+    /**
+     * How long, in milliseconds, the automatic link measurement waits for one Identity Reply before it gives up.
+     *
+     * Why: a piano that answers does so within tens of milliseconds; one that is silent once stays silent, and
+     * the wait is paid before a timed run starts.
+     *
+     * Source: starting value, owner-approved 2026-11-24 (ADR 0025).
+     */
+    public const val CALIBRATION_PING_TIMEOUT_MS: Long = 300
+
+    /**
+     * The link delay assumed for a Bluetooth LE piano that does not answer the Identity Request, in milliseconds
+     * (USB and other transports assume 0).
+     *
+     * Why: Bluetooth MIDI adds one connection interval or more before a note arrives.
+     *
+     * Source: owner's probe 2026-11-15 (ADR 0025): one-way 10 to 16 ms; starting value, owner-approved 2026-11-24.
+     */
+    public const val CALIBRATION_BLE_DEFAULT_MS: Long = 15
 }

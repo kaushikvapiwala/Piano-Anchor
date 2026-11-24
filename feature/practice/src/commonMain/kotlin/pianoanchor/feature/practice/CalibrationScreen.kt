@@ -47,6 +47,7 @@ import pianoanchor.feature.practice.resources.calibration_out_of_range
 import pianoanchor.feature.practice.resources.calibration_play_now
 import pianoanchor.feature.practice.resources.calibration_retry
 import pianoanchor.feature.practice.resources.calibration_save_failed
+import pianoanchor.feature.practice.resources.calibration_spread
 import pianoanchor.feature.practice.resources.calibration_start
 import pianoanchor.feature.practice.resources.calibration_title
 import pianoanchor.feature.practice.resources.calibration_too_few
@@ -182,6 +183,14 @@ private fun Done(
         style = MaterialTheme.typography.titleMedium,
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
+    spreadNanos(state.result)?.let {
+        val ms = (it / NANOS_PER_MILLI).roundToInt().toString()
+        Text(
+            stringResource(Res.string.calibration_spread, ms),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         if (saved) {
             PillButton(stringResource(Res.string.calibration_done), onDone)
@@ -197,6 +206,14 @@ private fun Done(
     }
 }
 
+/** The spread of the taps, when the result has one to show (accepted or too uneven). */
+private fun spreadNanos(result: CalibrationResult?): Long? =
+    when (result) {
+        is CalibrationResult.Accepted -> result.spreadNanos
+        is CalibrationResult.TooUneven -> result.spreadNanos
+        else -> null
+    }
+
 @Composable
 private fun resultText(state: CalibrationState): String =
     when (val result = state.result) {
@@ -211,7 +228,7 @@ private fun resultText(state: CalibrationState): String =
         }
 
         is CalibrationResult.TooUneven -> {
-            stringResource(Res.string.calibration_uneven)
+            stringResource(Res.string.calibration_uneven, Tunables.CALIBRATION_MAX_SPREAD_MS.toString())
         }
 
         is CalibrationResult.TooFewTaps -> {

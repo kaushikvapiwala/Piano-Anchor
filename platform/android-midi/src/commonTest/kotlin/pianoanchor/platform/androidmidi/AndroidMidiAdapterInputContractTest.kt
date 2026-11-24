@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.engine.Tunables
 import pianoanchor.testing.MidiInputRideOutContractTest
@@ -20,7 +21,8 @@ class AndroidMidiAdapterInputContractTest : MidiInputRideOutContractTest() {
             private val system = FakeMidiSystem()
             private val adapter = AndroidMidiAdapter(system, scope.backgroundScope)
             override val port: MidiInputPort = adapter
-            override val device: MidiDevice = MidiDevice(id = "ble:$ADDRESS", name = "Acme MIDI")
+            override val device: MidiDevice =
+                MidiDevice(id = "ble:$ADDRESS", name = "Acme MIDI", transport = MidiTransport.BLUETOOTH)
 
             init {
                 system.advertise(BluetoothAdvertisement(ADDRESS, device.name))

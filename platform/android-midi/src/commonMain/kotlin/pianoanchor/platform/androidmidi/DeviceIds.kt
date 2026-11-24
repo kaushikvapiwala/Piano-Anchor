@@ -1,6 +1,7 @@
 package pianoanchor.platform.androidmidi
 
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.model.UNSTABLE_DEVICE_ID_PREFIX
 
 /** Display name when Android reports neither a name nor a product (UI string resource comes with the monitor). */
@@ -24,7 +25,7 @@ internal fun identify(devices: List<SystemDevice>): List<ListedDevice> {
     return devices.sortedBy { it.systemId }.map { system ->
         var id = baseId(system)
         while (!taken.add(id)) id = "$id#${system.systemId}"
-        ListedDevice(system, MidiDevice(id = id, name = displayName(system)))
+        ListedDevice(system, MidiDevice(id = id, name = displayName(system), transport = system.transport.toModel()))
     }
 }
 
@@ -61,3 +62,10 @@ private fun displayName(device: SystemDevice): String =
     device.name.present() ?: device.product.present() ?: FALLBACK_DEVICE_NAME
 
 internal fun String?.present(): String? = this?.takeIf { it.isNotBlank() }
+
+private fun Transport.toModel(): MidiTransport =
+    when (this) {
+        Transport.USB -> MidiTransport.USB
+        Transport.BLUETOOTH -> MidiTransport.BLUETOOTH
+        Transport.OTHER -> MidiTransport.OTHER
+    }

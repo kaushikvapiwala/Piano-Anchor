@@ -16,6 +16,7 @@ import pianoanchor.core.model.LinkResumed
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiEvent
+import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.ports.MidiDiscoveryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
@@ -165,7 +166,8 @@ public class AndroidMidiAdapter internal constructor(
                 system.scanBluetooth().collect { advertisement ->
                     val id = bluetoothId(advertisement.address)
                     if (id in alreadyListed || id in found) return@collect
-                    found[id] = MidiDevice(id, advertisement.name.present() ?: FALLBACK_DEVICE_NAME)
+                    found[id] =
+                        MidiDevice(id, advertisement.name.present() ?: FALLBACK_DEVICE_NAME, MidiTransport.BLUETOOTH)
                     discovered[id] = advertisement.address
                     emit(found.values.toList())
                 }

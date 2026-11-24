@@ -61,7 +61,7 @@ import pianoanchor.ui.shell.pianoAnchorColors
 
 internal val TouchTarget = 44.dp
 internal val PillShape = RoundedCornerShape(22.dp)
-private const val STEP_COUNT = 4
+private const val STEP_COUNT = 3
 
 /** The panes split the width about 45/55, left to right. */
 private const val LEFT_PANE_WEIGHT = 0.45f
@@ -70,22 +70,15 @@ private val PaneGap = 24.dp
 
 /**
  * First-launch onboarding (Living Studio, `docs/ui/living-studio.md`): one step at a time in landscape
- * (explanation left, controls right), as [state] says: press a key, echo C-E-G, calibrate (the [calibration] slot
- * hosts the calibration screen for the connected piano) and choose the start point. Stateless: see
- * [OnboardingViewModel].
+ * (explanation left, controls right), as [state] says: press a key, echo C-E-G and choose the start point.
+ * Stateless: see [OnboardingViewModel].
  */
 @Composable
 public fun OnboardingScreen(
     state: OnboardingState,
     actions: OnboardingActions,
-    calibration: @Composable (MidiDevice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val device = state.device
-    if (state.step == OnboardingStep.CALIBRATE && device != null) {
-        calibration(device)
-        return
-    }
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
         // Landscape: the left pane (title, explanation, picture, step dots) reads first, then the controls.
         Row(
@@ -101,7 +94,6 @@ public fun OnboardingScreen(
                         OnboardingStep.CONNECT -> ConnectLeft(state)
                         OnboardingStep.ECHO -> EchoLeft(state)
                         OnboardingStep.START_POINT -> Title(Res.string.onboarding_start_title)
-                        OnboardingStep.CALIBRATE -> Unit // Calibrating without a piano can't happen: the slot shows it.
                     }
                 }
                 StepDots(state.step.ordinal)
@@ -114,14 +106,13 @@ public fun OnboardingScreen(
                     OnboardingStep.CONNECT -> ConnectRight(state, actions)
                     OnboardingStep.ECHO -> EchoRight(state, actions)
                     OnboardingStep.START_POINT -> StartPointRight(state, actions)
-                    OnboardingStep.CALIBRATE -> Unit
                 }
             }
         }
     }
 }
 
-/** Four dots, the current one filled, with the "Step n of 4" text that screen readers get. */
+/** Three dots, the current one filled, with the "Step n of 3" text that screen readers get. */
 @Composable
 private fun StepDots(current: Int) {
     Row(

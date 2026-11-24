@@ -661,7 +661,7 @@ class MonitorViewModelTest {
             runCurrent()
             assertEquals(1, open)
 
-            // What the route does for "Calibrate timing": close the monitor's reader, then navigate.
+            // What the route does for "Fine-tune timing": close the monitor's reader, then navigate.
             var openWhenNavigating = -1
             val navigation =
                 launch {

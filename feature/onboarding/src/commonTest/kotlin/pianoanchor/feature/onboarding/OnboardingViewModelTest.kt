@@ -125,9 +125,8 @@ class OnboardingViewModelTest {
 
     private fun TestScope.toStartPoint(vm: OnboardingViewModel) {
         passEcho(vm)
-        vm.continueToCalibration()
+        vm.continueToStartPoint()
         runCurrent()
-        vm.calibrationFinished()
     }
 
     private fun noteBytes(
@@ -243,9 +242,9 @@ class OnboardingViewModelTest {
 
             assertEquals(EchoPhase.PASSED, vm.state.value.echo)
             assertEquals(0, vm.state.value.misses)
-            vm.continueToCalibration()
+            vm.continueToStartPoint()
             runCurrent()
-            assertEquals(OnboardingStep.CALIBRATE, vm.state.value.step)
+            assertEquals(OnboardingStep.START_POINT, vm.state.value.step)
             assertEquals(0, input.open)
         }
 
@@ -290,16 +289,16 @@ class OnboardingViewModelTest {
     fun `skip after three misses`() =
         runTest(dispatcher) {
             val vm = connectAndListen()
-            vm.continueToCalibration()
+            vm.continueToStartPoint()
             runCurrent()
             assertEquals(OnboardingStep.ECHO, vm.state.value.step)
 
             missThreeTimes()
 
             assertTrue(vm.state.value.canSkipEcho)
-            vm.continueToCalibration()
+            vm.continueToStartPoint()
             runCurrent()
-            assertEquals(OnboardingStep.CALIBRATE, vm.state.value.step)
+            assertEquals(OnboardingStep.START_POINT, vm.state.value.step)
         }
 
     @Test
@@ -450,16 +449,16 @@ class OnboardingViewModelTest {
         }
 
     @Test
-    fun `closes input before calibration`() =
+    fun `closes input before the start point`() =
         runTest(dispatcher) {
             val vm = connectAndListen()
             missThreeTimes()
             assertEquals(1, input.open)
 
-            vm.continueToCalibration()
+            vm.continueToStartPoint()
             runCurrent()
 
-            assertEquals(OnboardingStep.CALIBRATE, vm.state.value.step)
+            assertEquals(OnboardingStep.START_POINT, vm.state.value.step)
             assertEquals(0, input.open)
         }
 
@@ -468,16 +467,14 @@ class OnboardingViewModelTest {
         runTest(dispatcher) {
             val vm = viewModel()
             vm.replay()
-            vm.continueToCalibration()
-            vm.calibrationFinished()
+            vm.continueToStartPoint()
             vm.start(StartPoint.UNIT_2)
             runCurrent()
             assertEquals(OnboardingState(listed = piano.device), vm.state.value)
 
             play(C4)
             advanceToMs(PLAYBACK_MS)
-            vm.continueToCalibration() // not passed, not three misses
-            vm.calibrationFinished()
+            vm.continueToStartPoint() // not passed, not three misses
             vm.start(StartPoint.UNIT_2)
             runCurrent()
 
@@ -684,10 +681,10 @@ class OnboardingViewModelTest {
             missThreeTimes()
 
             vm.replay()
-            vm.continueToCalibration()
+            vm.continueToStartPoint()
             runCurrent()
 
-            assertEquals(OnboardingStep.CALIBRATE, vm.state.value.step)
+            assertEquals(OnboardingStep.START_POINT, vm.state.value.step)
             assertEquals(0, input.open)
             assertEquals(1, input.maxOpen)
         }
