@@ -124,7 +124,7 @@ class LessonScreenTest {
             val state = lessonState(LessonStep.TRY, progress = sequenceProgress(60, 63))
             setContent { PianoAnchorTheme { LessonScreen(state, LessonActions()) } }
 
-            onNodeWithText("That was D#4. Waiting for D4.").assertIsDisplayed()
+            onNodeWithText("That was D♯4. D is between the two black keys.").assertIsDisplayed()
         }
 
     @Test

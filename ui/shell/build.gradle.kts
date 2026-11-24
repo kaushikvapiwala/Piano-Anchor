@@ -11,6 +11,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(libs.compose.resources)
+            implementation(project(":engine"))
         }
         named("androidHostTest").dependencies {
             implementation(libs.robolectric)

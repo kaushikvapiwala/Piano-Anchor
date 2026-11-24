@@ -52,6 +52,7 @@ import pianoanchor.feature.lesson.resources.quiz_summary_one
 import pianoanchor.ui.shell.BackButton
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.wrongKeyHintText
 
 private const val LEFT_PANE_WEIGHT = 0.3f
 private const val RIGHT_PANE_WEIGHT = 0.7f
@@ -188,7 +189,7 @@ private fun wrongKeyText(progress: TryProgress): String? {
     return if (expected == null) {
         stringResource(Res.string.lesson_try_wrong_any, MidiNote(wrong).name)
     } else {
-        quizHintText(wrongKeyHint(wrong, expected))
+        wrongKeyHintText(wrongKeyHint(wrong, expected))
     }
 }
 

@@ -32,6 +32,7 @@ import pianoanchor.feature.practice.resources.practice_next_key_done
 import pianoanchor.feature.practice.resources.practice_play_now
 import pianoanchor.feature.practice.resources.practice_skip
 import pianoanchor.ui.shell.displayFontFamily
+import pianoanchor.ui.shell.wrongKeyHintText
 
 private val STAFF_HEIGHT = 196.dp
 private val HIDDEN_STAFF_HEIGHT = 72.dp
@@ -93,7 +94,7 @@ internal fun HintRow(
     Row(modifier.heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
         if (hint != null) {
             Text(
-                hintText(hint),
+                wrongKeyHintText(hint),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
