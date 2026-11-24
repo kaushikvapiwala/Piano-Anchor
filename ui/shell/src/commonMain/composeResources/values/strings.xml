@@ -12,4 +12,14 @@
     <string name="back">Back</string>
     <string name="back_glyph">←</string>
     <string name="back_glyph_rtl">→</string>
+    <string name="hint_that_was">That was %1$s. %2$s</string>
+    <string name="hint_left_of_two">%1$s is just left of the two black keys.</string>
+    <string name="hint_between_two">%1$s is between the two black keys.</string>
+    <string name="hint_right_of_two">%1$s is just right of the two black keys.</string>
+    <string name="hint_left_of_three">%1$s is just left of the three black keys.</string>
+    <string name="hint_in_three_low">%1$s is in the three black keys, just left of the middle one.</string>
+    <string name="hint_in_three_high">%1$s is in the three black keys, just right of the middle one.</string>
+    <string name="hint_right_of_three">%1$s is just right of the three black keys.</string>
+    <string name="hint_black_above">%1$s is the black key just right of %2$s.</string>
+    <string name="hint_same_key">Same letter, other octave: try %1$s.</string>
 </resources>

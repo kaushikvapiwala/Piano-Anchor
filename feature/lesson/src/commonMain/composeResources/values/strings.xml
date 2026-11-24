@@ -29,7 +29,6 @@
     <string name="lesson_try_chord">Play %1$s together.</string>
     <string name="lesson_try_progress">%1$s of %2$s</string>
     <string name="lesson_try_done">✓ Well done</string>
-    <string name="lesson_try_wrong">That was %1$s. Waiting for %2$s.</string>
     <string name="lesson_try_wrong_any">That was %1$s. Try again.</string>
     <string name="lesson_count_in">Count-in %1$s</string>
     <string name="lesson_disconnected">The piano isn't connected. Go back and connect it to try this step.</string>
@@ -55,14 +54,4 @@
     <string name="quiz_summary">%1$s quizzes: %2$s clean</string>
     <string name="quiz_summary_one">1 quiz: %1$s clean</string>
     <string name="quiz_not_saved">Your results couldn't be saved.</string>
-    <string name="quiz_hint_that_was">That was %1$s. %2$s</string>
-    <string name="quiz_hint_left_of_two">%1$s is just left of the two black keys.</string>
-    <string name="quiz_hint_between_two">%1$s is between the two black keys.</string>
-    <string name="quiz_hint_right_of_two">%1$s is just right of the two black keys.</string>
-    <string name="quiz_hint_left_of_three">%1$s is just left of the three black keys.</string>
-    <string name="quiz_hint_in_three_low">%1$s is in the three black keys, just left of the middle one.</string>
-    <string name="quiz_hint_in_three_high">%1$s is in the three black keys, just right of the middle one.</string>
-    <string name="quiz_hint_right_of_three">%1$s is just right of the three black keys.</string>
-    <string name="quiz_hint_black_above">%1$s is the black key just right of %2$s.</string>
-    <string name="quiz_hint_same_key">Same letter, other octave: try %1$s.</string>
 </resources>

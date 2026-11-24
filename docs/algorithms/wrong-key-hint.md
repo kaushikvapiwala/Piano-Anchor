@@ -2,8 +2,8 @@
 
 A beginner who presses a wrong key learns little from "wrong". What helps is a way to find the right key without
 counting. The piano has one: the black keys come in a group of two and a group of three, and every white key has a fixed
-place against them. `wrongKeyHint(played, expected)` in `WrongKeyHint.kt` in the engine's guidance package picks that landmark; the practice screen
-turns it into one line of text.
+place against them. `wrongKeyHint(played, expected)` in `WrongKeyHint.kt` in the engine's guidance package picks that landmark; the practice screen, the quiz and the lesson's Try step
+turn it into one line of text with `wrongKeyHintText` in `ui/shell`.
 
 - **Landmarks by pitch class.** C is just left of the two black keys, D between them, E just right of them; F is just
   left of the three, G and A sit in the three (left and right of the middle key), B is just right of them. Every black

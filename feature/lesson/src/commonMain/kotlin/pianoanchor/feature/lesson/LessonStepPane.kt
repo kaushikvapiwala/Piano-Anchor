@@ -27,6 +27,7 @@ import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.TryCheck
+import pianoanchor.engine.guidance.wrongKeyHint
 import pianoanchor.engine.lesson.TryProgress
 import pianoanchor.feature.lesson.resources.Res
 import pianoanchor.feature.lesson.resources.lesson_count_in
@@ -42,11 +43,11 @@ import pianoanchor.feature.lesson.resources.lesson_see_watch_hand
 import pianoanchor.feature.lesson.resources.lesson_skip
 import pianoanchor.feature.lesson.resources.lesson_try_done
 import pianoanchor.feature.lesson.resources.lesson_try_progress
-import pianoanchor.feature.lesson.resources.lesson_try_wrong
 import pianoanchor.feature.lesson.resources.lesson_try_wrong_any
 import pianoanchor.feature.lesson.resources.lesson_use_play
 import pianoanchor.feature.lesson.resources.lesson_use_play_it
 import pianoanchor.ui.shell.displayFontFamily
+import pianoanchor.ui.shell.wrongKeyHintText
 
 private val COUNT_IN_SIZE = 56.sp
 private val BUTTON_HEIGHT = 44.dp
@@ -192,7 +193,7 @@ private fun wrongKeyLine(progress: TryProgress): String? {
     return if (expected == null) {
         stringResource(Res.string.lesson_try_wrong_any, MidiNote(wrong).name)
     } else {
-        stringResource(Res.string.lesson_try_wrong, MidiNote(wrong).name, MidiNote(expected).name)
+        wrongKeyHintText(wrongKeyHint(wrong, expected))
     }
 }
 
