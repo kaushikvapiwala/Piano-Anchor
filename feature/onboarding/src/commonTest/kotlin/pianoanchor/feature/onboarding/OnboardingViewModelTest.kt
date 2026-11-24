@@ -13,7 +13,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.BluetoothUnavailableException
@@ -26,9 +25,7 @@ import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
-import pianoanchor.engine.learner.PLACEMENT_ATTEMPT_ID
 import pianoanchor.engine.midi.MidiEncoder
-import pianoanchor.engine.onboarding.PlacementTest
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakePiano
 import pianoanchor.testing.FakeSettingsRepository
@@ -39,7 +36,6 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant

@@ -23,7 +23,6 @@ import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiTransport
 import pianoanchor.core.model.Release
-import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort

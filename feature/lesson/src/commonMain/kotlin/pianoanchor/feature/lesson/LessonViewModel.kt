@@ -32,6 +32,7 @@ import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.core.ports.TonePort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.lesson.Demo
 import pianoanchor.engine.lesson.LessonDemo
@@ -61,7 +62,8 @@ private class KeyChange(
  * keys as they sound. Try reads the piano from [input], opened once for the screen, into a [TryRun]: a Try with a
  * click starts [metronome] with a one-bar count-in, and a passed Try shows its tick for
  * `LESSON_TRY_DONE_PAUSE_MS` and moves on to Use. A concept whose Try is a passage has no Try step: it is part of Use.
- * Recap names the next unticked concept, reading the ticks from [attempts]; [time] stamps the piano's notes.
+ * Recap names the next unticked concept, reading the ticks from [attempts] and the placed skills from [learner];
+ * [time] stamps the piano's notes.
  *
  * An input has one reader at a time: [close] returns once the piano is closed and the sound has stopped, before
  * another screen (practice) opens the piano.
@@ -76,6 +78,7 @@ public class LessonViewModel(
     private val metronome: MetronomePort,
     private val settings: SettingsRepositoryPort,
     private val attempts: AttemptRepositoryPort,
+    private val learner: LearnerModel,
     private val time: ClockPort,
     private val startAt: LessonStep? = null,
 ) : ViewModel() {
@@ -317,7 +320,11 @@ public class LessonViewModel(
     private suspend fun showRecap() {
         val ticked =
             try {
-                CourseProgress.ticked(Curriculum, attempts.passageHistories(Curriculum.passages))
+                CourseProgress.ticked(
+                    Curriculum,
+                    attempts.passageHistories(Curriculum.passages),
+                    learner.placedSkills(),
+                )
             } catch (_: StorageUnavailableException) {
                 // Without the ticks, the next concept is the one after this in map order.
                 CourseProgress.skills(Curriculum).takeWhile { it != skill }.mapTo(HashSet()) { it.id }

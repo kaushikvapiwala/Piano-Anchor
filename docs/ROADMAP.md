@@ -49,9 +49,6 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 3. **Lighter sight-reading level query** (follow-up of #246): Today and sight Results load every saved sight
     attempt with all its MIDI events (one events query per row, `instr` scan) just to derive the level. Add a
     port query that returns only passage id, band and start time, with an index-friendly range on passage id.
-4. **Placed skills in Recap and Songs** (follow-up of #247): Today ticks the placement test's skills
-    (`LearnerModel.placedSkills`), but the lesson Recap's "next lesson" and the Songs "next" marker still call
-    `CourseProgress.ticked` without them, so a placed learner can be pointed back at Unit 0 there. Pass them in both.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never

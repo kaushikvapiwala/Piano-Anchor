@@ -106,10 +106,10 @@ songs). "Stop here" on a piece counts as failing it. The same bands always give 
 beginning" is start unit 0 with nothing placed. The test is offered in the onboarding only.
 
 Each piece is played as a normal Practice run with hint level OFF, no hear-first and no Results screen, and is saved
-as an ordinary attempt, so the passage's history and the practice days include it. Its skill reviews are recorded only
-when the piece passed: a failed piece leaves no KEEP_PRACTISING review on skills the learner never studied. A passed
-piece's reviews are real cold checks (wait mode, so the rating is capped at Hard); placement then skips those skills,
-since they already have a state.
+as an ordinary attempt, so the passage's history and the practice days include it. No skill review is
+recorded for it, passed or failed: a failed piece must not leave a KEEP_PRACTISING review on skills the learner never
+studied, and a passed piece's review would give those skills a state, so `place` (which skips skills that already have
+one) would not mark them placed. The final `place` call covers every unit before the start unit.
 
 ## Existing progress
 The migration to schema 10 marks every stored review `unaided` (they predate fading hints, and marking them aided would

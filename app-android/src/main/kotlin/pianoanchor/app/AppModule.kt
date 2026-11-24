@@ -118,7 +118,7 @@ val appModule =
             }
         }
         viewModel { (device: MidiDevice, skillId: String, startAt: LessonStep?) ->
-            LessonViewModel(device, skillId, get(), get(), get(), get(), get(), get(), get(), startAt)
+            LessonViewModel(device, skillId, get(), get(), get(), get(), get(), get(), get(), get(), startAt)
         }
         viewModel { (device: MidiDevice, quizzes: List<Quiz>) ->
             QuizViewModel(device, quizzes, get(), get(), get(), get(), get(), get()) { Uuid.random().toString() }
@@ -137,7 +137,7 @@ val appModule =
                 get(),
             )
         }
-        viewModel { SongsViewModel(get(), get()) }
+        viewModel { SongsViewModel(get(), get(), get()) }
         viewModel {
             TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME)
         }

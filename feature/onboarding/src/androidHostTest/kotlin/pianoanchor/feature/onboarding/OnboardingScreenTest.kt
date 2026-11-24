@@ -157,7 +157,7 @@ class OnboardingScreenTest {
         runComposeUiTest {
             show(OnboardingState(OnboardingStep.START_POINT, piano, piece = piece))
 
-            onNodeWithText("Unit 3 of 4 · Hold and play").assertExists()
+            onNodeWithText("Piece 3 of 4 · Hold and play").assertExists()
             onNodeWithText("run of builtin:held-bass").assertExists()
             onNodeWithText("Stop here").performClick()
 

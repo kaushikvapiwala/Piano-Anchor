@@ -24,8 +24,10 @@ import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.testing.FakeAttemptRepository
+import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
 import pianoanchor.testing.FakeSettingsRepository
@@ -65,6 +67,7 @@ class LessonViewModelTest {
     private val metronome = FakeMetronome(piano.clock)
     private val settings = FakeSettingsRepository()
     private val attempts = FakeAttemptRepository()
+    private val learnerRepository = FakeLearnerRepository()
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -85,6 +88,7 @@ class LessonViewModelTest {
             metronome,
             settings,
             attempts,
+            LearnerModel(Curriculum.graph, learnerRepository),
             piano.clock,
             startAt,
         ).also { runCurrent() }
@@ -521,6 +525,21 @@ class LessonViewModelTest {
                 Skills.STEPS_AND_SKIPS.title,
                 later.state.value.recap
                     ?.nextTitle,
+            )
+        }
+
+    @Test
+    fun aPlacedLearnersRecapPointsPastThePlacedUnits() =
+        runTest(dispatcher) {
+            val unit1 = Curriculum.units[1].skills
+            LearnerModel(Curriculum.graph, learnerRepository)
+                .place(Curriculum.units[0].skills.toSet(), kotlinx.datetime.LocalDate(2026, 11, 15))
+            val vm = viewModel(Skills.RH_C_POSITION, startAt = LessonStep.RECAP)
+
+            assertEquals(
+                unit1[1],
+                vm.state.value.recap
+                    ?.nextSkillId,
             )
         }
 

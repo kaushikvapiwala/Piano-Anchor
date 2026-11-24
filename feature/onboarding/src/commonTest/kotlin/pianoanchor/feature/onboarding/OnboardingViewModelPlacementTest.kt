@@ -225,6 +225,23 @@ class OnboardingViewModelPlacementTest {
         }
 
     @Test
+    fun `aGoodFirstPieceAndAFailedSecondLeaveUnit0Placed`() =
+        runTest(dispatcher) {
+            val vm = connectAndListen()
+            toStartPoint(vm)
+            vm.testMe()
+            runCurrent()
+            playTest(vm, Band.GOOD)
+
+            vm.placementRunFinished(Band.KEEP_PRACTISING)
+            vm.continueTest()
+            runCurrent()
+
+            val model = LearnerModel(Curriculum.graph, learnerRepository)
+            assertEquals(placedSkills(1), model.placedSkills())
+        }
+
+    @Test
     fun `aStorageFailureAfterTheTestIsRetriedFromTheVerdict`() =
         runTest(dispatcher) {
             val vm = connectAndListen()

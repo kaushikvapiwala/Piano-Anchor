@@ -63,7 +63,6 @@ import pianoanchor.engine.matcher.WaitModeMatcher
 import pianoanchor.engine.matcher.beatNanos
 import pianoanchor.engine.midi.defaultLinkLatencyNanos
 import pianoanchor.engine.midi.measureLinkLatencyNanos
-import pianoanchor.engine.onboarding.PlacementTest
 import pianoanchor.engine.profile
 import pianoanchor.engine.sight.SightReadingGenerator
 import kotlin.math.abs
@@ -106,8 +105,8 @@ import kotlin.time.Instant
  * [initialRung] and [initialMode] say. The wrong-key line still shows.
  *
  * A [placement] run (a piece of the onboarding's placement test, `docs/algorithms/learner-model.md`) runs the same
- * way, and its attempt is saved as usual but records the passage's skill reviews only when its band passes the test
- * (`PlacementTest.passes`): a failed test piece leaves no review on skills the learner never studied.
+ * way, and its attempt is saved as usual but records no skill review, passed or failed: the onboarding places the
+ * skills of the passed units itself, which only works for skills with no state yet.
  * [PracticeState.finishedBand] is the band of the saved attempt.
  */
 @Suppress("TooManyFunctions")
@@ -512,12 +511,12 @@ public class PracticeViewModel(
     }
 
     /**
-     * Records the saved [attempt] as a cold check (none for a failed placement piece). The run is already safe, so a
+     * Records the saved [attempt] as a cold check (none for a placement piece). The run is already safe, so a
      * learner store that can't be written is skipped: a replay or the next cold check recovers
      * (`docs/algorithms/learner-model.md`).
      */
     private suspend fun recordLearning(attempt: Attempt) {
-        if (placement && !PlacementTest.passes(attempt.band)) return
+        if (placement) return
         try {
             learner.record(passage, attempt, learnerDay(attempt.startedAt, zone))
         } catch (_: StorageUnavailableException) {

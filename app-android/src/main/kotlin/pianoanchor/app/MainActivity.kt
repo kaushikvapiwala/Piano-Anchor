@@ -302,6 +302,7 @@ private fun PracticeRoute(
     onBack: () -> Unit,
     onFinished: (attemptId: String, rung: TempoRung, band: Band?) -> Unit,
     onPlayWhole: (TempoRung) -> Unit,
+    stopRequested: Boolean = false,
 ) {
     val viewModel: PracticeViewModel =
         koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner()) {
@@ -316,6 +317,8 @@ private fun PracticeRoute(
     // Leave only once the run has closed the piano, so the monitor can reopen it (one reader per input).
     val leave = { then: () -> Unit -> scope.launch { viewModel.close() }.invokeOnCompletion { then() } }
     BackHandler { leave(onBack) }
+    // The onboarding's "Stop here": leave like back does, closing the piano first.
+    LaunchedEffect(stopRequested) { if (stopRequested) leave(onBack) }
     LaunchedEffect(state.finishedAttemptId) {
         state.finishedAttemptId?.let { id ->
             val rung = state.rung // the rung the run was played on, read before the screen closes
@@ -498,7 +501,9 @@ private fun ResultsRoute(
  * The first-launch onboarding. Its ViewModel lives as long as the route. Leaving for the piano list closes the piano
  * (one reader per input) and leaves the Bluetooth pianos
  * the search connected connected, so the list shows them without a new scan. The pieces of the placement test run in
- * the screen's slot: onboarding has closed the piano for them, and each run closes it again before it reports.
+ * the screen's slot: onboarding has closed the piano for them, and each run closes it again before it reports. "Stop
+ * here" is passed to the run, which closes the piano and then ends the test, so it never leaves composition with the
+ * piano still open.
  */
 @Composable
 private fun OnboardingRoute(
@@ -508,6 +513,8 @@ private fun OnboardingRoute(
     val viewModel: OnboardingViewModel = koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner())
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
+    // "Stop here" goes through the hosted run, which closes the piano before it reports (one reader per input).
+    var stopRequested by remember(state.piece?.number) { mutableStateOf(false) }
     val askBluetooth =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
@@ -523,7 +530,7 @@ private fun OnboardingRoute(
             onContinue = viewModel::continueToStartPoint,
             onTestMe = viewModel::testMe,
             onStartAtBeginning = viewModel::startFromBeginning,
-            onStopHere = viewModel::stopHere,
+            onStopHere = { if (state.device == null) viewModel.stopHere() else stopRequested = true },
             onNextPiece = viewModel::continueTest,
         ),
     ) { piece ->
@@ -535,6 +542,7 @@ private fun OnboardingRoute(
                     onBack = viewModel::stopHere,
                     onFinished = { _, _, band -> viewModel.placementRunFinished(band ?: Band.KEEP_PRACTISING) },
                     onPlayWhole = {},
+                    stopRequested = stopRequested,
                 )
             }
         }

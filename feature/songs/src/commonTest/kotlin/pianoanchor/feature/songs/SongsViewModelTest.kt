@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiDevice
@@ -15,9 +16,11 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.PieceStatus
 import pianoanchor.engine.content.PieceView
 import pianoanchor.engine.content.Skills
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
+import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakePiano
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -34,6 +37,7 @@ import kotlin.time.Instant
 class SongsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val attempts = FakeAttemptRepository()
+    private val learnerRepository = FakeLearnerRepository()
     private val piano = FakePiano(device = MidiDevice("usb:Roland/FP-30X", "FP-30X"))
 
     @BeforeTest
@@ -42,7 +46,10 @@ class SongsViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun TestScope.viewModel() = SongsViewModel(attempts, piano).also { runCurrent() }
+    private fun TestScope.viewModel() =
+        SongsViewModel(attempts, LearnerModel(Curriculum.graph, learnerRepository), piano).also {
+            runCurrent()
+        }
 
     private suspend fun playClean(
         id: String,
@@ -71,6 +78,21 @@ class SongsViewModelTest {
 
     private fun SongsViewModel.piece(id: String): PieceView =
         checkNotNull(state.value.pieces).first { it.passage.id == "builtin:$id" }
+
+    @Test
+    fun aPlacedLearnersNextMarkerIsTheStartUnitsFirstConcept() =
+        runTest(dispatcher) {
+            val unit0 =
+                Curriculum.units
+                    .first()
+                    .skills
+                    .toSet()
+            LearnerModel(Curriculum.graph, learnerRepository).place(unit0, LocalDate(2026, 11, 15))
+            val vm = viewModel()
+
+            assertEquals(Skills.RH_C_POSITION.id, vm.state.value.next)
+            assertEquals(unit0, vm.state.value.ticked)
+        }
 
     @Test
     fun listsPiecesWithStatus() =

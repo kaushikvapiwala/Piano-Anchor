@@ -48,17 +48,12 @@ import pianoanchor.feature.onboarding.resources.onboarding_connect_searching
 import pianoanchor.feature.onboarding.resources.onboarding_connect_sleep
 import pianoanchor.feature.onboarding.resources.onboarding_connect_title
 import pianoanchor.feature.onboarding.resources.onboarding_continue
-import pianoanchor.feature.onboarding.resources.onboarding_placement_header
 import pianoanchor.feature.onboarding.resources.onboarding_placement_next
-import pianoanchor.feature.onboarding.resources.onboarding_placement_passed
-import pianoanchor.feature.onboarding.resources.onboarding_placement_start_here
-import pianoanchor.feature.onboarding.resources.onboarding_placement_stop
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning_summary
 import pianoanchor.feature.onboarding.resources.onboarding_start_error
 import pianoanchor.feature.onboarding.resources.onboarding_start_test
 import pianoanchor.feature.onboarding.resources.onboarding_start_test_summary
-import pianoanchor.feature.onboarding.resources.onboarding_start_title
 import pianoanchor.feature.onboarding.resources.onboarding_step
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors

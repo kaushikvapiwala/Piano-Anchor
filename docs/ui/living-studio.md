@@ -230,7 +230,7 @@ that is the connection line and buttons, the "Not found?" hint or the start-poin
    by ear." with Continue; a miss says "Close! Start again from C." with Replay, and Skip joins it after three misses.
 3. **Where do you want to start?**: two cards, "Test me" (filled; a one-line summary) and "Start from the beginning"
    (Unit 0, nothing assumed). Each card is one 44 dp-high-or-more button. "Test me" plays up to four pieces, one per
-   unit (`docs/algorithms/learner-model.md`, "The placement test"). A piece fills the screen: a header "Unit 3 of 4 · Hold
+   unit (`docs/algorithms/learner-model.md`, "The placement test"). A piece fills the screen: a header "Piece 3 of 4 · Hold
    and play" with a "Stop here" text button on the right, and under it the practice screen (wait mode, no hints, no Hint
    button, no tempo chips; its own back arrow also stops the test). When the piece is done the two-pane step returns:
    the header and a one-line verdict (polite live region), "Passed, next piece" with a "Next piece" button, or "That's

@@ -117,7 +117,7 @@ class PracticeViewModelPlacementTest {
             assertFalse(saved.hintShown)
             assertEquals(Band.CLEAN, vm.state.value.finishedBand)
             assertEquals("attempt-1", vm.state.value.finishedAttemptId)
-            assertTrue(learnerRepository.states().isNotEmpty()) // a passed run records its skills' reviews
+            assertTrue(learnerRepository.states().isEmpty()) // placement, not the run, marks skills
         }
 
     @Test
@@ -134,5 +134,18 @@ class PracticeViewModelPlacementTest {
             assertNotNull(attempts.get("attempt-1"))
             assertTrue(learnerRepository.states().isEmpty())
             assertFalse(vm.state.value.saveFailed)
+        }
+
+    @Test
+    fun passedPlacementRunRecordsNoReview() =
+        runTest(dispatcher) {
+            val vm = practice()
+
+            tap(c4)
+            tap(d4)
+            tap(e4)
+
+            assertEquals(Band.CLEAN, vm.state.value.finishedBand)
+            assertTrue(learnerRepository.states().isEmpty())
         }
 }
