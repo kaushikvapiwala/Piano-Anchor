@@ -17,6 +17,7 @@ import pianoanchor.core.model.PlayedNote
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.WrongNote
+import pianoanchor.core.model.summary
 import pianoanchor.core.ports.AttemptRepositoryPort
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -365,44 +366,57 @@ abstract class AttemptRepositoryPortContractTest {
         }
 
     @Test
-    fun attemptsWithPassagePrefixReturnsMatchesOldestFirst() =
+    fun summariesWithPassagePrefixReturnsMatchesOldestFirst() =
         runTest {
             val repository = createSubject()
             repository.save(attempt("a-1", startedAtSeconds = 3_000, passageId = "sight:1:20"))
             repository.save(attempt("a-2", startedAtSeconds = 1_000, passageId = "sight:2:10"))
             repository.save(attempt("a-3", startedAtSeconds = 2_000, passageId = "sight:1:20"))
-            assertEquals(listOf("a-2", "a-3", "a-1"), repository.attemptsWithPassagePrefix("sight:").map { it.id })
-            assertEquals(events, repository.attemptsWithPassagePrefix("sight:").first().events)
+            assertEquals(listOf("a-2", "a-3", "a-1"), repository.summariesWithPassagePrefix("sight:").map { it.id })
+            val saved = attempt("a-2", startedAtSeconds = 1_000, passageId = "sight:2:10")
+            assertEquals(saved.summary, repository.summariesWithPassagePrefix("sight:").first())
         }
 
     @Test
-    fun attemptsWithPassagePrefixIgnoresOthers() =
+    fun summariesWithPassagePrefixIgnoresOthers() =
         runTest {
             val repository = createSubject()
             repository.save(attempt("a-1", startedAtSeconds = 1_000, passageId = "sight:1:20"))
             repository.save(attempt("a-2", startedAtSeconds = 2_000, passageId = "c-d-e"))
             repository.save(attempt("a-3", startedAtSeconds = 3_000, passageId = "sigh%"))
-            assertEquals(listOf("a-1"), repository.attemptsWithPassagePrefix("sight:").map { it.id })
-            assertEquals(emptyList(), repository.attemptsWithPassagePrefix("nothing:"))
+            repository.save(attempt("a-4", startedAtSeconds = 4_000, passageId = "x-sight:1"))
+            assertEquals(listOf("a-1"), repository.summariesWithPassagePrefix("sight:").map { it.id })
+            assertEquals(emptyList(), repository.summariesWithPassagePrefix("nothing:"))
             // A wildcard is plain text, not a pattern.
-            assertEquals(emptyList(), repository.attemptsWithPassagePrefix("%"))
+            assertEquals(emptyList(), repository.summariesWithPassagePrefix("%"))
         }
 
     @Test
-    fun attemptsWithPassagePrefixBlankPrefixThrows() =
+    fun summariesWithPassagePrefixIncludesIdsJustAboveThePrefix() =
         runTest {
             val repository = createSubject()
-            assertFailsWith<IllegalArgumentException> { repository.attemptsWithPassagePrefix("") }
-            assertFailsWith<IllegalArgumentException> { repository.attemptsWithPassagePrefix("  ") }
+            repository.save(attempt("a-1", startedAtSeconds = 1_000, passageId = "sight:"))
+            repository.save(attempt("a-2", startedAtSeconds = 2_000, passageId = "sight:\uFFFF"))
+            repository.save(attempt("a-3", startedAtSeconds = 3_000, passageId = "sight;"))
+            repository.save(attempt("a-4", startedAtSeconds = 4_000, passageId = "sigh"))
+            assertEquals(listOf("a-1", "a-2"), repository.summariesWithPassagePrefix("sight:").map { it.id })
         }
 
     @Test
-    fun attemptsWithPassagePrefixBreaksStartTiesById() =
+    fun summariesWithPassagePrefixBlankPrefixThrows() =
+        runTest {
+            val repository = createSubject()
+            assertFailsWith<IllegalArgumentException> { repository.summariesWithPassagePrefix("") }
+            assertFailsWith<IllegalArgumentException> { repository.summariesWithPassagePrefix("  ") }
+        }
+
+    @Test
+    fun summariesWithPassagePrefixBreaksStartTiesById() =
         runTest {
             val repository = createSubject()
             repository.save(attempt("a-2", startedAtSeconds = 1_000, passageId = "sight:1:20"))
             repository.save(attempt("a-1", startedAtSeconds = 1_000, passageId = "sight:1:21"))
-            assertEquals(listOf("a-1", "a-2"), repository.attemptsWithPassagePrefix("sight:").map { it.id })
+            assertEquals(listOf("a-1", "a-2"), repository.summariesWithPassagePrefix("sight:").map { it.id })
         }
 }
 

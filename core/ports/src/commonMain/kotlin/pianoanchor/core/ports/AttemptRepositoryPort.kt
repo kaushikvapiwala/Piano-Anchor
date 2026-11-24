@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.AttemptSummary
 import pianoanchor.core.model.StorageUnavailableException
 import kotlin.time.Instant
 
@@ -75,8 +76,9 @@ public interface AttemptRepositoryPort {
     ): Set<LocalDate>
 
     /**
-     * Attempts whose passage id starts with [prefix], oldest first by [Attempt.startedAt]; empty when none. Throws
-     * [IllegalArgumentException] for a blank prefix, [StorageUnavailableException] when the store can't be read.
+     * Summaries of the attempts whose passage id starts with [prefix], oldest first by [AttemptSummary.startedAt],
+     * ties by id; empty when none. Throws [IllegalArgumentException] for a blank prefix, [StorageUnavailableException]
+     * when the store can't be read.
      */
-    public suspend fun attemptsWithPassagePrefix(prefix: String): List<Attempt>
+    public suspend fun summariesWithPassagePrefix(prefix: String): List<AttemptSummary>
 }

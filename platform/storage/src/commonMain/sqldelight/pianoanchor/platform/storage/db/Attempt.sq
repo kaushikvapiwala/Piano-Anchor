@@ -97,5 +97,15 @@ SELECT started_at_ms FROM attempt WHERE started_at_ms >= ?;
 countCleanWaitRuns:
 SELECT COUNT(*) FROM attempt WHERE passage_id = ? AND band = 'CLEAN' AND tempo_bpm IS NULL AND spot_first_bar IS NULL;
 
-selectByPassagePrefix:
-SELECT * FROM attempt WHERE instr(passage_id, :prefix) = 1 ORDER BY started_at_ms, id;
+-- Summaries of the attempts whose passage id starts with :prefix, as a range (:prefix <= id < :upper, :upper being the
+-- prefix with its last character incremented) that the attempt_passage_started index serves. No LIKE: % and _ stay literal.
+selectSummariesInPrefixRange:
+SELECT id, passage_id, started_at_ms, band FROM attempt
+WHERE passage_id >= :prefix AND passage_id < :upper
+ORDER BY started_at_ms, id;
+
+-- The same when no :upper exists (the prefix ends in a character that can't be incremented): a lower bound plus an exact check.
+selectSummariesByPrefixFrom:
+SELECT id, passage_id, started_at_ms, band FROM attempt
+WHERE passage_id >= :prefix AND instr(passage_id, :prefix) = 1
+ORDER BY started_at_ms, id;

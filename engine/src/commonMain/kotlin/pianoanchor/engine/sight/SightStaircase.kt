@@ -1,6 +1,6 @@
 package pianoanchor.engine.sight
 
-import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.AttemptSummary
 import pianoanchor.core.model.Band
 import pianoanchor.engine.Tunables
 
@@ -11,7 +11,7 @@ public object SightStaircase {
      * id counts, in startedAt order), starting at 1, clamped to 1..[open]. 0 when [open] is 0.
      */
     public fun level(
-        attempts: List<Attempt>,
+        attempts: List<AttemptSummary>,
         open: Int,
     ): Int {
         if (open == 0) return 0

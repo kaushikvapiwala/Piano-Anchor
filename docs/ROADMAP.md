@@ -46,9 +46,6 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 2. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
     and the key of G; the pedal and legato; scales with thumb-under. Built like units 0–3 (concept cards, five-step
     lessons, Try checks); each unit adds sight-reading levels.
-3. **Lighter sight-reading level query** (follow-up of #246): Today and sight Results load every saved sight
-    attempt with all its MIDI events (one events query per row, `instr` scan) just to derive the level. Add a
-    port query that returns only passage id, band and start time, with an index-friendly range on passage id.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never

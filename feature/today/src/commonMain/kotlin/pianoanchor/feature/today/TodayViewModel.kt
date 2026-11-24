@@ -141,7 +141,7 @@ public class TodayViewModel(
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
             val from = minOf(weekStart, windowStart)
             val days = attempts.practiceDays(from, zone) + learner.reviewDays(from)
-            val sightAttempts = attempts.attemptsWithPassagePrefix(SightReadingGenerator.ID_PREFIX)
+            val sightAttempts = attempts.summariesWithPassagePrefix(SightReadingGenerator.ID_PREFIX)
             val learned = learner.learnedSkills()
             val session =
                 SessionComposer.compose(

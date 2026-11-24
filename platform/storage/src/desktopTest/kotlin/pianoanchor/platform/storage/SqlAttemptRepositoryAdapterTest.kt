@@ -1,5 +1,6 @@
 package pianoanchor.platform.storage
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -126,11 +127,49 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
         }
 
     @Test
-    fun attemptsWithPassagePrefixThrowsStorageUnavailableExceptionWhenTheDriverFails() =
+    fun summariesWithPassagePrefixThrowsStorageUnavailableExceptionWhenTheDriverFails() =
         runTest {
             failingDriver.failing = true
-            assertFailsWith<StorageUnavailableException> { failingRepository.attemptsWithPassagePrefix("sight:") }
+            assertFailsWith<StorageUnavailableException> { failingRepository.summariesWithPassagePrefix("sight:") }
         }
+
+    @Test
+    fun prefixQueryUsesThePassageIndex() {
+        val plan = mutableListOf<String>()
+        driver.executeQuery(
+            identifier = null,
+            sql =
+                "EXPLAIN QUERY PLAN SELECT id, passage_id, started_at_ms, band FROM attempt " +
+                    "WHERE passage_id >= ? AND passage_id < ? ORDER BY started_at_ms, id",
+            mapper = { cursor ->
+                while (cursor.next().value) plan += cursor.getString(3).orEmpty()
+                QueryResult.Unit
+            },
+            parameters = 2,
+            binders = {
+                bindString(0, "sight:")
+                bindString(1, "sight;")
+            },
+        )
+        assertTrue(plan.any { "attempt_passage_started" in it }, plan.toString())
+    }
+
+    @Test
+    fun aPrefixEndingInTheHighestCharacterStillMatches() =
+        runTest {
+            val prefix = "sight:\uFFFF"
+            repository.save(attempt(emptyList()).copy(id = "a-1", passageId = prefix + "x"))
+            repository.save(attempt(emptyList()).copy(id = "a-2", passageId = "sight:"))
+            assertEquals(listOf("a-1"), repository.summariesWithPassagePrefix(prefix).map { it.id })
+        }
+
+    @Test
+    fun prefixUpperBoundIncrementsTheLastCharacterUnlessUnsafe() {
+        assertEquals("sight;", prefixUpperBound("sight:"))
+        assertNull(prefixUpperBound("a\uFFFF"))
+        assertNull(prefixUpperBound("a\uD83D"))
+        assertNull(prefixUpperBound("a\uD7FF"))
+    }
 
     @Test
     fun deletingAnAttemptDeletesItsNotes() =

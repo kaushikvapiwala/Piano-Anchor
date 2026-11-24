@@ -1,6 +1,6 @@
 package pianoanchor.engine.sight
 
-import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.AttemptSummary
 import pianoanchor.core.model.Band
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,20 +16,11 @@ class SightStaircaseTest {
         band: Band,
         passageId: String = SightReadingGenerator.idOf(1, next++),
         at: Long = clock++,
-    ) = Attempt(
+    ) = AttemptSummary(
         id = "a$at-$passageId",
         passageId = passageId,
-        deviceId = "d",
         startedAt = Instant.fromEpochSeconds(at),
-        durationNanos = 0,
-        stepCount = 1,
-        wrongNotes = 0,
-        incompleteChords = 0,
-        accuracy = 1.0,
         band = band,
-        events = emptyList(),
-        tempoBpm = null,
-        playedNotes = emptyList(),
     )
 
     private fun run(

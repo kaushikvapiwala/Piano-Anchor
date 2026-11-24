@@ -8,8 +8,10 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.AttemptSummary
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.model.summary
 import pianoanchor.core.ports.AttemptRepositoryPort
 import kotlin.time.Instant
 
@@ -87,12 +89,13 @@ class FakeAttemptRepository : AttemptRepositoryPort {
             .filterTo(LinkedHashSet()) { it >= from }
     }
 
-    override suspend fun attemptsWithPassagePrefix(prefix: String): List<Attempt> {
-        failIfFailing("attemptsWithPassagePrefix")
+    override suspend fun summariesWithPassagePrefix(prefix: String): List<AttemptSummary> {
+        failIfFailing("summariesWithPassagePrefix")
         require(prefix.isNotBlank()) { "prefix must not be blank" }
         return attempts.value.values
             .filter { it.passageId.startsWith(prefix) }
             .sortedWith(compareBy({ it.startedAt }, { it.id }))
+            .map { it.summary }
     }
 
     private fun failIfFailing(operation: String) {
