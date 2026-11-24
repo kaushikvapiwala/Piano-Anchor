@@ -50,8 +50,9 @@ private val CHORD = listOf(MidiNote(60), MidiNote(64), MidiNote(67))
 /**
  * First-launch onboarding (`docs/ui/living-studio.md`): the first note on any listed [input] picks the piano (while
  * [discovery] connects the Bluetooth pianos it finds, and the one picked is stored as `lastPiano` in [settings]);
- * the piano plays C-E-G through [output] and the learner echoes it; the start step offers "Test me", the played placement test (one hosted run per piece, see [testMe],
- * [placementRunFinished], [stopHere] and [continueTest]), or "Start from the beginning". Either way the skills of the
+ * the piano plays C-E-G through [output] and the learner echoes it; the start step offers "Test me", the played
+ * placement test (one hosted run per piece, see [testMe], [placementRunFinished], [stopHere] and [continueTest]), or
+ * "Start from the beginning". Either way the skills of the
  * units before the start unit are placed with [learner] and `onboarded` is stored in [settings]. The day follows
  * [clock] in [zone].
  *

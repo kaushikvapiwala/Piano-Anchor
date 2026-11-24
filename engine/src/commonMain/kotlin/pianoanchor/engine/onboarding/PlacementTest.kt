@@ -24,14 +24,7 @@ public object PlacementTest {
     public fun passes(band: Band): Boolean = band != Band.KEEP_PRACTISING
 
     /** After [bands] (in test order): the next passage index to play, or null when the test is over. */
-    public fun next(bands: List<Band>): Int? =
-        if (bands.any { !passes(it) } ||
-            bands.size >= UNITS
-        ) {
-            null
-        } else {
-            bands.size
-        }
+    public fun next(bands: List<Band>): Int? = bands.size.takeIf { bands.all(::passes) && it < UNITS }
 
     /** The unit the learner starts at (0..4; 4 = course done) once [next] is null. */
     public fun startUnit(bands: List<Band>): Int = bands.indexOfFirst { !passes(it) }.takeIf { it >= 0 } ?: bands.size

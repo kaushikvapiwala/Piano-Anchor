@@ -224,14 +224,8 @@ private fun StartPointRight(
         }
     }
     if (state.piece != null) {
-        val next =
-            if (state.verdict ==
-                PlacementVerdict.PASSED
-            ) {
-                Res.string.onboarding_placement_next
-            } else {
-                Res.string.onboarding_continue
-            }
+        val passed = state.verdict == PlacementVerdict.PASSED
+        val next = if (passed) Res.string.onboarding_placement_next else Res.string.onboarding_continue
         PillButton(stringResource(next), actions.onNextPiece)
         return
     }
