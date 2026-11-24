@@ -11,7 +11,7 @@ public enum class OnboardingStep {
     /** The piano plays C-E-G and the learner echoes it. */
     ECHO,
 
-    /** Unit 0 or "I can already play". */
+    /** "Test me" (the played placement test) or "Start from the beginning". */
     START_POINT,
 }
 
@@ -30,18 +30,24 @@ public enum class EchoPhase {
     PASSED,
 }
 
-/** Where the learner starts: the beginning, or after the first [unitsPlaced] units, whose skills count as learned. */
-public enum class StartPoint(
-    public val unitsPlaced: Int,
-) {
-    /** Unit 0, nothing placed. */
-    BEGINNING(0),
+/**
+ * The piece of the placement test being played (or just played): [number] of [total] (1-based, "Unit 1 of 4"), the
+ * [passageId] to host, and its [title].
+ */
+public data class PlacementPiece(
+    val number: Int,
+    val total: Int,
+    val passageId: String,
+    val title: String,
+)
 
-    /** Unit 1: Unit 0's skills are placed. */
-    UNIT_1(1),
+/** What the learner is told between two pieces of the placement test. */
+public enum class PlacementVerdict {
+    /** The piece passed and another follows: "Passed, next piece". */
+    PASSED,
 
-    /** Unit 2: the skills of Units 0 and 1 are placed. */
-    UNIT_2(2),
+    /** The test is over: "That's where we'll start". */
+    START_HERE,
 }
 
 /**
@@ -51,7 +57,8 @@ public enum class StartPoint(
  * `Tunables.ONBOARDING_CONNECT_HINT_MS`. In the echo step [echo] is where it is, [keysHighlighted] is true when the
  * piano can't play C-E-G itself (no MIDI output) so the screen shows the keys instead, and [misses] counts the attempts
  * that didn't match. [storageFailed] is true when the start point could not be saved; [finished] is true once it was
- * and the app can open Today.
+ * and the app can open Today. In the start step, [piece] is the piece of the placement test under way (null before
+ * "Test me"): while [verdict] is null the app hosts a run of it, then [verdict] says how it went.
  */
 public data class OnboardingState(
     val step: OnboardingStep = OnboardingStep.CONNECT,
@@ -63,6 +70,8 @@ public data class OnboardingState(
     val misses: Int = 0,
     val storageFailed: Boolean = false,
     val finished: Boolean = false,
+    val piece: PlacementPiece? = null,
+    val verdict: PlacementVerdict? = null,
 ) {
     /** True once the echo has been missed often enough to offer Skip. */
     val canSkipEcho: Boolean get() = misses >= Tunables.ONBOARDING_MISSES_BEFORE_SKIP

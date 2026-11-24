@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
+import pianoanchor.core.model.Band
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
@@ -38,6 +39,7 @@ import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.midi.canPlayOn
 import pianoanchor.engine.midi.playTones
+import pianoanchor.engine.onboarding.PlacementTest
 import pianoanchor.engine.onboarding.echoCanStillMatch
 import pianoanchor.engine.onboarding.echoMatches
 import kotlin.time.Clock
@@ -48,8 +50,10 @@ private val CHORD = listOf(MidiNote(60), MidiNote(64), MidiNote(67))
 /**
  * First-launch onboarding (`docs/ui/living-studio.md`): the first note on any listed [input] picks the piano (while
  * [discovery] connects the Bluetooth pianos it finds, and the one picked is stored as `lastPiano` in [settings]);
- * the piano plays C-E-G through [output] and the learner echoes it; the
- * start point places the skills of the units before it with [learner] and stores `onboarded` in [settings]. The day follows [clock] in [zone].
+ * the piano plays C-E-G through [output] and the learner echoes it; the start step offers "Test me", the played placement test (one hosted run per piece, see [testMe],
+ * [placementRunFinished], [stopHere] and [continueTest]), or "Start from the beginning". Either way the skills of the
+ * units before the start unit are placed with [learner] and `onboarded` is stored in [settings]. The day follows
+ * [clock] in [zone].
  *
  * An input has one reader at a time: [close] returns once the piano is closed, and the next session starts only after
  * the reader before it has closed. When the ViewModel is cleared, [cleanup] runs
@@ -74,6 +78,9 @@ public class OnboardingViewModel(
     private var scan: Job? = null
     private var starting: Job? = null
     private val connectedByScan = HashSet<MidiDevice>()
+
+    /** The bands of the placement pieces played so far, in test order. */
+    private val bands = ArrayList<Band>()
 
     /** True once the piano list took over: the Bluetooth pianos the search connected stay connected for it. */
     private var handedOver = false
@@ -119,17 +126,89 @@ public class OnboardingViewModel(
     }
 
     /**
-     * Places every skill of the units before [point], stores `onboarded` and sets [OnboardingState.finished]. A store
-     * that can't be written sets [OnboardingState.storageFailed]; choosing again retries (placed skills stay).
+     * "Test me": closes the piano (the hosted runs read it) and shows the first piece of the placement test. The app
+     * hosts a run of [OnboardingState.piece] until it reports [placementRunFinished] (or [stopHere]).
      */
-    public fun start(point: StartPoint) {
-        if (state.value.step != OnboardingStep.START_POINT || starting?.isActive == true) return
+    public fun testMe() {
+        if (state.value.step != OnboardingStep.START_POINT || state.value.piece != null || starting?.isActive == true) {
+            return
+        }
+        val previous = session
+        starting =
+            viewModelScope.launch {
+                withContext(NonCancellable) { previous?.cancelAndJoin() }
+                bands.clear()
+                mutableState.update { it.copy(piece = pieceAt(0), verdict = null, storageFailed = false) }
+            }
+    }
+
+    /**
+     * The hosted run of the current piece ended with [band] (its attempt is saved by the run): the piece passes with
+     * GOOD or CLEAN. Says "Passed, next piece" while the test goes on, else "That's where we'll start". Ignored when
+     * no piece is being played.
+     */
+    public fun placementRunFinished(band: Band) {
+        val current = state.value
+        if (current.piece == null || current.verdict != null) return
+        bands += band
+        val verdict = if (PlacementTest.next(bands) == null) PlacementVerdict.START_HERE else PlacementVerdict.PASSED
+        mutableState.update { it.copy(verdict = verdict) }
+    }
+
+    /** "Stop here" on a piece: the test ends as if the piece failed. */
+    public fun stopHere() {
+        placementRunFinished(Band.KEEP_PRACTISING)
+    }
+
+    /**
+     * After the verdict: shows the next piece, or when the test is over places the skills of the units before the
+     * start unit and finishes (like [startFromBeginning]). Ignored before a verdict.
+     */
+    public fun continueTest() {
+        val current = state.value
+        when (current.verdict) {
+            PlacementVerdict.PASSED -> {
+                mutableState.update { it.copy(piece = pieceAt(bands.size), verdict = null) }
+            }
+
+            PlacementVerdict.START_HERE -> {
+                finish(PlacementTest.startUnit(bands))
+            }
+
+            null -> {
+                return
+            }
+        }
+    }
+
+    /** "Start from the beginning": start unit 0, nothing placed. */
+    public fun startFromBeginning() {
+        if (state.value.step != OnboardingStep.START_POINT || state.value.piece != null) return
+        finish(0)
+    }
+
+    private fun pieceAt(index: Int): PlacementPiece {
+        val id = PlacementTest.passageIds[index]
+        return PlacementPiece(
+            number = index + 1,
+            total = PlacementTest.passageIds.size,
+            passageId = id,
+            title = checkNotNull(Curriculum.passage(id)).title,
+        )
+    }
+
+    /**
+     * Places every skill of the units before [startUnit], stores `onboarded` and sets [OnboardingState.finished]. A
+     * store that can't be written sets [OnboardingState.storageFailed]; trying again retries (placed skills stay).
+     */
+    private fun finish(startUnit: Int) {
+        if (starting?.isActive == true) return
         val previous = session
         starting =
             viewModelScope.launch {
                 withContext(NonCancellable) { previous?.cancelAndJoin() }
                 try {
-                    val skills = Curriculum.units.take(point.unitsPlaced).flatMapTo(HashSet()) { it.skills }
+                    val skills = Curriculum.units.take(startUnit).flatMapTo(HashSet()) { it.skills }
                     learner.place(skills, learnerDay(clock.now(), zone))
                     settings.update { it.copy(onboarded = true) }
                     mutableState.update { it.copy(storageFailed = false, finished = true) }

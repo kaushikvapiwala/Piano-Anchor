@@ -32,6 +32,32 @@ class CourseProgressTest {
     }
 
     @Test
+    fun placedSkillsAreTicked() {
+        val unit0 =
+            Curriculum.units
+                .first()
+                .skills
+                .toSet()
+        val ticked = CourseProgress.ticked(Curriculum, emptyMap(), placed = unit0 + "ear-skill-not-in-course")
+        assertEquals(
+            CourseProgress
+                .skills(Curriculum)
+                .map { it.id }
+                .filter { it in unit0 }
+                .toSet(),
+            ticked,
+        )
+        assertEquals(Skills.RH_C_POSITION.id, CourseProgress.next(Curriculum, ticked)?.id)
+    }
+
+    @Test
+    fun defaultPlacedIsEmpty() =
+        assertEquals(
+            CourseProgress.ticked(Curriculum, emptyMap(), emptySet()),
+            CourseProgress.ticked(Curriculum, emptyMap()),
+        )
+
+    @Test
     fun noneCleanGivesHandShapeNext() {
         val ticked = CourseProgress.ticked(Curriculum, emptyMap())
         assertEquals(emptySet(), ticked)

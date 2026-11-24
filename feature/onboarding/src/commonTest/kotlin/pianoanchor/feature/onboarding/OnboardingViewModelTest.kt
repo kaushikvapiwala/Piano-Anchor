@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import pianoanchor.core.model.Band
 import pianoanchor.core.model.BluetoothUnavailableException
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiEvent
@@ -27,6 +28,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.PLACEMENT_ATTEMPT_ID
 import pianoanchor.engine.midi.MidiEncoder
+import pianoanchor.engine.onboarding.PlacementTest
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakePiano
 import pianoanchor.testing.FakeSettingsRepository
@@ -37,6 +39,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -374,74 +377,33 @@ class OnboardingViewModelTest {
         }
 
     @Test
-    fun `starting at unit 2 places units 0 and 1`() =
+    fun `beginningPlacesNothing`() =
         runTest(dispatcher) {
             val vm = connectAndListen()
             toStartPoint(vm)
 
-            vm.start(StartPoint.UNIT_2)
-            runCurrent()
-
-            val placed = learnerRepository.states()
-            val expected =
-                Curriculum.units
-                    .take(2)
-                    .flatMap { it.skills }
-                    .toSet()
-            assertEquals(expected, placed.keys)
-            assertTrue(placed.values.all { it.learned })
-            assertEquals(LocalDate(2026, 11, 18), placed.values.first().introducedDay)
-            assertEquals(PLACEMENT_ATTEMPT_ID, learnerRepository.reviews(expected.first()).single().attemptId)
-        }
-
-    @Test
-    fun `starting at the beginning places nothing`() =
-        runTest(dispatcher) {
-            val vm = connectAndListen()
-            toStartPoint(vm)
-
-            vm.start(StartPoint.BEGINNING)
+            vm.startFromBeginning()
             runCurrent()
 
             assertTrue(learnerRepository.states().isEmpty())
-            assertTrue(vm.state.value.finished)
-        }
-
-    @Test
-    fun `finishing sets onboarded`() =
-        runTest(dispatcher) {
-            val vm = connectAndListen()
-            toStartPoint(vm)
-            assertFalse(settings.settings.first().onboarded)
-
-            vm.start(StartPoint.UNIT_1)
-            runCurrent()
-
             assertTrue(settings.settings.first().onboarded)
             assertTrue(vm.state.value.finished)
-            assertEquals(
-                Curriculum.units
-                    .first()
-                    .skills
-                    .toSet(),
-                learnerRepository.states().keys,
-            )
         }
 
     @Test
-    fun `a store that fails keeps the start point open for another try`() =
+    fun `storageFailureIsShownAndRetried`() =
         runTest(dispatcher) {
             val vm = connectAndListen()
             toStartPoint(vm)
             settings.failing = true
 
-            vm.start(StartPoint.UNIT_1)
+            vm.startFromBeginning()
             runCurrent()
 
             assertTrue(vm.state.value.storageFailed)
             assertFalse(vm.state.value.finished)
             settings.failing = false
-            vm.start(StartPoint.UNIT_1)
+            vm.startFromBeginning()
             runCurrent()
             assertTrue(vm.state.value.finished)
             assertFalse(vm.state.value.storageFailed)
@@ -468,37 +430,23 @@ class OnboardingViewModelTest {
             val vm = viewModel()
             vm.replay()
             vm.continueToStartPoint()
-            vm.start(StartPoint.UNIT_2)
+            vm.testMe()
+            vm.startFromBeginning()
+            vm.placementRunFinished(Band.CLEAN)
+            vm.stopHere()
+            vm.continueTest()
             runCurrent()
             assertEquals(OnboardingState(listed = piano.device), vm.state.value)
 
             play(C4)
             advanceToMs(PLAYBACK_MS)
             vm.continueToStartPoint() // not passed, not three misses
-            vm.start(StartPoint.UNIT_2)
+            vm.testMe()
+            vm.startFromBeginning()
             runCurrent()
 
             assertEquals(OnboardingStep.ECHO, vm.state.value.step)
             assertTrue(learnerRepository.states().isEmpty())
-        }
-
-    @Test
-    fun `a second start while saving is ignored`() =
-        runTest(dispatcher) {
-            val vm = connectAndListen()
-            toStartPoint(vm)
-
-            vm.start(StartPoint.UNIT_2)
-            vm.start(StartPoint.BEGINNING)
-            runCurrent()
-
-            assertEquals(
-                Curriculum.units
-                    .take(2)
-                    .flatMap { it.skills }
-                    .toSet(),
-                learnerRepository.states().keys,
-            )
         }
 
     @Test

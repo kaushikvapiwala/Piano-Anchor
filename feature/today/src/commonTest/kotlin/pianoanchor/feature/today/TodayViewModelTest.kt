@@ -213,6 +213,21 @@ class TodayViewModelTest : TodayViewModelFixture() {
             assertEquals(Skills.MIDDLE_C, card.skill)
         }
 
+    @Test
+    fun placedLearnerGetsTheStartUnitsFirstLesson() =
+        runTest(dispatcher) {
+            val unit0 =
+                Curriculum.units
+                    .first()
+                    .skills
+                    .toSet()
+            LearnerModel(Curriculum.graph, learnerRepository).place(unit0, today)
+            val vm = viewModel()
+
+            val card = assertIs<Card.Lesson>(assertNotNull(vm.state.value.session).cards.first())
+            assertEquals(Skills.RH_C_POSITION, card.skill)
+        }
+
     private val remembered = MidiDevice("ble:AA:BB:CC:DD:EE:01", "Casio CDP-S160", MidiTransport.BLUETOOTH)
 
     /** A Today whose wired piano is unplugged, with [remembered] stored (or not) and advertising. */

@@ -155,6 +155,7 @@ public class TodayViewModel(
                     quizzesDone = learner.quizzesOn(learnerDay(now, zone)),
                     sightLevel = SightStaircase.level(sightAttempts, SightLevels.open(learned)),
                     sightDoneToday = sightAttempts.any { learnerDay(it.startedAt, zone) == learnerDay(now, zone) },
+                    placed = learner.placedSkills(),
                 )
             mutableState.update {
                 it.copy(

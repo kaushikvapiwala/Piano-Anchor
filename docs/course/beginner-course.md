@@ -62,7 +62,9 @@ Rules:
   D. C is just left of the two black keys." No red, no sound, and the app waits.
 - **Nothing locked:** every lesson is open. Today shows one suggested "Next" card. The course map ticks lessons the
   learner has passed (right notes in wait mode) and marks the suggested one. Opening a later lesson is fine; its card
-  says what it builds on. Timing and note length improve through review and never block a lesson.
+  says what it builds on. Timing and note length improve through review and never block a lesson. A learner who took
+  the onboarding's placement test starts at the first unit they did not pass: the skills of the earlier units count as
+  ticked, so "Next" is that unit's first concept and not Unit 0's lessons (`docs/algorithms/learner-model.md`).
 - **Review:** learned concepts come back as 10–20 s quizzes checked by the piano ("play all the Fs", "a skip up from
   E", "hold C for 2 clicks"), scheduled by the existing review planner into the warm-up.
 - **Results in words:** say what happened and give one tip, for example "You started a beat late. Notes were short:

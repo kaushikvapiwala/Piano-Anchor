@@ -63,6 +63,7 @@ import pianoanchor.engine.matcher.WaitModeMatcher
 import pianoanchor.engine.matcher.beatNanos
 import pianoanchor.engine.midi.defaultLinkLatencyNanos
 import pianoanchor.engine.midi.measureLinkLatencyNanos
+import pianoanchor.engine.onboarding.PlacementTest
 import pianoanchor.engine.profile
 import pianoanchor.engine.sight.SightReadingGenerator
 import kotlin.math.abs
@@ -103,6 +104,11 @@ import kotlin.time.Instant
  * A sight-reading [passage] (its id parses with `SightReadingGenerator.parse`) always practises in wait mode from the
  * staff alone: hint level OFF, no Hint button, no hear-first or Listen, no tempo rungs or perform mode, whatever
  * [initialRung] and [initialMode] say. The wrong-key line still shows.
+ *
+ * A [placement] run (a piece of the onboarding's placement test, `docs/algorithms/learner-model.md`) runs the same
+ * way, and its attempt is saved as usual but records the passage's skill reviews only when its band passes the test
+ * (`PlacementTest.passes`): a failed test piece leaves no review on skills the learner never studied.
+ * [PracticeState.finishedBand] is the band of the saved attempt.
  */
 @Suppress("TooManyFunctions")
 public class PracticeViewModel(
@@ -123,10 +129,14 @@ public class PracticeViewModel(
     private val spot: BarRange? = null,
     private val player: PassagePlayer? = null,
     private val pieceId: String = passage.id,
+    private val placement: Boolean = false,
     private val newId: () -> String,
 ) : ViewModel() {
-    /** Whether [passage] is a sight-reading exercise (`docs/algorithms/sight-reading.md`). */
-    private val sight = SightReadingGenerator.parse(passage.id) != null
+    /**
+     * Whether the run is plain: a sight-reading exercise (`docs/algorithms/sight-reading.md`) or a placement piece.
+     * Both are played in wait mode from the staff alone, with no hint, hear-first or Listen.
+     */
+    private val sight = placement || SightReadingGenerator.parse(passage.id) != null
 
     private val mutableState =
         MutableStateFlow(
@@ -502,10 +512,12 @@ public class PracticeViewModel(
     }
 
     /**
-     * Records the saved [attempt] as a cold check. The run is already safe, so a learner store that can't be written
-     * is skipped: a replay or the next cold check recovers (`docs/algorithms/learner-model.md`).
+     * Records the saved [attempt] as a cold check (none for a failed placement piece). The run is already safe, so a
+     * learner store that can't be written is skipped: a replay or the next cold check recovers
+     * (`docs/algorithms/learner-model.md`).
      */
     private suspend fun recordLearning(attempt: Attempt) {
+        if (placement && !PlacementTest.passes(attempt.band)) return
         try {
             learner.record(passage, attempt, learnerDay(attempt.startedAt, zone))
         } catch (_: StorageUnavailableException) {
@@ -535,7 +547,11 @@ public class PracticeViewModel(
         if (!saved) hintCache = null
         if (saved && spot != null) return loopFinished(attempt)
         mutableState.update {
-            if (saved) it.copy(saveFailed = false, finishedAttemptId = attempt.id) else it.copy(saveFailed = true)
+            if (saved) {
+                it.copy(saveFailed = false, finishedAttemptId = attempt.id, finishedBand = attempt.band)
+            } else {
+                it.copy(saveFailed = true)
+            }
         }
     }
 

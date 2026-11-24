@@ -284,6 +284,15 @@ class LearnerModelTest {
         }
 
     @Test
+    fun `placedSkillsListsOnlyPlacementReviews`() =
+        runTest {
+            model.place(setOf("a", "b"), day(0))
+            check("d", 0, Band.CLEAN)
+
+            assertEquals(setOf("a", "b"), model.placedSkills())
+        }
+
+    @Test
     fun `theSimulationStallCaseIsLearned`() =
         runTest {
             check("a", 0, Band.GOOD)

@@ -47,14 +47,18 @@ import pianoanchor.feature.onboarding.resources.onboarding_connect_not_found
 import pianoanchor.feature.onboarding.resources.onboarding_connect_searching
 import pianoanchor.feature.onboarding.resources.onboarding_connect_sleep
 import pianoanchor.feature.onboarding.resources.onboarding_connect_title
+import pianoanchor.feature.onboarding.resources.onboarding_continue
+import pianoanchor.feature.onboarding.resources.onboarding_placement_header
+import pianoanchor.feature.onboarding.resources.onboarding_placement_next
+import pianoanchor.feature.onboarding.resources.onboarding_placement_passed
+import pianoanchor.feature.onboarding.resources.onboarding_placement_start_here
+import pianoanchor.feature.onboarding.resources.onboarding_placement_stop
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning
 import pianoanchor.feature.onboarding.resources.onboarding_start_beginning_summary
-import pianoanchor.feature.onboarding.resources.onboarding_start_can_play
 import pianoanchor.feature.onboarding.resources.onboarding_start_error
+import pianoanchor.feature.onboarding.resources.onboarding_start_test
+import pianoanchor.feature.onboarding.resources.onboarding_start_test_summary
 import pianoanchor.feature.onboarding.resources.onboarding_start_title
-import pianoanchor.feature.onboarding.resources.onboarding_start_unit
-import pianoanchor.feature.onboarding.resources.onboarding_start_unit_1_summary
-import pianoanchor.feature.onboarding.resources.onboarding_start_unit_2_summary
 import pianoanchor.feature.onboarding.resources.onboarding_step
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
@@ -70,15 +74,22 @@ private val PaneGap = 24.dp
 
 /**
  * First-launch onboarding (Living Studio, `docs/ui/living-studio.md`): one step at a time in landscape
- * (explanation left, controls right), as [state] says: press a key, echo C-E-G and choose the start point.
- * Stateless: see [OnboardingViewModel].
+ * (explanation left, controls right), as [state] says: press a key, echo C-E-G and choose the start point ("Test me"
+ * or the beginning). While a piece of the placement test is played, [runSlot] hosts its run under a header with
+ * "Stop here" (the app puts a Practice screen there). Stateless: see [OnboardingViewModel].
  */
 @Composable
 public fun OnboardingScreen(
     state: OnboardingState,
     actions: OnboardingActions,
     modifier: Modifier = Modifier,
+    runSlot: @Composable (PlacementPiece) -> Unit = {},
 ) {
+    val piece = state.piece
+    if (piece != null && state.verdict == null) {
+        PlacementRun(piece, actions.onStopHere, modifier, runSlot)
+        return
+    }
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
         // Landscape: the left pane (title, explanation, picture, step dots) reads first, then the controls.
         Row(
@@ -93,7 +104,7 @@ public fun OnboardingScreen(
                     when (state.step) {
                         OnboardingStep.CONNECT -> ConnectLeft(state)
                         OnboardingStep.ECHO -> EchoLeft(state)
-                        OnboardingStep.START_POINT -> Title(Res.string.onboarding_start_title)
+                        OnboardingStep.START_POINT -> StartPointLeft(state)
                     }
                 }
                 StepDots(state.step.ordinal)
@@ -212,31 +223,30 @@ private fun StartPointRight(
             )
         }
     }
-    val beginning = Curriculum.units.first().title
+    if (state.piece != null) {
+        val next =
+            if (state.verdict ==
+                PlacementVerdict.PASSED
+            ) {
+                Res.string.onboarding_placement_next
+            } else {
+                Res.string.onboarding_continue
+            }
+        PillButton(stringResource(next), actions.onNextPiece)
+        return
+    }
+    ChoiceCard(
+        stringResource(Res.string.onboarding_start_test),
+        stringResource(Res.string.onboarding_start_test_summary),
+        primary = true,
+        onClick = actions.onTestMe,
+    )
     ChoiceCard(
         stringResource(Res.string.onboarding_start_beginning),
-        stringResource(Res.string.onboarding_start_beginning_summary, beginning),
-        primary = true,
-    ) { actions.onStart(StartPoint.BEGINNING) }
-    Text(
-        stringResource(Res.string.onboarding_start_can_play),
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(top = 8.dp).semantics { heading() },
+        stringResource(Res.string.onboarding_start_beginning_summary, Curriculum.units.first().title),
+        primary = false,
+        onClick = actions.onStartAtBeginning,
     )
-    for (
-    (point, summary) in
-    listOf(
-        StartPoint.UNIT_1 to Res.string.onboarding_start_unit_1_summary,
-        StartPoint.UNIT_2 to Res.string.onboarding_start_unit_2_summary,
-    )
-    ) {
-        val unit = point.unitsPlaced
-        ChoiceCard(
-            stringResource(Res.string.onboarding_start_unit, unit.toString(), Curriculum.units[unit].title),
-            stringResource(summary),
-            primary = false,
-        ) { actions.onStart(point) }
-    }
 }
 
 /** A whole-card button: a [title] and a one-line [summary]. */

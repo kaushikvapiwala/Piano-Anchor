@@ -6,5 +6,8 @@ public data class OnboardingActions(
     val onReplay: () -> Unit = {},
     val onSkipEcho: () -> Unit = {},
     val onContinue: () -> Unit = {},
-    val onStart: (StartPoint) -> Unit = {},
+    val onTestMe: () -> Unit = {},
+    val onStartAtBeginning: () -> Unit = {},
+    val onStopHere: () -> Unit = {},
+    val onNextPiece: () -> Unit = {},
 )

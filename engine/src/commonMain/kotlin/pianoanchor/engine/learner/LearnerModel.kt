@@ -237,6 +237,16 @@ public class LearnerModel(
             .filter { it.learned }
             .mapTo(HashSet()) { it.skillId }
 
+    /**
+     * The ids of the skills with a placement review (attempt id [PLACEMENT_ATTEMPT_ID]): placed as already learned,
+     * not played in a run. Throws StorageUnavailableException like the repository.
+     */
+    public suspend fun placedSkills(): Set<String> =
+        repository
+            .states()
+            .keys
+            .filterTo(HashSet()) { id -> repository.reviews(id).any { it.attemptId == PLACEMENT_ATTEMPT_ID } }
+
     /** Rebuilds every cached state by replaying the review log through FSRS. */
     public suspend fun replay() {
         val ids = (graph.skills.map { it.id } + repository.states().keys).distinct()
