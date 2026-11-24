@@ -103,6 +103,11 @@ import kotlin.time.Instant
  * A sight-reading [passage] (its id parses with `SightReadingGenerator.parse`) always practises in wait mode from the
  * staff alone: hint level OFF, no Hint button, no hear-first or Listen, no tempo rungs or perform mode, whatever
  * [initialRung] and [initialMode] say. The wrong-key line still shows.
+ *
+ * A [placement] run (a piece of the onboarding's placement test, `docs/algorithms/learner-model.md`) runs the same
+ * way, and its attempt is saved as usual but records no skill review, passed or failed: the onboarding places the
+ * skills of the passed units itself, which only works for skills with no state yet.
+ * [PracticeState.finishedBand] is the band of the saved attempt.
  */
 @Suppress("TooManyFunctions")
 public class PracticeViewModel(
@@ -123,10 +128,14 @@ public class PracticeViewModel(
     private val spot: BarRange? = null,
     private val player: PassagePlayer? = null,
     private val pieceId: String = passage.id,
+    private val placement: Boolean = false,
     private val newId: () -> String,
 ) : ViewModel() {
-    /** Whether [passage] is a sight-reading exercise (`docs/algorithms/sight-reading.md`). */
-    private val sight = SightReadingGenerator.parse(passage.id) != null
+    /**
+     * Whether the run is plain: a sight-reading exercise (`docs/algorithms/sight-reading.md`) or a placement piece.
+     * Both are played in wait mode from the staff alone, with no hint, hear-first or Listen.
+     */
+    private val plain = placement || SightReadingGenerator.parse(passage.id) != null
 
     private val mutableState =
         MutableStateFlow(
@@ -135,7 +144,7 @@ public class PracticeViewModel(
                 .copy(
                     spotLoop = spot?.let { SpotLoopState(it, initialRung) },
                     staffHidden = isUnitZero(passage),
-                    sightReading = sight,
+                    sightReading = plain,
                 ),
         )
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
@@ -148,7 +157,7 @@ public class PracticeViewModel(
     private var demo: Job? = null
 
     /** True until the screen has decided whether this passage plays itself first (once per screen). */
-    private var hearFirstPending = spot == null && !sight
+    private var hearFirstPending = spot == null && !plain
 
     /** The graded attempt whose save failed, until it is saved or discarded; null while a retry runs. */
     private var unsaved: Attempt? = null
@@ -212,8 +221,8 @@ public class PracticeViewModel(
         wanted: TempoRung,
         requested: RunMode,
     ) {
-        val rung = if (sight) TempoRung.WAIT else wanted
-        val mode = if (!rung.canPerform || spot != null || sight) RunMode.PRACTICE else requested
+        val rung = if (plain) TempoRung.WAIT else wanted
+        val mode = if (!rung.canPerform || spot != null || plain) RunMode.PRACTICE else requested
         flashTimer?.cancel()
         hintTimer?.cancel()
         demo?.cancel()
@@ -227,8 +236,8 @@ public class PracticeViewModel(
                     doneRungs = it.doneRungs,
                     clickOn = it.clickOn,
                     spotLoop = it.spotLoop,
-                    canListen = player != null && !sight,
-                    sightReading = sight,
+                    canListen = player != null && !plain,
+                    sightReading = plain,
                     staffHidden = it.staffHidden,
                     // Hidden until `loadHints` reads the run's level, so a slow store can't flash the band at FULL.
                     hintVisible = false,
@@ -302,7 +311,7 @@ public class PracticeViewModel(
 
     /** Shows the key band on the waiting step, for that step only (the Hint button). */
     public fun showHint() {
-        if (!mutableState.value.showsVerdicts || sight) return
+        if (!mutableState.value.showsVerdicts || plain) return
         hintShown = true
         mutableState.update { it.copy(hintVisible = true) }
     }
@@ -315,7 +324,7 @@ public class PracticeViewModel(
      */
     private suspend fun loadHints() {
         val known = hintCache
-        if (sight) {
+        if (plain) {
             hintLevel = HintLevel.OFF
         } else if (known != null) {
             hintLevel = known.first
@@ -502,10 +511,12 @@ public class PracticeViewModel(
     }
 
     /**
-     * Records the saved [attempt] as a cold check. The run is already safe, so a learner store that can't be written
-     * is skipped: a replay or the next cold check recovers (`docs/algorithms/learner-model.md`).
+     * Records the saved [attempt] as a cold check (none for a placement piece). The run is already safe, so a
+     * learner store that can't be written is skipped: a replay or the next cold check recovers
+     * (`docs/algorithms/learner-model.md`).
      */
     private suspend fun recordLearning(attempt: Attempt) {
+        if (placement) return
         try {
             learner.record(passage, attempt, learnerDay(attempt.startedAt, zone))
         } catch (_: StorageUnavailableException) {
@@ -535,7 +546,11 @@ public class PracticeViewModel(
         if (!saved) hintCache = null
         if (saved && spot != null) return loopFinished(attempt)
         mutableState.update {
-            if (saved) it.copy(saveFailed = false, finishedAttemptId = attempt.id) else it.copy(saveFailed = true)
+            if (saved) {
+                it.copy(saveFailed = false, finishedAttemptId = attempt.id, finishedBand = attempt.band)
+            } else {
+                it.copy(saveFailed = true)
+            }
         }
     }
 
@@ -591,7 +606,7 @@ public class PracticeViewModel(
                     flash = flash,
                     lastKey = flash,
                 ).withHint(note, flash.correct, needed, advanced)
-                .let { state -> if (sight) state.copy(hintGlow = emptySet()) else state }
+                .let { state -> if (plain) state.copy(hintGlow = emptySet()) else state }
         }
         flashTimer?.cancel()
         flashTimer =

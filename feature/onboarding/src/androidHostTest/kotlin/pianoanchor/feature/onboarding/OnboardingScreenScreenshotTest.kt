@@ -63,6 +63,17 @@ class OnboardingScreenScreenshotTest {
 
     @Test
     fun startPoint() = capture("start_point", OnboardingState(OnboardingStep.START_POINT, piano))
+
+    @Test
+    fun testPiece() =
+        capture(
+            "test_piece",
+            OnboardingState(
+                OnboardingStep.START_POINT,
+                piano,
+                piece = PlacementPiece(3, 4, "builtin:held-bass", "Hold and play"),
+            ),
+        )
 }
 
 /** Android API level the screenshots render with (the newest Robolectric supports). */

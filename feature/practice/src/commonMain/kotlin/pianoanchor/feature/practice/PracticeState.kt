@@ -1,5 +1,6 @@
 package pianoanchor.feature.practice
 
+import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiNote
@@ -42,7 +43,8 @@ private const val COUNT_IN_NUMERALS = 3
  * A Unit 0 passage hides the staff ([staffHidden], set by the ViewModel) and glows every next key while a run is
  * under way. [played] is true once a key was pressed in the run (the Listen button then goes).
  * A [sightReading] exercise runs in wait mode from the staff alone: the screen hides the tempo chips, the perform
- * switch and the Hint button.
+ * switch and the Hint button; so does a placement piece. [finishedBand] is the band of the attempt that set
+ * [finishedAttemptId].
  */
 public data class PracticeState(
     val passage: Passage,
@@ -76,6 +78,7 @@ public data class PracticeState(
     val staffHidden: Boolean = false,
     val played: Boolean = false,
     val sightReading: Boolean = false,
+    val finishedBand: Band? = null,
 ) {
     init {
         require(steps.size == passage.steps.size) {

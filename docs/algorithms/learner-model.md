@@ -86,13 +86,30 @@ each skill's reviews, in day order, through the same rules as `record`, then cal
 graph's skills and any skill that has a cached state. The result equals the states `record` built up.
 
 ## Placement
-`place(skills, day)` starts a learner past the early units (the onboarding's "I can already play"). Each skill with no
+`place(skills, day)` starts a learner past the early units (the onboarding's placement test). Each skill with no
 state yet gets a review on `day` rated GOOD with attempt id `placement`, so its memory starts as after a first Good, and its
 state is `learned = true`. A placement review is a claim, not a check: it adds nothing to `cleanColdChecks` or
 `recalledColdChecks`, and `replay` treats it the same way, so the rebuilt states equal the stored ones. Skills that
 already have a state are left alone, and a skill outside the graph is rejected. Placed skills come back for review at
 their first interval and confirm themselves there. A placed state (learned, no recalled check) does not use up the day's
-`MAX_NEW_PER_DAY` slots, so the first day still offers new lessons.
+`MAX_NEW_PER_DAY` slots, so the first day still offers new lessons. `placedSkills()` lists the skills with a placement
+review; Today passes them to `CourseProgress.ticked`, which ticks every course skill in the set, so a placed learner's
+Lesson card starts at the first concept of the start unit rather than at Unit 0.
+
+### The placement test
+The onboarding's "Test me" replaces a self-chosen start point with a short played test (`PlacementTest`, pure). One
+existing passage per unit is played in order, in wait mode, at first sight: Unit 0 `all-the-cs`, Unit 1
+`mary-had-a-little-lamb`, Unit 2 `held-bass`, Unit 3 `ode-to-joy-with-chords`. A piece passes with band GOOD or CLEAN. The test
+stops at the first piece not passed and the learner starts at that piece's unit: the skills of every earlier unit are
+placed with `place`. All four passed starts at 4, the course done (all course skills placed; Today moves on to More
+songs). "Stop here" on a piece counts as failing it. The same bands always give the same start unit. "Start from the
+beginning" is start unit 0 with nothing placed. The test is offered in the onboarding only.
+
+Each piece is played as a normal Practice run with hint level OFF, no hear-first and no Results screen, and is saved
+as an ordinary attempt, so the passage's history and the practice days include it. No skill review is
+recorded for it, passed or failed: a failed piece must not leave a KEEP_PRACTISING review on skills the learner never
+studied, and a passed piece's review would give those skills a state, so `place` (which skips skills that already have
+one) would not mark them placed. The final `place` call covers every unit before the start unit.
 
 ## Existing progress
 The migration to schema 10 marks every stored review `unaided` (they predate fading hints, and marking them aided would

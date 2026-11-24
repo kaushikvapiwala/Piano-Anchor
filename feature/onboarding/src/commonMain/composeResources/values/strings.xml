@@ -22,11 +22,14 @@
     <string name="onboarding_key_g">G</string>
     <string name="onboarding_key_highlighted">%1$s, play this key</string>
     <string name="onboarding_start_title">Where do you want to start?</string>
-    <string name="onboarding_start_beginning">Start at the beginning</string>
+    <string name="onboarding_start_test">Test me</string>
+    <string name="onboarding_start_test_summary">Play up to four short pieces. You start at the first one that doesn't go well.</string>
+    <string name="onboarding_start_beginning">Start from the beginning</string>
     <string name="onboarding_start_beginning_summary">Unit 0 · %1$s. Nothing is assumed.</string>
-    <string name="onboarding_start_can_play">I can already play</string>
-    <string name="onboarding_start_unit">Unit %1$s · %2$s</string>
-    <string name="onboarding_start_unit_1_summary">You can find middle C, know the black-key groups and keep a steady beat.</string>
-    <string name="onboarding_start_unit_2_summary">You can also play five-finger tunes with your right hand and read the first notes on the staff.</string>
-    <string name="onboarding_start_error">Couldn't save your start point. Tap one to try again.</string>
+    <string name="onboarding_placement_header">Piece %1$s of %2$s · %3$s</string>
+    <string name="onboarding_placement_stop">Stop here</string>
+    <string name="onboarding_placement_passed">Passed, next piece</string>
+    <string name="onboarding_placement_start_here">That's where we'll start</string>
+    <string name="onboarding_placement_next">Next piece</string>
+    <string name="onboarding_start_error">Couldn't save your start point. Tap again to retry.</string>
 </resources>

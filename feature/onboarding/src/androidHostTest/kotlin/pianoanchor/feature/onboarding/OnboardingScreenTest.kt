@@ -31,15 +31,20 @@ class OnboardingScreenTest {
             onOpenPianoList = { calls += "list" },
             onReplay = { calls += "replay" },
             onContinue = { calls += "continue" },
-            onStart = { calls += "start $it" },
+            onTestMe = { calls += "test" },
+            onStartAtBeginning = { calls += "beginning" },
+            onStopHere = { calls += "stop" },
+            onNextPiece = { calls += "next" },
         )
 
     private fun androidx.compose.ui.test.ComposeUiTest.show(state: OnboardingState) =
         setContent {
             PianoAnchorTheme {
-                OnboardingScreen(state, actions)
+                OnboardingScreen(state, actions) { Text("run of ${it.passageId}") }
             }
         }
+
+    private val piece = PlacementPiece(3, 4, "builtin:held-bass", "Hold and play")
 
     @Test
     fun connectShowsTheSearchThenThePianoListAfterTheHint() =
@@ -136,15 +141,57 @@ class OnboardingScreenTest {
         }
 
     @Test
-    fun theStartPointOffersTheUnits() =
+    fun theStartPointOffersTheTestAndTheBeginning() =
         runComposeUiTest {
             show(OnboardingState(OnboardingStep.START_POINT, piano))
 
-            onNodeWithText("Start at the beginning").performScrollTo().performClick()
-            onNodeWithText("Unit 1 · Five-finger tunes").performScrollTo().performClick()
-            onNodeWithText("Unit 2 · Left hand, then both hands").performScrollTo().performClick()
+            onNodeWithText("Test me").performScrollTo().performClick()
+            onNodeWithText("Start from the beginning").performScrollTo().performClick()
+            onNodeWithText("Unit 1 · Five-finger tunes").assertDoesNotExist()
 
-            assertEquals(listOf("start BEGINNING", "start UNIT_1", "start UNIT_2"), calls)
+            assertEquals(listOf("test", "beginning"), calls)
+        }
+
+    @Test
+    fun aTestPieceShowsItsHeaderAndHostsTheRun() =
+        runComposeUiTest {
+            show(OnboardingState(OnboardingStep.START_POINT, piano, piece = piece))
+
+            onNodeWithText("Piece 3 of 4 · Hold and play").assertExists()
+            onNodeWithText("run of builtin:held-bass").assertExists()
+            onNodeWithText("Stop here").performClick()
+
+            assertEquals(listOf("stop"), calls)
+        }
+
+    @Test
+    fun aPassedPieceSaysSoAndOffersTheNext() =
+        runComposeUiTest {
+            show(OnboardingState(OnboardingStep.START_POINT, piano, piece = piece, verdict = PlacementVerdict.PASSED))
+
+            onNodeWithText("Passed, next piece").assertExists()
+            onNodeWithText("run of builtin:held-bass").assertDoesNotExist()
+            onNodeWithText("Next piece").performClick()
+
+            assertEquals(listOf("next"), calls)
+        }
+
+    @Test
+    fun theLastVerdictSaysWhereWeStart() =
+        runComposeUiTest {
+            show(
+                OnboardingState(
+                    OnboardingStep.START_POINT,
+                    piano,
+                    piece = piece,
+                    verdict = PlacementVerdict.START_HERE,
+                ),
+            )
+
+            onNodeWithText("That's where we'll start").assertExists()
+            onNodeWithText("Continue").performClick()
+
+            assertEquals(listOf("next"), calls)
         }
 
     @Test
@@ -152,7 +199,7 @@ class OnboardingScreenTest {
         runComposeUiTest {
             show(OnboardingState(OnboardingStep.START_POINT, piano, storageFailed = true))
 
-            onNodeWithText("Couldn't save your start point. Tap one to try again.").assertExists()
+            onNodeWithText("Couldn't save your start point. Tap again to retry.").assertExists()
         }
 
     @Test
@@ -170,7 +217,7 @@ class OnboardingScreenTest {
                 }
             }
 
-            onNodeWithText("Unit 2 · Left hand, then both hands").performScrollTo().assertIsDisplayed()
+            onNodeWithText("Start from the beginning").performScrollTo().assertIsDisplayed()
         }
 }
 

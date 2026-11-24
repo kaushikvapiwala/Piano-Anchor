@@ -133,7 +133,8 @@ public object SessionComposer {
      * The quizzes' minutes are part of the Review segment.
      * The song is a piece with no lock: played before new, then public domain before original, then curriculum order.
      * A Sight-reading card follows the song when [sightLevel] is at least 1 (0 means closed) and [sightDoneToday] is
-     * false: the exercise of that level seeded by [day]'s epoch day.
+     * false: the exercise of that level seeded by [day]'s epoch day. The skills in [placed] (the onboarding's placement
+     * test) count as taught: their concepts are ticked, so the lesson is the first concept after them.
      */
     public fun compose(
         plan: DailyPlan,
@@ -146,13 +147,14 @@ public object SessionComposer {
         quizzesDone: Int = 0,
         sightLevel: Int = 0,
         sightDoneToday: Boolean = false,
+        placed: Set<String> = emptySet(),
     ): Session {
         val (dueEar, dueNotEar) = plan.due.partition { graph.byId(it.skillId)?.track == Track.EAR }
-        val taught = CourseProgress.ticked(curriculum, history)
+        val taught = CourseProgress.ticked(curriculum, history, placed)
         val quizzes = quizzes(dueNotEar, graph, taught, day, Tunables.QUIZ_MAX_PER_DAY - quizzesDone)
         val quizzed = quizzes.map { it.skillId }.toSet()
         val dueOther = dueNotEar.filter { it.skillId !in quizzed }
-        val lesson = lesson(curriculum, history, graph)
+        val lesson = lesson(curriculum, history, graph, placed)
         val cold = coldOpen(dueOther, curriculum, history, learned, lesson?.let { it.passage.id })
         val earSkills = dueEar.mapNotNull { graph.byId(it.skillId) } + plan.new.filter { it.track == Track.EAR }
         val used = listOfNotNull(cold?.passage, lesson?.passage).map { it.id }
@@ -251,8 +253,9 @@ public object SessionComposer {
         curriculum: Curriculum,
         history: Map<String, PassageHistory>,
         graph: SkillGraph,
+        placed: Set<String>,
     ): Card.Lesson? {
-        val skill = CourseProgress.next(curriculum, CourseProgress.ticked(curriculum, history)) ?: return null
+        val skill = CourseProgress.next(curriculum, CourseProgress.ticked(curriculum, history, placed)) ?: return null
         // Every course concept has a passage (checked by the content tests).
         val passage = curriculum.passages.first { skill.id in it.skills }
         return Card.Lesson(passage, TempoRung.WAIT, 0, skill, graph.skills.filter { it.id in skill.prerequisites })

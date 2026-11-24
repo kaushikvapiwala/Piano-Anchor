@@ -14,17 +14,20 @@ import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.PieceView
 import pianoanchor.engine.content.Pieces
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.passageHistories
 
 /**
  * Songs: lists every piece of the curriculum with its status and tempo-ladder progress, from each piece's history in
- * [attempts] with the course ticks and the suggested next concept (`CourseProgress`), and follows the connected
- * piano (the first of [input]'s devices). Every piece is open. A store that can't be read leaves [SongsState.storageFailed] until [refresh].
+ * [attempts], with the course ticks (from [attempts] and the placed skills of [learner]) and the suggested next concept
+ * (`CourseProgress`), and follows the connected piano (the first of [input]'s devices). Every piece is open. A store
+ * that can't be read leaves [SongsState.storageFailed] until [refresh].
  */
 public class SongsViewModel(
     private val attempts: AttemptRepositoryPort,
+    private val learner: LearnerModel,
     input: MidiInputPort,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(SongsState())
@@ -61,7 +64,7 @@ public class SongsViewModel(
             // Every passage: a concept ticks on a clean wait-mode run of any of its passages, pieces or not.
             val history = attempts.passageHistories(Curriculum.passages)
             val pieces = Pieces.list(Curriculum, history)
-            val ticked = CourseProgress.ticked(Curriculum, history)
+            val ticked = CourseProgress.ticked(Curriculum, history, learner.placedSkills())
             val next = CourseProgress.next(Curriculum, ticked)?.id
             mutableState.update { it.copy(pieces = pieces, ticked = ticked, next = next, storageFailed = false) }
         } catch (_: StorageUnavailableException) {

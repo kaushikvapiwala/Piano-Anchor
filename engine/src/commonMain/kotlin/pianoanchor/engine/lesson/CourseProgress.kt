@@ -21,14 +21,16 @@ public object CourseProgress {
 
     /**
      * Course skills (Track.CORE, map order) with a clean wait-mode run of any of their passages, by passage id in
-     * [history]. A clean timed run alone doesn't tick.
+     * [history], and every course skill in [placed] (the onboarding's placement test): a placed learner starts at the
+     * first concept after them. A clean timed run alone doesn't tick.
      */
     public fun ticked(
         curriculum: Curriculum,
         history: Map<String, PassageHistory>,
+        placed: Set<String> = emptySet(),
     ): Set<String> {
         val passed = curriculum.passages.filter { history[it.id]?.cleanWait == true }.flatMapTo(HashSet()) { it.skills }
-        return skills(curriculum).map { it.id }.filterTo(LinkedHashSet()) { it in passed }
+        return skills(curriculum).map { it.id }.filterTo(LinkedHashSet()) { it in passed || it in placed }
     }
 
     /** The first course skill in map order not in [ticked]; null when all are. */
