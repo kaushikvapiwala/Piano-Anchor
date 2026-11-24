@@ -51,16 +51,19 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 3. **Lesson Try: the landmark hint** (follow-up of #189 and #195; mechanical): the lesson's Try step still says "That
     was X. Waiting for Y."; use the quiz screen's landmark line (`QuizHint.kt`) there too, and move that text, now copied
     from `feature/practice`, into one shared UI module instead of two copies.
-4. **Quizzes count as practice days** (spec #244; follow-up of #195; owner decided they count): Today's weekly dots and day
+4. **Keys during the link measurement** (follow-up of #172; needs an owner decision): before the first timed run,
+    Practice spends about 0.3 s (0.6 s for a silent piano) measuring the link delay while showing the ready state, and
+    a key pressed then is dropped. Either show a short "getting ready" state or hand those notes on to the run.
+5. **Quizzes count as practice days** (spec #244; follow-up of #195; owner decided they count): Today's weekly dots and day
     line count ear reviews (`ear:` attempt ids) but not review quizzes (`quiz:` ids), so a day with only quizzes shows as
     missed. A quiz-only day counts; lesson-only days stay out (lessons store no dated record).
-5. **Sight-reading generator and staircase (M6.1)** (spec #245): a seeded generator of 4-bar unseen exercises over 8
+6. **Sight-reading generator and staircase (M6.1)** (spec #245): a seeded generator of 4-bar unseen exercises over 8
     levels opened by learned skills, and a 2-up/1-down level rule derived from saved `sight:` attempts.
-6. **Daily sight-reading card (M6.2)** (spec #246) [#245]: Today's Sight-reading card (10% of the budget, after the
+7. **Daily sight-reading card (M6.2)** (spec #246) [#245]: Today's Sight-reading card (10% of the budget, after the
     song), played in wait mode from the staff only; Results say how the level moved.
-7. **Played placement test (M6.3)** (spec #247): onboarding's "Test me" plays one piece per unit and starts the
+8. **Played placement test (M6.3)** (spec #247): onboarding's "Test me" plays one piece per unit and starts the
     learner at the first unit not passed; the start-unit list goes; placed skills tick their lessons.
-8. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
+9. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
     and the key of G; the pedal and legato; scales with thumb-under. Built like units 0–3 (concept cards, five-step
     lessons, Try checks); each unit adds sight-reading levels.
 
