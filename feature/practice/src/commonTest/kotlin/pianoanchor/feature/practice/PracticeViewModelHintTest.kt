@@ -113,7 +113,7 @@ class PracticeViewModelHintTest {
             "attempt-${++ids}"
         }.also { runCurrent() }
 
-    /** A spot loop on bar 1 of C D E: its id is the piece's with a `#bars` suffix. */
+    /** A spot loop on bar 1 of C D E: its attempts are saved under the piece's id. */
     private fun TestScope.loop(): PracticeViewModel =
         PracticeViewModel(
             piano.device,
@@ -131,6 +131,7 @@ class PracticeViewModelHintTest {
             TempoRung.WAIT,
             RunMode.PRACTICE,
             BarRange(1, 1),
+            pieceId = Passages.CDE.id,
         ) {
             "attempt-${++ids}"
         }.also { runCurrent() }
@@ -179,6 +180,24 @@ class PracticeViewModelHintTest {
             assertFalse(vm.state.value.hintVisible)
             wait(1)
             assertTrue(vm.state.value.hintVisible)
+        }
+
+    @Test
+    fun hintFadingIgnoresSpotLoopsFillingHistory() =
+        runTest(dispatcher) {
+            store(*offHistory)
+            repeat(Tunables.HINT_FADE_HISTORY + 1) { i ->
+                attempts.save(
+                    attempts.get("old-0")!!.copy(
+                        id = "loop-$i",
+                        startedAt = Instant.fromEpochSeconds(2_000L + i),
+                        band = Band.KEEP_PRACTISING,
+                        spot = BarRange(1, 1),
+                    ),
+                )
+            }
+
+            assertEquals(HintLevel.OFF, loop().state.value.hintLevel)
         }
 
     @Test

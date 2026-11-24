@@ -25,6 +25,3 @@ public fun Passage.slice(range: BarRange): Passage {
 }
 
 private const val BARS_MARKER = "#bars"
-
-/** The id of the passage a slice was cut from ([id] without its `#bars…` suffix); [id] itself for a whole passage. */
-public fun sourcePassageId(id: String): String = id.substringBefore(BARS_MARKER)

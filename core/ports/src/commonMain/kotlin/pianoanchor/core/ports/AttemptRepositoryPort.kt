@@ -25,9 +25,10 @@ public interface AttemptRepositoryPort {
     public suspend fun get(id: String): Attempt?
 
     /**
-     * The attempts of [passageId], newest first by [Attempt.startedAt] (ties in any order), at most [limit] of them.
-     * Emits the current list on collection and again after every save. Throws [IllegalArgumentException] when [limit]
-     * is not positive. The flow fails with [StorageUnavailableException] when the store can't be read.
+     * The full-run attempts ([Attempt.spot] null) of [passageId], newest first by [Attempt.startedAt] (ties in any
+     * order), at most [limit] of them. Emits the current list on collection and again after every save. Throws
+     * [IllegalArgumentException] when [limit] is not positive. The flow fails with [StorageUnavailableException] when
+     * the store can't be read.
      */
     public fun recent(
         passageId: String,
@@ -35,9 +36,9 @@ public interface AttemptRepositoryPort {
     ): Flow<List<Attempt>>
 
     /**
-     * How many attempts of [passageId] started strictly before [before]; 0 for an unknown passage. Adapters that store
-     * [Attempt.startedAt] coarser compare at that precision. Throws [StorageUnavailableException] when the store
-     * can't be read or written.
+     * How many full-run attempts ([Attempt.spot] null) of [passageId] started strictly before [before]; 0 for an
+     * unknown passage. Adapters that store [Attempt.startedAt] coarser compare at that precision. Throws
+     * [StorageUnavailableException] when the store can't be read or written.
      */
     public suspend fun countStartedBefore(
         passageId: String,
@@ -57,15 +58,16 @@ public interface AttemptRepositoryPort {
     public suspend fun hasCleanWaitRun(passageId: String): Boolean
 
     /**
-     * When [passageId] was last played: the latest [Attempt.startedAt] of its attempts, or null for a passage never
-     * played. Adapters that store [Attempt.startedAt] coarser answer at that precision. Throws
+     * When [passageId] was last played: the latest [Attempt.startedAt] of its attempts, spot-loop ones included, or
+     * null for a passage never played. Adapters that store [Attempt.startedAt] coarser answer at that precision. Throws
      * [StorageUnavailableException] when the store can't be read or written.
      */
     public suspend fun lastPlayed(passageId: String): Instant?
 
     /**
-     * The calendar days, in [zone], from [from] on (inclusive) on which at least one attempt of any passage started;
-     * empty when none. Throws [StorageUnavailableException] when the store can't be read or written.
+     * The calendar days, in [zone], from [from] on (inclusive) on which at least one attempt of any passage (spot
+     * loops included) started; empty when none. Throws [StorageUnavailableException] when the store can't be read or
+     * written.
      */
     public suspend fun practiceDays(
         from: LocalDate,

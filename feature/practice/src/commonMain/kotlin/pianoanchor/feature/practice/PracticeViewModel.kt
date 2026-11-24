@@ -52,7 +52,6 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.grading.Grader
 import pianoanchor.engine.guidance.HintDelay
 import pianoanchor.engine.guidance.HintFading
-import pianoanchor.engine.guidance.sourcePassageId
 import pianoanchor.engine.guidance.wrongKeyHint
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
@@ -88,7 +87,8 @@ import kotlin.time.Instant
  * the run opens the input (measured once per ViewModel), else the default of the piano's transport. Wait mode
  * measures nothing. The attempt records the offset used.
  * The ViewModel starts on [initialRung] (wait mode by default) in [initialMode] (practice by default); a
- * spot loop starts one rung below [initialRung].
+ * spot loop starts one rung below [initialRung]. A spot loop's [passage] is a slice of the piece [pieceId]; its
+ * attempts are saved under [pieceId] with [spot] set.
  *
  * [selectMode] switches between practice and perform (`docs/algorithms/guidance.md`). A perform run needs a timed
  * rung: no hint ever shows, the live verdicts (marks, tags, the key strip's text, wrong-key colours) stay hidden, and
@@ -116,6 +116,7 @@ public class PracticeViewModel(
     initialMode: RunMode = RunMode.PRACTICE,
     private val spot: BarRange? = null,
     private val player: PassagePlayer? = null,
+    private val pieceId: String = passage.id,
     private val newId: () -> String,
 ) : ViewModel() {
     private val mutableState =
@@ -242,7 +243,7 @@ public class PracticeViewModel(
         hearFirstPending = false
         val never =
             try {
-                attempts.lastPlayed(sourcePassageId(passage.id)) == null
+                attempts.lastPlayed(pieceId) == null
             } catch (_: StorageUnavailableException) {
                 false // can't tell: don't make a returning learner wait
             }
@@ -290,8 +291,8 @@ public class PracticeViewModel(
     /**
      * Works out the run's hint level and delay from the passage's stored attempts; a store that can't be read gives
      * the defaults (FULL) for this start only. A successful read is kept for later starts, since the history can't
-     * change within this screen (a saved whole-passage run leaves it, and loop attempts belong to the slice's own id);
-     * a failed save clears it, as that save may have reached the store.
+     * change within this screen (a saved whole-passage run leaves it, and the history read leaves loop attempts out); a
+     * failed save clears it, as that save may have reached the store.
      */
     private suspend fun loadHints() {
         val known = hintCache
@@ -301,7 +302,7 @@ public class PracticeViewModel(
         } else {
             val history =
                 try {
-                    attempts.recent(sourcePassageId(passage.id), Tunables.HINT_FADE_HISTORY).first()
+                    attempts.recent(pieceId, Tunables.HINT_FADE_HISTORY).first()
                 } catch (_: StorageUnavailableException) {
                     null
                 }
@@ -461,6 +462,7 @@ public class PracticeViewModel(
                 hintLevel = hintLevel,
                 hintShown = hintShown,
                 mode = mutableState.value.mode,
+                passageId = pieceId,
                 spot = spot,
             )
         try {
@@ -494,7 +496,7 @@ public class PracticeViewModel(
     private suspend fun refreshDoneRungs() {
         val tempos =
             try {
-                attempts.cleanTempos(passage.id)
+                attempts.cleanTempos(pieceId)
             } catch (_: StorageUnavailableException) {
                 return
             }

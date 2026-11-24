@@ -1,0 +1,4 @@
+-- Schema 11 to 12: spot-loop attempts were saved under the slice's id (`<piece>#bars5-6`); store them under the piece's
+-- id instead, since spot_first_bar already tells them apart from full runs.
+UPDATE attempt SET passage_id = substr(passage_id, 1, instr(passage_id, '#bars') - 1)
+WHERE spot_first_bar IS NOT NULL AND instr(passage_id, '#bars') > 0;
