@@ -76,9 +76,9 @@ public interface AttemptRepositoryPort {
     ): Set<LocalDate>
 
     /**
-     * Summaries of the attempts whose passage id starts with [prefix], oldest first by [Attempt.startedAt], ties by id;
-     * empty when none. Throws [IllegalArgumentException] for a blank prefix, [StorageUnavailableException] when the
-     * store can't be read.
+     * Summaries of the attempts whose passage id starts with [prefix], oldest first by [AttemptSummary.startedAt],
+     * ties by id; empty when none. Throws [IllegalArgumentException] for a blank prefix, [StorageUnavailableException]
+     * when the store can't be read.
      */
     public suspend fun summariesWithPassagePrefix(prefix: String): List<AttemptSummary>
 }

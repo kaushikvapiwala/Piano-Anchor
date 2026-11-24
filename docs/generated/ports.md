@@ -17,7 +17,7 @@ Driven port: the learner's completed attempts, kept across app restarts and keye
 | `suspend fun hasCleanWaitRun(passageId: String): Boolean` | Whether [passageId] has a wait-mode attempt (no tempo) whose band is CLEAN, spot-loop attempts excluded. Throws [StorageUnavailableException] when the store can't be read or written. |
 | `suspend fun lastPlayed(passageId: String): Instant?` | When [passageId] was last played: the latest [Attempt.startedAt] of its attempts, spot-loop ones included, or null for a passage never played. Adapters that store [Attempt.startedAt] coarser answer at that precision. Throws [StorageUnavailableException] when the store can't be read or written. |
 | `suspend fun practiceDays(from: LocalDate, zone: TimeZone): Set<LocalDate>` | The calendar days, in [zone], from [from] on (inclusive) on which at least one attempt of any passage (spot loops included) started; empty when none. Throws [StorageUnavailableException] when the store can't be read or written. |
-| `suspend fun summariesWithPassagePrefix(prefix: String): List<AttemptSummary>` | Summaries of the attempts whose passage id starts with [prefix], oldest first by [Attempt.startedAt], ties by id; empty when none. Throws [IllegalArgumentException] for a blank prefix, [StorageUnavailableException] when the store can't be read. |
+| `suspend fun summariesWithPassagePrefix(prefix: String): List<AttemptSummary>` | Summaries of the attempts whose passage id starts with [prefix], oldest first by [AttemptSummary.startedAt], ties by id; empty when none. Throws [IllegalArgumentException] for a blank prefix, [StorageUnavailableException] when the store can't be read. |
 
 Contract test: `testing/src/commonMain/kotlin/pianoanchor/testing/AttemptRepositoryPortContractTest.kt`
 
