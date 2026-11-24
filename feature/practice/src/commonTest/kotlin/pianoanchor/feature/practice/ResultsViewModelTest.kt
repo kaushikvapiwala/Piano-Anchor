@@ -445,6 +445,15 @@ class ResultsViewModelTest {
         }
 
     @Test
+    fun aSpotLoopAttemptIsNotAnalysedAgainstTheWholePiece() =
+        runTest(dispatcher) {
+            val state = assertIs<ResultsState.Ready>(results("a-1", lateRun().copy(spot = BarRange(1, 1))).state.value)
+
+            assertNull(state.timing)
+            assertNull(state.spot)
+        }
+
+    @Test
     fun runNumberSkipsSpotLoops() =
         runTest(dispatcher) {
             val loops = (0 until 5).map { attempt("l-$it", 300L + it).copy(spot = BarRange(1, 1)) }

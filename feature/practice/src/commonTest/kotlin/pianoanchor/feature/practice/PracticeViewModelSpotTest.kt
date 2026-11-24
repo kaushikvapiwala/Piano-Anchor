@@ -31,6 +31,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -64,6 +65,7 @@ class PracticeViewModelSpotTest {
     private fun TestScope.loop(
         rung: TempoRung = TempoRung.WAIT,
         spot: BarRange? = range,
+        pieceId: String = whole.id,
     ): PracticeViewModel =
         PracticeViewModel(
             piano.device,
@@ -81,7 +83,7 @@ class PracticeViewModelSpotTest {
             rung,
             RunMode.PERFORM,
             spot,
-            pieceId = whole.id,
+            pieceId = pieceId,
         ) {
             "attempt-${++ids}"
         }.also { runCurrent() }
@@ -142,6 +144,12 @@ class PracticeViewModelSpotTest {
             vm.selectMode(RunMode.PERFORM)
             runCurrent()
             assertEquals(RunMode.PRACTICE, vm.state.value.mode)
+        }
+
+    @Test
+    fun aSpotLoopWithoutItsPieceIdIsRejected() =
+        runTest(dispatcher) {
+            assertFailsWith<IllegalArgumentException> { loop(pieceId = whole.slice(range).id) }
         }
 
     @Test

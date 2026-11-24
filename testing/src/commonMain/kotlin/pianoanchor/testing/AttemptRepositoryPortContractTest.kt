@@ -148,7 +148,7 @@ abstract class AttemptRepositoryPortContractTest {
             assertEquals(0, repository.countBefore(beforeSeconds = 9_000, passageId = "unknown"))
         }
 
-    @Suppress("MagicNumber") // Epoch seconds and calendar dates of the scenario.
+    @Suppress("MagicNumber") // Epoch seconds of the scenario.
     @Test
     fun countStartedBeforeIgnoresSpotAttempts() =
         runTest {
@@ -158,7 +158,7 @@ abstract class AttemptRepositoryPortContractTest {
             assertEquals(1, repository.countBefore(beforeSeconds = 9_000))
         }
 
-    @Suppress("MagicNumber") // Epoch seconds and calendar dates of the scenario.
+    @Suppress("MagicNumber") // Epoch seconds of the scenario.
     @Test
     fun recentListsOnlyFullRuns() =
         runTest {
@@ -169,7 +169,7 @@ abstract class AttemptRepositoryPortContractTest {
             assertEquals(listOf("a-1"), repository.recent("c-d-e", limit = 2).first().map { it.id })
         }
 
-    @Suppress("MagicNumber") // Epoch seconds and calendar dates of the scenario.
+    @Suppress("MagicNumber") // Epoch seconds of the scenario.
     @Test
     fun lastPlayedCountsSpotAttempts() =
         runTest {

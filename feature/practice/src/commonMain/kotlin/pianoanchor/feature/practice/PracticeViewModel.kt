@@ -88,7 +88,8 @@ import kotlin.time.Instant
  * measures nothing. The attempt records the offset used.
  * The ViewModel starts on [initialRung] (wait mode by default) in [initialMode] (practice by default); a
  * spot loop starts one rung below [initialRung]. A spot loop's [passage] is a slice of the piece [pieceId]; its
- * attempts are saved under [pieceId] with [spot] set.
+ * attempts are saved under [pieceId] with [spot] set, so a spot loop must name its piece (else
+ * [IllegalArgumentException]).
  *
  * [selectMode] switches between practice and perform (`docs/algorithms/guidance.md`). A perform run needs a timed
  * rung: no hint ever shows, the live verdicts (marks, tags, the key strip's text, wrong-key colours) stay hidden, and
@@ -161,6 +162,7 @@ public class PracticeViewModel(
     private var pattern: ClickPattern? = null
 
     init {
+        require(spot == null || pieceId != passage.id) { "a spot loop needs the id of its piece" }
         viewModelScope.launch { refreshDoneRungs() }
         viewModelScope.launch { seedClickOn() }
         start(if (spot == null) initialRung else initialRung.below(), initialMode)

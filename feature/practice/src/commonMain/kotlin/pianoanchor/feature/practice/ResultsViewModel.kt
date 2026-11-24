@@ -86,7 +86,8 @@ public class ResultsViewModel(
         val passage = Curriculum.passage(attempt.passageId)
         val strictness = storedStrictness()
         val analysed =
-            passage?.let {
+            // A loop's notes and steps are the slice's, not the piece's: no analysis against the whole piece.
+            passage?.takeIf { attempt.spot == null }?.let {
                 withContext(analysisDispatcher) {
                     val analysis = analyse(it, attempt, strictness)
                     ResultsSummary.of(it, attempt, analysis) to spotOf(it, attempt, analysis?.findings.orEmpty())
