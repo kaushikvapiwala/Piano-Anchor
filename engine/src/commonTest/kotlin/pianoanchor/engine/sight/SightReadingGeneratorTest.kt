@@ -226,6 +226,12 @@ class SightReadingGeneratorTest {
     }
 
     @Test
+    fun fromIdRebuildsThePassageOfAnIdOrIsNull() {
+        assertEquals(SightReadingGenerator.passage(4, 7), SightReadingGenerator.fromId("sight:4:7"))
+        assertNull(SightReadingGenerator.fromId("ode-to-joy"))
+    }
+
+    @Test
     fun levelOutsideRangeThrows() {
         assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(0, 1) }
         assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(9, 1) }

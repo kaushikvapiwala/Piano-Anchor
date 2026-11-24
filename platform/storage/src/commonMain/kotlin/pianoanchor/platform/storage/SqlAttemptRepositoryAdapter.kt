@@ -163,6 +163,21 @@ public class SqlAttemptRepositoryAdapter(
             }
         }
 
+    override suspend fun attemptsWithPassagePrefix(prefix: String): List<Attempt> {
+        require(prefix.isNotBlank()) { "prefix must not be blank" }
+        return withContext(dispatcher) {
+            storage("attemptsWithPassagePrefix") {
+                queries.transactionWithResult {
+                    queries
+                        .selectByPassagePrefix(
+                            prefix,
+                        ).executeAsList()
+                        .map(::withEvents)
+                }
+            }
+        }
+    }
+
     private fun withEvents(row: AttemptRow) =
         Attempt(
             id = row.id,

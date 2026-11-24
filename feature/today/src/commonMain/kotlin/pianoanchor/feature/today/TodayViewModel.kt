@@ -39,6 +39,9 @@ import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.SessionComposer
 import pianoanchor.engine.session.passageHistories
+import pianoanchor.engine.sight.SightLevels
+import pianoanchor.engine.sight.SightReadingGenerator
+import pianoanchor.engine.sight.SightStaircase
 import pianoanchor.engine.update.isNewer
 import kotlin.math.roundToInt
 import kotlin.time.Clock
@@ -109,7 +112,8 @@ public class TodayViewModel(
     }
 
     /**
-     * Where tapping [card] leads: the lesson of a Lesson card's concept, Practice on another passage card's passage
+     * Where tapping [card] leads: the lesson of a Lesson card's concept, the sight-reading exercise of a
+     * Sight-reading card, Practice on another passage card's passage
      * and rung, the ear screen with an Ear card's skills, the quizzes of a Quizzes card,
      * or Pianos when no piano is connected.
      */
@@ -117,6 +121,7 @@ public class TodayViewModel(
         val piano = mutableState.value.piano ?: return TodayTarget.Pianos
         return when (card) {
             is Card.Lesson -> TodayTarget.Lesson(piano.device, card.skill.id)
+            is Card.SightReading -> TodayTarget.SightReading(piano.device, card.passage.id)
             is Card.PassageCard -> TodayTarget.Practice(piano.device, card.passage.id, card.rung, card.mode)
             is Card.Ear -> TodayTarget.Ear(piano.device, card.skills)
             is Card.Quizzes -> TodayTarget.Quizzes(piano.device, card.quizzes)
@@ -137,15 +142,19 @@ public class TodayViewModel(
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
             val from = minOf(weekStart, windowStart)
             val days = attempts.practiceDays(from, zone) + learner.reviewDays(from)
+            val sightAttempts = attempts.attemptsWithPassagePrefix(SightReadingGenerator.ID_PREFIX)
+            val learned = learner.learnedSkills()
             val session =
                 SessionComposer.compose(
                     plan,
                     Curriculum,
                     stored.dailyBudget,
                     history,
-                    learner.learnedSkills(),
+                    learned,
                     learnerDay(now, zone),
                     quizzesDone = learner.quizzesOn(learnerDay(now, zone)),
+                    sightLevel = SightStaircase.level(sightAttempts, SightLevels.open(learned)),
+                    sightDoneToday = sightAttempts.any { learnerDay(it.startedAt, zone) == learnerDay(now, zone) },
                 )
             mutableState.update {
                 it.copy(

@@ -65,6 +65,11 @@ import pianoanchor.feature.practice.resources.results_obs_paused_unknown
 import pianoanchor.feature.practice.resources.results_obs_started_early
 import pianoanchor.feature.practice.resources.results_obs_started_late
 import pianoanchor.feature.practice.resources.results_obs_wrong_notes
+import pianoanchor.feature.practice.resources.results_sight_caption
+import pianoanchor.feature.practice.resources.results_sight_down
+import pianoanchor.feature.practice.resources.results_sight_replay
+import pianoanchor.feature.practice.resources.results_sight_stays
+import pianoanchor.feature.practice.resources.results_sight_up
 import pianoanchor.feature.practice.resources.results_tip_hold_full_clicks
 import pianoanchor.feature.practice.resources.results_tip_let_go_sooner
 import pianoanchor.feature.practice.resources.results_tip_listen_to_click
@@ -150,25 +155,44 @@ private fun Header(state: ResultsState.Ready) {
             fontSize = 22.sp,
             modifier = Modifier.semantics { heading() },
         )
+        state.sight?.let {
+            Text(
+                sightLine(it),
+                style = MaterialTheme.typography.bodySmall,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
 @Composable
+private fun sightLine(sight: SightOutcome): String =
+    when (sight.change) {
+        SightChange.UP -> stringResource(Res.string.results_sight_up, sight.newLevel.toString())
+        SightChange.DOWN -> stringResource(Res.string.results_sight_down, sight.newLevel.toString())
+        SightChange.STAYS -> stringResource(Res.string.results_sight_stays, sight.newLevel.toString())
+        SightChange.REPLAY -> stringResource(Res.string.results_sight_replay)
+    }
+
+@Composable
 private fun caption(state: ResultsState.Ready): String =
-    if (state.tempoBpm == null) {
-        stringResource(Res.string.results_caption, state.passageTitle, state.runNumber.toString())
+    if (state.sight != null) {
+        stringResource(Res.string.results_sight_caption, state.sight.level.toString())
+    } else if (state.tempoBpm == null) {
+        stringResource(Res.string.results_caption, state.passageTitle, checkNotNull(state.runNumber).toString())
     } else if (state.mode == RunMode.PERFORM) {
         stringResource(
             Res.string.results_caption_performed,
             state.passageTitle,
-            state.runNumber.toString(),
+            checkNotNull(state.runNumber).toString(),
             state.tempoBpm.toString(),
         )
     } else {
         stringResource(
             Res.string.results_caption_tempo,
             state.passageTitle,
-            state.runNumber.toString(),
+            checkNotNull(state.runNumber).toString(),
             state.tempoBpm.toString(),
         )
     }
@@ -252,14 +276,16 @@ private fun Words(state: ResultsState.Ready) {
         for (observation in state.words.observations) {
             Text(observationText(observation, state), style = MaterialTheme.typography.bodyMedium)
         }
-        Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
-            Text(
-                stringResource(tipText(state.words.tip)),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            )
+        state.words.tip?.let { tip ->
+            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                Text(
+                    stringResource(tipText(tip)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                )
+            }
         }
     }
 }

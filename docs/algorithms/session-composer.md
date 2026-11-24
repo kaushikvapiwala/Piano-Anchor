@@ -38,11 +38,17 @@ through `passageHistories` (beside `PassageHistory`), the loader Songs shares.
 
 ## Minutes
 The Quizzes card takes its minutes first; the rest of the budget is split as below.
-The budget is split by `SESSION_SHARE_REVIEW`, `SESSION_SHARE_LESSON`, `SESSION_SHARE_SONG` and `SESSION_SHARE_EAR`
-(20/35/30/15 %). A missing card's share goes to the others in proportion. Minutes are whole: each share is rounded
-down and the leftover minutes go to the largest fractional parts, ties in the order review, lesson, song, ear, so they
-always add up to the budget (20 min with all four cards gives 4, 7, 6, 3; with no ear card, 5, 8, 7). With no cards
-all minutes are 0.
+The budget is split by `SESSION_SHARE_REVIEW`, `SESSION_SHARE_LESSON`, `SESSION_SHARE_SONG`, `SESSION_SHARE_SIGHT`
+and `SESSION_SHARE_EAR` (18/32/27/10/13 %). A missing card's share goes to the others in proportion. Minutes are
+whole: each share is rounded down and the leftover minutes go to the largest fractional parts, ties in the order
+review, lesson, song, sight-reading, ear, so they always add up to the budget (20 min with all five cards gives 4, 6,
+5, 2, 3; with no sight-reading card, 4, 7, 6, 3). With no cards all minutes are 0.
+
+## Sight-reading card
+`compose` takes `sightLevel` (0 when the staircase is closed, see `docs/algorithms/sight-reading.md`) and
+`sightDoneToday`. The card exists when the level is at least 1 and no sight-reading attempt started today. It offers
+the exercise of that level seeded by the learner day's epoch day, so a day's exercise is the same every time Today
+loads, opens Practice in wait mode, and sits after the Song card and before the Ear card.
 
 ## Review segment
 `Session.moreDue` holds the due skills beyond the cold open, in plan order. Once a run is saved the skill is no longer

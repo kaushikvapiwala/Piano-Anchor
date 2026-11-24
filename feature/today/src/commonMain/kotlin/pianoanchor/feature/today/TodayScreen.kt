@@ -43,11 +43,14 @@ import pianoanchor.feature.today.resources.today_action_cold_open
 import pianoanchor.feature.today.resources.today_action_cold_open_perform
 import pianoanchor.feature.today.resources.today_action_lesson
 import pianoanchor.feature.today.resources.today_action_retry
+import pianoanchor.feature.today.resources.today_action_sight
 import pianoanchor.feature.today.resources.today_action_song
 import pianoanchor.feature.today.resources.today_card_cold_open
 import pianoanchor.feature.today.resources.today_card_detail
 import pianoanchor.feature.today.resources.today_card_lesson
 import pianoanchor.feature.today.resources.today_card_more_due
+import pianoanchor.feature.today.resources.today_card_sight
+import pianoanchor.feature.today.resources.today_card_sight_detail
 import pianoanchor.feature.today.resources.today_card_song
 import pianoanchor.feature.today.resources.today_card_tempo
 import pianoanchor.feature.today.resources.today_card_wait
@@ -207,6 +210,7 @@ private fun CardView(
             is Card.Song -> tempoLine(card)
             is Card.ColdOpen -> stringResource(Res.string.today_card_detail, card.skill.title, card.minutes)
             is Card.Lesson -> stringResource(Res.string.today_card_detail, card.passage.title, card.minutes)
+            is Card.SightReading -> stringResource(Res.string.today_card_sight_detail, card.minutes)
         }
     OutlinedCard(
         shape = CardShape,
@@ -253,6 +257,7 @@ private fun cardLabel(card: Card.PassageCard): StringResource =
         is Card.ColdOpen -> Res.string.today_card_cold_open
         is Card.Lesson -> Res.string.today_card_lesson
         is Card.Song -> Res.string.today_card_song
+        is Card.SightReading -> Res.string.today_card_sight
     }
 
 private fun cardAction(card: Card.PassageCard): StringResource =
@@ -260,6 +265,7 @@ private fun cardAction(card: Card.PassageCard): StringResource =
         card.mode == RunMode.PERFORM -> Res.string.today_action_cold_open_perform
         card is Card.ColdOpen -> Res.string.today_action_cold_open
         card is Card.Lesson -> Res.string.today_action_lesson
+        card is Card.SightReading -> Res.string.today_action_sight
         else -> Res.string.today_action_song
     }
 
@@ -283,10 +289,11 @@ private fun tempoLine(card: Card.Song): String {
     }
 }
 
-/** The Review, Lesson, Song and Ear minutes as proportional segments; its caption is what TalkBack reads. */
+/** The Review, Lesson, Song, Sight-reading and Ear minutes as proportional segments; the caption is read aloud. */
 @Composable
 private fun SessionBar(session: Session) {
-    val total = session.reviewMinutes + session.lessonMinutes + session.songMinutes + session.earMinutes
+    val total =
+        session.reviewMinutes + session.lessonMinutes + session.songMinutes + session.sightMinutes + session.earMinutes
     val description =
         stringResource(
             Res.string.today_session_bar,
@@ -294,6 +301,7 @@ private fun SessionBar(session: Session) {
             session.reviewMinutes,
             session.lessonMinutes,
             session.songMinutes,
+            session.sightMinutes,
             session.earMinutes,
         )
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -306,6 +314,7 @@ private fun SessionBar(session: Session) {
                     session.reviewMinutes to ColdOpenBackground,
                     session.lessonMinutes to MaterialTheme.colorScheme.primary,
                     session.songMinutes to MaterialTheme.colorScheme.outline,
+                    session.sightMinutes to MaterialTheme.colorScheme.tertiary,
                     session.earMinutes to MaterialTheme.pianoAnchorColors.earAccent,
                 )
             for ((minutes, color) in segments) {

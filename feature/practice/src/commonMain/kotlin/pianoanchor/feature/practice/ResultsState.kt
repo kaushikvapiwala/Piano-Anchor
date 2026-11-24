@@ -29,11 +29,12 @@ public sealed interface ResultsState {
      * [spot] is the window of bars that went worst, which Results offer to loop (null for a run with no findings, a
      * perform take or an unknown passage); [rung] is the tempo-ladder rung the run was played on. [words] are what
      * the screen says first (up to two observations and a tip); [shiftBeats] is how many beats a run that started
-     * late was off, to the nearest half beat.
+     * late was off, to the nearest half beat. A sight-reading exercise has no [runNumber] (null) and a [sight] outcome
+     * instead.
      */
     public data class Ready(
         val passageTitle: String,
-        val runNumber: Int,
+        val runNumber: Int?,
         val band: Band,
         val correctSteps: Int,
         val stepCount: Int,
@@ -49,7 +50,30 @@ public sealed interface ResultsState {
         val rung: TempoRung = TempoRung.WAIT,
         val words: ResultsWords = ResultsWords(listOf(Observation.CLEAN), Tip.NEXT_TEMPO),
         val shiftBeats: Double = 0.0,
+        val sight: SightOutcome? = null,
     ) : ResultsState
+}
+
+/** How a daily sight-reading exercise of [level] moved the staircase (`docs/algorithms/sight-reading.md`). */
+public data class SightOutcome(
+    val level: Int,
+    val change: SightChange,
+    val newLevel: Int,
+)
+
+/** What a sight-reading attempt did to the level. */
+public enum class SightChange {
+    /** The level went up. */
+    UP,
+
+    /** The level went down. */
+    DOWN,
+
+    /** The level stayed. */
+    STAYS,
+
+    /** A replay: only the first play of an exercise moves the level. */
+    REPLAY,
 }
 
 /**

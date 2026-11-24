@@ -62,6 +62,18 @@ class ResultsScreenScreenshotTest {
     fun everyNoteRight() = capture("clean", clean)
 
     @Test
+    fun sightReadingLevelUp() =
+        capture(
+            "sight_level_up",
+            clean.copy(
+                passageTitle = "Sight-reading level 2",
+                runNumber = null,
+                words = ResultsWords(listOf(Observation.CLEAN), tip = null),
+                sight = SightOutcome(level = 2, change = SightChange.UP, newLevel = 3),
+            ),
+        )
+
+    @Test
     fun finishLessonAfterACleanRun() = capture("finish_lesson", clean, fromLesson = true)
 
     @Test

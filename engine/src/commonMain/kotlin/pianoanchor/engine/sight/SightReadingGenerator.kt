@@ -12,7 +12,6 @@ import pianoanchor.engine.content.exerciseRights
 import kotlin.math.abs
 import kotlin.random.Random
 
-private const val ID_PREFIX = "sight"
 private const val ID_PARTS = 3
 private const val LEFT_HAND_LEVEL = 4
 private const val TURNS_LEVEL = 5
@@ -78,8 +77,13 @@ private class Slot(
     val first: Boolean,
 )
 
+private const val ID_NAME = "sight"
+
 /** Draws sight-reading exercises (`docs/algorithms/sight-reading.md`). Pure over a seeded [Random]. */
 public object SightReadingGenerator {
+    /** What every exercise id starts with: "sight:". */
+    public const val ID_PREFIX: String = "$ID_NAME:"
+
     /**
      * The exercise for [level] (1..8) and [seed]: id "sight:<level>:<seed>", SIGHT_BARS bars, rights ORIGINAL,
      * skills empty, piece false. Same inputs give an equal [Passage]. Throws [IllegalArgumentException] for a level
@@ -124,14 +128,17 @@ public object SightReadingGenerator {
     public fun idOf(
         level: Int,
         seed: Long,
-    ): String = "$ID_PREFIX:$level:$seed"
+    ): String = "$ID_PREFIX$level:$seed"
+
+    /** The exercise an id names (see [parse]); null for any other id. */
+    public fun fromId(id: String): Passage? = parse(id)?.let { (level, seed) -> passage(level, seed) }
 
     /** level and seed of a "sight:<level>:<seed>" id; null for any other id. */
     public fun parse(id: String): Pair<Int, Long>? {
         val parts = id.split(':')
         val level = parts.getOrNull(1)?.toIntOrNull()?.takeIf { it in 1..SightLevels.all.size }
         val seed = parts.getOrNull(2)?.toLongOrNull()
-        val sight = parts.size == ID_PARTS && parts[0] == ID_PREFIX
+        val sight = parts.size == ID_PARTS && parts[0] == ID_NAME
         return if (sight && level != null && seed != null) level to seed else null
     }
 

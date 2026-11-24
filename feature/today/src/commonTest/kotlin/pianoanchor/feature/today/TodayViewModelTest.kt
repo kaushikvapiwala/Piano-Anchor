@@ -26,6 +26,7 @@ import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
+import pianoanchor.engine.sight.SightReadingGenerator
 import pianoanchor.testing.FakePiano
 import pianoanchor.testing.FakeWallClock
 import kotlin.test.Test
@@ -486,8 +487,10 @@ class TodayViewModelTest : TodayViewModelFixture() {
             )
             val vm = viewModel()
 
-            val song = assertIs<Card.Song>(assertNotNull(vm.state.value.session).cards.single())
-            assertEquals(DailyBudget.MIN_20.minutes, song.minutes)
+            // Everything learned also opens the top sight-reading level: the song shares the day with that card.
+            val cards = assertNotNull(vm.state.value.session).cards
+            assertEquals(listOf(Card.Song::class, Card.SightReading::class), cards.map { it::class })
+            assertEquals(DailyBudget.MIN_20.minutes, cards.sumOf { it.minutes })
             assertEquals(
                 0,
                 vm.state.value.session
@@ -513,5 +516,92 @@ class TodayViewModelTest : TodayViewModelFixture() {
             val song = assertNotNull(vm.state.value.session).cards.filterIsInstance<Card.Song>().single()
             assertEquals(first.passage.id, song.passage.id)
             assertEquals(TempoRung.P60, song.rung)
+        }
+
+    private fun sightCard(vm: TodayViewModel) =
+        assertNotNull(vm.state.value.session).cards.filterIsInstance<Card.SightReading>().singleOrNull()
+
+    @Test
+    fun sightLevelFromStoredAttempts() =
+        runTest(dispatcher) {
+            givenStates(
+                skillState(Skills.STAFF_STEPS.id, dueDay = LocalDate(2026, 12, 1), learned = true),
+                skillState(Skills.TREBLE_CLEF.id, dueDay = LocalDate(2026, 12, 1), learned = true),
+            )
+            // Two clean first plays on earlier days move level 1 up to 2; the card is offered at level 2.
+            playedOn("2026-11-16", id = "s-1", passageId = "sight:1:1", band = Band.CLEAN)
+            playedOn("2026-11-17", id = "s-2", passageId = "sight:1:2", band = Band.CLEAN)
+            val vm = viewModel()
+
+            val card = assertNotNull(sightCard(vm))
+            assertEquals(2, card.level)
+            assertEquals(SightReadingGenerator.idOf(2, today.toEpochDays()), card.passage.id)
+            assertEquals(TodayTarget.SightReading(piano.device, card.passage.id), vm.target(card))
+        }
+
+    @Test
+    fun noSightCardUntilTheFirstSightSkillIsLearned() =
+        runTest(dispatcher) {
+            givenStates(skillState(Skills.MIDDLE_C.id))
+            assertNull(sightCard(viewModel()))
+        }
+
+    @Test
+    fun noSightCardOnceTodaysExerciseWasPlayed() =
+        runTest(dispatcher) {
+            givenStates(skillState(Skills.STAFF_STEPS.id, dueDay = LocalDate(2026, 12, 1), learned = true))
+            playedOn("2026-11-18", id = "s-1", passageId = "sight:1:1", band = Band.GOOD)
+            assertNull(sightCard(viewModel()))
+        }
+
+    @Test
+    fun seedIsTheLearnerDay() =
+        runTest(dispatcher) {
+            givenStates(skillState(Skills.STAFF_STEPS.id, dueDay = LocalDate(2026, 12, 1), learned = true))
+            assertEquals(
+                SightReadingGenerator.idOf(1, today.toEpochDays()),
+                assertNotNull(sightCard(viewModel())).passage.id,
+            )
+            // 02:00 UTC is still the previous learner day (the day starts at 04:00).
+            val early =
+                TodayViewModel(
+                    LearnerModel(Curriculum.graph, learnerRepository),
+                    settings,
+                    attempts,
+                    piano,
+                    piano,
+                    calibration,
+                    FakeWallClock(Instant.parse("2026-11-18T02:00:00Z")),
+                    TimeZone.UTC,
+                    updateCheck,
+                    INSTALLED,
+                ).also { runCurrent() }
+            assertEquals(
+                SightReadingGenerator.idOf(1, LocalDate(2026, 11, 17).toEpochDays()),
+                assertNotNull(sightCard(early)).passage.id,
+            )
+        }
+
+    @Test
+    fun noSightCardAfterMidnightBeforeTheLearnerDayStarts() =
+        runTest(dispatcher) {
+            givenStates(skillState(Skills.STAFF_STEPS.id, dueDay = LocalDate(2026, 12, 1), learned = true))
+            // Played at 23:00 on the 17th; at 01:00 on the 18th it is still the same learner day.
+            playedOn("2026-11-17", id = "s-1", passageId = "sight:1:1", hour = "23")
+            val vm =
+                TodayViewModel(
+                    LearnerModel(Curriculum.graph, learnerRepository),
+                    settings,
+                    attempts,
+                    piano,
+                    piano,
+                    calibration,
+                    FakeWallClock(Instant.parse("2026-11-18T01:00:00Z")),
+                    TimeZone.UTC,
+                    updateCheck,
+                    INSTALLED,
+                ).also { runCurrent() }
+
+            assertNull(sightCard(vm))
         }
 }

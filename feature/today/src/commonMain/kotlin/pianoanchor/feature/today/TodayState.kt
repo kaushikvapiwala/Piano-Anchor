@@ -48,8 +48,8 @@ public data class TodayState(
     /** The cold-open card, if something is due. */
     val coldOpen: Card.ColdOpen? get() = session?.cards?.filterIsInstance<Card.ColdOpen>()?.firstOrNull()
 
-    /** True when the plan has loaded and offers neither a review nor a lesson: only a song, or nothing. */
-    val caughtUp: Boolean get() = session != null && session.cards.none { it !is Card.Song }
+    /** True when the plan has loaded and offers neither a review nor a lesson: at most a song or sight-reading. */
+    val caughtUp: Boolean get() = session != null && session.cards.none { it !is Card.Song && it !is Card.SightReading }
 }
 
 /** Where a tapped card leads. */
@@ -78,6 +78,12 @@ public sealed interface TodayTarget {
     public data class Quizzes(
         val device: MidiDevice,
         val quizzes: List<Quiz>,
+    ) : TodayTarget
+
+    /** The sight-reading exercise [passageId] on [device]: wait mode, from the staff alone. */
+    public data class SightReading(
+        val device: MidiDevice,
+        val passageId: String,
     ) : TodayTarget
 
     /** No piano is connected: the Pianos screen. */

@@ -162,6 +162,9 @@ Landscape like practice, 915×412 dp; page `#F7F5F2` (dark `#1B1B1F`), padding 1
 - **In words**: under the header, up to two plain sentences about the run ("You started about 1.5 beats late.",
   "Notes were short.") and one tip in a highlighted line ("Wait for 3, 2, 1, then play on the next click."); a clean
   run says "Clean run!" alone (`docs/algorithms/grading.md`, "Results in words").
+- **Sight-reading**: for a daily sight-reading exercise the caption reads "Sight-reading · level 3" (no run number) and
+  one line under the headline says "Level up: 4", "Level down: 2", "Level stays 3" or, for a replay, "Only the first
+  play moves your level". No spot loop is offered.
 - **Details**: a toggle below the words, collapsed every time Results open; TalkBack reads "Expanded" or
   "Collapsed". The tiles below show only when it is open.
 - **Caption**: "C-D-E · run 3 · ♩ = 72" for a timed run, "… · wait mode" otherwise.
@@ -352,10 +355,13 @@ weekly goal dots, "Practised 9 of the last 16 days" and the update banner.
   rung (the lesson card opens the lesson); with no piano connected a card opens Pianos.
 - **Quizzes** card (first, when due skills have a quiz): surface with a 2 dp border in the primary colour, "Quick
   quizzes · 3", "About 1 min, checked by your piano" and "Start quizzes"; it opens the quiz screen.
+- **Sight-reading** card (after the Song, while the level is open and today's exercise is unplayed): label
+  "Sight-reading", the exercise title, "One unseen exercise · 4 min" and "Start sight-reading". It opens Practice in
+  wait mode with no Hint button, tempo chips or perform switch. The card does not count against "All caught up".
 - **Ear** card: surface with a 2 dp border in the ear accent (above), the label "EAR · 3 MIN" in amber,
   the first skill's title, "3 skills today" and an amber "Start ear" button. It opens the Ear screen with its skills.
-- **Session bar**: Review, Lesson, Song and (amber) Ear segments with widths proportional to their minutes (a zero
-  segment is left out), decorative; the caption under it, "Today's 20 minutes: review 4, lesson 7, song 6, ear 3", is
+- **Session bar**: Review, Lesson, Song, Sight-reading (tertiary colour) and (amber) Ear segments with widths proportional to their minutes (a zero
+  segment is left out), decorative; the caption under it, "Today's 20 minutes: review 4, lesson 6, song 5, sight-reading 2, ear 3", is
   what TalkBack reads.
 - **All caught up**: "All caught up. Play a song or come back tomorrow." above the Song card, if any.
 - **Storage error**: an `errorContainer` card with Retry.

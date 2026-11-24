@@ -25,6 +25,7 @@ import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.matcher.TempoRung
+import pianoanchor.engine.sight.SightReadingGenerator
 import pianoanchor.feature.ear.EarViewModel
 import pianoanchor.feature.lesson.LessonViewModel
 import pianoanchor.feature.lesson.QuizViewModel
@@ -74,7 +75,10 @@ val appModule =
         factory { LearnerModel(Curriculum.graph, get()) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
         viewModel { (device: MidiDevice, passageId: String, start: PracticeStart) ->
-            val passage = requireNotNull(Curriculum.passage(passageId)) { "unknown passage $passageId" }
+            val passage =
+                requireNotNull(Curriculum.passage(passageId) ?: SightReadingGenerator.fromId(passageId)) {
+                    "unknown passage $passageId"
+                }
             PracticeViewModel(
                 device,
                 start.spot?.let { passage.slice(it) } ?: passage,
@@ -119,7 +123,7 @@ val appModule =
             QuizViewModel(device, quizzes, get(), get(), get(), get(), get(), get()) { Uuid.random().toString() }
         }
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
-        viewModel { (attemptId: String, rung: TempoRung) -> ResultsViewModel(attemptId, rung, get(), get()) }
+        viewModel { (attemptId: String, rung: TempoRung) -> ResultsViewModel(attemptId, rung, get(), get(), get()) }
         viewModel { SettingsViewModel(get()) }
         viewModel {
             OnboardingViewModel(

@@ -41,3 +41,14 @@ moves the walk by its grade, whichever level it was played at.
 
 A staircase that goes up after two successes and down after one failure settles at the level where about 70% of plays
 are clean (Levitt, 1971), hard enough to stretch and not enough to discourage.
+
+## The daily card
+
+Today offers one exercise a day (`docs/algorithms/session-composer.md`): the staircase level is computed from the
+saved attempts whose passage id starts with `sight:` and the level the learner's skills have opened, and the exercise
+is generated from that level and the learner day's epoch day, so it is new each day and stable within it. Once a
+sight-reading attempt has started on the current learner day (the day that begins at `LEARNER_DAY_START_HOUR`), the card is gone until tomorrow. Practice plays it in wait mode
+from the staff alone: no key hints, no hear-first, no tempo rungs, no perform mode, no spot loop. Results name the
+level ("Sight-reading · level 3") with no run number and one line on how the level moved, found by comparing the
+staircase over the attempts up to this one with the staircase over those before it; a replay of the same exercise
+says only the first play moves the level.

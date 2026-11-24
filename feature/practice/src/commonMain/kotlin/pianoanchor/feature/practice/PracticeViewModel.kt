@@ -64,6 +64,7 @@ import pianoanchor.engine.matcher.beatNanos
 import pianoanchor.engine.midi.defaultLinkLatencyNanos
 import pianoanchor.engine.midi.measureLinkLatencyNanos
 import pianoanchor.engine.profile
+import pianoanchor.engine.sight.SightReadingGenerator
 import kotlin.math.abs
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
@@ -98,6 +99,10 @@ import kotlin.time.Instant
  * With a [player] the passage plays once, at its written tempo, before the first run of a passage never played
  * (hear it first; [skipListening] stops it) and again on [listen] while no run is under way. A wrong key in wait mode
  * sets [PracticeState.hint] and the glow keys (`docs/algorithms/wrong-key-hint.md`).
+ *
+ * A sight-reading [passage] (its id parses with `SightReadingGenerator.parse`) always practises in wait mode from the
+ * staff alone: hint level OFF, no Hint button, no hear-first or Listen, no tempo rungs or perform mode, whatever
+ * [initialRung] and [initialMode] say. The wrong-key line still shows.
  */
 @Suppress("TooManyFunctions")
 public class PracticeViewModel(
@@ -120,11 +125,18 @@ public class PracticeViewModel(
     private val pieceId: String = passage.id,
     private val newId: () -> String,
 ) : ViewModel() {
+    /** Whether [passage] is a sight-reading exercise (`docs/algorithms/sight-reading.md`). */
+    private val sight = SightReadingGenerator.parse(passage.id) != null
+
     private val mutableState =
         MutableStateFlow(
             PracticeState
                 .start(passage)
-                .copy(spotLoop = spot?.let { SpotLoopState(it, initialRung) }, staffHidden = isUnitZero(passage)),
+                .copy(
+                    spotLoop = spot?.let { SpotLoopState(it, initialRung) },
+                    staffHidden = isUnitZero(passage),
+                    sightReading = sight,
+                ),
         )
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
 
@@ -136,7 +148,7 @@ public class PracticeViewModel(
     private var demo: Job? = null
 
     /** True until the screen has decided whether this passage plays itself first (once per screen). */
-    private var hearFirstPending = spot == null
+    private var hearFirstPending = spot == null && !sight
 
     /** The graded attempt whose save failed, until it is saved or discarded; null while a retry runs. */
     private var unsaved: Attempt? = null
@@ -197,10 +209,11 @@ public class PracticeViewModel(
     }
 
     private fun start(
-        rung: TempoRung,
+        wanted: TempoRung,
         requested: RunMode,
     ) {
-        val mode = if (!rung.canPerform || spot != null) RunMode.PRACTICE else requested
+        val rung = if (sight) TempoRung.WAIT else wanted
+        val mode = if (!rung.canPerform || spot != null || sight) RunMode.PRACTICE else requested
         flashTimer?.cancel()
         hintTimer?.cancel()
         demo?.cancel()
@@ -214,7 +227,8 @@ public class PracticeViewModel(
                     doneRungs = it.doneRungs,
                     clickOn = it.clickOn,
                     spotLoop = it.spotLoop,
-                    canListen = player != null,
+                    canListen = player != null && !sight,
+                    sightReading = sight,
                     staffHidden = it.staffHidden,
                     // Hidden until `loadHints` reads the run's level, so a slow store can't flash the band at FULL.
                     hintVisible = false,
@@ -288,7 +302,7 @@ public class PracticeViewModel(
 
     /** Shows the key band on the waiting step, for that step only (the Hint button). */
     public fun showHint() {
-        if (!mutableState.value.showsVerdicts) return
+        if (!mutableState.value.showsVerdicts || sight) return
         hintShown = true
         mutableState.update { it.copy(hintVisible = true) }
     }
@@ -301,7 +315,9 @@ public class PracticeViewModel(
      */
     private suspend fun loadHints() {
         val known = hintCache
-        if (known != null) {
+        if (sight) {
+            hintLevel = HintLevel.OFF
+        } else if (known != null) {
             hintLevel = known.first
             hintDelayMillis = known.second
         } else {
@@ -575,6 +591,7 @@ public class PracticeViewModel(
                     flash = flash,
                     lastKey = flash,
                 ).withHint(note, flash.correct, needed, advanced)
+                .let { state -> if (sight) state.copy(hintGlow = emptySet()) else state }
         }
         flashTimer?.cancel()
         flashTimer =

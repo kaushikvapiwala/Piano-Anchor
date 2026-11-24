@@ -64,6 +64,31 @@ class ResultsScreenTest {
         }
 
     @Test
+    fun aSightReadingResultNamesTheLevelAndHowItMoved() =
+        runComposeUiTest {
+            var sight by mutableStateOf(SightOutcome(2, SightChange.DOWN, 1))
+            setContent {
+                PianoAnchorTheme {
+                    ResultsScreen(
+                        ready.copy(runNumber = null, sight = sight),
+                        onBack = {},
+                        onTryAgain = {},
+                        onRetry = {},
+                    )
+                }
+            }
+
+            onNodeWithText("Sight-reading · level 2").assertIsDisplayed()
+            onNodeWithText("Level down: 1").assertIsDisplayed()
+            sight = SightOutcome(2, SightChange.UP, 3)
+            onNodeWithText("Level up: 3").assertIsDisplayed()
+            sight = SightOutcome(2, SightChange.STAYS, 2)
+            onNodeWithText("Level stays 2").assertIsDisplayed()
+            sight = SightOutcome(2, SightChange.REPLAY, 2)
+            onNodeWithText("Only the first play moves your level").assertIsDisplayed()
+        }
+
+    @Test
     fun finishLessonShowsOnlyWhenStartedFromALesson() =
         runComposeUiTest {
             var finished = 0

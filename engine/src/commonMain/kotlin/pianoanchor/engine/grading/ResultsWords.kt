@@ -32,10 +32,10 @@ public enum class Tip {
     NEXT_TEMPO,
 }
 
-/** The first one or two [observations] in priority order, and the [tip] for the first. */
+/** The first one or two [observations] in priority order, and the [tip] for the first (null: none to give). */
 public data class ResultsWords(
     val observations: List<Observation>,
-    val tip: Tip,
+    val tip: Tip?,
 )
 
 /** Picks what Results say about a run. */

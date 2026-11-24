@@ -177,6 +177,28 @@ class PracticeScreenTest {
         }
 
     @Test
+    fun aSightReadingExerciseHidesTheHintButtonTempoChipsAndPerformSwitch() =
+        runComposeUiTest {
+            setContent {
+                PianoAnchorTheme {
+                    PracticeScreen(
+                        PracticeState.start(Passages.CDE).copy(sightReading = true),
+                        onBack = {},
+                        onSelectRung = {},
+                        onToggleClick = {},
+                        onRetrySave = {},
+                        onDiscard = {},
+                    )
+                }
+            }
+
+            onNodeWithContentDescription("Show hint").assertDoesNotExist()
+            onNodeWithText("Wait").assertDoesNotExist()
+            onNodeWithText("Perform").assertDoesNotExist()
+            onNodeWithContentDescription("Click on").assertExists()
+        }
+
+    @Test
     fun readyTimedRunSaysToPlayAKey() =
         runComposeUiTest {
             show(PracticeState.start(Passages.CDE).copy(rung = TempoRung.P60))

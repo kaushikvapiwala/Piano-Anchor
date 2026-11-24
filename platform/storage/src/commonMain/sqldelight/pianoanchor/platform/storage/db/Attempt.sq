@@ -96,3 +96,6 @@ SELECT started_at_ms FROM attempt WHERE started_at_ms >= ?;
 
 countCleanWaitRuns:
 SELECT COUNT(*) FROM attempt WHERE passage_id = ? AND band = 'CLEAN' AND tempo_bpm IS NULL AND spot_first_bar IS NULL;
+
+selectByPassagePrefix:
+SELECT * FROM attempt WHERE instr(passage_id, :prefix) = 1 ORDER BY started_at_ms, id;

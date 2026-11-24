@@ -363,6 +363,47 @@ abstract class AttemptRepositoryPortContractTest {
             )
             assertEquals(emptySet(), repository.practiceDays(LocalDate(2026, 11, 16), TimeZone.UTC))
         }
+
+    @Test
+    fun attemptsWithPassagePrefixReturnsMatchesOldestFirst() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-1", startedAtSeconds = 3_000, passageId = "sight:1:20"))
+            repository.save(attempt("a-2", startedAtSeconds = 1_000, passageId = "sight:2:10"))
+            repository.save(attempt("a-3", startedAtSeconds = 2_000, passageId = "sight:1:20"))
+            assertEquals(listOf("a-2", "a-3", "a-1"), repository.attemptsWithPassagePrefix("sight:").map { it.id })
+            assertEquals(events, repository.attemptsWithPassagePrefix("sight:").first().events)
+        }
+
+    @Test
+    fun attemptsWithPassagePrefixIgnoresOthers() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-1", startedAtSeconds = 1_000, passageId = "sight:1:20"))
+            repository.save(attempt("a-2", startedAtSeconds = 2_000, passageId = "c-d-e"))
+            repository.save(attempt("a-3", startedAtSeconds = 3_000, passageId = "sigh%"))
+            assertEquals(listOf("a-1"), repository.attemptsWithPassagePrefix("sight:").map { it.id })
+            assertEquals(emptyList(), repository.attemptsWithPassagePrefix("nothing:"))
+            // A wildcard is plain text, not a pattern.
+            assertEquals(emptyList(), repository.attemptsWithPassagePrefix("%"))
+        }
+
+    @Test
+    fun attemptsWithPassagePrefixBlankPrefixThrows() =
+        runTest {
+            val repository = createSubject()
+            assertFailsWith<IllegalArgumentException> { repository.attemptsWithPassagePrefix("") }
+            assertFailsWith<IllegalArgumentException> { repository.attemptsWithPassagePrefix("  ") }
+        }
+
+    @Test
+    fun attemptsWithPassagePrefixBreaksStartTiesById() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-2", startedAtSeconds = 1_000, passageId = "sight:1:20"))
+            repository.save(attempt("a-1", startedAtSeconds = 1_000, passageId = "sight:1:21"))
+            assertEquals(listOf("a-1", "a-2"), repository.attemptsWithPassagePrefix("sight:").map { it.id })
+        }
 }
 
 private const val TEMPO_A = 48

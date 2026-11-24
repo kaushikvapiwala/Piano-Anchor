@@ -213,14 +213,16 @@ private fun TopBar(
             )
         }
         Spacer(Modifier.weight(1f))
-        TempoRung.entries.forEach { rung ->
-            val label =
-                rung.percent?.let { stringResource(Res.string.practice_tempo_percent, it.toString()) }
-                    ?: stringResource(Res.string.practice_tempo_wait)
-            TempoChip(label, selected = rung == state.rung, done = rung in state.doneRungs) { onSelectRung(rung) }
+        if (!state.sightReading) {
+            TempoRung.entries.forEach { rung ->
+                val label =
+                    rung.percent?.let { stringResource(Res.string.practice_tempo_percent, it.toString()) }
+                        ?: stringResource(Res.string.practice_tempo_wait)
+                TempoChip(label, selected = rung == state.rung, done = rung in state.doneRungs) { onSelectRung(rung) }
+            }
         }
-        if (state.spotLoop == null) ModeSwitch(state, onSelectMode)
-        if (state.showsVerdicts) HintButton(onHint)
+        if (state.spotLoop == null && !state.sightReading) ModeSwitch(state, onSelectMode)
+        if (state.showsVerdicts && !state.sightReading) HintButton(onHint)
         ClickButton(state.clickOn, onToggleClick)
         Button(
             onClick = onBack,

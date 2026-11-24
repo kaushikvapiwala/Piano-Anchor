@@ -126,6 +126,13 @@ class SqlAttemptRepositoryAdapterTest : AttemptRepositoryPortContractTest() {
         }
 
     @Test
+    fun attemptsWithPassagePrefixThrowsStorageUnavailableExceptionWhenTheDriverFails() =
+        runTest {
+            failingDriver.failing = true
+            assertFailsWith<StorageUnavailableException> { failingRepository.attemptsWithPassagePrefix("sight:") }
+        }
+
+    @Test
     fun deletingAnAttemptDeletesItsNotes() =
         runTest {
             repository.save(

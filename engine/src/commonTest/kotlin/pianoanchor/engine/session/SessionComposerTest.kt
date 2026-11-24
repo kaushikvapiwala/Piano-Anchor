@@ -15,10 +15,12 @@ import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.DailyPlan
 import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.matcher.TempoRung
+import pianoanchor.engine.sight.SightReadingGenerator
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -455,6 +457,8 @@ class SessionComposerTest {
         plan: DailyPlan,
         budget: DailyBudget = DailyBudget.MIN_20,
         history: Map<String, PassageHistory> = emptyMap(),
+        sightLevel: Int = 0,
+        sightDoneToday: Boolean = false,
     ) = SessionComposer.compose(
         plan,
         Curriculum,
@@ -463,6 +467,8 @@ class SessionComposerTest {
         learnedWithPrerequisites(plan),
         day,
         withEar,
+        sightLevel = sightLevel,
+        sightDoneToday = sightDoneToday,
     )
 
     @Test
@@ -625,5 +631,76 @@ class SessionComposerTest {
     fun `ear skills and unknown skills get no quizzes`() {
         val plan = DailyPlan(listOf(state(earA), state(Skill("orphan", "Orphan", emptySet()))), emptyList())
         assertTrue(composeEar(plan).cards.none { it is Card.Quizzes })
+    }
+
+    private val fivePlan =
+        DailyPlan(
+            listOf(state(Skills.MIDDLE_C), state(Skills.FINGER_NUMBER_TUNES, learned = true), state(earA)),
+            listOf(Skills.HIGH_AND_LOW),
+        )
+
+    private fun sightOf(session: Session) = session.cards.filterIsInstance<Card.SightReading>().singleOrNull()
+
+    @Test
+    fun sightCardWhenLevelOpenAndNotDone() {
+        val card = assertNotNull(sightOf(composeEar(fivePlan, sightLevel = 3)))
+        assertEquals(3, card.level)
+        assertEquals(SightReadingGenerator.passage(3, day.toEpochDays()), card.passage)
+        assertEquals(TempoRung.WAIT, card.rung)
+        assertEquals(RunMode.PRACTICE, card.mode)
+    }
+
+    @Test
+    fun noSightCardWhenClosed() {
+        assertNull(sightOf(composeEar(fivePlan, sightLevel = 0)))
+    }
+
+    @Test
+    fun noSightCardWhenDoneToday() {
+        assertNull(sightOf(composeEar(fivePlan, sightLevel = 2, sightDoneToday = true)))
+    }
+
+    @Test
+    fun sightCardComesAfterSong() {
+        val kinds = composeEar(fivePlan, sightLevel = 1).cards.map { it::class }
+        assertEquals(
+            listOf(
+                Card.ColdOpen::class,
+                Card.Lesson::class,
+                Card.Song::class,
+                Card.SightReading::class,
+                Card.Ear::class,
+            ),
+            kinds,
+        )
+    }
+
+    @Test
+    fun sharesWithAllFiveCards() {
+        val session = composeEar(fivePlan, sightLevel = 1)
+        // 20 minutes at 0.18 : 0.32 : 0.27 : 0.10 : 0.13 is 3.6 : 6.4 : 5.4 : 2.0 : 2.6; the two spare minutes go to
+        // the largest remainders, the ear's (.6) and the review's (.6).
+        assertEquals(
+            listOf(4, 6, 5, 2, 3),
+            listOf(
+                session.reviewMinutes,
+                session.lessonMinutes,
+                session.songMinutes,
+                session.sightMinutes,
+                session.earMinutes,
+            ),
+        )
+        assertEquals(listOf(4, 6, 5, 2, 3), session.cards.map { it.minutes })
+    }
+
+    @Test
+    fun missingSightShareRedistributes() {
+        val session = composeEar(fivePlan)
+        assertEquals(0, session.sightMinutes)
+        assertEquals(
+            DailyBudget.MIN_20.minutes,
+            session.reviewMinutes + session.lessonMinutes + session.songMinutes + session.earMinutes,
+        )
+        assertEquals(listOf(4, 7, 6, 3), session.cards.map { it.minutes })
     }
 }
