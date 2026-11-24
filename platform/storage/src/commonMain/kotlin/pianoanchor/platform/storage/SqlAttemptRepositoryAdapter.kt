@@ -11,6 +11,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.Attempt
+import pianoanchor.core.model.AttemptSummary
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ChordIncomplete
@@ -163,16 +164,15 @@ public class SqlAttemptRepositoryAdapter(
             }
         }
 
-    override suspend fun attemptsWithPassagePrefix(prefix: String): List<Attempt> {
+    override suspend fun summariesWithPassagePrefix(prefix: String): List<AttemptSummary> {
         require(prefix.isNotBlank()) { "prefix must not be blank" }
         return withContext(dispatcher) {
-            storage("attemptsWithPassagePrefix") {
-                queries.transactionWithResult {
-                    queries
-                        .selectByPassagePrefix(
-                            prefix,
-                        ).executeAsList()
-                        .map(::withEvents)
+            storage("summariesWithPassagePrefix") {
+                val upper = prefixUpperBound(prefix)
+                if (upper == null) {
+                    queries.selectSummariesByPrefixFrom(prefix, ::toSummary).executeAsList()
+                } else {
+                    queries.selectSummariesInPrefixRange(prefix, upper, ::toSummary).executeAsList()
                 }
             }
         }
@@ -258,3 +258,21 @@ private fun toPlayedNote(row: Attempt_note) =
 
 private fun notes(missing: String): Set<MidiNote> =
     if (missing.isEmpty()) emptySet() else missing.split(NOTE_SEPARATOR).map { MidiNote(it.toInt()) }.toSet()
+
+private fun toSummary(
+    id: String,
+    passageId: String,
+    startedAtMs: Long,
+    band: String,
+) = AttemptSummary(id, passageId, Instant.fromEpochMilliseconds(startedAtMs), Band.valueOf(band))
+
+/**
+ * The smallest string above every string starting with [prefix]: the prefix with its last character incremented, or
+ * null when that character is the highest one or next to a surrogate (an incremented surrogate would not compare in
+ * the same order in UTF-8 and UTF-16).
+ */
+internal fun prefixUpperBound(prefix: String): String? {
+    val last = prefix.last()
+    if (last == Char.MAX_VALUE || last.isSurrogate() || (last + 1).isSurrogate()) return null
+    return prefix.dropLast(1) + (last + 1)
+}

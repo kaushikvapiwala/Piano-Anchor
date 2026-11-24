@@ -21,6 +21,7 @@ import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.StrictnessProfile
+import pianoanchor.core.model.summary
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.analysis.PerformanceAnalyser
@@ -139,8 +140,8 @@ public class ResultsViewModel(
     private suspend fun sightOutcome(attempt: Attempt): SightOutcome? {
         val (level, _) = SightReadingGenerator.parse(attempt.passageId) ?: return null
         val open = SightLevels.open(learner.learnedSkills())
-        val all = attempts.attemptsWithPassagePrefix(SightReadingGenerator.ID_PREFIX)
-        val upTo = all.takeWhile { it.id != attempt.id } + attempt
+        val all = attempts.summariesWithPassagePrefix(SightReadingGenerator.ID_PREFIX)
+        val upTo = all.takeWhile { it.id != attempt.id } + attempt.summary
         val before = upTo.dropLast(1)
         val now = SightStaircase.level(upTo, open)
         val change =

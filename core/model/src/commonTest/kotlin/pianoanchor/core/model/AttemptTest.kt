@@ -42,6 +42,14 @@ class AttemptTest {
     )
 
     @Test
+    fun summaryKeepsOnlyWhatTheSightStaircaseReads() {
+        assertEquals(
+            AttemptSummary("a-1", "c-d-e", Instant.fromEpochSeconds(1_000), Band.KEEP_PRACTISING),
+            attempt(id = "a-1").summary,
+        )
+    }
+
+    @Test
     fun unaidedIsAPerformRunWithoutAHint() {
         assertTrue(attempt(mode = RunMode.PERFORM, hintShown = false).unaided)
         assertFalse(attempt(mode = RunMode.PERFORM, hintShown = true).unaided)
