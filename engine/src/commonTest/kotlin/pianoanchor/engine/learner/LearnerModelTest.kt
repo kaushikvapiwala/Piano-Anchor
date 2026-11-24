@@ -486,25 +486,47 @@ class LearnerModelTest {
         }
 
     @Test
-    fun earDaysListsTheDaysOfEarReviewsFromTheGivenDayOn() =
+    fun reviewDaysListsTheDaysOfEarReviewsFromTheGivenDayOn() =
         runTest {
             model.recordEarSet("a", Band.CLEAN, LocalDate(2026, 11, 10), "1")
             model.recordEarSet("b", Band.CLEAN, LocalDate(2026, 11, 13), "2")
 
-            assertEquals(setOf(LocalDate(2026, 11, 13)), model.earDays(LocalDate(2026, 11, 12)))
-            assertEquals(emptySet(), model.earDays(LocalDate(2026, 11, 14)))
+            assertEquals(setOf(LocalDate(2026, 11, 13)), model.reviewDays(LocalDate(2026, 11, 12)))
+            assertEquals(emptySet(), model.reviewDays(LocalDate(2026, 11, 14)))
         }
 
     @Test
-    fun earDaysIgnoresPassageAndPlacementReviews() =
+    fun reviewDaysListsTheDaysOfReviewQuizzes() =
+        runTest {
+            model.recordQuiz("a", Rating.GOOD, LocalDate(2026, 11, 10), "1")
+            model.recordQuiz("b", Rating.GOOD, LocalDate(2026, 11, 13), "2")
+
+            assertEquals(setOf(LocalDate(2026, 11, 13)), model.reviewDays(LocalDate(2026, 11, 12)))
+        }
+
+    @Test
+    fun reviewDaysListsEarAndQuizDaysTogether() =
+        runTest {
+            model.recordEarSet("a", Band.CLEAN, LocalDate(2026, 11, 10), "1")
+            model.recordQuiz("b", Rating.GOOD, LocalDate(2026, 11, 13), "2")
+
+            assertEquals(
+                setOf(LocalDate(2026, 11, 10), LocalDate(2026, 11, 13)),
+                model.reviewDays(LocalDate(2026, 11, 1)),
+            )
+        }
+
+    @Test
+    fun reviewDaysIgnoresPassageAndPlacementReviews() =
         runTest {
             val thirteenth = LocalDate(2026, 11, 13)
             model.place(setOf("d"), thirteenth)
             model.record(passage("a"), attempt(Band.CLEAN), thirteenth)
 
-            assertEquals(emptySet(), model.earDays(LocalDate(2026, 11, 1)))
+            assertEquals(emptySet(), model.reviewDays(LocalDate(2026, 11, 1)))
         }
 
     @Test
-    fun earDaysIsEmptyWithNoReviews() = runTest { assertEquals(emptySet(), model.earDays(LocalDate(2026, 11, 1))) }
+    fun reviewDaysIsEmptyWithNoReviews() =
+        runTest { assertEquals(emptySet(), model.reviewDays(LocalDate(2026, 11, 1))) }
 }

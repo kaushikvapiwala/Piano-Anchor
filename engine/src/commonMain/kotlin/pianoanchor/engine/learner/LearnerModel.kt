@@ -34,6 +34,9 @@ internal const val EAR_ATTEMPT_ID_PREFIX: String = "ear:"
 /** The prefix of the attempt id of a review recorded from a review quiz. */
 internal const val QUIZ_ATTEMPT_ID_PREFIX: String = "quiz:"
 
+/** The attempt-id prefixes of reviews that make a learner day a practice day ([LearnerModel.reviewDays]). */
+private val REVIEW_DAY_PREFIXES: List<String> = listOf(EAR_ATTEMPT_ID_PREFIX, QUIZ_ATTEMPT_ID_PREFIX)
+
 /** The rating of a cold check from the band of the run: never EASY (`docs/algorithms/learner-model.md`). */
 public fun Band.toRating(): Rating =
     when (this) {
@@ -121,15 +124,16 @@ public class LearnerModel(
     }
 
     /**
-     * The learner days from [from] on (inclusive) with at least one ear-set review (attempt id starting with
-     * [EAR_ATTEMPT_ID_PREFIX]); empty when none. Throws StorageUnavailableException like the repository.
+     * The learner days from [from] on (inclusive) with at least one ear-set review or review quiz (attempt id
+     * starting with [EAR_ATTEMPT_ID_PREFIX] or [QUIZ_ATTEMPT_ID_PREFIX]); empty when none. Throws
+     * StorageUnavailableException like the repository.
      */
-    public suspend fun earDays(from: LocalDate): Set<LocalDate> =
+    public suspend fun reviewDays(from: LocalDate): Set<LocalDate> =
         repository
             .states()
             .keys
             .flatMap { repository.reviews(it) }
-            .filter { it.attemptId.startsWith(EAR_ATTEMPT_ID_PREFIX) && it.day >= from }
+            .filter { review -> review.day >= from && REVIEW_DAY_PREFIXES.any { review.attemptId.startsWith(it) } }
             .mapTo(HashSet()) { it.day }
 
     /**

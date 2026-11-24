@@ -24,8 +24,8 @@ prerequisites are all learned. It ignores due dates and daily limits, which belo
 A review belongs to a learner day: the local date in the learner's time zone, where the day starts at
 `LEARNER_DAY_START_HOUR` (a run at 01:30 still belongs to the evening before). `learnerDay` reads the local clock
 time and subtracts a calendar day when it is before that hour, so a daylight-saving change cannot shift the date
-by a day. A skill has at most one review per learner day. Today counts a learner day with an ear-set review (attempt
-id starting with `ear:`) as a practice day, like a day with an attempt; a placement review does not count.
+by a day. A skill has at most one review per learner day. Today counts a learner day with an ear-set review or review quiz
+(attempt id starting with `ear:` or `quiz:`) as a practice day, like a day with an attempt; a placement review does not count.
 
 ## Cold checks
 The first saved attempt on a learner day that exercises a skill is that skill's review for the day, whatever the
