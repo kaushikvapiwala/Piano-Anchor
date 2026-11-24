@@ -43,7 +43,7 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 1. **Automatic link latency** (spec #172; owner's hardware check; ADR 0025): timed runs measure the piano's link delay
     with Identity Request round trips; calibration leaves the onboarding and the first-run card; tap calibration becomes
     the optional "Fine-tune timing" with a 45 ms spread limit.
-2. **Spot attempts under the piece's id** (follow-up of the M5 cleanup; needs an owner decision on run numbering): spot
+2. **Spot attempts under the piece's id** (spec #243; follow-up of the M5 cleanup; run numbering decided): spot
     loops save their attempts under the slice's id (`…#bars5-6`) and also set `Attempt.spot`, so the full-passage
     queries' spot filters never match a row, the loop's done-rung refresh always reads an empty set and `run N` counts
     loops apart from the piece. Save them under the piece's id and rely on `spot` alone (then drop the id suffix and
@@ -54,9 +54,18 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 4. **Lesson Try: the landmark hint** (follow-up of #189 and #195; mechanical): the lesson's Try step still says "That
     was X. Waiting for Y."; use the quiz screen's landmark line (`QuizHint.kt`) there too, and move that text, now copied
     from `feature/practice`, into one shared UI module instead of two copies.
-5. **Quizzes count as practice days** (follow-up of #195; needs an owner decision): Today's weekly dots and day
+5. **Quizzes count as practice days** (spec #244; follow-up of #195; owner decided they count): Today's weekly dots and day
     line count ear reviews (`ear:` attempt ids) but not review quizzes (`quiz:` ids), so a day with only quizzes shows as
-    missed. Decide whether a quiz-only day counts.
+    missed. A quiz-only day counts; lesson-only days stay out (lessons store no dated record).
+6. **Sight-reading generator and staircase (M6.1)** (spec #245): a seeded generator of 4-bar unseen exercises over 8
+    levels opened by learned skills, and a 2-up/1-down level rule derived from saved `sight:` attempts.
+7. **Daily sight-reading card (M6.2)** (spec #246) [#245]: Today's Sight-reading card (10% of the budget, after the
+    song), played in wait mode from the staff only; Results say how the level moved.
+8. **Played placement test (M6.3)** (spec #247): onboarding's "Test me" plays one piece per unit and starts the
+    learner at the first unit not passed; the start-unit list goes; placed skills tick their lessons.
+9. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
+    and the key of G; the pedal and legato; scales with thumb-under. Built like units 0–3 (concept cards, five-step
+    lessons, Try checks); each unit adds sight-reading levels.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
@@ -98,7 +107,7 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2, M3.3 settings, M3.4 Today, M3.5 onboarding, M3.6 update check and M3.7 release pipeline done; v0.1.0 and the dogfood are the owner's) | Dogfood (`docs/RELEASING.md`): the owner uses the released APK; Today's practice-day line shows 14 practice days within 16, and no open `dogfood` issue is labelled `blocker` |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (✅ done: tracks in the daily plan #151, ear #152, songs and chords #153, the contribute-a-piano kit #154) | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting (✅ done: M5.1 hint fading, M5.2 perform mode, M5.3 spot loops and M5.4 unaided pass and strictness) | Unaided pass required before "learned" |
-| M6 | Curriculum units 3–8, sight-reading staircase, placement | Placement reproducible |
+| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). Specced: #245–#247 | Placement reproducible |
 | M7 | Heatmaps, recordings, calibration report | Predicted vs observed retention plotted |
 | M8 | Optional Google Drive sync | Round-trip sync between two devices |
 | M9 | Kids (ages 6–8+): research pass, age-appropriate content | — |
