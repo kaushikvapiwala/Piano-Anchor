@@ -95,6 +95,7 @@ public class TodayViewModel(
     public val pedalStarts: Flow<Card> = pedalRequests.receiveAsFlow()
     private var pedalReader: Job? = null
     private var released = false
+    private var pedalAsked = false
 
     private var load: Job? = null
 
@@ -116,6 +117,16 @@ public class TodayViewModel(
     public fun refresh() {
         load?.cancel()
         load = viewModelScope.launch { loadToday() }
+    }
+
+    /**
+     * Claims leaving Today: true for the first caller, false once any navigation has started. From then on a pedal tap
+     * is ignored, so a pedal tap and a button tap can't both navigate.
+     */
+    public fun beginLeaving(): Boolean {
+        val first = !released
+        released = true
+        return first
     }
 
     /**
@@ -170,7 +181,8 @@ public class TodayViewModel(
     /** Follows the connected piano and turns a pedal tap on it into a request for the first card. */
     private suspend fun readPedal() {
         mutableState
-            .map { it.piano?.device }
+            // The piano is read only while the pedal control is on, so turning it off leaves the input closed.
+            .map { current -> current.piano?.device?.takeIf { current.pedalControl } }
             .distinctUntilChanged()
             .collectLatest { device ->
                 if (device != null) {
@@ -179,10 +191,15 @@ public class TodayViewModel(
                         input.events(device).collect { event ->
                             val first =
                                 mutableState.value
-                                    .takeIf { it.pedalControl && !released }
+                                    .takeIf { !released && !pedalAsked }
                                     ?.session
                                     ?.cards
-                            if (detector.onEvent(event)) first?.firstOrNull()?.let { pedalRequests.trySend(it) }
+                            if (detector.onEvent(event)) {
+                                first?.firstOrNull()?.let {
+                                    pedalAsked = true
+                                    pedalRequests.trySend(it)
+                                }
+                            }
                         }
                     } catch (_: MidiDeviceUnavailableException) {
                         // The piano is gone: the chip says so, and there is no pedal control.

@@ -295,7 +295,7 @@ the current step; only this pane changes between steps. A key strip runs along t
   "Next lesson" and "Done", or "You've finished the course!" with "Done".
 - **Hands-free** (ADR 0027): with "Pedal to continue" on and the piano connected, a tap of the sustain pedal does
   what the step's main button does (Why and See: go on, Use: "Play it", Recap: "Next lesson", or "Done" at the end of
-  the course); a Try ignores it, and so does a concept that uses the pedal as music. A small line beside the button
+  the course); a Try ignores it. A concept that uses the pedal as music is meant to ignore it too: the lesson has the flag for that, but nothing sets it yet; it is wired when course 2's pedal unit adds pedal concepts. A small line beside the button
   says "Tap the pedal to continue" (TalkBack reads it as part of the button). Why moves on by itself after 4.6 s (one
   animation loop and its rest), See when the demo ends (a concept with nothing to hear: after 4.6 s), Use opens
   Practice after 1.5 s unless the lesson was just reopened there; Recap always waits. Playing the demo again by hand

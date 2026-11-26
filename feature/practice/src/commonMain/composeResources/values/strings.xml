@@ -135,7 +135,6 @@
     <string name="results_hesitation_description">Hesitation: %1$s</string>
     <string name="results_timing_not_calibrated">%1$s · not calibrated</string>
     <string name="results_finish_lesson">Finish lesson</string>
-    <string name="results_pedal_hint">Tap the pedal to continue</string>
     <string name="results_try_again">Try again</string>
     <string name="results_loop_bars">Loop bars %1$s–%2$s</string>
     <string name="results_loop_bar">Loop bar %1$s</string>

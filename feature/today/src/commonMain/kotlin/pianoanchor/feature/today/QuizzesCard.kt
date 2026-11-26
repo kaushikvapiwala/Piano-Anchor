@@ -20,6 +20,8 @@ import pianoanchor.feature.today.resources.Res
 import pianoanchor.feature.today.resources.today_action_quizzes
 import pianoanchor.feature.today.resources.today_card_quizzes
 import pianoanchor.feature.today.resources.today_card_quizzes_detail
+import pianoanchor.ui.shell.PedalHintLine
+import pianoanchor.ui.shell.withPedalHint
 
 /** The Quizzes card: "Quick quizzes · 3", the minutes and a button that opens the quiz screen. */
 @Composable
@@ -54,7 +56,7 @@ internal fun QuizzesCardView(
             ) {
                 Text(action)
             }
-            PedalHint(pedalHint)
+            PedalHintLine(pedalHint)
         }
     }
 }

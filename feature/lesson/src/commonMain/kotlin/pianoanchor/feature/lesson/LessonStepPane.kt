@@ -39,7 +39,6 @@ import pianoanchor.feature.lesson.resources.lesson_disconnected
 import pianoanchor.feature.lesson.resources.lesson_done
 import pianoanchor.feature.lesson.resources.lesson_next
 import pianoanchor.feature.lesson.resources.lesson_next_lesson
-import pianoanchor.feature.lesson.resources.lesson_pedal_hint
 import pianoanchor.feature.lesson.resources.lesson_play_again
 import pianoanchor.feature.lesson.resources.lesson_recap
 import pianoanchor.feature.lesson.resources.lesson_recap_done
@@ -51,7 +50,9 @@ import pianoanchor.feature.lesson.resources.lesson_try_progress
 import pianoanchor.feature.lesson.resources.lesson_try_wrong_any
 import pianoanchor.feature.lesson.resources.lesson_use_play
 import pianoanchor.feature.lesson.resources.lesson_use_play_it
+import pianoanchor.ui.shell.PedalHintLine
 import pianoanchor.ui.shell.displayFontFamily
+import pianoanchor.ui.shell.withPedalHint
 import pianoanchor.ui.shell.wrongKeyHintText
 
 private val COUNT_IN_SIZE = 56.sp
@@ -114,22 +115,12 @@ internal fun PrimaryButton(
     onClick: () -> Unit,
     pedalHint: Boolean = false,
 ) {
-    val hint = stringResource(Res.string.lesson_pedal_hint)
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Button(
             onClick = onClick,
-            modifier =
-                Modifier.heightIn(min = BUTTON_HEIGHT).semantics {
-                    if (pedalHint) contentDescription = "$label. $hint"
-                },
+            modifier = Modifier.heightIn(min = BUTTON_HEIGHT).withPedalHint(label, pedalHint),
         ) { Text(label) }
-        if (pedalHint) {
-            Text(
-                hint,
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.clearAndSetSemantics {},
-            )
-        }
+        PedalHintLine(pedalHint)
     }
 }
 

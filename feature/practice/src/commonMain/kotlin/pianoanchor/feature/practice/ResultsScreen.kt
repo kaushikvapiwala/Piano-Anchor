@@ -80,8 +80,10 @@ import pianoanchor.feature.practice.resources.results_tip_wait_for_count_in
 import pianoanchor.feature.practice.resources.results_try_again
 import pianoanchor.feature.practice.resources.results_unavailable
 import pianoanchor.ui.shell.BackButton
+import pianoanchor.ui.shell.PedalHintLine
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.withPedalHint
 
 /**
  * The results screen (Living Studio mock, `docs/ui/living-studio.md`): the run's caption and headline, the Pitch

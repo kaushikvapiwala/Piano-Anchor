@@ -23,6 +23,7 @@ import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
+import pianoanchor.core.model.Passage
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.Tone
 import pianoanchor.core.model.TryCheck
@@ -92,6 +93,7 @@ public class LessonViewModel(
     private val time: ClockPort,
     private val startAt: LessonStep? = null,
     private val pedalIsMusic: Boolean = false,
+    private val usePassage: Passage? = usePassageOf(skillId),
 ) : ViewModel() {
     private val skill = requireNotNull(Curriculum.graph.byId(skillId)) { "unknown skill $skillId" }
     private val card = requireNotNull(Curriculum.card(skillId)) { "skill $skillId has no concept card" }
@@ -182,6 +184,7 @@ public class LessonViewModel(
         finishing?.cancel()
         run = null
         accepting = false
+        pedal.reset()
         mutableState.update {
             it.copy(
                 step = step,
@@ -197,38 +200,50 @@ public class LessonViewModel(
             viewModelScope.launch {
                 // The previous step releases the piano's sound and the click first; this wait can't be cancelled.
                 withContext(NonCancellable) { previous?.cancelAndJoin() }
-                when (step) {
-                    LessonStep.WHY -> {
-                        delay(Tunables.LESSON_WHY_AUTO_MS)
-                        next()
-                    }
+                runStep(step, auto, autoOpen)
+            }
+    }
 
-                    LessonStep.SEE -> {
-                        val demo = LessonDemo.of(checkOf())
-                        if (demo.tones.isEmpty()) {
-                            if (auto) delay(Tunables.LESSON_WHY_AUTO_MS)
-                        } else {
-                            playDemo(demo)
-                        }
-                        if (auto) next()
-                    }
+    /** What a step does by itself: the Why wait, the demo, the Try's listening, the Use wait, the recap. */
+    private suspend fun runStep(
+        step: LessonStep,
+        auto: Boolean,
+        autoOpen: Boolean,
+    ) {
+        when (step) {
+            LessonStep.WHY -> {
+                delay(Tunables.LESSON_WHY_AUTO_MS)
+                next()
+            }
 
-                    LessonStep.TRY -> {
-                        tryStep(checkOf())
-                    }
+            LessonStep.SEE -> {
+                val demo = LessonDemo.of(checkOf())
+                if (demo.tones.isEmpty()) {
+                    if (auto) delay(Tunables.LESSON_WHY_AUTO_MS)
+                } else {
+                    playDemo(demo)
+                }
+                if (auto) next()
+            }
 
-                    LessonStep.USE -> {
-                        if (autoOpen) {
-                            delay(Tunables.LESSON_AUTO_OPEN_MS)
-                            requestExit(LessonExit.PLAY_IT)
-                        }
-                    }
+            LessonStep.TRY -> {
+                tryStep(checkOf())
+            }
 
-                    LessonStep.RECAP -> {
-                        showRecap()
+            LessonStep.USE -> {
+                if (autoOpen && usePassage != null) {
+                    delay(Tunables.LESSON_AUTO_OPEN_MS)
+                    // A dropped piano can't play it: wait for the learner.
+                    if (mutableState.value.connection == LessonConnection.CONNECTED) {
+                        requestExit(LessonExit.PLAY_IT)
                     }
                 }
             }
+
+            LessonStep.RECAP -> {
+                showRecap()
+            }
+        }
     }
 
     private fun checkOf(): TryCheck = requireNotNull(mutableState.value.check) { "skill $skillId has no Try check" }
@@ -333,24 +348,34 @@ public class LessonViewModel(
 
     /** What a pedal tap does: the step's main button, never in Try (a Try listens for notes). */
     private fun onPedalTap() {
-        if (!mutableState.value.pedalControl) return
-        when (mutableState.value.step) {
+        val current = mutableState.value
+        if (!current.pedalControl) return
+        when (current.step) {
             LessonStep.WHY, LessonStep.SEE -> {
                 next()
             }
 
             LessonStep.TRY -> {
-                return
+                // A Try listens for notes, not the pedal.
             }
 
             LessonStep.USE -> {
-                if (mutableState.value.usePassage != null) requestExit(LessonExit.PLAY_IT)
+                if (usePassage != null) requestExit(LessonExit.PLAY_IT)
             }
 
             LessonStep.RECAP -> {
-                requestExit(
-                    if (mutableState.value.recap?.nextSkillId != null) LessonExit.NEXT_LESSON else LessonExit.DONE,
-                )
+                // Until the recap has loaded the next lesson is unknown: ignore the tap.
+                current.recap?.let {
+                    requestExit(
+                        if (it.nextSkillId !=
+                            null
+                        ) {
+                            LessonExit.NEXT_LESSON
+                        } else {
+                            LessonExit.DONE
+                        },
+                    )
+                }
             }
         }
     }
@@ -365,7 +390,12 @@ public class LessonViewModel(
     private suspend fun readPiano() {
         try {
             input.events(device).collect { event ->
-                if (pedal.onEvent(event)) onPedalTap()
+                // A press that began in a Try is not a tap on the next step.
+                if (mutableState.value.step == LessonStep.TRY) {
+                    pedal.reset()
+                } else if (pedal.onEvent(event)) {
+                    onPedalTap()
+                }
                 when (event) {
                     is NoteOn -> onNoteOn(event)
                     is NoteOff -> onNoteOff(event)

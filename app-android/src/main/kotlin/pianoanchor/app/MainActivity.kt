@@ -612,7 +612,7 @@ private fun TodayRoute(
     val scope = rememberCoroutineScope()
     // Today reads the piano for the pedal: leave only once it is closed, so the next screen can open it (one reader).
     val release: (() -> Unit) -> Unit = { then ->
-        scope.launch { viewModel.releasePiano() }.invokeOnCompletion { then() }
+        if (viewModel.beginLeaving()) scope.launch { viewModel.releasePiano() }.invokeOnCompletion { then() }
     }
     val onPractice = { to: Destination.Practice -> release { toPractice(to) } }
     val onEar = { to: Destination.Ear -> release { toEar(to) } }

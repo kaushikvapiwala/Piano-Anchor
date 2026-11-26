@@ -1,10 +1,17 @@
 package pianoanchor.feature.today
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.TimeZone
+import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.ports.MidiInputPort
+import pianoanchor.engine.content.Curriculum
+import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.session.Card
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -105,5 +112,61 @@ class TodayPedalTest : TodayViewModelFixture() {
 
             assertTrue(starts.isEmpty())
             vm.releasePiano()
+        }
+
+    @Test
+    fun `the piano is not opened while the pedal control is off and opens when it is turned on`() =
+        runTest(dispatcher) {
+            settings.update { it.copy(pedalControlOn = false) }
+            var open = 0
+            val counting =
+                object : MidiInputPort by piano {
+                    override fun events(device: MidiDevice) =
+                        piano.events(device).onStart { open++ }.onCompletion { open-- }
+                }
+            val vm =
+                TodayViewModel(
+                    LearnerModel(Curriculum.graph, learnerRepository),
+                    settings,
+                    attempts,
+                    counting,
+                    piano,
+                    calibration,
+                    clock,
+                    TimeZone.UTC,
+                    updateCheck,
+                    INSTALLED,
+                )
+            runCurrent()
+            assertEquals(0, open)
+
+            settings.update { it.copy(pedalControlOn = true) }
+            runCurrent()
+            assertEquals(1, open)
+
+            settings.update { it.copy(pedalControlOn = false) }
+            runCurrent()
+            assertEquals(0, open)
+            vm.releasePiano()
+        }
+
+    @Test
+    fun `one pedal request is sent and none once a navigation has begun`() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            val starts = collectStarts(vm)
+
+            tapPedal()
+            tapPedal()
+            assertEquals(1, starts.size)
+            vm.releasePiano()
+
+            val other = viewModel()
+            val none = collectStarts(other)
+            assertTrue(other.beginLeaving())
+            assertFalse(other.beginLeaving())
+            tapPedal()
+            assertTrue(none.isEmpty())
+            other.releasePiano()
         }
 }

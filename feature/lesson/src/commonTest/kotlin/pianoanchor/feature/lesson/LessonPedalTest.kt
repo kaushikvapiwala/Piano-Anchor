@@ -1,5 +1,6 @@
 package pianoanchor.feature.lesson
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -11,7 +12,9 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.LessonStep
+import pianoanchor.core.model.Passage
 import pianoanchor.core.model.Skill
+import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
@@ -27,7 +30,10 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 private const val DEMO_DONE_MS = 20_000L
 private const val NANOS_PER_MS = 1_000_000L
@@ -50,6 +56,8 @@ class LessonPedalTest {
         skill: Skill = Skills.MIDDLE_C,
         startAt: LessonStep? = null,
         pedalIsMusic: Boolean = false,
+        attemptsPort: AttemptRepositoryPort = attempts,
+        usePassage: Passage? = usePassageOf(skill.id),
     ): LessonViewModel =
         LessonViewModel(
             piano.device,
@@ -59,11 +67,12 @@ class LessonPedalTest {
             FakeTone(),
             FakeMetronome(piano.clock),
             settings,
-            attempts,
+            attemptsPort,
             LearnerModel(Curriculum.graph, FakeLearnerRepository()),
             piano.clock,
             startAt,
             pedalIsMusic,
+            usePassage,
         ).also { runCurrent() }
 
     private fun TestScope.finishDemo() {
@@ -313,6 +322,84 @@ class LessonPedalTest {
             runCurrent()
 
             assertFalse(vm.state.value.pedalHint)
+            vm.close()
+        }
+
+    @Test
+    fun aConceptWithoutAUsePassageNeverLatchesTheExit() =
+        runTest(dispatcher) {
+            val vm = viewModel(usePassage = null)
+            val exits = collectExits(vm)
+            vm.goTo(LessonStep.USE)
+            runCurrent()
+
+            wait(Tunables.LESSON_AUTO_OPEN_MS * 2)
+            vm.goTo(LessonStep.RECAP)
+            runCurrent()
+            tapPedal()
+
+            assertEquals(1, exits.size)
+            assertNotNull(exits.single())
+            vm.close()
+        }
+
+    @Test
+    fun aRecapTapBeforeTheRecapHasLoadedIsIgnored() =
+        runTest(dispatcher) {
+            val gate = CompletableDeferred<Unit>()
+            val slow =
+                object : AttemptRepositoryPort by attempts {
+                    override suspend fun lastPlayed(passageId: String): Instant? {
+                        gate.await()
+                        return attempts.lastPlayed(passageId)
+                    }
+                }
+            val vm = viewModel(startAt = LessonStep.RECAP, attemptsPort = slow)
+            val exits = collectExits(vm)
+            assertNull(vm.state.value.recap)
+            assertFalse(vm.state.value.pedalHint)
+
+            tapPedal()
+            assertTrue(exits.isEmpty())
+            gate.complete(Unit)
+            runCurrent()
+            assertTrue(vm.state.value.pedalHint)
+            tapPedal()
+
+            assertEquals(1, exits.size)
+            vm.close()
+        }
+
+    @Test
+    fun aPressThatBeganInATryIsNotATapOnTheNextStep() =
+        runTest(dispatcher) {
+            val vm = viewModel(startAt = LessonStep.TRY)
+            val exits = collectExits(vm)
+            piano.play(byteArrayOf(0xB0.toByte(), 64, 127))
+            runCurrent()
+            vm.goTo(LessonStep.USE)
+            runCurrent()
+
+            piano.play(byteArrayOf(0xB0.toByte(), 64, 0))
+            runCurrent()
+
+            assertTrue(exits.isEmpty())
+            vm.close()
+        }
+
+    @Test
+    fun useDoesNotOpenPracticeWhileThePianoIsDisconnected() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            val exits = collectExits(vm)
+            vm.goTo(LessonStep.USE)
+            runCurrent()
+            piano.unplug()
+            runCurrent()
+
+            wait(Tunables.LESSON_AUTO_OPEN_MS * 2)
+
+            assertTrue(exits.isEmpty())
             vm.close()
         }
 }

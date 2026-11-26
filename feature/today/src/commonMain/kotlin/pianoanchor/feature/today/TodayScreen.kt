@@ -64,8 +64,10 @@ import pianoanchor.feature.today.resources.today_update_available
 import pianoanchor.feature.today.resources.today_update_dismiss
 import pianoanchor.feature.today.resources.today_update_see
 import pianoanchor.ui.shell.AppNavRail
+import pianoanchor.ui.shell.PedalHintLine
 import pianoanchor.ui.shell.RailDestination
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.withPedalHint
 import androidx.compose.material3.Card as MaterialCard
 
 internal val TouchTarget = 44.dp
@@ -251,7 +253,7 @@ private fun CardView(
             ) {
                 Text(action)
             }
-            PedalHint(pedalHint)
+            PedalHintLine(pedalHint)
         }
     }
 }

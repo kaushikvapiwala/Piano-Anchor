@@ -48,7 +48,10 @@ public data class LessonState(
     val pedalControl: Boolean = false,
 ) {
     /** True when the step shows "Tap the pedal to continue": a tap acts here and the piano is connected. */
-    val pedalHint: Boolean get() = pedalControl && connection == LessonConnection.CONNECTED && step != LessonStep.TRY
+    val pedalHint: Boolean
+        get() =
+            pedalControl && connection == LessonConnection.CONNECTED && step != LessonStep.TRY &&
+                (step != LessonStep.RECAP || recap != null)
 
     /** The concept card's looping animation, or null while its unit has none. */
     val scene: CardScene? get() = Curriculum.scene(skill.id)
@@ -57,7 +60,7 @@ public data class LessonState(
     val check: TryCheck? get() = Curriculum.tryCheck(skill.id)
 
     /** The concept's first passage, played in the Use step. */
-    val usePassage: Passage? get() = Curriculum.passages.firstOrNull { skill.id in it.skills }
+    val usePassage: Passage? get() = usePassageOf(skill.id)
 
     /** True when the Try is the Use step's passage: there is no separate Try step. */
     val tryMergedIntoUse: Boolean get() = check is TryCheck.Passage
@@ -74,6 +77,9 @@ public data class LessonState(
             return if (lit || progress.lastWrong != null) setOf(expected) else emptySet()
         }
 }
+
+/** The first passage of the course concept [skillId], played in its Use step; null when it has none. */
+internal fun usePassageOf(skillId: String): Passage? = Curriculum.passages.firstOrNull { skillId in it.skills }
 
 /** Where a [LessonViewModel] asks the host to go: the Use step's Practice, the next lesson, or back to Today. */
 public enum class LessonExit {
