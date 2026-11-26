@@ -63,8 +63,6 @@ import pianoanchor.feature.practice.resources.practice_mode_switch_practice
 import pianoanchor.feature.practice.resources.practice_mode_tempo
 import pianoanchor.feature.practice.resources.practice_mode_wait
 import pianoanchor.feature.practice.resources.practice_ready_timed
-import pianoanchor.feature.practice.resources.practice_restart_missed
-import pianoanchor.feature.practice.resources.practice_restart_wrong
 import pianoanchor.feature.practice.resources.practice_retry
 import pianoanchor.feature.practice.resources.practice_save_failed
 import pianoanchor.feature.practice.resources.practice_tempo_done

@@ -144,18 +144,13 @@ internal fun RestartReasonLine(
     reason: RestartReason,
     modifier: Modifier = Modifier,
 ) {
-    val note = reason.note.name
+    val text =
+        when (reason.kind) {
+            RestartKind.WRONG -> Res.string.practice_restart_wrong
+            RestartKind.MISSED -> Res.string.practice_restart_missed
+        }
     Text(
-        stringResource(
-            if (reason.kind ==
-                RestartKind.WRONG
-            ) {
-                Res.string.practice_restart_wrong
-            } else {
-                Res.string.practice_restart_missed
-            },
-            note,
-        ),
+        stringResource(text, reason.note.name),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurface,
         modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
