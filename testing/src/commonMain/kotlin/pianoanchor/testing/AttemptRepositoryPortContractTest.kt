@@ -320,6 +320,27 @@ abstract class AttemptRepositoryPortContractTest {
             assertEquals(false, repository.hasCleanWaitRun("unknown"))
         }
 
+    @Suppress("MagicNumber") // Epoch seconds of the scenario.
+    @Test
+    fun firstCleanUnaidedWaitRunIsTheEarliestCleanWaitRunWithoutAHint() =
+        runTest {
+            val repository = createSubject()
+            assertNull(repository.firstCleanUnaidedWaitRun("c-d-e"))
+            listOf(
+                attempt("a-1", startedAtSeconds = 1_000, band = Band.CLEAN, hintShown = true),
+                attempt("a-2", startedAtSeconds = 2_000, band = Band.GOOD, hintShown = false),
+                attempt("a-3", startedAtSeconds = 3_000, tempoBpm = TEMPO_A, band = Band.CLEAN, hintShown = false),
+                attempt("a-4", startedAtSeconds = 4_000, passageId = "other", band = Band.CLEAN, hintShown = false),
+                attempt("a-5", startedAtSeconds = 5_000, band = Band.CLEAN, hintShown = false, spot = BarRange(1, 2)),
+            ).forEach { repository.save(it) }
+            assertNull(repository.firstCleanUnaidedWaitRun("c-d-e"))
+            assertEquals(Instant.fromEpochSeconds(4_000), repository.firstCleanUnaidedWaitRun("other"))
+            repository.save(attempt("a-7", startedAtSeconds = 7_000, band = Band.CLEAN, hintShown = false))
+            repository.save(attempt("a-6", startedAtSeconds = 6_000, band = Band.CLEAN, hintShown = false))
+            repository.save(attempt("a-8", startedAtSeconds = 8_000, band = Band.CLEAN, hintShown = false))
+            assertEquals(Instant.fromEpochSeconds(6_000), repository.firstCleanUnaidedWaitRun("c-d-e"))
+        }
+
     @Suppress("MagicNumber") // Epoch seconds and calendar dates of the scenario.
     @Test
     fun lastPlayedIsTheLatestStartOfThePassage() =

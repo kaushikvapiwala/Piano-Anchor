@@ -30,6 +30,7 @@
     <string name="lesson_try_stress">Play %1$s on every click, louder on beat 1.</string>
     <string name="lesson_try_chord">Play %1$s together.</string>
     <string name="lesson_try_progress">%1$s of %2$s</string>
+    <string name="lesson_try_clean">Clean %1$s of %2$s</string>
     <string name="lesson_try_done">✓ Well done</string>
     <string name="lesson_try_wrong_any">That was %1$s. Try again.</string>
     <string name="lesson_count_in">Count-in %1$s</string>

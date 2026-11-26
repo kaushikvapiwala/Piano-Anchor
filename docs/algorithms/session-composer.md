@@ -17,12 +17,12 @@ through `passageHistories` (beside `PassageHistory`), the loader Songs shares.
   qualifies; a piece needing later skills is not used to review an early one), the one played least recently (never played counts as oldest; ties go to curriculum order). Its
   rung is the highest rung with a CLEAN timed run at that rung's tempo, else WAIT. A due skill the curriculum doesn't
   know, or with no passage, is skipped for the next one. Nothing due means no card.
-- **Lesson.** The first course concept in map order that isn't ticked (`CourseProgress.next`): a course skill (core
-  track, the 23 skills of Units 0 to 3) is ticked when any passage that exercises it has a clean wait-mode run in the
-  passage history (`PassageHistory.cleanWait`). The plan's new skills play no part, so a concept with a later concept
-  ticked is still suggested first. The card carries the concept and its first passage (the lesson's Use step), at
+- **Lesson.** The first course concept in map order that isn't passed (`CourseProgress.next`): a course skill (core
+  track, the 23 skills of Units 0 to 3) is passed when any passage that exercises it has a clean wait-mode run with no
+  hint shown in the passage history (`PassageHistory.cleanUnaidedWait`). The plan's new skills play no part, so a concept with a later concept
+  passed is still suggested first. The card carries the concept and its first passage (the lesson's Use step), at
   WAIT; "why now" lists the concept's prerequisites. It opens the five-step lesson, not Practice. With every concept
-  ticked there is no Lesson card and its share goes to the others, as for any missing card.
+  passed there is no Lesson card and its share goes to the others, as for any missing card.
 - **Song.** A passage marked as a piece, not already used by the cold open or the lesson and not yet CLEAN at 100%.
   There is no lock filter: pieces are open whatever is learned, as on Songs. Exercises are never offered. Among the candidates of every unit: pieces
   already played before new ones, then public domain before original, then curriculum order (unit, then content

@@ -10,7 +10,9 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.LessonStep
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
+import pianoanchor.engine.lesson.TryRun
 import pianoanchor.ui.shell.PianoAnchorTheme
 
 /**
@@ -70,6 +72,17 @@ class LessonScreenScreenshotTest {
     @Test
     fun tryWithAWrongKey() =
         capture("try_wrong_key", lessonState(LessonStep.TRY, progress = sequenceProgress(60, 63), litKeys = setOf(63)))
+
+    @Test
+    fun tryWithTwoCleanRepsOfThree() =
+        capture(
+            "try_clean_reps",
+            lessonState(
+                LessonStep.TRY,
+                Skills.C_CHORD,
+                TryRun(checkNotNull(Curriculum.tryCheck(Skills.C_CHORD.id))).progress,
+            ).copy(cleanReps = 2, repsNeeded = 3),
+        )
 
     @Test
     fun tryPassed() = capture("try_done", lessonState(LessonStep.TRY, Skills.MIDDLE_C, finishedMiddleC()))

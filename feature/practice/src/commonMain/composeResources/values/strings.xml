@@ -79,6 +79,8 @@
     <string name="results_obs_off_beat">Some notes came off the beat.</string>
     <string name="results_obs_paused">You paused before %1$s.</string>
     <string name="results_obs_paused_unknown">You paused a few times.</string>
+    <string name="results_lesson_passed">Lesson passed. It comes back on a later day for review.</string>
+    <string name="results_lesson_clean_with_hints">Clean! Play it once without hints from the lesson to pass it.</string>
     <string name="results_obs_clean">Clean run!</string>
     <string name="results_tip_wait_for_count_in">Wait for 3, 2, 1, then play on the next click.</string>
     <string name="results_tip_slow_down">Slow down: wait mode lets you take your time.</string>

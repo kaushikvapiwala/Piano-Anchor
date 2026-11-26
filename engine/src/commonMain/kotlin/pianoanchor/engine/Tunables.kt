@@ -937,6 +937,34 @@ public object Tunables {
     public const val LESSON_TRY_DONE_PAUSE_MS: Long = 800
 
     /**
+     * How many clean checks in a row a lesson's Try needs before it passes (a wrong key starts the count again).
+     *
+     * Why: three in a row shows the action is reliable, not luck.
+     *
+     * Source: owner decision 2026-11-25 (the common "three in a row" teaching rule).
+     */
+    public const val LESSON_TRY_REPS: Int = 3
+
+    /**
+     * The clean checks in a row a long Try needs ([LESSON_TRY_LONG_NOTES] or more notes, e.g. "every C").
+     *
+     * Why: a long check is already many correct notes in a row; three of them would be tedious.
+     *
+     * Source: owner decision 2026-11-25.
+     */
+    public const val LESSON_TRY_REPS_LONG: Int = 2
+
+    /**
+     * How many notes make a Try "long" (it then needs [LESSON_TRY_REPS_LONG] clean checks).
+     *
+     * Why: the shortest check that is already a run of notes (the 8 C keys of "every C" and the 9-note scale) is long;
+     * a chord or a three-note sequence is not.
+     *
+     * Source: owner decision 2026-11-25.
+     */
+    public const val LESSON_TRY_LONG_NOTES: Int = 6
+
+    /**
      * The velocity (MIDI 1-127) of a soft key in the lesson's See demos (soft-then-loud, the unaccented beats of the
      * stress check).
      *

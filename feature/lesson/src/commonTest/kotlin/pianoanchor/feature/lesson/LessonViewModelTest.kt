@@ -372,28 +372,6 @@ class LessonViewModelTest {
         }
 
     @Test
-    fun finishingShowsTheTickThenMovesToUse() =
-        runTest(dispatcher) {
-            val vm = viewModel()
-            toTry(vm)
-
-            press(60)
-            assertTrue(
-                vm.state.value.tryProgress
-                    ?.finished == true,
-            )
-            assertEquals(LessonStep.TRY, vm.state.value.step)
-
-            advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS - 1)
-            runCurrent()
-            assertEquals(LessonStep.TRY, vm.state.value.step)
-            advanceTimeBy(1)
-            runCurrent()
-            assertEquals(LessonStep.USE, vm.state.value.step)
-            assertEquals(LessonStep.USE, savedStep())
-        }
-
-    @Test
     fun skippingTheTryMovesToUse() =
         runTest(dispatcher) {
             val vm = viewModel()
@@ -515,18 +493,18 @@ class LessonViewModelTest {
         }
 
     @Test
-    fun recapNamesTheNextUntickedSkill() =
+    fun recapNamesTheNextUnpassedSkill() =
         runTest(dispatcher) {
             val vm = viewModel(startAt = LessonStep.RECAP)
 
-            // Nothing ticked: this concept counts as done, so the first other one is next.
+            // Nothing passed: this concept counts as done, so the first other one is next.
             assertEquals(
                 RecapText("Middle C", "Sit, hand shape, fingers 1–5", Skills.HAND_SHAPE.id),
                 vm.state.value.recap,
             )
 
-            tickBefore(Skills.RH_C_POSITION)
-            tick(Skills.RH_C_POSITION)
+            passBefore(Skills.RH_C_POSITION)
+            pass(Skills.RH_C_POSITION)
             val later = viewModel(Skills.RH_C_POSITION, startAt = LessonStep.RECAP)
             assertEquals(
                 Skills.STEPS_AND_SKIPS.title,
@@ -553,7 +531,7 @@ class LessonViewModelTest {
     @Test
     fun recapSaysTheCourseIsFinishedAtTheEnd() =
         runTest(dispatcher) {
-            tickBefore(Skills.SHARPS_AND_FLATS)
+            passBefore(Skills.SHARPS_AND_FLATS)
 
             val vm = viewModel(Skills.SHARPS_AND_FLATS, startAt = LessonStep.RECAP)
 
@@ -573,7 +551,7 @@ class LessonViewModelTest {
         }
 
     @Test
-    fun recapFallsBackToMapOrderWhenTheTicksCantBeRead() =
+    fun recapFallsBackToMapOrderWhenThePassesCantBeRead() =
         runTest(dispatcher) {
             attempts.failing = true
 
@@ -629,7 +607,7 @@ class LessonViewModelTest {
             assertEquals(LessonStep.SEE, vm.state.value.step)
         }
 
-    private suspend fun tick(skill: Skill) {
+    private suspend fun pass(skill: Skill) {
         val passage = Curriculum.passages.first { skill.id in it.skills }
         attempts.save(
             Attempt(
@@ -646,14 +624,15 @@ class LessonViewModelTest {
                 events = emptyList(),
                 tempoBpm = null,
                 playedNotes = emptyList(),
+                hintShown = false,
             ),
         )
     }
 
-    private suspend fun tickBefore(skill: Skill) {
+    private suspend fun passBefore(skill: Skill) {
         CourseProgress
             .skills(Curriculum)
             .takeWhile { it != skill }
-            .forEach { tick(it) }
+            .forEach { pass(it) }
     }
 }

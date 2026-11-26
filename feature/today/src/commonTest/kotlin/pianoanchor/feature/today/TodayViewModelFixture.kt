@@ -95,6 +95,7 @@ abstract class TodayViewModelFixture {
         tempoBpm: Int? = null,
         passageId: String = "builtin:middle-c-march",
         hour: String = "09",
+        hintShown: Boolean = false,
     ) = attempts.save(
         Attempt(
             id = id,
@@ -110,6 +111,7 @@ abstract class TodayViewModelFixture {
             events = emptyList(),
             tempoBpm = tempoBpm,
             playedNotes = emptyList(),
+            hintShown = hintShown,
         ),
     )
 }

@@ -55,6 +55,8 @@ import pianoanchor.feature.practice.resources.results_finish_lesson
 import pianoanchor.feature.practice.resources.results_headline_clean
 import pianoanchor.feature.practice.resources.results_headline_good
 import pianoanchor.feature.practice.resources.results_headline_keep_practising
+import pianoanchor.feature.practice.resources.results_lesson_clean_with_hints
+import pianoanchor.feature.practice.resources.results_lesson_passed
 import pianoanchor.feature.practice.resources.results_not_found
 import pianoanchor.feature.practice.resources.results_obs_clean
 import pianoanchor.feature.practice.resources.results_obs_notes_long
@@ -296,6 +298,19 @@ private fun Words(state: ResultsState.Ready) {
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                 )
             }
+        }
+        state.lesson?.let { lesson ->
+            Text(
+                stringResource(
+                    when (lesson) {
+                        LessonResult.PASSED -> Res.string.results_lesson_passed
+                        LessonResult.CLEAN_WITH_HINTS -> Res.string.results_lesson_clean_with_hints
+                    },
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

@@ -45,6 +45,7 @@ import pianoanchor.feature.lesson.resources.lesson_recap_done
 import pianoanchor.feature.lesson.resources.lesson_see_listen
 import pianoanchor.feature.lesson.resources.lesson_see_watch_hand
 import pianoanchor.feature.lesson.resources.lesson_skip
+import pianoanchor.feature.lesson.resources.lesson_try_clean
 import pianoanchor.feature.lesson.resources.lesson_try_done
 import pianoanchor.feature.lesson.resources.lesson_try_progress
 import pianoanchor.feature.lesson.resources.lesson_try_wrong_any
@@ -176,6 +177,14 @@ private fun TryPane(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         )
+        if (state.repsNeeded > 1) {
+            Text(
+                stringResource(Res.string.lesson_try_clean, state.cleanReps.toString(), state.repsNeeded.toString()),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
         wrongKeyLine(progress)?.let {
             Text(
                 it,

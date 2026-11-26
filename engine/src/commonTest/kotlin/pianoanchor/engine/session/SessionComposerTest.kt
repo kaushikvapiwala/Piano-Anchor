@@ -96,20 +96,23 @@ class SessionComposerTest {
         vararg tempos: Int,
     ) = PassageHistory(epochSecond?.let(Instant::fromEpochSeconds), tempos.toSet())
 
-    /** Every passage played clean at every rung, wait mode included: the whole course is ticked. */
+    private val unaidedClean =
+        PassageHistory(null, emptySet(), cleanWait = true, firstCleanUnaidedWait = Instant.fromEpochSeconds(1))
+
+    /** Every passage played clean at every rung, wait mode included: the whole course is passed. */
     private val everyUnitClean: Map<String, PassageHistory> =
         Curriculum.units
             .flatMap { it.passages }
-            .associate { it.id to PassageHistory(Instant.fromEpochSeconds(1), setOf(TempoRung.P100.bpm(it)!!), true) }
+            .associate { it.id to unaidedClean.copy(cleanTempos = setOf(TempoRung.P100.bpm(it)!!)) }
 
     /** A clean wait-mode run of the first passage of every course skill before [skill]: the lesson is [skill]. */
-    private fun courseTickedBefore(skill: Skill): Map<String, PassageHistory> =
+    private fun coursePassedBefore(skill: Skill): Map<String, PassageHistory> =
         CourseProgress
             .skills(Curriculum)
             .takeWhile { it != skill }
             .associate { done ->
                 Curriculum.passages.first { done.id in it.skills }.id to
-                    PassageHistory(null, emptySet(), cleanWait = true)
+                    unaidedClean
             }
 
     @Test
@@ -117,7 +120,7 @@ class SessionComposerTest {
         // Middle C is due but has no clean wait-mode run, so it is also the lesson; its only playable passage is the
         // lesson's, so there is no cold open rather than the same passage twice.
         val plan = DailyPlan(listOf(state(Skills.MIDDLE_C, learned = true)), emptyList())
-        val cards = compose(plan, courseTickedBefore(Skills.MIDDLE_C)).cards
+        val cards = compose(plan, coursePassedBefore(Skills.MIDDLE_C)).cards
         assertEquals(Skills.MIDDLE_C, cards.filterIsInstance<Card.Lesson>().single().skill)
         assertTrue(cards.none { it is Card.ColdOpen })
     }
@@ -201,7 +204,7 @@ class SessionComposerTest {
     fun lessonNamesItsPrerequisites() {
         val plan = DailyPlan(emptyList(), emptyList())
         val lesson =
-            assertIs<Card.Lesson>(compose(plan, courseTickedBefore(Skills.FINGER_NUMBER_TUNES)).cards.first())
+            assertIs<Card.Lesson>(compose(plan, coursePassedBefore(Skills.FINGER_NUMBER_TUNES)).cards.first())
         assertEquals(Skills.FINGER_NUMBER_TUNES, lesson.skill)
         assertEquals(setOf(Skills.STEPS_AND_SKIPS.id), lesson.unlockedBy.map { it.id }.toSet())
         assertEquals(TempoRung.WAIT, lesson.rung)
@@ -216,21 +219,21 @@ class SessionComposerTest {
     }
 
     @Test
-    fun theLessonIsTheFirstUntickedCourseSkillWhateverThePlanSays() {
+    fun theLessonIsTheFirstUnpassedCourseSkillWhateverThePlanSays() {
         val plan = DailyPlan(emptyList(), listOf(Skills.HIGH_AND_LOW))
         assertEquals(Skills.HAND_SHAPE, assertIs<Card.Lesson>(compose(plan).cards.first()).skill)
-        // A clean wait run of a later concept doesn't skip the first unticked one (map order).
+        // A clean wait run of a later concept doesn't skip the first unpassed one (map order).
         val middleC = Curriculum.passages.first { Skills.MIDDLE_C.id in it.skills }
-        val later = mapOf(middleC.id to PassageHistory(null, emptySet(), cleanWait = true))
+        val later = mapOf(middleC.id to unaidedClean)
         assertEquals(Skills.HAND_SHAPE, assertIs<Card.Lesson>(compose(plan, later).cards.first()).skill)
-        // A clean timed run alone doesn't tick.
+        // A clean timed run alone doesn't pass the concept.
         val handShape = Curriculum.passages.first { Skills.HAND_SHAPE.id in it.skills }
         val timed = mapOf(handShape.id to PassageHistory(null, setOf(TempoRung.P100.bpm(handShape)!!)))
         assertEquals(Skills.HAND_SHAPE, assertIs<Card.Lesson>(compose(plan, timed).cards.first()).skill)
     }
 
     @Test
-    fun noLessonCardWhenEveryCourseSkillIsTicked() {
+    fun noLessonCardWhenEveryCourseSkillIsPassed() {
         val plan = DailyPlan(emptyList(), listOf(Skills.HIGH_AND_LOW))
         val session = compose(plan, everyUnitClean)
         assertEquals(0, session.cards.count { it is Card.Lesson })
@@ -269,7 +272,7 @@ class SessionComposerTest {
     @Test
     fun songComesFromTheLearnedSkillsEvenWhenNothingIsDueOrNew() {
         val plan = DailyPlan(emptyList(), emptyList())
-        val session = compose(plan, courseTickedBefore(Skills.SHARPS_AND_FLATS), learned = oneLearnedSkill)
+        val session = compose(plan, coursePassedBefore(Skills.SHARPS_AND_FLATS), learned = oneLearnedSkill)
         val song = session.cards.filterIsInstance<Card.Song>().single()
         assertEquals("builtin:hot-cross-buns", song.passage.id)
         assertEquals(session.cards.sumOf { it.minutes }, DailyBudget.MIN_20.minutes)
@@ -282,7 +285,7 @@ class SessionComposerTest {
         // The first passage of finger-number-tunes is hot-cross-buns, the first piece: the lesson uses it.
         val lessonPlan = DailyPlan(emptyList(), emptyList())
         val lessonSession =
-            compose(lessonPlan, courseTickedBefore(Skills.FINGER_NUMBER_TUNES), learned = oneLearnedSkill)
+            compose(lessonPlan, coursePassedBefore(Skills.FINGER_NUMBER_TUNES), learned = oneLearnedSkill)
         assertEquals(hot, assertIs<Card.Lesson>(lessonSession.cards.first()).passage)
         assertEquals(mary, songOf(lessonSession)?.passage)
         // Every other finger-number-tunes passage was played, so the cold open is the never-played hot-cross-buns.
@@ -370,9 +373,9 @@ class SessionComposerTest {
         val plan = DailyPlan(emptyList(), emptyList())
         val learned =
             learnedWithPrerequisites(DailyPlan(listOf(state(Skills.FINGER_NUMBER_TUNES, learned = true)), emptyList()))
-        val ticked = courseTickedBefore(Skills.SHARPS_AND_FLATS)
-        val first = songOf(compose(plan, ticked, learned = learned))!!
-        val history = ticked + (first.passage.id to PassageHistory(null, emptySet(), cleanWait = true))
+        val passed = coursePassedBefore(Skills.SHARPS_AND_FLATS)
+        val first = songOf(compose(plan, passed, learned = learned))!!
+        val history = passed + (first.passage.id to unaidedClean)
         assertEquals(TempoRung.P60, songOf(compose(plan, history, learned = learned))?.rung)
     }
 

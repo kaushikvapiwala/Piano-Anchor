@@ -30,7 +30,7 @@ public sealed interface ResultsState {
      * perform take or an unknown passage); [rung] is the tempo-ladder rung the run was played on. [words] are what
      * the screen says first (up to two observations and a tip); [shiftBeats] is how many beats a run that started
      * late was off, to the nearest half beat. A sight-reading exercise has no [runNumber] (null) and a [sight] outcome
-     * instead.
+     * instead. [lesson] says what the run did for a course concept (null when nothing).
      */
     public data class Ready(
         val passageTitle: String,
@@ -51,7 +51,17 @@ public sealed interface ResultsState {
         val words: ResultsWords = ResultsWords(listOf(Observation.CLEAN), Tip.NEXT_TEMPO),
         val shiftBeats: Double = 0.0,
         val sight: SightOutcome? = null,
+        val lesson: LessonResult? = null,
     ) : ResultsState
+}
+
+/** What a clean wait-mode run did for a course concept (`docs/course/beginner-course.md`, "Mastery"). */
+public enum class LessonResult {
+    /** A clean run with no hint: the lesson is passed and comes back as a quiz tomorrow. */
+    PASSED,
+
+    /** A clean run, but with hints: it doesn't pass; play it once without hints. */
+    CLEAN_WITH_HINTS,
 }
 
 /** How a daily sight-reading exercise of [level] moved the staircase (`docs/algorithms/sight-reading.md`). */

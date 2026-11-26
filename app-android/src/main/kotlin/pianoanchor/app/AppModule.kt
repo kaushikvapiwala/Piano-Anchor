@@ -98,6 +98,7 @@ val appModule =
                 PassagePlayer(device, get(), get()),
                 passageId,
                 start.placement,
+                start.unaided,
             ) {
                 Uuid.random().toString()
             }
@@ -139,7 +140,7 @@ val appModule =
                 get(),
             )
         }
-        viewModel { SongsViewModel(get(), get(), get()) }
+        viewModel { SongsViewModel(get(), get(), get(), get()) }
         viewModel {
             TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME)
         }

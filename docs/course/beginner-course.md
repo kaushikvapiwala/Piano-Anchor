@@ -60,11 +60,18 @@ Rules:
   A timed run shows a visible count-in ("3, 2, 1, play") and a clear start cue.
 - **Wrong key:** the key pressed flashes grey and the right key glows. One plain line explains, for example "That was
   D. C is just left of the two black keys." No red, no sound, and the app waits.
-- **Nothing locked:** every lesson is open. Today shows one suggested "Next" card. The course map ticks lessons the
-  learner has passed (right notes in wait mode) and marks the suggested one. Opening a later lesson is fine; its card
-  says what it builds on. Timing and note length improve through review and never block a lesson. A learner who took
-  the onboarding's placement test starts at the first unit they did not pass: the skills of the earlier units count as
-  ticked, so "Next" is that unit's first concept and not Unit 0's lessons (`docs/algorithms/learner-model.md`).
+- **Nothing locked:** every lesson is open. Today shows one suggested "Next" card that moves only past passed
+  concepts. Opening a later lesson is fine; its card says what it builds on. Timing and note length improve through
+  review and never block a lesson. A learner who took the onboarding's placement test starts at the first unit they
+  did not pass: the skills of the earlier units count as passed and learned, so "Next" is that unit's first concept and
+  not Unit 0's lessons (`docs/algorithms/learner-model.md`).
+- **Mastery:** passing a lesson takes two steps and being **Learned** a third. The Try is clean several times in a row
+  (`LESSON_TRY_REPS`; `LESSON_TRY_REPS_LONG` for a check of `LESSON_TRY_LONG_NOTES` or more notes; one for a check the
+  app can't verify, like "finger 3"); a wrong key sets the count back to 0. The Use piece, opened from the lesson with
+  hints off (no amber band, no Unit 0 glow, no Hint button), is played clean once in wait mode: that **passes** the
+  concept. The pass enters review, so the concept comes back as a quiz on a later day; passing that quiz unaided makes
+  it **Learned** (a star beside its tick). A failed quiz keeps it passed. Skip still moves on without passing. Tempo
+  is not part of passing. Songs' own "Mastered" rule is unchanged.
 - **Review:** learned concepts come back as 10–20 s quizzes checked by the piano ("play all the Fs", "a skip up from
   E", "hold C for 2 clicks"), scheduled by the existing review planner into the warm-up.
 - **Results in words:** say what happened and give one tip, for example "You started a beat late. Notes were short:

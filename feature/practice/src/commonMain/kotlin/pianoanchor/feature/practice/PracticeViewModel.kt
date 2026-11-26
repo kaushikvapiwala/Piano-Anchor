@@ -112,6 +112,12 @@ import kotlin.time.Instant
  * way, and its attempt is saved as usual but records no skill review, passed or failed: the onboarding places the
  * skills of the passed units itself, which only works for skills with no state yet.
  * [PracticeState.finishedBand] is the band of the saved attempt.
+ *
+ * An [unaided] run (the whole-passage wait-mode run of a lesson's Use step, `docs/course/beginner-course.md`,
+ * "Mastery"; a timed rung or spot loop keeps its hints) has hint level OFF whatever the passage's history says: no key
+ * band, no Unit 0 glow of the next key, no Hint button. The wrong-key line still
+ * shows (it is feedback, not a hint), and the attempt is saved with `hintShown` false, so a clean run passes the
+ * concept.
  */
 @Suppress("TooManyFunctions")
 public class PracticeViewModel(
@@ -133,6 +139,7 @@ public class PracticeViewModel(
     private val player: PassagePlayer? = null,
     private val pieceId: String = passage.id,
     private val placement: Boolean = false,
+    private val unaided: Boolean = false,
     private val newId: () -> String,
 ) : ViewModel() {
     /**
@@ -140,6 +147,12 @@ public class PracticeViewModel(
      * Both are played in wait mode from the staff alone, with no hint, hear-first or Listen.
      */
     private val plain = placement || SightReadingGenerator.parse(passage.id) != null
+
+    /**
+     * Whether no hint shows in the run now: a plain run, or the whole-passage wait-mode run of a lesson's Use step
+     * ([unaided]; a timed rung or a spot loop opened from it keeps its hints).
+     */
+    private val noHints: Boolean get() = plain || mutableState.value.unaided
 
     private val mutableState =
         MutableStateFlow(
@@ -149,6 +162,7 @@ public class PracticeViewModel(
                     spotLoop = spot?.let { SpotLoopState(it, initialRung) },
                     staffHidden = isUnitZero(passage),
                     sightReading = plain,
+                    unaided = unaided && spot == null && initialRung == TempoRung.WAIT,
                 ),
         )
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
@@ -182,7 +196,7 @@ public class PracticeViewModel(
     /** The strictness profile runs are judged and graded with, read from the settings when the screen opens. */
     private var strictness: StrictnessProfile = Strictness.STANDARD.profile()
 
-    /** Whether any hint showed in the run in progress: FULL, a Delayed hint that fired, or the Hint button. */
+    /** Whether any hint showed in the run in progress: FULL, a fired Delayed hint, the Hint button, the Unit 0 glow. */
     private var hintShown = true
     private var hintTimer: Job? = null
 
@@ -260,6 +274,7 @@ public class PracticeViewModel(
                     spotLoop = it.spotLoop,
                     canListen = player != null && !plain,
                     sightReading = plain,
+                    unaided = unaided && spot == null && rung == TempoRung.WAIT,
                     staffHidden = it.staffHidden,
                     // Hidden until `loadHints` reads the run's level, so a slow store can't flash the band at FULL.
                     hintVisible = false,
@@ -333,7 +348,7 @@ public class PracticeViewModel(
 
     /** Shows the key band on the waiting step, for that step only (the Hint button). */
     public fun showHint() {
-        if (!mutableState.value.showsVerdicts || plain) return
+        if (!mutableState.value.showsVerdicts || noHints) return
         hintShown = true
         mutableState.update { it.copy(hintVisible = true) }
     }
@@ -346,7 +361,7 @@ public class PracticeViewModel(
      */
     private suspend fun loadHints() {
         val known = hintCache
-        if (plain) {
+        if (noHints) {
             hintLevel = HintLevel.OFF
         } else if (known != null) {
             hintLevel = known.first
@@ -366,7 +381,9 @@ public class PracticeViewModel(
         // A perform run gets no hint at all, whatever the level the passage would start at.
         runHintLevel = if (mutableState.value.showsVerdicts) hintLevel else HintLevel.OFF
         val aided = runHintLevel == HintLevel.FULL
-        hintShown = aided
+        // A Unit 0 run glows every next key at any level: that is a hint too, unless the run is unaided (no glow).
+        val glows = mutableState.value.let { it.staffHidden && it.showsVerdicts && !it.unaided }
+        hintShown = aided || glows
         mutableState.update { it.copy(hintLevel = hintLevel, hintVisible = aided) }
     }
 
@@ -655,7 +672,7 @@ public class PracticeViewModel(
                     flash = flash,
                     lastKey = flash,
                 ).withHint(note, flash.correct, needed, advanced)
-                .let { state -> if (plain) state.copy(hintGlow = emptySet()) else state }
+                .let { state -> if (noHints) state.copy(hintGlow = emptySet()) else state }
         }
         flashTimer?.cancel()
         flashTimer =

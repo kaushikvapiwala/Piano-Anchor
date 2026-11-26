@@ -46,7 +46,8 @@ private const val COUNT_IN_NUMERALS = 3
  * A Unit 0 passage hides the staff ([staffHidden], set by the ViewModel) and glows every next key while a run is
  * under way. [played] is true once a key was pressed in the run (the Listen button then goes).
  * A [sightReading] exercise runs in wait mode from the staff alone: the screen hides the tempo chips, the perform
- * switch and the Hint button; so does a placement piece. [finishedBand] is the band of the attempt that set
+ * switch and the Hint button; so does a placement piece, and so does an [unaided] run (the Use step of a lesson), which
+ * also glows no next key in Unit 0. [finishedBand] is the band of the attempt that set
  * [finishedAttemptId].
  */
 public data class PracticeState(
@@ -83,6 +84,7 @@ public data class PracticeState(
     val staffHidden: Boolean = false,
     val played: Boolean = false,
     val sightReading: Boolean = false,
+    val unaided: Boolean = false,
     val finishedBand: Band? = null,
 ) {
     init {
@@ -104,14 +106,10 @@ public data class PracticeState(
                 .orEmpty()
 
     /** Keys that glow in the accent: those a wrong key points to and, in Unit 0, every next key at any hint level. */
-    val glowKeys: Set<MidiNote> get() =
-        if (staffHidden && showsVerdicts &&
-            underway
-        ) {
-            hintGlow + waitingNotes
-        } else {
-            hintGlow
-        }
+    val glowKeys: Set<MidiNote> get() = if (glowsNextKey && underway) hintGlow + waitingNotes else hintGlow
+
+    /** Unit 0 glows every next key, unless the run is [unaided] (a lesson's Use step) or shows no verdicts. */
+    private val glowsNextKey: Boolean get() = staffHidden && showsVerdicts && !unaided
 
     /** Whether a run is reading the piano: wait mode when not listening, a timed run once the cursor moves. */
     private val underway: Boolean get() = !listening && (rung == TempoRung.WAIT || phase == RunPhase.PLAYING)

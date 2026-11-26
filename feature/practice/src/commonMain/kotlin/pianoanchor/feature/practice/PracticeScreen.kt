@@ -245,7 +245,7 @@ private fun TopBar(
             }
         }
         if (state.spotLoop == null && !state.sightReading) ModeSwitch(state, onSelectMode)
-        if (state.showsVerdicts && !state.sightReading) HintButton(onHint)
+        if (state.showsVerdicts && !state.sightReading && !state.unaided) HintButton(onHint)
         ClickButton(state.clickOn, onToggleClick)
         Button(
             onClick = onBack,

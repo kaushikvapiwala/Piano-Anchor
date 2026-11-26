@@ -138,6 +138,24 @@ class LessonScreenTest {
         }
 
     @Test
+    fun theCleanRepsShowBesideTheChecksOwnProgressWhenMoreThanOneIsNeeded() =
+        runComposeUiTest {
+            val state = lessonState(LessonStep.TRY, skill = Skills.MIDDLE_C, progress = finishedMiddleC())
+            setContent { PianoAnchorTheme { LessonScreen(state.copy(cleanReps = 2, repsNeeded = 3), LessonActions()) } }
+
+            onNodeWithText("Clean 2 of 3").assertIsDisplayed()
+        }
+
+    @Test
+    fun aCheckThatNeedsOneRepShowsNoCleanCount() =
+        runComposeUiTest {
+            val state = lessonState(LessonStep.TRY, skill = Skills.MIDDLE_C, progress = finishedMiddleC())
+            setContent { PianoAnchorTheme { LessonScreen(state, LessonActions()) } }
+
+            onNodeWithText("Clean", substring = true).assertDoesNotExist()
+        }
+
+    @Test
     fun theCountInNumeralShows() =
         runComposeUiTest {
             val state = lessonState(LessonStep.TRY, skill = Skills.STEADY_BEAT, countIn = 3)

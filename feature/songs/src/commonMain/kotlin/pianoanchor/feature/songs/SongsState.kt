@@ -8,21 +8,30 @@ import pianoanchor.engine.matcher.TempoRung
 
 /**
  * What the Songs screen shows. [pieces] is null until they have loaded (or when [storageFailed]); [piano] is the
- * connected piano, or null while none is. [ticked] are the ids of the course concepts passed (a clean wait-mode run)
- * and [next] the id of the suggested one, null when the course is done or not loaded.
+ * connected piano, or null while none is. [passed] are the ids of the course concepts passed (a clean wait-mode run
+ * with no hint, or placed), [learned] those of them that came back as a quiz on a later day and were passed again, and
+ * [next] the id of the suggested one, null when the course is done or not loaded.
  */
 public data class SongsState(
     val pieces: List<PieceView>? = null,
     val piano: MidiDevice? = null,
     val storageFailed: Boolean = false,
-    val ticked: Set<String> = emptySet(),
+    val passed: Set<String> = emptySet(),
+    val learned: Set<String> = emptySet(),
     val next: String? = null,
 ) {
-    /** Whether [piece] has course concepts and every one of them is ticked: its row shows a tick. */
-    public fun isTicked(piece: PieceView): Boolean {
-        val course = piece.passage.skills.filter { it in courseSkillIds }
-        return course.isNotEmpty() && ticked.containsAll(course)
-    }
+    /** Whether [piece] has course concepts and every one of them is passed: its row shows a tick. */
+    public fun isPassed(piece: PieceView): Boolean =
+        courseSkills(piece).let { it.isNotEmpty() && passed.containsAll(it) }
+
+    /** Whether [piece] has course concepts and every one of them is learned: its tick gets a star. */
+    public fun isLearned(piece: PieceView): Boolean =
+        courseSkills(piece).let {
+            it.isNotEmpty() &&
+                learned.containsAll(it)
+        }
+
+    private fun courseSkills(piece: PieceView) = piece.passage.skills.filter { it in courseSkillIds }
 
     /** Whether [piece] exercises the suggested concept: its row shows the "Next" chip. */
     public fun isNext(piece: PieceView): Boolean = next != null && next in piece.passage.skills

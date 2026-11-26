@@ -9,9 +9,11 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.Rating
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.PieceStatus
 import pianoanchor.engine.content.PieceView
@@ -47,7 +49,7 @@ class SongsViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun TestScope.viewModel() =
-        SongsViewModel(attempts, LearnerModel(Curriculum.graph, learnerRepository), piano).also {
+        SongsViewModel(attempts, LearnerModel(Curriculum.graph, learnerRepository), piano, TimeZone.UTC).also {
             runCurrent()
         }
 
@@ -55,6 +57,7 @@ class SongsViewModelTest {
         id: String,
         passageId: String,
         rung: TempoRung?,
+        hintShown: Boolean = false,
     ) {
         val passage = checkNotNull(Curriculum.passage(passageId))
         attempts.save(
@@ -72,6 +75,7 @@ class SongsViewModelTest {
                 events = emptyList(),
                 tempoBpm = rung?.bpm(passage),
                 playedNotes = emptyList(),
+                hintShown = hintShown,
             ),
         )
     }
@@ -91,7 +95,7 @@ class SongsViewModelTest {
             val vm = viewModel()
 
             assertEquals(Skills.RH_C_POSITION.id, vm.state.value.next)
-            assertEquals(unit0, vm.state.value.ticked)
+            assertEquals(unit0, vm.state.value.passed)
         }
 
     @Test
@@ -161,23 +165,56 @@ class SongsViewModelTest {
         }
 
     @Test
-    fun aConceptTicksOnACleanWaitRunAndTheFirstUntickedIsNext() =
+    fun aConceptPassesOnACleanUnaidedWaitRunAndTheFirstUnpassedIsNext() =
         runTest(dispatcher) {
             val vm = viewModel()
-            assertEquals(emptySet(), vm.state.value.ticked)
+            assertEquals(emptySet(), vm.state.value.passed)
             assertEquals(Skills.HAND_SHAPE.id, vm.state.value.next)
 
-            // A clean wait-mode run of Middle C march ticks middle-c; hand-shape stays next (map order).
+            // A clean wait-mode run of Middle C march passes middle-c; hand-shape stays next (map order).
             playClean("a", "builtin:middle-c-march", null)
             vm.refresh()
             runCurrent()
 
-            assertEquals(setOf(Skills.MIDDLE_C.id), vm.state.value.ticked)
+            assertEquals(setOf(Skills.MIDDLE_C.id), vm.state.value.passed)
             assertEquals(Skills.HAND_SHAPE.id, vm.state.value.next)
         }
 
     @Test
-    fun aPieceTicksWhenItsConceptsAreTickedAndMarksTheNextConcept() =
+    fun aCleanRunWithHintsDoesNotPassTheConcept() =
+        runTest(dispatcher) {
+            playClean("a", "builtin:middle-c-march", null, hintShown = true)
+            val vm = viewModel()
+            assertEquals(emptySet(), vm.state.value.passed)
+            assertEquals(Skills.HAND_SHAPE.id, vm.state.value.next)
+        }
+
+    @Test
+    fun aPassedConceptIsLearnedOnceAQuizOnALaterDayIsPassed() =
+        runTest(dispatcher) {
+            val hot = checkNotNull(Curriculum.passage("builtin:hot-cross-buns"))
+            val concepts = hot.skills.filter { id -> CourseProgress.skills(Curriculum).any { it.id == id } }
+            playClean("a", hot.id, null)
+            val model = LearnerModel(Curriculum.graph, learnerRepository)
+            // The run was on 2026-11-15; a quiz the same day doesn't count, one the next day does.
+            concepts.forEach { model.recordQuiz(it, Rating.GOOD, LocalDate(2026, 11, 15), "q1") }
+            val vm = viewModel()
+            // Everything the piece trains but its own concepts stays unpassed, so only the piece's row is checked.
+            assertEquals(emptySet(), vm.state.value.learned)
+            assertEquals(concepts.toSet(), vm.state.value.passed)
+            assertFalse(vm.state.value.isLearned(vm.piece("hot-cross-buns")))
+
+            concepts.forEach { model.recordQuiz(it, Rating.GOOD, LocalDate(2026, 11, 16), "q2") }
+            vm.refresh()
+            runCurrent()
+
+            assertEquals(concepts.toSet(), vm.state.value.learned)
+            assertTrue(vm.state.value.isPassed(vm.piece("hot-cross-buns")))
+            assertTrue(vm.state.value.isLearned(vm.piece("hot-cross-buns")))
+        }
+
+    @Test
+    fun aPieceIsPassedWhenItsConceptsAreAndMarksTheNextConcept() =
         runTest(dispatcher) {
             // The concepts before the first tunes are passed through their first passages.
             CourseProgress
@@ -192,32 +229,32 @@ class SongsViewModelTest {
             val hot = vm.piece("hot-cross-buns")
             assertEquals(Skills.FINGER_NUMBER_TUNES.id, vm.state.value.next)
             assertTrue(vm.state.value.isNext(hot))
-            assertFalse(vm.state.value.isTicked(hot))
+            assertFalse(vm.state.value.isPassed(hot))
 
             playClean("hot", hot.passage.id, null)
             vm.refresh()
             runCurrent()
 
-            assertTrue(vm.state.value.isTicked(vm.piece("hot-cross-buns")))
+            assertTrue(vm.state.value.isPassed(vm.piece("hot-cross-buns")))
             assertFalse(vm.state.value.isNext(vm.piece("hot-cross-buns")))
             // A piece of the More songs unit has no course concept: no tick, no chip.
             val saints = vm.piece("when-the-saints-go-marching-in")
-            assertFalse(vm.state.value.isTicked(saints))
+            assertFalse(vm.state.value.isPassed(saints))
             assertFalse(vm.state.value.isNext(saints))
         }
 
     @Test
-    fun aFailedReadClearsTheTicks() =
+    fun aFailedReadClearsThePasses() =
         runTest(dispatcher) {
             playClean("a", "builtin:middle-c-march", null)
             val vm = viewModel()
-            assertEquals(setOf(Skills.MIDDLE_C.id), vm.state.value.ticked)
+            assertEquals(setOf(Skills.MIDDLE_C.id), vm.state.value.passed)
 
             attempts.failing = true
             vm.refresh()
             runCurrent()
 
-            assertEquals(emptySet(), vm.state.value.ticked)
+            assertEquals(emptySet(), vm.state.value.passed)
             assertNull(vm.state.value.next)
         }
 

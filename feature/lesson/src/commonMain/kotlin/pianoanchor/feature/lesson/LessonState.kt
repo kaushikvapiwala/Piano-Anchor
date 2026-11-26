@@ -20,7 +20,7 @@ public enum class LessonConnection {
 
 /**
  * The Recap line: what the learner can now do ([learned], the concept's title) and the [nextTitle] of the next
- * unticked concept ([nextSkillId]), both null at the end of the course.
+ * unpassed concept ([nextSkillId]), both null at the end of the course.
  */
 public data class RecapText(
     val learned: String,
@@ -33,7 +33,8 @@ public data class RecapText(
  * (null outside it), whether the See demo is [playing], the keys lit now ([litKeys], MIDI note numbers: sounding in
  * See, held in Try) and the [recap] (only in the Recap step). [countIn] is the numeral of the count-in (3, 2, 1) of a
  * Try with a click, null otherwise. [pedalControl] is true while a pedal tap may continue the lesson (the setting is on
- * and the concept does not use the pedal as music).
+ * and the concept does not use the pedal as music). A Try passes after [repsNeeded] clean checks in a row: [cleanReps]
+ * is how many it has so far (a wrong key resets it to 0).
  */
 public data class LessonState(
     val skill: Skill,
@@ -46,6 +47,8 @@ public data class LessonState(
     val connection: LessonConnection,
     val countIn: Int? = null,
     val pedalControl: Boolean = false,
+    val cleanReps: Int = 0,
+    val repsNeeded: Int = 1,
 ) {
     /** True when the step shows "Tap the pedal to continue": a tap acts here and the piano is connected. */
     val pedalHint: Boolean

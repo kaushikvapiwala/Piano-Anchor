@@ -140,6 +140,17 @@ public class SqlAttemptRepositoryAdapter(
             storage("hasCleanWaitRun") { queries.countCleanWaitRuns(passageId).executeAsOne() > 0 }
         }
 
+    override suspend fun firstCleanUnaidedWaitRun(passageId: String): Instant? =
+        withContext(dispatcher) {
+            storage("firstCleanUnaidedWaitRun") {
+                queries
+                    .selectFirstCleanUnaidedWaitStart(passageId)
+                    .executeAsOne()
+                    .MIN
+                    ?.let(Instant::fromEpochMilliseconds)
+            }
+        }
+
     override suspend fun lastPlayed(passageId: String): Instant? =
         withContext(dispatcher) {
             storage("lastPlayed") {

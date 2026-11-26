@@ -56,14 +56,31 @@ class SongsScreenScreenshotTest {
             SongsState(pieces = Pieces.list(Curriculum, history)),
         )
 
+    private val passedConcepts =
+        setOf(Skills.FINGER_NUMBER_TUNES.id, Skills.STEPS_AND_SKIPS.id, Skills.QUARTER_AND_HALF.id)
+
     @Test
-    fun tickedAndNext() {
-        val ticked = setOf(Skills.FINGER_NUMBER_TUNES.id, Skills.STEPS_AND_SKIPS.id, Skills.QUARTER_AND_HALF.id)
+    fun passedAndNext() =
         capture(
-            "ticked",
-            SongsState(pieces = Pieces.list(Curriculum, history), ticked = ticked, next = Skills.BARS_AND_COUNTING.id),
+            "passed",
+            SongsState(
+                pieces = Pieces.list(Curriculum, history),
+                passed = passedConcepts,
+                next = Skills.BARS_AND_COUNTING.id,
+            ),
         )
-    }
+
+    @Test
+    fun passedAndLearned() =
+        capture(
+            "learned",
+            SongsState(
+                pieces = Pieces.list(Curriculum, history),
+                passed = passedConcepts,
+                learned = passedConcepts,
+                next = Skills.BARS_AND_COUNTING.id,
+            ),
+        )
 
     @Test
     fun storageError() = capture("storage_error", SongsState(storageFailed = true))

@@ -51,6 +51,7 @@ import pianoanchor.engine.grading.noteNumber
 import pianoanchor.engine.grading.noteValue
 import pianoanchor.engine.guidance.SpotFinder
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.midi.PedalTapDetector
 import pianoanchor.engine.profile
@@ -190,8 +191,54 @@ public class ResultsViewModel(
             words = words,
             shiftBeats = shiftBeats(summary?.timing, attempt.tempoBpm),
             sight = sight,
+            lesson = lessonResult(attempt),
         )
     }
+
+    /**
+     * What [attempt] did for the course concepts of its passage that the learner was not placed past: PASSED when it is
+     * the first clean wait-mode run with no hint for one of them, CLEAN_WITH_HINTS when it is clean with hints and one
+     * of them is not passed yet. Null when a store can't be read: the results still show.
+     */
+    private suspend fun lessonResult(attempt: Attempt): LessonResult? {
+        val clean = attempt.band == Band.CLEAN && attempt.tempoBpm == null && attempt.spot == null
+        return if (clean) {
+            try {
+                lessonResultOfCleanRun(attempt)
+            } catch (_: StorageUnavailableException) {
+                null
+            }
+        } else {
+            null
+        }
+    }
+
+    private suspend fun lessonResultOfCleanRun(attempt: Attempt): LessonResult? {
+        val placed = learner.placedSkills()
+        val concepts = courseConceptsOf(attempt).filter { it.id !in placed }
+        if (concepts.isEmpty()) return null
+        // For each concept, when each of its passages first had a clean run with no hint.
+        val firstRuns =
+            concepts.map { concept ->
+                Curriculum.passages
+                    .filter { concept.id in it.skills }
+                    .mapNotNull { attempts.firstCleanUnaidedWaitRun(it.id) }
+            }
+        return if (attempt.hintShown) {
+            LessonResult.CLEAN_WITH_HINTS.takeIf { firstRuns.any { it.isEmpty() } }
+        } else {
+            // No passage of the concept had a clean run with no hint before this one.
+            LessonResult.PASSED.takeIf { firstRuns.any { runs -> runs.none { it < attempt.startedAt } } }
+        }
+    }
+
+    /** The course concepts the passage of [attempt] exercises (none for a sight-reading exercise). */
+    private fun courseConceptsOf(attempt: Attempt) =
+        Curriculum
+            .passage(attempt.passageId)
+            ?.let { passage ->
+                CourseProgress.skills(Curriculum).filter { it.id in passage.skills }
+            }.orEmpty()
 
     /** One more than the passage's runs started before [attempt]; none for a sight-reading exercise. */
     private suspend fun runNumber(

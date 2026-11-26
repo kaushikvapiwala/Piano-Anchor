@@ -134,6 +134,18 @@ class ResultsScreenTest {
         }
 
     @Test
+    fun theLessonLineSaysPassedOrAsksForARunWithoutHints() =
+        runComposeUiTest {
+            var state by mutableStateOf(ready.copy(lesson = LessonResult.PASSED))
+            setContent { PianoAnchorTheme { ResultsScreen(state, onBack = {}, onTryAgain = {}, onRetry = {}) } }
+
+            onNodeWithText("Lesson passed. It comes back on a later day for review.").assertIsDisplayed()
+            state = ready.copy(lesson = LessonResult.CLEAN_WITH_HINTS)
+            waitForIdle()
+            onNodeWithText("Clean! Play it once without hints from the lesson to pass it.").assertIsDisplayed()
+        }
+
+    @Test
     fun theWordsAndTheTipShowAndTheTilesWaitBehindDetails() =
         runComposeUiTest {
             val words = ResultsWords(listOf(Observation.STARTED_LATE, Observation.NOTES_SHORT), Tip.WAIT_FOR_COUNT_IN)

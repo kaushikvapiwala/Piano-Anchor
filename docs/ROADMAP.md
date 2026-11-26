@@ -40,29 +40,31 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Lesson mastery** (spec #265; owner's device test): a Try passes after 3 clean reps in a row (2 for long checks),
-    the Use piece must be clean with no hints, and a concept is Learned after a next-day quiz.
-2. **Note names on the key strips** (spec #266; owner's device test): letters on the app's keys, fading as the key
+1. **Note names on the key strips** (spec #266; owner's device test): letters on the app's keys, fading as the key
     names are passed and Learned, with an Auto/Off setting.
-3. **Lesson and practice redesign** (needs a grill session with Lazyweb design research; owner's device test): a
+2. **Lesson and practice redesign** (needs a grill session with Lazyweb design research; owner's device test): a
     hand-drawn hand over the keys whose fingers press in time with See and Listen (drawn in Compose, ADR 0026), a
     one-tap session that runs today's plan in a row, play-along backing for songs, "Day 1 vs today" playback and a
     weekly recap. The owner keeps the plum palette. Specs follow an approved mock.
-4. **Staff notation** (spec #272; grill 2026-11-25): stems, flags, beams, dots, rests, key signatures and natural
+3. **Staff notation** (spec #272; grill 2026-11-25): stems, flags, beams, dots, rests, key signatures and natural
     signs on the practice staff, with every music glyph from the Bravura font (ADR 0010); the clef no longer relies on
     the system font.
-5. **Course 2, Unit 4: eighth notes and the dotted quarter (M6.4)** (spec #273) [#272]: four concepts, a timed Rhythm
+4. **Course 2, Unit 4: eighth notes and the dotted quarter (M6.4)** (spec #273) [#272]: four concepts, a timed Rhythm
     Try, the Jingle Bells chorus, sight-reading levels 9–10 and Unit 4's placement piece.
-6. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
+5. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
     D7 shortcut, Go Tell Aunt Rhody, sight-reading levels 11–12 and Unit 5's placement piece.
-7. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
+6. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
     thumb-under. Built like Units 4–5; each unit adds sight-reading levels and a placement piece. The pedal unit sets
     the lesson's pedalIsMusic flag for its concepts (ADR 0027).
+7. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
+    learner skipped its Try or Use, so its "next" can differ from Today's Next card; name the next unpassed concept.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
 pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md` (`scripts/capture_session.sh` records a session).
 
+- **Lesson mastery (#265):** a Try needs 3 clean reps (2 for long ones), the lesson's Use piece runs with no hints and
+  passes the concept, and the next day's quiz turns the tick into a ★ on Songs.
 - **First release and dogfood (M3 exit):** cut v0.1.0 by following `docs/RELEASING.md` (keystore, secrets, the
   `dogfood` and `blocker` labels, then the tag; the first run also proves the untested emulator smoke job), then use
   the released APK daily as the M3 exit check says.

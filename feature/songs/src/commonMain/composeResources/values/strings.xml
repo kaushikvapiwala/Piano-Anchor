@@ -5,8 +5,10 @@
     <string name="songs_progress">rung %1$s of %2$s</string>
     <string name="songs_row_description">%1$s. %2$s</string>
     <string name="songs_row_description_passed">%1$s. %2$s. Passed</string>
+    <string name="songs_row_description_learned">%1$s. %2$s. Learned</string>
     <string name="songs_row_description_next">%1$s. %2$s. Suggested next</string>
     <string name="songs_tick">✓</string>
+    <string name="songs_tick_learned">✓★</string>
     <string name="songs_next">Next</string>
     <string name="songs_error_storage">Couldn't load your songs.</string>
     <string name="songs_action_retry">Retry</string>
