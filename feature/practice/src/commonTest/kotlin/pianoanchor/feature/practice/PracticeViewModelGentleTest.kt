@@ -20,6 +20,7 @@ import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.StepCorrect
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.AttemptRepositoryPort
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.guidance.Direction
@@ -200,10 +201,9 @@ class PracticeViewModelGentleTest {
     fun aWrongKeyInATimedRunFlashesOnly() =
         runTest(dispatcher) {
             val vm = practice(rung = TempoRung.P60)
-            tap(f4) // the starting key
-            clock.advanceNanos(5_000 * ms)
-            advanceTimeBy(5_000)
+            advanceTimeBy(Tunables.TEMPO_AUTO_START_DELAY_MS) // the run arms itself and begins its count-in
             runCurrent()
+            clock.advanceNanos(5_000 * ms) // virtual time stays put: the run's clock does not tick on
             tap(MidiNote(70))
 
             val state = vm.state.value

@@ -40,27 +40,24 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Tempo runs restart by themselves** (spec #263; owner's device test 2026-11-25): a timed run counts in by
-    itself (no starting key, so no key is lost during the link measurement, the old item 1) and stops on a wrong or
-    missed note, says why and counts in again from the top; three restarts in a row offer a slower rung.
-2. **Hands-free lessons** (spec #264; owner's device test): a sustain-pedal tap continues outside a run (lessons,
+1. **Hands-free lessons** (spec #264; owner's device test): a sustain-pedal tap continues outside a run (lessons,
     quizzes, Results, Today), lesson steps move on by themselves, and the card shows one line with "More".
-3. **Lesson mastery** (spec #265; owner's device test): a Try passes after 3 clean reps in a row (2 for long checks),
+2. **Lesson mastery** (spec #265; owner's device test): a Try passes after 3 clean reps in a row (2 for long checks),
     the Use piece must be clean with no hints, and a concept is Learned after a next-day quiz.
-4. **Note names on the key strips** (spec #266; owner's device test): letters on the app's keys, fading as the key
+3. **Note names on the key strips** (spec #266; owner's device test): letters on the app's keys, fading as the key
     names are passed and Learned, with an Auto/Off setting.
-5. **Lesson and practice redesign** (needs a grill session with Lazyweb design research; owner's device test): a
+4. **Lesson and practice redesign** (needs a grill session with Lazyweb design research; owner's device test): a
     hand-drawn hand over the keys whose fingers press in time with See and Listen (drawn in Compose, ADR 0026), a
     one-tap session that runs today's plan in a row, play-along backing for songs, "Day 1 vs today" playback and a
     weekly recap. The owner keeps the plum palette. Specs follow an approved mock.
-6. **Staff notation** (spec #272; grill 2026-11-25): stems, flags, beams, dots, rests, key signatures and natural
+5. **Staff notation** (spec #272; grill 2026-11-25): stems, flags, beams, dots, rests, key signatures and natural
     signs on the practice staff, with every music glyph from the Bravura font (ADR 0010); the clef no longer relies on
     the system font.
-7. **Course 2, Unit 4: eighth notes and the dotted quarter (M6.4)** (spec #273) [#272]: four concepts, a timed Rhythm
+6. **Course 2, Unit 4: eighth notes and the dotted quarter (M6.4)** (spec #273) [#272]: four concepts, a timed Rhythm
     Try, the Jingle Bells chorus, sight-reading levels 9–10 and Unit 4's placement piece.
-8. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
+7. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
     D7 shortcut, Go Tell Aunt Rhody, sight-reading levels 11–12 and Unit 5's placement piece.
-9. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
+8. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
     thumb-under. Built like Units 4–5; each unit adds sight-reading levels and a placement piece.
 
 ## Owner device checks

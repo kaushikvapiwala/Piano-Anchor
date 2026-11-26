@@ -8,6 +8,9 @@ import pianoanchor.engine.profile
 import pianoanchor.testing.passageOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class TempoJudgeTest {
     private val c4 = MidiNote(60)
@@ -73,6 +76,47 @@ class TempoJudgeTest {
 
         assertEquals(LiveVerdict.TimingOff(ScoreNoteRef(0, c4), -400), lone.onNoteOn(on(c4, -400)))
         assertEquals(LiveVerdict.Wrong(c4), lone.onNoteOn(on(c4, 600)))
+    }
+
+    @Test
+    fun aNoteWhoseWindowPassedUnplayedIsMissed() {
+        // c4's window closes half a gap after its onset: 500 ms.
+        assertNull(judge.missedNote(start + 500 * ms))
+        assertEquals(ScoreNoteRef(0, c4), judge.missedNote(start + 501 * ms))
+    }
+
+    @Test
+    fun aPlayedNoteIsNotMissedAndTheNextOneIs() {
+        judge.onNoteOn(on(c4, 0))
+
+        assertNull(judge.missedNote(start + 1_000 * ms))
+        assertEquals(ScoreNoteRef(1, d4), judge.missedNote(start + 1_501 * ms))
+    }
+
+    @Test
+    fun theLinkDelayShiftsWhenANoteCountsAsMissed() {
+        val delayed = TempoJudge(passage, bpm = 60, startNanos = start, latencyOffsetNanos = 40 * ms)
+
+        assertNull(delayed.missedNote(start + 540 * ms))
+        assertEquals(ScoreNoteRef(0, c4), delayed.missedNote(start + 541 * ms))
+    }
+
+    @Test
+    fun aChordNoteLeftOutIsMissedWhileItsPartnerIsPlayed() {
+        val chord = TempoJudge(passageOf(setOf(e4, c4), setOf(d4)), bpm = 60, startNanos = start)
+        chord.onNoteOn(on(e4, 0))
+
+        assertEquals(ScoreNoteRef(0, c4), chord.missedNote(start + 600 * ms))
+    }
+
+    @Test
+    fun keysBeforeTheFirstStepsWindowBelongToTheCountIn() {
+        // c4's window opens half a gap (500 ms) before its onset.
+        assertTrue(judge.beforeFirstWindow(start - 501 * ms))
+        assertFalse(judge.beforeFirstWindow(start - 500 * ms))
+        val delayed = TempoJudge(passage, bpm = 60, startNanos = start, latencyOffsetNanos = 40 * ms)
+        assertTrue(delayed.beforeFirstWindow(start - 461 * ms))
+        assertFalse(delayed.beforeFirstWindow(start - 460 * ms))
     }
 
     @Test

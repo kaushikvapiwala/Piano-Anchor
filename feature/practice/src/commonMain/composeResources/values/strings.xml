@@ -15,7 +15,12 @@
     <string name="practice_click_off">Click off</string>
     <string name="practice_hint_glyph">💡</string>
     <string name="practice_hint">Show hint</string>
-    <string name="practice_ready_timed">Play any key to count in</string>
+    <string name="practice_ready_timed">Get ready…</string>
+    <string name="practice_restart_wrong">Wrong note: %1$s. Again from the top.</string>
+    <string name="practice_restart_missed">Missed %1$s. Again from the top.</string>
+    <string name="practice_too_hard">This tempo is tough right now.</string>
+    <string name="practice_too_hard_slower">Slower</string>
+    <string name="practice_too_hard_keep_trying">Keep trying</string>
     <string name="practice_count_in">Count-in</string>
     <string name="practice_beat">Beat %1$s of %2$s</string>
     <string name="practice_staff_cursor">Treble staff, %1$s. Notes %2$s. Cursor on %3$s.</string>

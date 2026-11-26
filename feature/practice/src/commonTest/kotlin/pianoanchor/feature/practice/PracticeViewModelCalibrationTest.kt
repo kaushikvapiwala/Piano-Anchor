@@ -138,14 +138,14 @@ class PracticeViewModelCalibrationTest {
         advance(restMs)
     }
 
-    /** Selects the 60 % rung, starts the run with a key and plays C D E, each [lateMs] after its written time. */
+    /** Selects the 60 % rung, lets it arm and plays C D E, each [lateMs] after its written time. */
     private fun TestScope.playCde(
         vm: PracticeViewModel,
         lateMs: Long,
     ) {
         vm.selectRung(TempoRung.P60)
         runCurrent()
-        press(c4) // the starting key
+        advance(Tunables.TEMPO_AUTO_START_DELAY_MS)
         advance(countInMs + lateMs)
         hold(c4, heldMs = 900, restMs = beatMs - 900)
         hold(d4, heldMs = 900, restMs = beatMs - 900)
@@ -196,7 +196,8 @@ class PracticeViewModelCalibrationTest {
 
             vm.selectRung(TempoRung.P60)
             runCurrent()
-            press(c4) // the starting key: read by the run, so the measurement's reader is gone
+            // The run reads the piano itself now: the measurement's reader is gone.
+            advance(Tunables.TEMPO_AUTO_START_DELAY_MS)
 
             assertNotNull(metronome.running.value)
         }
@@ -210,7 +211,8 @@ class PracticeViewModelCalibrationTest {
 
             advanceTimeBy(2 * Tunables.CALIBRATION_PING_TIMEOUT_MS) // the warm-up and the first timed ping
             runCurrent()
-            press(c4)
+            assertNull(metronome.running.value) // the count-in waits for the measurement, then the arming delay
+            advance(Tunables.TEMPO_AUTO_START_DELAY_MS)
 
             assertNotNull(metronome.running.value)
             assertEquals(TempoRung.P60, vm.state.value.rung)
@@ -294,7 +296,7 @@ class PracticeViewModelCalibrationTest {
             val vm = practice()
             vm.selectRung(TempoRung.P60)
             runCurrent()
-            press(c4) // the starting key
+            advance(Tunables.TEMPO_AUTO_START_DELAY_MS)
             advance(countInMs + 200)
             hold(c4, heldMs = 900, restMs = beatMs - 900)
             hold(d4, heldMs = 900, restMs = beatMs - 900)

@@ -44,6 +44,8 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 ## Testing
 - Pure-Kotlin modules: **100% line and branch coverage** (Kover fails the build). If code truly can't run on the
   JVM, annotate `@ExcludeFromCoverage("reason + where it is tested")`.
+- A timed practice run arms and restarts by itself, so a test that leaves its `PracticeViewModel` open makes
+  `runTest`'s final drain spin forever: close every ViewModel a test opens (the `runHints`/`runLoops` helpers do).
 - Kover counts `companion object` `val` getters as uncovered lines: put private constants at file top level instead.
 - Robolectric breaks on a checkout path with spaces: keep `robolectric.dependency.dir` under the Gradle user home,
   as `feature/monitor/build.gradle.kts` does (copy that setup into new modules with Robolectric tests).

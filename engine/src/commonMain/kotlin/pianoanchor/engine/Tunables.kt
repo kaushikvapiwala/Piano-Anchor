@@ -363,6 +363,37 @@ public object Tunables {
     public const val TEMPO_COUNT_IN_LEAD_MS: Long = 200
 
     /**
+     * How long, in milliseconds, a timed run waits after it is armed (link delay measured, screen settled) before the
+     * count-in starts by itself.
+     *
+     * Why: long enough to look from the phone to the keys and settle the hands, short enough that the run still feels
+     * automatic.
+     *
+     * Source: owner decision 2026-11-25, to tune on device.
+     */
+    public const val TEMPO_AUTO_START_DELAY_MS: Long = 1200
+
+    /**
+     * How long, in milliseconds, the reason line ("Wrong note: F4. Again from the top.") stays on screen after a
+     * mistake stops a timed run, before the run arms again.
+     *
+     * Why: one short sentence, read at a glance.
+     *
+     * Source: owner decision 2026-11-25.
+     */
+    public const val TEMPO_RESTART_PAUSE_MS: Long = 1500
+
+    /**
+     * How many restarts in a row on one rung make the next pause offer a slower rung instead of arming again.
+     *
+     * Why: three failures in a row is the point where repetition stops helping and frustration starts; slowing down is
+     * the standard practice advice.
+     *
+     * Source: owner decision 2026-11-25.
+     */
+    public const val TEMPO_RESTARTS_BEFORE_OFFER: Int = 3
+
+    /**
      * How many metronome clicks the latency calibration plays, warm-up included.
      *
      * Why: enough taps for a stable median in about 16 seconds at the calibration tempo.

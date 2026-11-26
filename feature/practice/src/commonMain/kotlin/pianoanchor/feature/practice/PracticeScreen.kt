@@ -68,6 +68,9 @@ import pianoanchor.feature.practice.resources.practice_save_failed
 import pianoanchor.feature.practice.resources.practice_tempo_done
 import pianoanchor.feature.practice.resources.practice_tempo_percent
 import pianoanchor.feature.practice.resources.practice_tempo_wait
+import pianoanchor.feature.practice.resources.practice_too_hard
+import pianoanchor.feature.practice.resources.practice_too_hard_keep_trying
+import pianoanchor.feature.practice.resources.practice_too_hard_slower
 import pianoanchor.ui.shell.BackButton
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
@@ -99,6 +102,8 @@ public fun PracticeScreen(
     onSelectMode: (RunMode) -> Unit = {},
     onPlayWhole: () -> Unit = {},
     onKeepLooping: () -> Unit = {},
+    onSlower: () -> Unit = {},
+    onKeepTrying: () -> Unit = {},
     onListen: () -> Unit = {},
     onSkipListening: () -> Unit = {},
 ) {
@@ -114,9 +119,17 @@ public fun PracticeScreen(
                     onDiscard,
                     onPlayWhole,
                     onKeepLooping,
+                    onSlower,
+                    onKeepTrying,
                 )
                 StaffArea(state)
                 HintRow(state, onListen, onSkipListening, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
+                state.restartReason?.let {
+                    RestartReasonLine(
+                        it,
+                        Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                    )
+                }
                 if (state.linkResumed) LinkResumedLine(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
                 if (state.rung != TempoRung.WAIT) {
                     RunStatus(state, Modifier.padding(horizontal = 20.dp).fillMaxWidth())
@@ -138,7 +151,7 @@ public fun PracticeScreen(
     }
 }
 
-/** The cards above the staff: disconnected, save failed and the clean spot loop. */
+/** The cards above the staff: too hard, disconnected, save failed and the clean spot loop. */
 @Composable
 private fun StatusCards(
     state: PracticeState,
@@ -147,7 +160,17 @@ private fun StatusCards(
     onDiscard: () -> Unit,
     onPlayWhole: () -> Unit,
     onKeepLooping: () -> Unit,
+    onSlower: () -> Unit,
+    onKeepTrying: () -> Unit,
 ) {
+    if (state.offerSlower) {
+        MessageCard(
+            stringResource(Res.string.practice_too_hard),
+            CardAction(stringResource(Res.string.practice_too_hard_slower), onSlower),
+            CardAction(stringResource(Res.string.practice_too_hard_keep_trying), onKeepTrying),
+            modifier = CARD_MODIFIER,
+        )
+    }
     if (state.connection == PracticeConnection.DISCONNECTED) {
         MessageCard(
             stringResource(Res.string.practice_disconnected),
@@ -394,7 +417,7 @@ private fun TempoChip(
 }
 
 /**
- * The timed run's status line: "Play any key to count in" before the run, then the beat pulse (one dot per beat of the
+ * The timed run's status line: "Get ready…" while arming, then the beat pulse (one dot per beat of the
  * bar, the current one filled) with the count while counting in.
  */
 @Composable
@@ -412,11 +435,14 @@ private fun RunStatus(
     ) {
         when (state.phase) {
             RunPhase.READY -> {
-                Text(
-                    stringResource(Res.string.practice_ready_timed),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = colors.onSurfaceVariant,
-                )
+                // Paused after a mistake the reason line speaks, and the too-hard card asks: no "Get ready" then.
+                if (state.restartReason == null) {
+                    Text(
+                        stringResource(Res.string.practice_ready_timed),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = colors.onSurfaceVariant,
+                    )
+                }
             }
 
             RunPhase.COUNT_IN, RunPhase.PLAYING -> {

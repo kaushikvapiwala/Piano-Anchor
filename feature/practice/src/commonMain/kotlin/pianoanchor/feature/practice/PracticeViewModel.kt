@@ -61,6 +61,7 @@ import pianoanchor.engine.matcher.TempoJudge
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.matcher.WaitModeMatcher
 import pianoanchor.engine.matcher.beatNanos
+import pianoanchor.engine.matcher.offersSlowerRung
 import pianoanchor.engine.midi.defaultLinkLatencyNanos
 import pianoanchor.engine.midi.measureLinkLatencyNanos
 import pianoanchor.engine.profile
@@ -73,8 +74,11 @@ import kotlin.time.Instant
 
 /**
  * Practice of [passage] on [device]. Wait mode follows the piano's notes with [WaitModeMatcher]; a timed rung
- * ([selectRung]) waits for a key, counts in one bar with [metronome], then moves the cursor with [time] and
- * judges each note live ([TempoJudge]). It shows progress and the live keys, and when the run is done grades it
+ * ([selectRung]) arms itself (the link delay is measured, then after `Tunables.TEMPO_AUTO_START_DELAY_MS` it counts
+ * in one bar with [metronome]), then moves the cursor with [time] and judges each note live ([TempoJudge]). The first
+ * wrong or missed note stops the run, says why for `Tunables.TEMPO_RESTART_PAUSE_MS` and arms it again from the top;
+ * after `Tunables.TEMPO_RESTARTS_BEFORE_OFFER` such restarts in a row on a rung the pause offers a slower rung
+ * ([slowerRung], [keepTrying]) instead. It shows progress and the live keys, and when the run is done grades it
  * ([Grader]), saves it to [attempts] with its played notes and sets [PracticeState.finishedAttemptId]. A run that
  * ends early (disconnect, [restart], [selectRung], leaving the screen) is discarded. When the store is unavailable
  * the graded attempt is kept with [PracticeState.saveFailed] until [retrySave] or [discardRun]. [clock] gives the
@@ -185,6 +189,9 @@ public class PracticeViewModel(
     /** The click pattern of the timed run in progress, null outside one. */
     private var pattern: ClickPattern? = null
 
+    /** Mistake restarts in a row on this rung and mode; a clean finish, a rung or a mode change resets it. */
+    private var restartsInARow = 0
+
     init {
         require(spot == null || pieceId != passage.id) { "a spot loop needs the id of its piece" }
         viewModelScope.launch { refreshDoneRungs() }
@@ -198,10 +205,11 @@ public class PracticeViewModel(
     }
 
     /**
-     * Discards any run and goes to [rung], ready to start: wait mode as before, a timed rung on the first key. The
+     * Discards any run and goes to [rung], ready to start: wait mode as before, a timed rung arming itself. The
      * piano is reopened once the old run has closed it (one reader per input).
      */
     public fun selectRung(rung: TempoRung) {
+        restartsInARow = 0
         // A spot loop's clean streak counts loops at one rung: a new rung starts it again.
         mutableState.update { it.copy(spotLoop = it.spotLoop?.restarted()) }
         start(rung, mutableState.value.mode)
@@ -214,7 +222,21 @@ public class PracticeViewModel(
     public fun selectMode(mode: RunMode) {
         val current = mutableState.value
         if (spot != null || mode == current.mode || !current.rung.canPerform) return
+        restartsInARow = 0
         start(current.rung, mode)
+    }
+
+    /** The "Slower" button of the too-hard card: the rung below the current one (Wait below the lowest timed rung). */
+    public fun slowerRung() {
+        if (!mutableState.value.offerSlower) return
+        selectRung(mutableState.value.rung.below())
+    }
+
+    /** The "Keep trying" button of the too-hard card: arms the run again on the same rung, counting afresh. */
+    public fun keepTrying() {
+        if (!mutableState.value.offerSlower) return
+        restartsInARow = 0
+        restart()
     }
 
     private fun start(
@@ -462,14 +484,25 @@ public class PracticeViewModel(
         offsetNanos: Long,
     ) {
         val timed = TimedRun(bpm, offsetNanos)
-        val finished =
+        val outcome =
             try {
                 timed.play()
             } finally {
                 pattern = null
                 withContext(NonCancellable) { metronome.stop() }
             }
-        if (!finished) return mutableState.update { it.disconnected() }
+        when (outcome) {
+            RunOutcome.Dropped -> {
+                return mutableState.update { it.disconnected() }
+            }
+
+            is RunOutcome.Stopped -> {
+                return afterMistake(outcome.reason)
+            }
+
+            RunOutcome.Completed -> {}
+        }
+        restartsInARow = 0
         mutableState.update { it.copy(phase = RunPhase.FINISHED, beat = 0, playNow = false) }
         save(
             Grader.timedAttempt(
@@ -483,6 +516,22 @@ public class PracticeViewModel(
                 strictness = strictness,
             ),
         )
+    }
+
+    /**
+     * A mistake stopped the run and discarded its take: says why, then arms the run again from the top after
+     * `Tunables.TEMPO_RESTART_PAUSE_MS`, unless this is the restart that makes the too-hard card show instead.
+     */
+    private suspend fun afterMistake(reason: RestartReason) {
+        hintTimer?.cancel()
+        restartsInARow++
+        val offer = offersSlowerRung(restartsInARow)
+        mutableState.update {
+            it.copy(restartReason = reason, offerSlower = offer, phase = RunPhase.READY, beat = 0, playNow = false)
+        }
+        if (offer) return
+        delay(Tunables.TEMPO_RESTART_PAUSE_MS)
+        restart()
     }
 
     private suspend fun save(graded: Attempt) {
@@ -765,9 +814,24 @@ public class PracticeViewModel(
         suspend fun start(metronome: MetronomePort) = metronome.start(firstBeatNanos, beatNanos, beatsPerBar)
     }
 
+    /** How a timed run ended. */
+    private sealed interface RunOutcome {
+        /** The clock ran to the judge's end: the take is graded and saved. */
+        data object Completed : RunOutcome
+
+        /** The piano's stream ended or failed first. */
+        data object Dropped : RunOutcome
+
+        /** A wrong or missed note stopped the run; the take is discarded. */
+        data class Stopped(
+            val reason: RestartReason,
+        ) : RunOutcome
+    }
+
     /**
-     * One timed run on the rung at [bpm]: waits for the starting key, then counts in and runs the clock until the
-     * judge's end. Notes after the starting key are the take.
+     * One timed run on the rung at [bpm]: arms itself (waits `Tunables.TEMPO_AUTO_START_DELAY_MS` with the piano open),
+     * counts in and runs the clock until the judge's end or the first wrong or missed note. Keys before the judge's
+     * first window (arming, count-in) light neutrally and are not part of the take.
      */
     private inner class TimedRun(
         private val bpm: Int,
@@ -775,8 +839,9 @@ public class PracticeViewModel(
     ) {
         var startedAt: Instant? = null
 
-        /** True once the run has started over or its clock has ended: later events belong to someone else. */
+        /** True once the run has started over, stopped or its clock has ended: later events belong to someone else. */
         private var finished = false
+        private val ended = CompletableDeferred<RunOutcome>()
         private var judge: TempoJudge? = null
         private var startNanos = 0L
         private var firstBeatNanos = 0L
@@ -796,28 +861,28 @@ public class PracticeViewModel(
         /** The take's played notes, rebased so 0 is the written time of tick 0; keys still down end with the run. */
         fun notes() = PlayedNotes.from(midi, endNanos).map { it.shiftedBy(-startNanos) }
 
-        /** Runs until the judge's end (true) or until the piano's stream ends first (false). */
-        suspend fun play(): Boolean =
+        /** Runs until the judge's end, a mistake or the end of the piano's stream. */
+        suspend fun play(): RunOutcome =
             coroutineScope {
-                val ended = CompletableDeferred<Boolean>()
                 launch {
                     try {
-                        input.events(device).collect { onEvent(it, this@coroutineScope, ended) }
+                        input.events(device).collect { onEvent(it) }
                     } catch (_: MidiDeviceUnavailableException) {
                         // Not listed (or gone) when the run opened it: same as a drop.
                     }
-                    ended.complete(false)
+                    ended.complete(RunOutcome.Dropped)
                 }
-                val finished = ended.await()
-                coroutineContext.cancelChildren() // the reader (closing the piano) and a clock still running
-                finished
+                val scope = this
+                launch {
+                    delay(Tunables.TEMPO_AUTO_START_DELAY_MS)
+                    begin(scope)
+                }
+                val outcome = ended.await()
+                coroutineContext.cancelChildren() // the reader (closing the piano), the arming delay, a clock
+                outcome
             }
 
-        private suspend fun onEvent(
-            event: MidiEvent,
-            scope: CoroutineScope,
-            ended: CompletableDeferred<Boolean>,
-        ) {
+        private fun onEvent(event: MidiEvent) {
             // A run that started over, or whose take is over, reads nothing more.
             if (finished) return
             if (event is NoteOn) keyPressedInRun()
@@ -829,13 +894,13 @@ public class PracticeViewModel(
                     onLinkResumed(judge)
                 }
 
-                // The key that starts the count-in is not graded and not part of the take; a pedal already down is.
-                judge == null && event is NoteOn -> {
-                    begin(event, scope, ended)
+                // Arming or counting in: the key sounds and lights neutrally, but nothing judges it.
+                event is NoteOn && (judge == null || judge.beforeFirstWindow(event.timestampNanos)) -> {
+                    mutableState.update { it.copy(keysDown = it.keysDown + event.note) }
                 }
 
                 judge == null -> {
-                    if (event !is NoteOff) midi += event
+                    if (event !is NoteOff) midi += event // a pedal already down is part of the take
                 }
 
                 else -> {
@@ -846,9 +911,9 @@ public class PracticeViewModel(
         }
 
         /**
-         * The link dropped and came back: messages in the gap are lost. Before the starting key there is no take, so
-         * only the keys come up. Otherwise the take is meaningless: it is discarded unsaved and the run starts over
-         * like [restart] (same rung, mode and spot loop), saying why until the next note.
+         * The link dropped and came back: messages in the gap are lost. While arming there is no take, so only the keys
+         * come up. Otherwise the take is meaningless: it is discarded unsaved and the run starts over like [restart]
+         * (same rung, mode and spot loop), saying why until the next note.
          */
         private fun onLinkResumed(judge: TempoJudge?) {
             if (judge == null) {
@@ -860,26 +925,32 @@ public class PracticeViewModel(
             }
         }
 
-        private suspend fun begin(
-            starter: NoteOn,
-            scope: CoroutineScope,
-            ended: CompletableDeferred<Boolean>,
-        ) {
+        private suspend fun begin(scope: CoroutineScope) {
             startedAt = clock.now()
             firstBeatNanos = time.nowNanos() + Tunables.TEMPO_COUNT_IN_LEAD_MS.milliseconds.inWholeNanoseconds
             startNanos = firstBeatNanos + beatsPerBar * beatNanos
             val timing = TempoJudge(passage, bpm, startNanos, latencyOffsetNanos, strictness)
             judge = timing
             endNanos = timing.endNanos + latencyOffsetNanos.coerceAtLeast(0)
-            mutableState.update { it.copy(keysDown = it.keysDown + starter.note) }
             val click = ClickPattern(firstBeatNanos, beatNanos, beatsPerBar)
             pattern = click
             if (mutableState.value.clickOn) click.start(metronome)
             scope.launch {
                 runClock(timing)
-                finished = true
-                ended.complete(true)
+                if (!finished) {
+                    finished = true
+                    ended.complete(RunOutcome.Completed)
+                }
             }
+        }
+
+        /** A wrong or missed [note] stops the run: nothing more is read and [play] returns. */
+        private fun stop(
+            kind: RestartKind,
+            note: MidiNote,
+        ) {
+            finished = true
+            ended.complete(RunOutcome.Stopped(RestartReason(kind, note)))
         }
 
         private fun onNoteOn(
@@ -904,6 +975,7 @@ public class PracticeViewModel(
                 }
             publish(time.nowNanos(), judge)
             pressKey(event.note, flash)
+            if (!flash.correct) stop(RestartKind.WRONG, event.note)
         }
 
         private fun mark(
@@ -922,6 +994,8 @@ public class PracticeViewModel(
             while (true) {
                 val now = time.nowNanos()
                 publish(now, judge)
+                val missed = judge.missedNote(now)
+                if (missed != null) return stop(RestartKind.MISSED, missed.pitch)
                 if (now >= endNanos) return
                 val next = firstBeatNanos + ((now - firstBeatNanos).floorDiv(subdivision) + 1) * subdivision
                 delay((next - now).nanoseconds)

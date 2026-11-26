@@ -30,6 +30,8 @@ import pianoanchor.feature.practice.resources.practice_listen
 import pianoanchor.feature.practice.resources.practice_next_key
 import pianoanchor.feature.practice.resources.practice_next_key_done
 import pianoanchor.feature.practice.resources.practice_play_now
+import pianoanchor.feature.practice.resources.practice_restart_missed
+import pianoanchor.feature.practice.resources.practice_restart_wrong
 import pianoanchor.feature.practice.resources.practice_skip
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.wrongKeyHintText
@@ -133,5 +135,24 @@ internal fun CountInNumeral(state: PracticeState) {
                     RoundedCornerShape(24.dp),
                 ).padding(horizontal = 32.dp)
                 .semantics { liveRegion = LiveRegionMode.Assertive },
+    )
+}
+
+/** Says why a timed run stopped and starts again: "Wrong note: F4. Again from the top." (a polite live region). */
+@Composable
+internal fun RestartReasonLine(
+    reason: RestartReason,
+    modifier: Modifier = Modifier,
+) {
+    val text =
+        when (reason.kind) {
+            RestartKind.WRONG -> Res.string.practice_restart_wrong
+            RestartKind.MISSED -> Res.string.practice_restart_missed
+        }
+    Text(
+        stringResource(text, reason.note.name),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
 }

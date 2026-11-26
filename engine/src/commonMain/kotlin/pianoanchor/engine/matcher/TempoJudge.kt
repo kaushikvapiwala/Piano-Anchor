@@ -122,6 +122,31 @@ public class TempoJudge(
         }
     }
 
+    /**
+     * Whether a key at [timestampNanos] came before the first step's window (during the count-in): the judge ignores
+     * such keys, they are neither right nor wrong.
+     */
+    public fun beforeFirstWindow(timestampNanos: Long): Boolean = timestampNanos - latencyOffsetNanos < window(0).first
+
+    /**
+     * The first score note, in written order, still unjudged once its window has closed at [nowNanos]: an expected note
+     * that was never played. Null while every note is judged or still has time.
+     */
+    public fun missedNote(nowNanos: Long): ScoreNoteRef? {
+        val t = nowNanos - latencyOffsetNanos
+        return passage.steps.indices.firstNotNullOfOrNull { s ->
+            if (t <= window(s).last) {
+                null
+            } else {
+                passage.steps[s]
+                    .pitches
+                    .sortedBy { it.number }
+                    .firstOrNull { ScoreNoteRef(s, it) !in judged }
+                    ?.let { ScoreNoteRef(s, it) }
+            }
+        }
+    }
+
     /** The step the cursor is on at [nowNanos]: the last step whose written onset is <= now (clamped to the steps). */
     public fun cursorStep(nowNanos: Long): Int = onsets.indexOfLast { it <= nowNanos }.coerceAtLeast(0)
 

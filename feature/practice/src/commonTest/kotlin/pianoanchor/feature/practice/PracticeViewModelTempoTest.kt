@@ -1,6 +1,5 @@
 package pianoanchor.feature.practice
 
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -14,14 +13,9 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
-import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiNote
-import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.ScoreNoteRef
-import pianoanchor.core.model.StepCorrect
-import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.Strictness
-import pianoanchor.core.model.WrongNote
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
@@ -44,8 +38,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -136,18 +128,14 @@ class PracticeViewModelTempoTest {
         }
     }
 
-    /** Selects the 60 % rung and presses [starter]: the count-in begins now. Returns the press time. */
-    private fun TestScope.startRun(
-        vm: PracticeViewModel,
-        starter: MidiNote = c4,
-    ): Long {
+    private val autoStartMs = Tunables.TEMPO_AUTO_START_DELAY_MS
+
+    /** Selects the 60 % rung and lets it arm: the count-in begins now. Returns the time the count-in began. */
+    private fun TestScope.startRun(vm: PracticeViewModel): Long {
         vm.selectRung(TempoRung.P60)
         runCurrent()
-        val pressedAt = clock.nowNanos()
-        piano.press(starter)
-        piano.release(starter)
-        runCurrent()
-        return pressedAt
+        advance(autoStartMs)
+        return clock.nowNanos()
     }
 
     /** Presses [note], holds it [heldMs] (a quarter note's worth) and releases it. */
@@ -162,6 +150,15 @@ class PracticeViewModelTempoTest {
         runCurrent()
     }
 
+    /** Plays C, D and E on time, from the first beat on: the take is clean once the clock runs out. */
+    private fun TestScope.playCdeOnTime() {
+        press(c4)
+        advance(beatMs)
+        press(d4)
+        advance(beatMs)
+        press(e4)
+    }
+
     private fun TestScope.press(note: MidiNote) {
         piano.press(note)
         piano.release(note)
@@ -169,18 +166,19 @@ class PracticeViewModelTempoTest {
     }
 
     @Test
-    fun timedRungWaitsForAKeyThenCountsInOneBar() =
+    fun timedRungArmsThenCountsInOneBarWithoutAKey() =
         runPractice {
             val vm = practice()
             vm.selectRung(TempoRung.P60)
             runCurrent()
-            advance(2_000)
+            advance(autoStartMs - 50)
 
             assertEquals(RunPhase.READY, vm.state.value.phase)
             assertEquals(TempoRung.P60, vm.state.value.rung)
             assertNull(metronome.running.value)
 
-            val pressedAt = startRun(vm)
+            advance(50)
+            val pressedAt = clock.nowNanos()
             assertEquals(RunPhase.COUNT_IN, vm.state.value.phase)
             assertEquals(0, vm.state.value.beat)
             assertEquals(
@@ -202,19 +200,26 @@ class PracticeViewModelTempoTest {
         }
 
     @Test
-    fun theCountInKeyIsNotGraded() =
+    fun keysDuringTheCountInAreNotGraded() =
         runPractice {
             val vm = practice()
-            startRun(vm, starter = c4)
+            startRun(vm)
+            advance(2 * beatMs)
+            press(c4) // two beats into the count-in: sounds, is not judged
 
             assertEquals(emptyMap(), vm.state.value.liveMarks)
-            advance(countInMs)
+            assertEquals(null, vm.state.value.restartReason)
+            advance(countInMs - 2 * beatMs)
             press(c4) // on the first beat: Correct for step 0
             assertEquals(mapOf(ScoreNoteRef(0, c4) to LiveMark.Correct), vm.state.value.liveMarks)
+            advance(beatMs)
+            press(d4)
+            advance(beatMs)
+            press(e4)
 
             advance(runMs)
             val attempt = assertNotNull(attempts.get("attempt-1"))
-            assertEquals(listOf(c4), attempt.playedNotes.map { it.pitch })
+            assertEquals(listOf(c4, d4, e4), attempt.playedNotes.map { it.pitch })
         }
 
     @Test
@@ -223,9 +228,12 @@ class PracticeViewModelTempoTest {
             val vm = practice()
             startRun(vm)
 
-            advance(countInMs + beatMs - 50)
+            advance(countInMs)
+            press(c4)
+            advance(beatMs - 50)
             assertEquals(0, vm.state.value.currentStep)
             advance(50)
+            press(d4)
             assertEquals(1, vm.state.value.currentStep)
             assertEquals(listOf(StepStatus.UPCOMING, StepStatus.WAITING, StepStatus.UPCOMING), vm.statuses())
             advance(beatMs)
@@ -253,6 +261,7 @@ class PracticeViewModelTempoTest {
             )
             assertEquals(KeyFlash(f4, correct = false), vm.state.value.lastKey)
             assertEquals(setOf(f4), vm.state.value.wrongKeys)
+            assertEquals(RestartReason(RestartKind.WRONG, f4), vm.state.value.restartReason)
         }
 
     /** The live mark of D, played [lateMs] late, with [strictness] stored; the band is 156 ms on Standard. */
@@ -316,12 +325,16 @@ class PracticeViewModelTempoTest {
         runPractice {
             val vm = practice()
             startRun(vm)
-            advance(countInMs + 2 * beatMs)
+            advance(countInMs)
+            press(c4)
+            advance(beatMs)
+            press(d4)
+            advance(beatMs)
             piano.press(e4) // held past the end: its NoteOff never reaches the take
             runCurrent()
             advance(runMs - 2 * beatMs)
 
-            val e = assertNotNull(attempts.get("attempt-1")).playedNotes.single()
+            val e = assertNotNull(attempts.get("attempt-1")).playedNotes.last()
             assertEquals(2 * beatMs * ms, e.downNanos)
             assertEquals(runMs * ms, e.upNanos)
             vm.close()
@@ -329,183 +342,20 @@ class PracticeViewModelTempoTest {
         }
 
     @Test
-    fun aPedalDownBeforeTheStartingKeyHoldsTheTakesNotes() =
+    fun aPedalDownWhileArmingHoldsTheTakesNotes() =
         runPractice {
             val vm = practice()
             vm.selectRung(TempoRung.P60)
             runCurrent()
             piano.play(byteArrayOf(0xB0.toByte(), 64, 127)) // sustain pedal down before the count-in
             runCurrent()
-            press(c4) // starts the count-in
+            advance(autoStartMs)
             advance(countInMs)
-            press(c4)
+            playCdeOnTime()
             advance(runMs)
 
-            val c = assertNotNull(attempts.get("attempt-1")).playedNotes.single()
+            val c = assertNotNull(attempts.get("attempt-1")).playedNotes.first()
             assertEquals(runMs * ms, c.soundingEndNanos)
-        }
-
-    @Test
-    fun aClickTurnedOnAsTheRunEndsDoesNotKeepClicking() =
-        runPractice {
-            val vm = practice()
-            vm.toggleClick() // off
-            startRun(vm)
-            advance(countInMs)
-            val gate = CompletableDeferred<Unit>()
-            metronome.startGate = gate
-            vm.toggleClick() // on: the start waits on the gate
-            runCurrent()
-            vm.selectRung(TempoRung.WAIT) // the run ends while that start is pending
-            runCurrent()
-            gate.complete(Unit)
-            runCurrent()
-
-            assertNull(metronome.running.value)
-        }
-
-    @Test
-    fun metronomeStartsWithTheCountInAndStopsAtTheEnd() =
-        runPractice {
-            val vm = practice()
-            val pressedAt = startRun(vm)
-
-            assertEquals(Pattern(pressedAt + leadMs * ms), metronome.running.value?.let { Pattern(it.firstBeatNanos) })
-            val clicks = metronome.clicksUntil(pressedAt + (countInMs + 2 * beatMs) * ms)
-            assertEquals(listOf(true, false, false, false, true, false, false), clicks.map { it.accent })
-
-            advance(countInMs + runMs)
-            assertNull(metronome.running.value)
-        }
-
-    @Test
-    fun toggleClickStopsAndRestartsTheClickWithoutMovingTheTiming() =
-        runPractice {
-            val vm = practice()
-            startRun(vm)
-            val pattern = metronome.running.value
-            advance(countInMs + 100)
-
-            vm.toggleClick()
-            runCurrent()
-            assertFalse(vm.state.value.clickOn)
-            assertNull(metronome.running.value)
-            advance(beatMs)
-            assertEquals(
-                2,
-                vm.state.value.currentStep
-                    .coerceAtLeast(2),
-            ) // the clock keeps running
-
-            vm.toggleClick()
-            runCurrent()
-            assertTrue(vm.state.value.clickOn)
-            assertEquals(pattern, metronome.running.value)
-            assertTrue(settings.settings.first().clickOn)
-        }
-
-    @Test
-    fun aMutedRunStartsSilentAndTheClickCanComeBack() =
-        runPractice {
-            val vm = practice()
-            vm.toggleClick() // no run yet: only the setting changes
-            runCurrent()
-            assertFalse(vm.state.value.clickOn)
-
-            startRun(vm)
-            assertNull(metronome.running.value)
-            vm.toggleClick()
-            runCurrent()
-
-            assertNotNull(metronome.running.value)
-            assertTrue(settings.settings.first().clickOn)
-        }
-
-    @Test
-    fun `click toggle persists`() =
-        runPractice {
-            practice().toggleClick()
-            runCurrent()
-            assertFalse(settings.settings.first().clickOn)
-
-            practice().toggleClick()
-            runCurrent()
-            assertTrue(settings.settings.first().clickOn)
-        }
-
-    @Test
-    fun theStoredClickChoiceSeedsTheScreen() =
-        runPractice {
-            settings.update { it.copy(clickOn = false) }
-
-            val vm = practice()
-
-            assertFalse(vm.state.value.clickOn)
-            startRun(vm)
-            assertNull(metronome.running.value)
-        }
-
-    @Test
-    fun aToggleBeforeTheStoredChoiceIsReadWinsAndIsStored() =
-        runPractice {
-            settings.update { it.copy(clickOn = false) }
-            settings.readDelay = 1.seconds
-            val vm = practice()
-
-            vm.toggleClick() // the screen still shows the default (on), so this turns the click off
-            advanceTimeBy(2.seconds)
-            runCurrent()
-
-            assertFalse(vm.state.value.clickOn)
-            settings.readDelay = Duration.ZERO
-            assertFalse(settings.settings.first().clickOn)
-        }
-
-    @Test
-    fun aStoredOffChoiceReadAfterTheRunStartedSilencesTheClick() =
-        runPractice {
-            settings.update { it.copy(clickOn = false) }
-            settings.readDelay = 1.seconds
-            val vm = practice()
-            startRun(vm)
-            assertNotNull(metronome.running.value) // the default click started before the read returned
-
-            advanceTimeBy(2.seconds)
-            runCurrent()
-
-            assertFalse(vm.state.value.clickOn)
-            assertNull(metronome.running.value)
-        }
-
-    @Test
-    fun anUnreadableSettingsStoreLeavesTheClickOn() =
-        runPractice {
-            settings.failing = true
-
-            assertTrue(practice().state.value.clickOn)
-        }
-
-    @Test
-    fun aToggleThatCannotBeStoredStillChangesTheClickForThisScreen() =
-        runPractice {
-            val vm = practice()
-            settings.failing = true
-
-            vm.toggleClick()
-            runCurrent()
-
-            assertFalse(vm.state.value.clickOn)
-            settings.failing = false
-            assertTrue(settings.settings.first().clickOn)
-        }
-
-    @Test
-    fun theMuteSettingIsKeptForTheNextScreen() =
-        runPractice {
-            practice().toggleClick()
-            runCurrent()
-
-            assertFalse(practice().state.value.clickOn)
         }
 
     @Test
@@ -540,17 +390,17 @@ class PracticeViewModelTempoTest {
             piano.dropLink()
             runCurrent()
 
-            assertEquals(RunPhase.READY, vm.state.value.phase) // like restart(): the next key counts in again
+            assertEquals(RunPhase.READY, vm.state.value.phase) // like restart(): arms itself again
             assertEquals(TempoRung.P60, vm.state.value.rung)
             assertTrue(vm.state.value.linkResumed)
             assertEquals(emptyMap(), vm.state.value.liveMarks)
             assertNull(metronome.running.value)
-            advance(runMs)
+            advance(autoStartMs)
+            assertEquals(RunPhase.COUNT_IN, vm.state.value.phase) // no key needed
             assertNull(attempts.get("attempt-1"))
             assertNull(vm.state.value.finishedAttemptId)
 
             press(c4)
-            assertEquals(RunPhase.COUNT_IN, vm.state.value.phase)
             assertFalse(vm.state.value.linkResumed)
         }
 
@@ -571,7 +421,7 @@ class PracticeViewModelTempoTest {
         }
 
     @Test
-    fun aResumedLinkBeforeTheStartingKeyIsIgnored() =
+    fun aResumedLinkWhileArmingIsIgnored() =
         runPractice {
             val vm = practice()
             vm.selectRung(TempoRung.P60)
@@ -655,24 +505,26 @@ class PracticeViewModelTempoTest {
             val vm = practice()
             vm.selectRung(TempoRung.P60)
             runCurrent()
-            piano.press(f4) // starts the count-in, still held
+            piano.press(f4) // while arming: lights, is not judged
             runCurrent()
             assertEquals(setOf(f4), vm.state.value.keysDown)
+            assertEquals(emptyMap(), vm.state.value.liveMarks)
             piano.release(f4)
             runCurrent()
             assertEquals(emptySet(), vm.state.value.keysDown)
 
+            advance(autoStartMs)
             advance(countInMs)
             piano.play(byteArrayOf(0xB0.toByte(), 64, 127)) // sustain pedal down
             runCurrent()
-            press(c4)
+            playCdeOnTime()
             advance(runMs)
 
             assertNotNull(attempts.get("attempt-1"))
         }
 
     @Test
-    fun allNotesOffClearsTheStartingKeyDuringTheCountIn() =
+    fun allNotesOffClearsAKeyPressedWhileArming() =
         runPractice {
             val vm = practice()
             vm.selectRung(TempoRung.P60)
@@ -691,11 +543,7 @@ class PracticeViewModelTempoTest {
     fun allNotesOffClearsKeysDuringTheTimedRun() =
         runPractice {
             val vm = practice()
-            vm.selectRung(TempoRung.P60)
-            runCurrent()
-            piano.press(f4)
-            runCurrent()
-            piano.release(f4)
+            startRun(vm)
             advance(countInMs)
             piano.press(c4)
             runCurrent()
@@ -749,9 +597,5 @@ class PracticeViewModelTempoTest {
         events = emptyList(),
         tempoBpm = tempoBpm,
         playedNotes = emptyList(),
-    )
-
-    private data class Pattern(
-        val firstBeatNanos: Long,
     )
 }
