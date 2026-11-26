@@ -40,10 +40,20 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Keys during the link measurement** (follow-up of #172; needs an owner decision): before the first timed run,
-    Practice spends about 0.3 s (0.6 s for a silent piano) measuring the link delay while showing the ready state, and
-    a key pressed then is dropped. Either show a short "getting ready" state or hand those notes on to the run.
-2. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
+1. **Tempo runs restart by themselves** (spec #263; owner's device test 2026-11-25): a timed run counts in by
+    itself (no starting key, so no key is lost during the link measurement, the old item 1) and stops on a wrong or
+    missed note, says why and counts in again from the top; three restarts in a row offer a slower rung.
+2. **Hands-free lessons** (spec #264; owner's device test): a sustain-pedal tap continues outside a run (lessons,
+    quizzes, Results, Today), lesson steps move on by themselves, and the card shows one line with "More".
+3. **Lesson mastery** (spec #265; owner's device test): a Try passes after 3 clean reps in a row (2 for long checks),
+    the Use piece must be clean with no hints, and a concept is Learned after a next-day quiz.
+4. **Note names on the key strips** (spec #266; owner's device test): letters on the app's keys, fading as the key
+    names are passed and Learned, with an Auto/Off setting.
+5. **Lesson and practice redesign** (needs a grill session with Lazyweb design research; owner's device test): a
+    hand-drawn hand over the keys whose fingers press in time with See and Listen (drawn in Compose, ADR 0026), a
+    one-tap session that runs today's plan in a row, play-along backing for songs, "Day 1 vs today" playback and a
+    weekly recap. The owner keeps the plum palette. Specs follow an approved mock.
+6. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
     and the key of G; the pedal and legato; scales with thumb-under. Built like units 0–3 (concept cards, five-step
     lessons, Try checks); each unit adds sight-reading levels.
 
@@ -71,6 +81,8 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
 - **Brief Bluetooth drops** (from #180): on a piano whose Bluetooth link drops about 2 s after connecting, the
   onboarding echo, Pianos and a wait-mode run carry on through the drop; a timed run says "The piano disconnected for
   a moment. Starting again." and waits for the starting key.
+- **Pedal as a control** (from #264): the piano's sustain pedal sends CC 64 over Bluetooth and a quick tap reads as
+  "continue" in a lesson, while holding it during a piece does not (the recorded C-D-E fixture has no pedal events).
 - **Metronome by ear** (from M1.4a, #63): on the first tempo-mode run on a device, check the click's timing against
   the cursor and that the accent is audible on phone speakers.
 - **Update check on a device** (from M3.6, #81): once a release exists, open Today with "update check" on and an
