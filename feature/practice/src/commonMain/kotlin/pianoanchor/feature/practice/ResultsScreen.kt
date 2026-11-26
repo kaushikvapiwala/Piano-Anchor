@@ -80,8 +80,10 @@ import pianoanchor.feature.practice.resources.results_tip_wait_for_count_in
 import pianoanchor.feature.practice.resources.results_try_again
 import pianoanchor.feature.practice.resources.results_unavailable
 import pianoanchor.ui.shell.BackButton
+import pianoanchor.ui.shell.PedalHintLine
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.withPedalHint
 
 /**
  * The results screen (Living Studio mock, `docs/ui/living-studio.md`): the run's caption and headline, the Pitch
@@ -89,6 +91,7 @@ import pianoanchor.ui.shell.pianoAnchorColors
  * the passage again; [onFinishLesson], set only when the run started from a lesson, adds "Finish lesson" (back to
  * the lesson's recap); [onRetry] reads the run again after [ResultsState.Unavailable]; [onLoopBars] starts a spot
  * loop on the bars of [ResultsState.Ready.spot], offered as "Loop bars 5–6" under "Try again" when there are any.
+ * With [pedalHint], a small line by the primary button says a pedal tap does the same.
  */
 @Composable
 public fun ResultsScreen(
@@ -99,6 +102,7 @@ public fun ResultsScreen(
     modifier: Modifier = Modifier,
     onLoopBars: (BarRange) -> Unit = {},
     onFinishLesson: (() -> Unit)? = null,
+    pedalHint: Boolean = false,
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
         Column(
@@ -132,7 +136,7 @@ public fun ResultsScreen(
                 }
 
                 is ResultsState.Ready -> {
-                    Ready(state, onTryAgain, onLoopBars, onFinishLesson)
+                    Ready(state, onTryAgain, onLoopBars, onFinishLesson, pedalHint)
                 }
             }
         }
@@ -204,12 +208,30 @@ private fun headline(band: Band): StringResource =
         Band.KEEP_PRACTISING -> Res.string.results_headline_keep_practising
     }
 
+/** The primary button of the results; with [pedalHint] a small line under it says a pedal tap does the same. */
+@Composable
+private fun PrimaryResultButton(
+    label: String,
+    onClick: () -> Unit,
+    pedalHint: Boolean,
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.height(44.dp).withPedalHint(label, pedalHint),
+        shape = RoundedCornerShape(22.dp),
+    ) {
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+    }
+    PedalHintLine(pedalHint)
+}
+
 @Composable
 private fun Ready(
     state: ResultsState.Ready,
     onTryAgain: () -> Unit,
     onLoopBars: (BarRange) -> Unit,
     onFinishLesson: (() -> Unit)?,
+    pedalHint: Boolean,
 ) {
     Words(state)
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -227,22 +249,10 @@ private fun Ready(
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (onFinishLesson != null) {
-                Button(onClick = onFinishLesson, modifier = Modifier.height(44.dp), shape = RoundedCornerShape(22.dp)) {
-                    Text(
-                        stringResource(Res.string.results_finish_lesson),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
+                PrimaryResultButton(stringResource(Res.string.results_finish_lesson), onFinishLesson, pedalHint)
             }
             if (onFinishLesson == null) {
-                Button(onClick = onTryAgain, modifier = Modifier.height(44.dp), shape = RoundedCornerShape(22.dp)) {
-                    Text(
-                        stringResource(Res.string.results_try_again),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
+                PrimaryResultButton(stringResource(Res.string.results_try_again), onTryAgain, pedalHint)
             } else {
                 OutlinedButton(
                     onClick = onTryAgain,

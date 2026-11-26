@@ -208,7 +208,9 @@ Grouped rows under plum group titles, every target at least 44 dp, every change 
   "20 minutes"), then "Weekly goal" with the value below ("4 days a week") and a minus and plus stepper (read as
   "Fewer days" and "More days"; each disables at its end of 1 to 7).
 - **Playing**: the "Click in timed runs" switch, the same choice as the practice screen's click glyph.
-- **Strictness** (below the click switch, in the Playing group): "Strictness" with three radio rows, each a title and
+- **Pedal to continue** (below the click switch): a switch, on by default, with the note "Tap the sustain pedal to go
+  on in lessons, quizzes and results." Stored at once.
+- **Strictness** (below the pedal switch, in the Playing group): "Strictness" with three radio rows, each a title and
   a one-line description: "Gentle: more room for timing and slips", "Standard: the default", "Strict: tight timing,
   few slips". The whole row selects and reads as a radio button; a change applies to the next run.
 - **Updates**: the "Check for updates" switch with the note "Checks GitHub once a day for a new version. Sends
@@ -276,8 +278,9 @@ per piece in content order. Cards are at least 56 dp high; the grid scrolls and 
 
 ## Lesson screen
 
-Landscape (915×412 dp), no rail. Left pane (about 40%): a back button and the concept's title, the four card fields
-(What, Why, How, When) with the concept's animation above them (see "Card animations") and the dot row. Right pane (about 60%): the content of
+Landscape (915×412 dp), no rail. Left pane (about 40%): a back button and the concept's title, the concept's animation (see "Card animations") and
+the one-line What, with a "More" text button (44 dp, "Less" once open) that opens Why, How and When in place, then the
+dot row. The four fields stay required in the content; only the card's view is short. Right pane (about 60%): the content of
 the current step; only this pane changes between steps. A key strip runs along the bottom.
 
 - **Dots**: five tappable buttons (44 dp or more) with the step name under each; filled up to the current step, the
@@ -290,6 +293,13 @@ the current step; only this pane changes between steps. A key strip runs along t
   dropped piano is explained in place. **Use**: the first passage's title, "Play it" (opens Practice in wait mode, which
   ends in Results with "Finish lesson") and "Next". **Recap**: "You’ve learned <concept>. Next: <next concept>." with
   "Next lesson" and "Done", or "You've finished the course!" with "Done".
+- **Hands-free** (ADR 0027): with "Pedal to continue" on and the piano connected, a tap of the sustain pedal does
+  what the step's main button does (Why and See: go on, Use: "Play it", Recap: "Next lesson", or "Done" at the end of
+  the course); a Try ignores it. A concept that uses the pedal as music is meant to ignore it too: the lesson has the flag for that, but nothing sets it yet; it is wired when course 2's pedal unit adds pedal concepts. A small line beside the button
+  says "Tap the pedal to continue" (TalkBack reads it as part of the button). Why moves on by itself after 4.6 s (one
+  animation loop and its rest), See when the demo ends (a concept with nothing to hear: after 4.6 s), Use opens
+  Practice after 1.5 s unless the lesson was just reopened there; Recap always waits. Playing the demo again by hand
+  does not move on. Any tap or pedal tap moves on early; dots and back still work.
 - **Key strip**: whole octaves around the Try's notes (at least two; the whole keyboard for "every C"). Sounding or
   held keys are blue, the key of a wrong press grey, and the expected key glows in the accent (always for a lit key or
   a sequence, after a wrong key for the rest).
@@ -303,7 +313,8 @@ pane: the prompt ("Play every F", "A skip up from E4", "Hold C4 for 2 clicks"), 
 the gentle wrong-key hint in a polite live region ("That was F4. G is in the three black keys, just left of the middle
 one."; a chord says "Try again"), a count-in numeral for quizzes with a click and "Skip", always visible. The key
 strip runs along the bottom: held keys lit, the wrong key grey, the expected key glowing after a wrong key. There is no
-See step and no card. After the last quiz the right pane reads "3 quizzes: 2 clean" with "Done" back to Today. The
+See step and no card. After the last quiz the right pane reads "3 quizzes: 2 clean" with "Done" back to Today; a pedal
+tap there is "Done" too, with the "Tap the pedal to continue" line beside the button (not during a quiz). The
 piano is handed over as practice does: leaving closes it first.
 
 ## Card animations

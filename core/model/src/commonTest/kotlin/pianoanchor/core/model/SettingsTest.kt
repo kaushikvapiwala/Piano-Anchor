@@ -47,6 +47,11 @@ class SettingsTest {
     }
 
     @Test
+    fun pedalControlIsOnByDefault() {
+        assertEquals(true, Settings().pedalControlOn)
+    }
+
+    @Test
     fun budgetsKnowTheirMinutes() {
         assertEquals(listOf(15, 20, 30), DailyBudget.entries.map { it.minutes })
     }

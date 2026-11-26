@@ -46,6 +46,13 @@ class QuizScreenScreenshotTest {
     fun onAStaff() = capture("staff", quizState(staffQuiz, number = 3))
 
     @Test
+    fun summaryWithThePedalHint() =
+        capture(
+            "summary_pedal_hint",
+            quizState(everyFQuiz).copy(quiz = null, progress = null, summary = QuizSummary(3, 2), pedalControl = true),
+        )
+
+    @Test
     fun summary() =
         capture(
             "summary",

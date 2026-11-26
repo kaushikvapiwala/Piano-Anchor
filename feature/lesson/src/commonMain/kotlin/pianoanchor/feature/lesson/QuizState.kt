@@ -12,7 +12,7 @@ public data class QuizSummary(
 /**
  * What the quiz screen shows: quiz [number] of [count] ([quiz] is null once the [summary] shows), the [progress] of its
  * Try, the keys held now ([litKeys]), the [countIn] numeral of a quiz with a click and the piano's [connection].
- * [storageFailed] is true when a result could not be saved.
+ * [storageFailed] is true when a result could not be saved. [pedalControl] is true while a pedal tap may press Done.
  */
 public data class QuizState(
     val number: Int,
@@ -24,7 +24,11 @@ public data class QuizState(
     val connection: LessonConnection,
     val summary: QuizSummary?,
     val storageFailed: Boolean,
+    val pedalControl: Boolean = false,
 ) {
+    /** True when the summary shows "Tap the pedal to continue": a pedal tap acts as Done and the piano is connected. */
+    val pedalHint: Boolean get() = pedalControl && summary != null && connection == LessonConnection.CONNECTED
+
     /** The keys the strip shows. */
     val keyRange: IntRange get() = keyRange(quiz?.check)
 

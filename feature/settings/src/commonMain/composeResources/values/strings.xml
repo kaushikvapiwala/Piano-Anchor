@@ -16,6 +16,8 @@
     <string name="settings_weekly_goal_fewer_glyph">−</string>
     <string name="settings_weekly_goal_more_glyph">+</string>
     <string name="settings_click">Click in timed runs</string>
+    <string name="settings_pedal">Pedal to continue</string>
+    <string name="settings_pedal_note">Tap the sustain pedal to go on in lessons, quizzes and results.</string>
     <string name="settings_strictness">Strictness</string>
     <string name="settings_strictness_gentle">Gentle</string>
     <string name="settings_strictness_gentle_note">More room for timing and slips</string>

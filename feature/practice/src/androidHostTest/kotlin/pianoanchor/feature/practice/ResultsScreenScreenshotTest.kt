@@ -41,6 +41,7 @@ class ResultsScreenScreenshotTest {
         name: String,
         state: ResultsState,
         fromLesson: Boolean = false,
+        pedalHint: Boolean = false,
     ) {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
@@ -52,6 +53,7 @@ class ResultsScreenScreenshotTest {
                         onTryAgain = {},
                         onRetry = {},
                         onFinishLesson = if (fromLesson) ({}) else null,
+                        pedalHint = pedalHint,
                     )
                 }
             }
@@ -75,6 +77,9 @@ class ResultsScreenScreenshotTest {
 
     @Test
     fun finishLessonAfterACleanRun() = capture("finish_lesson", clean, fromLesson = true)
+
+    @Test
+    fun withThePedalHint() = capture("pedal_hint", clean, pedalHint = true)
 
     @Test
     fun oneWrongNote() = capture("good", clean.copy(band = Band.GOOD, wrongNotes = 1, words = wrongNotes))

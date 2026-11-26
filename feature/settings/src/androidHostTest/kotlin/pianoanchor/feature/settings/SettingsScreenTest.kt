@@ -33,6 +33,7 @@ class SettingsScreenTest {
             onDailyBudget = { calls += "budget $it" },
             onWeeklyGoalStep = { calls += "step $it" },
             onClickOn = { calls += "click $it" },
+            onPedalControlOn = { calls += "pedal $it" },
             onStrictness = { calls += "strictness $it" },
             onUpdateCheckOn = { calls += "update $it" },
             onDismissError = { calls += "dismiss" },
@@ -48,6 +49,7 @@ class SettingsScreenTest {
             onNodeWithContentDescription("Fewer days").performClick()
             onNodeWithContentDescription("More days").performClick()
             onNodeWithText("Click in timed runs").performScrollTo().performClick()
+            onNodeWithText("Pedal to continue").performScrollTo().performClick()
             onNodeWithText("Strict").performScrollTo().performClick()
             onNodeWithText("Check for updates").performScrollTo().performClick()
 
@@ -58,6 +60,7 @@ class SettingsScreenTest {
                     "step -1",
                     "step 1",
                     "click false",
+                    "pedal false",
                     "strictness STRICT",
                     "update false",
                 ),

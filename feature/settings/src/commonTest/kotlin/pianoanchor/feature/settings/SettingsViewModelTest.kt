@@ -104,6 +104,19 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun pedalSwitchStoresTheChoice() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            assertTrue(vm.state.value.settings.pedalControlOn)
+
+            vm.setPedalControlOn(false)
+            runCurrent()
+
+            assertFalse(repository.settings.first().pedalControlOn)
+            assertFalse(vm.state.value.settings.pedalControlOn)
+        }
+
+    @Test
     fun strictnessIsSavedAndReadBack() =
         runTest(dispatcher) {
             val vm = viewModel()

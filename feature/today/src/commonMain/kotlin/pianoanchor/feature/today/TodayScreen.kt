@@ -64,8 +64,10 @@ import pianoanchor.feature.today.resources.today_update_available
 import pianoanchor.feature.today.resources.today_update_dismiss
 import pianoanchor.feature.today.resources.today_update_see
 import pianoanchor.ui.shell.AppNavRail
+import pianoanchor.ui.shell.PedalHintLine
 import pianoanchor.ui.shell.RailDestination
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.withPedalHint
 import androidx.compose.material3.Card as MaterialCard
 
 internal val TouchTarget = 44.dp
@@ -110,10 +112,11 @@ public fun TodayScreen(
                         Text(stringResource(Res.string.today_caught_up), style = MaterialTheme.typography.bodyLarge)
                     }
                     for (card in session.cards) {
+                        val hint = state.pedalHint && card === session.cards.first()
                         when (card) {
-                            is Card.PassageCard -> CardView(card, session, actions.onStart)
-                            is Card.Ear -> EarCardView(card, actions.onStart)
-                            is Card.Quizzes -> QuizzesCardView(card, actions.onStart)
+                            is Card.PassageCard -> CardView(card, session, actions.onStart, hint)
+                            is Card.Ear -> EarCardView(card, actions.onStart, hint)
+                            is Card.Quizzes -> QuizzesCardView(card, actions.onStart, hint)
                         }
                     }
                     if (session.cards.isNotEmpty()) SessionBar(session)
@@ -202,6 +205,7 @@ private fun CardView(
     card: Card.PassageCard,
     session: Session,
     onStart: (Card.PassageCard) -> Unit,
+    pedalHint: Boolean = false,
 ) {
     val dark = card is Card.ColdOpen
     val content = if (dark) OnColdOpen else MaterialTheme.colorScheme.onSurface
@@ -236,9 +240,10 @@ private fun CardView(
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
+            val action = stringResource(cardAction(card))
             Button(
                 onClick = { onStart(card) },
-                modifier = Modifier.heightIn(min = TouchTarget),
+                modifier = Modifier.heightIn(min = TouchTarget).withPedalHint(action, pedalHint),
                 colors =
                     if (dark) {
                         ButtonDefaults.buttonColors(containerColor = OnColdOpen, contentColor = ColdOpenBackground)
@@ -246,8 +251,9 @@ private fun CardView(
                         ButtonDefaults.buttonColors()
                     },
             ) {
-                Text(stringResource(cardAction(card)))
+                Text(action)
             }
+            PedalHintLine(pedalHint)
         }
     }
 }

@@ -1049,4 +1049,50 @@ public object Tunables {
      * Source: matches the course's slow default.
      */
     public const val SIGHT_TEMPO_BPM: Int = 72
+
+    /**
+     * The sustain-pedal value (controller 64) at or above which the pedal counts as down.
+     *
+     * Why: the midpoint of MIDI's on/off range, so a half-pressed pedal does not count as down.
+     *
+     * Source: MIDI 1.0 controller 64 convention (64 and above is on).
+     */
+    public const val PEDAL_DOWN_VALUE: Int = 64
+
+    /**
+     * The sustain-pedal value below which a pedal that was down counts as up again.
+     *
+     * Why: lower than [PEDAL_DOWN_VALUE], so a half-pedal wobble between the two does not count twice.
+     *
+     * Source: hysteresis is our choice; MIDI only fixes the 64 midpoint.
+     */
+    public const val PEDAL_UP_VALUE: Int = 32
+
+    /**
+     * The longest a pedal press may last, in milliseconds, and still be a tap that means "continue".
+     *
+     * Why: a deliberate tap is quick; holding the pedal is music.
+     *
+     * Source: owner decision 2026-11-25, to tune on device.
+     */
+    public const val PEDAL_TAP_MAX_MS: Long = 600
+
+    /**
+     * How long a lesson's Why step (and a See step with nothing to hear) waits before it moves on by itself, in
+     * milliseconds.
+     *
+     * Why: one loop of the card animation (4000 ms) plus its rest (600 ms), so the learner sees it once through.
+     *
+     * Source: `docs/ui/living-studio.md`, the concept card's animation.
+     */
+    public const val LESSON_WHY_AUTO_MS: Long = 4_600
+
+    /**
+     * How long a lesson's Use step shows its title before Practice opens by itself, in milliseconds.
+     *
+     * Why: time to read what is about to be played.
+     *
+     * Source: a starting value.
+     */
+    public const val LESSON_AUTO_OPEN_MS: Long = 1_500
 }

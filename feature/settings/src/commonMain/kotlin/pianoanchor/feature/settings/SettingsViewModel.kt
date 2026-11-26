@@ -48,6 +48,9 @@ public class SettingsViewModel(
     /** Turns the metronome click of timed runs on or off. */
     public fun setClickOn(on: Boolean): Unit = change { it.copy(clickOn = on) }
 
+    /** Turns the sustain-pedal tap as "continue" on or off. */
+    public fun setPedalControlOn(on: Boolean): Unit = change { it.copy(pedalControlOn = on) }
+
     /** Sets how strictly the next run is graded. */
     public fun setStrictness(strictness: Strictness): Unit = change { it.copy(strictness = strictness) }
 

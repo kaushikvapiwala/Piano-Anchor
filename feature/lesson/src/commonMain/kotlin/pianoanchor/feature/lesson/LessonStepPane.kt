@@ -14,8 +14,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -30,6 +32,8 @@ import pianoanchor.core.model.TryCheck
 import pianoanchor.engine.guidance.wrongKeyHint
 import pianoanchor.engine.lesson.TryProgress
 import pianoanchor.feature.lesson.resources.Res
+import pianoanchor.feature.lesson.resources.lesson_card_how
+import pianoanchor.feature.lesson.resources.lesson_card_why
 import pianoanchor.feature.lesson.resources.lesson_count_in
 import pianoanchor.feature.lesson.resources.lesson_disconnected
 import pianoanchor.feature.lesson.resources.lesson_done
@@ -46,7 +50,9 @@ import pianoanchor.feature.lesson.resources.lesson_try_progress
 import pianoanchor.feature.lesson.resources.lesson_try_wrong_any
 import pianoanchor.feature.lesson.resources.lesson_use_play
 import pianoanchor.feature.lesson.resources.lesson_use_play_it
+import pianoanchor.ui.shell.PedalHintLine
 import pianoanchor.ui.shell.displayFontFamily
+import pianoanchor.ui.shell.withPedalHint
 import pianoanchor.ui.shell.wrongKeyHintText
 
 private val COUNT_IN_SIZE = 56.sp
@@ -73,7 +79,7 @@ internal fun StepPane(
             LessonStep.WHY -> {
                 state.scene?.let { CardAnimation(it, Modifier.widthIn(max = WHY_ANIMATION_MAX_WIDTH)) }
                 Body(state.card.why)
-                Buttons { PrimaryButton(stringResource(Res.string.lesson_next), actions.onNext) }
+                Buttons { PrimaryButton(stringResource(Res.string.lesson_next), actions.onNext, state.pedalHint) }
             }
 
             LessonStep.SEE -> {
@@ -102,11 +108,21 @@ private fun Body(text: String) = Text(text, style = MaterialTheme.typography.tit
 private fun Buttons(content: @Composable () -> Unit) =
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() }
 
+/** The step's main button; with [pedalHint] a small line beside it says a pedal tap does the same (TalkBack too). */
 @Composable
-private fun PrimaryButton(
+internal fun PrimaryButton(
     label: String,
     onClick: () -> Unit,
-) = Button(onClick = onClick, modifier = Modifier.heightIn(min = BUTTON_HEIGHT)) { Text(label) }
+    pedalHint: Boolean = false,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Button(
+            onClick = onClick,
+            modifier = Modifier.heightIn(min = BUTTON_HEIGHT).withPedalHint(label, pedalHint),
+        ) { Text(label) }
+        PedalHintLine(pedalHint)
+    }
+}
 
 @Composable
 private fun SecondaryButton(
@@ -124,12 +140,12 @@ private fun SeePane(
 ) {
     if (state.check == TryCheck.AnyKey) {
         Body(stringResource(Res.string.lesson_see_watch_hand))
-        Buttons { PrimaryButton(stringResource(Res.string.lesson_next), actions.onNext) }
+        Buttons { PrimaryButton(stringResource(Res.string.lesson_next), actions.onNext, state.pedalHint) }
     } else {
         Body(stringResource(Res.string.lesson_see_listen))
         Buttons {
             SecondaryButton(stringResource(Res.string.lesson_play_again), actions.onPlayAgain, enabled = !state.playing)
-            PrimaryButton(stringResource(Res.string.lesson_skip), actions.onSkip)
+            PrimaryButton(stringResource(Res.string.lesson_skip), actions.onSkip, state.pedalHint)
         }
     }
 }
@@ -205,7 +221,7 @@ private fun UsePane(
     val passage = state.usePassage
     if (passage != null) Body(stringResource(Res.string.lesson_use_play, passage.title))
     Buttons {
-        PrimaryButton(stringResource(Res.string.lesson_use_play_it), actions.onPlayIt)
+        PrimaryButton(stringResource(Res.string.lesson_use_play_it), actions.onPlayIt, state.pedalHint)
         TextButton(onClick = actions.onNext) { Text(stringResource(Res.string.lesson_next)) }
     }
 }
@@ -229,16 +245,14 @@ private fun RecapPane(
             },
         )
     }
+    CardField(Res.string.lesson_card_why, state.card.why)
+    CardField(Res.string.lesson_card_how, state.card.how)
     Buttons {
-        if (recap?.nextSkillId !=
-            null
-        ) {
-            PrimaryButton(stringResource(Res.string.lesson_next_lesson), actions.onNextLesson)
-        }
         if (recap?.nextSkillId != null) {
+            PrimaryButton(stringResource(Res.string.lesson_next_lesson), actions.onNextLesson, state.pedalHint)
             SecondaryButton(stringResource(Res.string.lesson_done), actions.onDone)
         } else {
-            PrimaryButton(stringResource(Res.string.lesson_done), actions.onDone)
+            PrimaryButton(stringResource(Res.string.lesson_done), actions.onDone, state.pedalHint)
         }
     }
 }

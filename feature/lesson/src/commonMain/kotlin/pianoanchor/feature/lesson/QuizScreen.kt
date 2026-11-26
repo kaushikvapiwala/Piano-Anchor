@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -108,7 +107,7 @@ public fun QuizScreen(
                     ) {
                         QuizPane(state, actions)
                     } else {
-                        SummaryPane(summary, state.storageFailed, actions)
+                        SummaryPane(summary, state.storageFailed, actions, state.pedalHint)
                     }
                 }
             }
@@ -198,6 +197,7 @@ private fun SummaryPane(
     summary: QuizSummary,
     storageFailed: Boolean,
     actions: QuizActions,
+    pedalHint: Boolean,
 ) {
     Text(
         if (summary.count == 1) {
@@ -209,9 +209,7 @@ private fun SummaryPane(
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )
     if (storageFailed) Text(stringResource(Res.string.quiz_not_saved), style = MaterialTheme.typography.bodySmall)
-    Button(onClick = actions.onDone, modifier = Modifier.heightIn(min = BUTTON_HEIGHT)) {
-        Text(stringResource(Res.string.lesson_done))
-    }
+    PrimaryButton(stringResource(Res.string.lesson_done), actions.onDone, pedalHint)
 }
 
 /** The treble staff with [note] on it (a notehead and ledger lines): "which key is this note?" */

@@ -22,13 +22,16 @@ import pianoanchor.feature.today.resources.today_action_ear
 import pianoanchor.feature.today.resources.today_card_ear
 import pianoanchor.feature.today.resources.today_card_ear_skill_one
 import pianoanchor.feature.today.resources.today_card_ear_skills
+import pianoanchor.ui.shell.PedalHintLine
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.withPedalHint
 
 /** The Ear card: the ear accent, the first skill's title and how many skills the screen runs. */
 @Composable
 internal fun EarCardView(
     card: Card.Ear,
     onStart: (Card.Ear) -> Unit,
+    pedalHint: Boolean = false,
 ) {
     val colors = MaterialTheme.pianoAnchorColors
     OutlinedCard(
@@ -56,17 +59,19 @@ internal fun EarCardView(
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
+            val action = stringResource(Res.string.today_action_ear)
             Button(
                 onClick = { onStart(card) },
-                modifier = Modifier.heightIn(min = TouchTarget),
+                modifier = Modifier.heightIn(min = TouchTarget).withPedalHint(action, pedalHint),
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor = colors.earAccent,
                         contentColor = colors.onEarAccent,
                     ),
             ) {
-                Text(stringResource(Res.string.today_action_ear))
+                Text(action)
             }
+            PedalHintLine(pedalHint)
         }
     }
 }

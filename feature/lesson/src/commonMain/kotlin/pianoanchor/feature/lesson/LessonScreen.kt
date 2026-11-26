@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -19,7 +20,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -35,6 +41,8 @@ import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.LessonStep
 import pianoanchor.feature.lesson.resources.Res
 import pianoanchor.feature.lesson.resources.lesson_card_how
+import pianoanchor.feature.lesson.resources.lesson_card_less
+import pianoanchor.feature.lesson.resources.lesson_card_more
 import pianoanchor.feature.lesson.resources.lesson_card_what
 import pianoanchor.feature.lesson.resources.lesson_card_when
 import pianoanchor.feature.lesson.resources.lesson_card_why
@@ -55,22 +63,25 @@ private const val LEFT_PANE_WEIGHT = 0.4f
 private const val RIGHT_PANE_WEIGHT = 0.6f
 private val DOT_SIZE = 14.dp
 private val DOT_TARGET = 48.dp
+private val MORE_HEIGHT = 44.dp
 
 /**
  * The five-step lesson, landscape (`docs/ui/living-studio.md`, "Lesson"): the concept's card on the left (title, the
- * four fields, the row of step dots), the step's content on the right, and the key strip along the bottom. Only the
- * right pane changes between steps. The dots are buttons that jump to any step. Stateless; the card is static.
+ * one-line What and a "More" button that opens Why, How and When, the row of step dots), the step's content on the
+ * right, and the key strip along the bottom. Only the right pane changes between steps. The dots are buttons that jump
+ * to any step. [startMoreOpen] opens "More" at first. Stateless; the card is static.
  */
 @Composable
 public fun LessonScreen(
     state: LessonState,
     actions: LessonActions,
     modifier: Modifier = Modifier,
+    startMoreOpen: Boolean = false,
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
         Column(Modifier.safeDrawingPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
             Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                CardPane(state, actions, Modifier.weight(LEFT_PANE_WEIGHT).fillMaxHeight())
+                CardPane(state, actions, Modifier.weight(LEFT_PANE_WEIGHT).fillMaxHeight(), startMoreOpen)
                 Box(Modifier.weight(RIGHT_PANE_WEIGHT).fillMaxHeight()) { StepPane(state, actions) }
             }
             LessonKeyStrip(state, Modifier.padding(top = 6.dp))
@@ -83,7 +94,9 @@ private fun CardPane(
     state: LessonState,
     actions: LessonActions,
     modifier: Modifier,
+    startOpen: Boolean,
 ) {
+    var moreOpen by rememberSaveable { mutableStateOf(startOpen) }
     Column(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BackButton(actions.onBack)
@@ -102,16 +115,24 @@ private fun CardPane(
             // The Why step shows the animation larger on the right, so the card pane shows it for the other steps.
             if (state.step != LessonStep.WHY) state.scene?.let { CardAnimation(it) }
             CardField(Res.string.lesson_card_what, state.card.what)
-            CardField(Res.string.lesson_card_why, state.card.why)
-            CardField(Res.string.lesson_card_how, state.card.how)
-            CardField(Res.string.lesson_card_when, state.card.whenMet)
+            TextButton(
+                onClick = { moreOpen = !moreOpen },
+                modifier = Modifier.heightIn(min = MORE_HEIGHT),
+            ) {
+                Text(stringResource(if (moreOpen) Res.string.lesson_card_less else Res.string.lesson_card_more))
+            }
+            if (moreOpen) {
+                CardField(Res.string.lesson_card_why, state.card.why)
+                CardField(Res.string.lesson_card_how, state.card.how)
+                CardField(Res.string.lesson_card_when, state.card.whenMet)
+            }
         }
         StepDots(state, actions.onGoTo)
     }
 }
 
 @Composable
-private fun CardField(
+internal fun CardField(
     label: StringResource,
     text: String,
 ) {

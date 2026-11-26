@@ -69,6 +69,9 @@ private const val APP_READ_PORT = 0
  */
 private const val FIRST_NOTE_RETRY_MS = 2_000L
 
+/** How long the test piano waits before it tries again to open the piano the MIDI service turned down. */
+private const val OPEN_RETRY_MS = 500L
+
 /**
  * The Phase 1 walking skeleton end to end, through the real Android MIDI stack, Koin wiring and SQLite: the monitor
  * finds and identifies [VirtualPianoService], practice follows C-D-E sent to its control port, and Results counts the
@@ -303,7 +306,20 @@ private class TestPiano(
         control.send(message, 0, message.size)
     }
 
+    /**
+     * Opens the piano, trying again while the MIDI service turns the open down: it does so for opens that race
+     * another client's (Today opens the piano for its pedal control the moment it is connected).
+     */
     private fun openDevice(): MidiDevice {
+        val deadline = SystemClock.uptimeMillis() + UI_TIMEOUT_MS
+        while (true) {
+            tryOpenDevice()?.let { return it }
+            check(SystemClock.uptimeMillis() < deadline) { "The test piano could not be opened" }
+            SystemClock.sleep(OPEN_RETRY_MS)
+        }
+    }
+
+    private fun tryOpenDevice(): MidiDevice? {
         val opened = CountDownLatch(1)
         var result: MidiDevice? = null
         manager.openDevice(info, {
@@ -311,7 +327,7 @@ private class TestPiano(
             opened.countDown()
         }, handler)
         check(opened.await(UI_TIMEOUT_MS, TimeUnit.MILLISECONDS)) { "The test piano did not open" }
-        return checkNotNull(result) { "The test piano could not be opened" }
+        return result
     }
 }
 

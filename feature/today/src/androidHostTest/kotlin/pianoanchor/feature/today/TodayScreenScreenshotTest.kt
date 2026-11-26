@@ -69,6 +69,25 @@ class TodayScreenScreenshotTest {
         )
 
     @Test
+    fun quizzesCardWithThePedalHint() =
+        capture(
+            "pedal_hint",
+            TodayState(
+                session =
+                    Session(
+                        cards = listOf(quizzesCard(), Card.Song(passage("hot-cross-buns"), TempoRung.P70, 6)),
+                        reviewMinutes = 1,
+                        lessonMinutes = 0,
+                        songMinutes = 6,
+                        earMinutes = 0,
+                        moreDue = emptyList(),
+                    ),
+                piano = piano,
+                pedalControl = true,
+            ),
+        )
+
+    @Test
     fun earCard() =
         capture(
             "ear_card",

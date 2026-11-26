@@ -5,10 +5,17 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,6 +42,7 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
+import pianoanchor.engine.midi.PedalTapDetector
 import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.SessionComposer
 import pianoanchor.engine.session.passageHistories
@@ -58,10 +66,14 @@ private const val NANOS_PER_MILLI = 1_000_000.0
  * The day and the greeting follow [clock] in [zone]. A store that can't be read leaves [TodayState.storageFailed]
  * until [refresh].
  *
+ * With `Settings.pedalControlOn` and a piano connected, Today reads the piano's events (one reader, closed by
+ * [releasePiano]) and a tap of the sustain pedal asks for the first card on [pedalStarts], as tapping its button does.
+ *
  * Once per learner day, when Today opens with the update check on in [settings], it asks [updateCheck] for the latest
  * release (the day is recorded first, so it is at most one request a day, whatever the answer). [TodayState.update]
  * is the latest release seen when it is newer than [installedVersion] and not dismissed; a failed check shows nothing.
  */
+@Suppress("TooManyFunctions") // One small function per part of the day.
 public class TodayViewModel(
     private val learner: LearnerModel,
     private val settings: SettingsRepositoryPort,
@@ -77,6 +89,14 @@ public class TodayViewModel(
     private val mutableState = MutableStateFlow(TodayState())
     public val state: StateFlow<TodayState> = mutableState.asStateFlow()
 
+    private val pedalRequests = Channel<Card>(Channel.BUFFERED)
+
+    /** The first card, each time a pedal tap asks to start it; the host starts it as the card's button does. */
+    public val pedalStarts: Flow<Card> = pedalRequests.receiveAsFlow()
+    private var pedalReader: Job? = null
+    private var released = false
+    private var pedalAsked = false
+
     private var load: Job? = null
 
     init {
@@ -86,6 +106,8 @@ public class TodayViewModel(
                 mutableState.update { it.copy(piano = piano) }
             }
         }
+        pedalReader = viewModelScope.launch { readPedal() }
+        viewModelScope.launch { watchPedalSetting() }
         refresh()
         viewModelScope.launch { checkForUpdate() }
         viewModelScope.launch { reconnectLastPiano() }
@@ -95,6 +117,25 @@ public class TodayViewModel(
     public fun refresh() {
         load?.cancel()
         load = viewModelScope.launch { loadToday() }
+    }
+
+    /**
+     * Claims leaving Today: true for the first caller, false once any navigation has started. From then on a pedal tap
+     * is ignored, so a pedal tap and a button tap can't both navigate.
+     */
+    public fun beginLeaving(): Boolean {
+        val first = !released
+        released = true
+        return first
+    }
+
+    /**
+     * Stops reading the piano and returns once it is closed, so the next screen can open it (one reader per input);
+     * Today then ignores the pedal.
+     */
+    public suspend fun releasePiano() {
+        released = true
+        withContext(NonCancellable) { pedalReader?.cancelAndJoin() }
     }
 
     /** Hides the update banner until a newer version than the one it names is released. */
@@ -125,6 +166,46 @@ public class TodayViewModel(
             is Card.Ear -> TodayTarget.Ear(piano.device, card.skills)
             is Card.Quizzes -> TodayTarget.Quizzes(piano.device, card.quizzes)
         }
+    }
+
+    private suspend fun watchPedalSetting() {
+        try {
+            settings.settings.collect { stored ->
+                mutableState.update { it.copy(pedalControl = stored.pedalControlOn) }
+            }
+        } catch (_: StorageUnavailableException) {
+            // Without the setting the pedal stays a plain pedal.
+        }
+    }
+
+    /** Follows the connected piano and turns a pedal tap on it into a request for the first card. */
+    private suspend fun readPedal() {
+        mutableState
+            // The piano is read only while the pedal control is on, so turning it off leaves the input closed.
+            .map { current -> current.piano?.device?.takeIf { current.pedalControl } }
+            .distinctUntilChanged()
+            .collectLatest { device ->
+                if (device != null) {
+                    val detector = PedalTapDetector()
+                    try {
+                        input.events(device).collect { event ->
+                            val first =
+                                mutableState.value
+                                    .takeIf { !released && !pedalAsked }
+                                    ?.session
+                                    ?.cards
+                            if (detector.onEvent(event)) {
+                                first?.firstOrNull()?.let {
+                                    pedalAsked = true
+                                    pedalRequests.trySend(it)
+                                }
+                            }
+                        }
+                    } catch (_: MidiDeviceUnavailableException) {
+                        // The piano is gone: the chip says so, and there is no pedal control.
+                    }
+                }
+            }
     }
 
     private suspend fun loadToday() {
