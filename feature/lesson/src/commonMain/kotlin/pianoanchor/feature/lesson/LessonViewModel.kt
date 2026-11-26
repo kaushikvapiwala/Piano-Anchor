@@ -322,23 +322,28 @@ public class LessonViewModel(
 
     private suspend fun tryStep(check: TryCheck) {
         cleanReps = 0
-        run = TryRun(check)
-        mutableState.update { it.copy(tryProgress = run?.progress, cleanReps = 0, repsNeeded = tryRepsNeeded(check)) }
-        val bpm = clickOf(check)
+        mutableState.update { it.copy(cleanReps = 0, repsNeeded = tryRepsNeeded(check)) }
         try {
-            if (bpm == null) {
-                accepting = true
-            } else {
-                countIn(
-                    metronome,
-                    time,
-                    bpm,
-                    { n -> mutableState.update { it.copy(countIn = n) } },
-                ) { accepting = true }
-            }
+            beginRep(check)
             awaitCancellation()
         } finally {
-            withContext(NonCancellable) { if (bpm != null) metronome.stop() }
+            withContext(NonCancellable) { if (clickOf(check) != null) metronome.stop() }
+        }
+    }
+
+    /**
+     * Starts one check of the Try from scratch. With a click, notes don't count during a one-bar count-in, so beat 1 of
+     * every check lands on the click's downbeat; without one they count at once.
+     */
+    private suspend fun beginRep(check: TryCheck) {
+        accepting = false
+        run = TryRun(check)
+        mutableState.update { it.copy(tryProgress = run?.progress) }
+        val bpm = clickOf(check)
+        if (bpm == null) {
+            accepting = true
+        } else {
+            countIn(metronome, time, bpm, { n -> mutableState.update { it.copy(countIn = n) } }) { accepting = true }
         }
     }
 
@@ -436,15 +441,9 @@ public class LessonViewModel(
             finishing =
                 viewModelScope.launch {
                     delay(Tunables.LESSON_TRY_DONE_PAUSE_MS)
-                    if (cleanReps >= mutableState.value.repsNeeded) next() else startNextRep(after.check)
+                    if (cleanReps >= mutableState.value.repsNeeded) next() else beginRep(after.check)
                 }
         }
-    }
-
-    /** The next check of the Try: the same check from the start (a click that plays goes on). */
-    private fun startNextRep(check: TryCheck) {
-        run = TryRun(check)
-        mutableState.update { it.copy(tryProgress = run?.progress) }
     }
 
     // --- Recap ---

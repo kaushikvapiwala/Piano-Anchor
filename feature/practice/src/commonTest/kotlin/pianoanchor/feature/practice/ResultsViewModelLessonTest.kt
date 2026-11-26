@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.engine.content.Curriculum
@@ -31,6 +32,7 @@ class ResultsViewModelLessonTest {
     private val dispatcher = StandardTestDispatcher()
     private val piano = FakePiano()
     private val attempts = FakeAttemptRepository()
+    private val learnerRepository = FakeLearnerRepository()
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -72,7 +74,7 @@ class ResultsViewModelLessonTest {
             TempoRung.WAIT,
             attempts,
             FakeSettingsRepository(),
-            LearnerModel(Curriculum.graph, FakeLearnerRepository()),
+            LearnerModel(Curriculum.graph, learnerRepository),
             piano.device,
             piano,
             dispatcher,
@@ -128,5 +130,24 @@ class ResultsViewModelLessonTest {
             // Not a curriculum passage at all.
             val other = results("a-3", attempt("a-3", 3_000, "sight:1:1", hintShown = false))
             assertNull(other.lesson())
+        }
+
+    @Test
+    fun placedConceptsGetNoLessonLine() =
+        runTest(dispatcher) {
+            val march = checkNotNull(Curriculum.passage("builtin:middle-c-march"))
+            LearnerModel(Curriculum.graph, learnerRepository).place(march.skills, LocalDate(2026, 11, 1))
+            assertNull(results("a-1", attempt("a-1", 1_000, march.id, hintShown = false)).lesson())
+            assertNull(results("a-2", attempt("a-2", 2_000, march.id)).lesson())
+        }
+
+    @Test
+    fun anUnreadableStoreLeavesTheResultsWithoutALessonLine() =
+        runTest(dispatcher) {
+            val march = "builtin:middle-c-march"
+            attempts.save(attempt("a-1", 1_000, march, hintShown = false))
+            learnerRepository.failing = true
+            val vm = results("a-1")
+            assertNull(vm.lesson())
         }
 }

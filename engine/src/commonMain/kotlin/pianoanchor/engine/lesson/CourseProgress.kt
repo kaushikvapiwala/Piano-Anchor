@@ -65,8 +65,8 @@ public object CourseProgress {
 
     /**
      * The passed course skills (those in [passed], by the day they were passed, in map order) that are *learned*: an
-     * unaided review rated Hard or Good in [reviews] on a learner day after the day they were passed, and every course
-     * skill in [placed]. A quiz that is failed (Again) leaves the skill passed, not learned.
+     * unaided review rated Hard, Good or Easy (not Again) in [reviews] on a learner day after the day they were passed,
+     * and every course skill in [placed]. A quiz that is failed (Again) leaves the skill passed, not learned.
      */
     public fun learned(
         curriculum: Curriculum,

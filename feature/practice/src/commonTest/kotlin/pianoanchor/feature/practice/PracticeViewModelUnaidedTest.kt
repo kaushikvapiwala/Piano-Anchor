@@ -9,14 +9,18 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
+import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.HintLevel
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
+import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeCalibrationRepository
 import pianoanchor.testing.FakeClock
@@ -60,10 +64,11 @@ class PracticeViewModelUnaidedTest {
     private fun TestScope.practice(
         passage: Passage = Passages.CDE,
         unaided: Boolean = true,
+        spot: BarRange? = null,
     ): PracticeViewModel =
         PracticeViewModel(
             piano.device,
-            passage,
+            spot?.let { passage.slice(it) } ?: passage,
             piano,
             noOutput,
             attempts,
@@ -74,6 +79,8 @@ class PracticeViewModelUnaidedTest {
             LearnerModel(Curriculum.graph, learnerRepository),
             TimeZone.UTC,
             FakeSettingsRepository(),
+            spot = spot,
+            pieceId = passage.id,
             unaided = unaided,
         ) {
             "attempt-${++ids}"
@@ -152,5 +159,74 @@ class PracticeViewModelUnaidedTest {
             val unaided = practice(march)
             assertEquals(emptySet(), unaided.state.value.glowKeys)
             unaided.close()
+        }
+
+    @Test
+    fun aUnitZeroRunThatGlowsTheNextKeyIsSavedAsAided() =
+        runTest(dispatcher) {
+            val march = checkNotNull(Curriculum.passage("builtin:middle-c-march"))
+            // A history that fades the hint level to OFF: the glow is still a hint.
+            repeat(4) { i ->
+                attempts.save(
+                    Attempt(
+                        id = "old-$i",
+                        passageId = march.id,
+                        deviceId = piano.device.id,
+                        startedAt = Instant.fromEpochSeconds(1_000L + i),
+                        durationNanos = 1,
+                        stepCount = 1,
+                        wrongNotes = 0,
+                        incompleteChords = 0,
+                        accuracy = 1.0,
+                        band = Band.CLEAN,
+                        events = emptyList(),
+                        tempoBpm = null,
+                        playedNotes = emptyList(),
+                    ),
+                )
+            }
+            val vm = practice(march, unaided = false)
+            assertEquals(HintLevel.OFF, vm.state.value.hintLevel)
+            assertTrue(
+                vm.state.value.glowKeys
+                    .isNotEmpty(),
+            )
+
+            march.steps.forEach { step -> step.pitches.forEach { tap(it) } }
+
+            val saved = assertNotNull(attempts.get("attempt-1"))
+            assertEquals(Band.CLEAN, saved.band)
+            assertTrue(saved.hintShown)
+            assertNull(attempts.firstCleanUnaidedWaitRun(march.id))
+            vm.close()
+        }
+
+    @Test
+    fun aTimedRungOpenedFromALessonKeepsItsHints() =
+        runTest(dispatcher) {
+            val vm = practice()
+            assertTrue(vm.state.value.unaided)
+
+            vm.selectRung(TempoRung.P60)
+            runCurrent()
+
+            assertFalse(vm.state.value.unaided)
+            assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
+            vm.selectRung(TempoRung.WAIT)
+            runCurrent()
+            assertTrue(vm.state.value.unaided)
+            assertEquals(HintLevel.OFF, vm.state.value.hintLevel)
+            vm.close()
+        }
+
+    @Test
+    fun aSpotLoopOpenedFromALessonKeepsItsHints() =
+        runTest(dispatcher) {
+            val march = checkNotNull(Curriculum.passage("builtin:middle-c-march"))
+            val vm = practice(march, spot = BarRange(1, 1))
+
+            assertFalse(vm.state.value.unaided)
+            assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
+            vm.close()
         }
 }

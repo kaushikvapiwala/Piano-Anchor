@@ -93,7 +93,7 @@ state is `learned = true`. A placement review is a claim, not a check: it adds n
 already have a state are left alone, and a skill outside the graph is rejected. Placed skills come back for review at
 their first interval and confirm themselves there. A placed state (learned, no recalled check) does not use up the day's
 `MAX_NEW_PER_DAY` slots, so the first day still offers new lessons. `placedSkills()` lists the skills with a placement
-review; Today passes them to `CourseProgress.ticked`, which ticks every course skill in the set, so a placed learner's
+review; Today passes them to `CourseProgress.passed`, which counts every course skill in the set as passed, so a placed learner's
 Lesson card starts at the first concept of the start unit rather than at Unit 0.
 
 ### The placement test

@@ -139,10 +139,10 @@ class ResultsScreenTest {
             var state by mutableStateOf(ready.copy(lesson = LessonResult.PASSED))
             setContent { PianoAnchorTheme { ResultsScreen(state, onBack = {}, onTryAgain = {}, onRetry = {}) } }
 
-            onNodeWithText("Lesson passed. It comes back tomorrow as a quick quiz.").assertIsDisplayed()
+            onNodeWithText("Lesson passed. It comes back on a later day for review.").assertIsDisplayed()
             state = ready.copy(lesson = LessonResult.CLEAN_WITH_HINTS)
             waitForIdle()
-            onNodeWithText("Clean! Play it once without hints to pass the lesson.").assertIsDisplayed()
+            onNodeWithText("Clean! Play it once without hints from the lesson to pass it.").assertIsDisplayed()
         }
 
     @Test
