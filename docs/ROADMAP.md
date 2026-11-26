@@ -53,9 +53,15 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     hand-drawn hand over the keys whose fingers press in time with See and Listen (drawn in Compose, ADR 0026), a
     one-tap session that runs today's plan in a row, play-along backing for songs, "Day 1 vs today" playback and a
     weekly recap. The owner keeps the plum palette. Specs follow an approved mock.
-6. **Course 2: Units 4–7 (M6.4–M6.7)** (needs a grill session per unit): eighth notes and dotted quarter; G position
-    and the key of G; the pedal and legato; scales with thumb-under. Built like units 0–3 (concept cards, five-step
-    lessons, Try checks); each unit adds sight-reading levels.
+6. **Staff notation** (spec #272; grill 2026-11-25): stems, flags, beams, dots, rests, key signatures and natural
+    signs on the practice staff, with every music glyph from the Bravura font (ADR 0010); the clef no longer relies on
+    the system font.
+7. **Course 2, Unit 4: eighth notes and the dotted quarter (M6.4)** (spec #273) [#272]: four concepts, a timed Rhythm
+    Try, the Jingle Bells chorus, sight-reading levels 9–10 and Unit 4's placement piece.
+8. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
+    D7 shortcut, Go Tell Aunt Rhody, sight-reading levels 11–12 and Unit 5's placement piece.
+9. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
+    thumb-under. Built like Units 4–5; each unit adds sight-reading levels and a placement piece.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
@@ -99,7 +105,7 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2, M3.3 settings, M3.4 Today, M3.5 onboarding, M3.6 update check and M3.7 release pipeline done; v0.1.0 and the dogfood are the owner's) | Dogfood (`docs/RELEASING.md`): the owner uses the released APK; Today's practice-day line shows 14 practice days within 16, and no open `dogfood` issue is labelled `blocker` |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (✅ done: tracks in the daily plan #151, ear #152, songs and chords #153, the contribute-a-piano kit #154) | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting (✅ done: M5.1 hint fading, M5.2 perform mode, M5.3 spot loops and M5.4 unaided pass and strictness) | Unaided pass required before "learned" |
-| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245), M6.2 (daily sight-reading card, #246) and M6.3 (played placement test, #247) done | Placement reproducible |
+| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245), M6.2 (daily sight-reading card, #246) and M6.3 (played placement test, #247) done; staff notation, M6.4 and M6.5 specced (#272–#274) | Placement reproducible |
 | M7 | Heatmaps, recordings, calibration report | Predicted vs observed retention plotted |
 | M8 | Optional Google Drive sync | Round-trip sync between two devices |
 | M9 | Kids (ages 6–8+): research pass, age-appropriate content | — |
