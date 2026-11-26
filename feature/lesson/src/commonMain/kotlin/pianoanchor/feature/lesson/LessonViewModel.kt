@@ -365,17 +365,8 @@ public class LessonViewModel(
 
             LessonStep.RECAP -> {
                 // Until the recap has loaded the next lesson is unknown: ignore the tap.
-                current.recap?.let {
-                    requestExit(
-                        if (it.nextSkillId !=
-                            null
-                        ) {
-                            LessonExit.NEXT_LESSON
-                        } else {
-                            LessonExit.DONE
-                        },
-                    )
-                }
+                val recap = current.recap ?: return
+                requestExit(if (recap.nextSkillId != null) LessonExit.NEXT_LESSON else LessonExit.DONE)
             }
         }
     }
