@@ -26,6 +26,7 @@ import pianoanchor.feature.today.resources.today_card_quizzes_detail
 internal fun QuizzesCardView(
     card: Card.Quizzes,
     onStart: (Card.Quizzes) -> Unit,
+    pedalHint: Boolean = false,
 ) {
     OutlinedCard(
         shape = CardShape,
@@ -46,9 +47,14 @@ internal fun QuizzesCardView(
                 stringResource(Res.string.today_card_quizzes_detail, card.minutes.toString()),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = { onStart(card) }, modifier = Modifier.heightIn(min = TouchTarget)) {
-                Text(stringResource(Res.string.today_action_quizzes))
+            val action = stringResource(Res.string.today_action_quizzes)
+            Button(
+                onClick = { onStart(card) },
+                modifier = Modifier.heightIn(min = TouchTarget).withPedalHint(action, pedalHint),
+            ) {
+                Text(action)
             }
+            PedalHint(pedalHint)
         }
     }
 }

@@ -10,6 +10,7 @@ public data class SettingsActions(
     /** Receives -1 (fewer days) or +1 (more days). */
     val onWeeklyGoalStep: (Int) -> Unit = {},
     val onClickOn: (Boolean) -> Unit = {},
+    val onPedalControlOn: (Boolean) -> Unit = {},
     val onStrictness: (Strictness) -> Unit = {},
     val onUpdateCheckOn: (Boolean) -> Unit = {},
     val onDismissError: () -> Unit = {},

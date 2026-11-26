@@ -5,10 +5,18 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pianoanchor.core.model.Attempt
@@ -16,6 +24,8 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ErrorKind
 import pianoanchor.core.model.Finding
+import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StorageUnavailableException
@@ -23,6 +33,7 @@ import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.StrictnessProfile
 import pianoanchor.core.model.summary
 import pianoanchor.core.ports.AttemptRepositoryPort
+import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.analysis.PerformanceAnalyser
 import pianoanchor.engine.analysis.PerformanceAnalysis
@@ -41,6 +52,7 @@ import pianoanchor.engine.grading.noteValue
 import pianoanchor.engine.guidance.SpotFinder
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
+import pianoanchor.engine.midi.PedalTapDetector
 import pianoanchor.engine.profile
 import pianoanchor.engine.sight.SightLevels
 import pianoanchor.engine.sight.SightReadingGenerator
@@ -54,24 +66,75 @@ import pianoanchor.engine.sight.SightStaircase
  * in [settings] (Standard if unreadable), on [analysisDispatcher], off the main thread, so a long passage doesn't
  * stall the screen as it opens.
  *
+ * With `Settings.pedalControlOn`, a tap of the sustain pedal on the piano [device] (read from [input]; the run that
+ * led here has closed it) asks for the primary action on [pedalContinues] once the results show, and [pedalHint] says
+ * so. [releasePiano] closes the reader before another screen opens the piano (one reader per input).
+ *
  * A daily sight-reading exercise has no run number and no spot loop; [ResultsState.Ready.sight] says how it moved the
  * level, from the staircase over the attempts up to and before this one, capped at the level [learner] has opened.
  */
+@Suppress("TooManyFunctions") // One small function per part of the results.
 public class ResultsViewModel(
     private val attemptId: String,
     private val rung: TempoRung,
     private val attempts: AttemptRepositoryPort,
     private val settings: SettingsRepositoryPort,
     private val learner: LearnerModel,
+    private val device: MidiDevice,
+    private val input: MidiInputPort,
     private val analysisDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<ResultsState>(ResultsState.Loading)
     public val state: StateFlow<ResultsState> = mutableState.asStateFlow()
 
     private var loading: Job? = null
+    private var pedalReader: Job? = null
+    private val pedalOn = MutableStateFlow(false)
+    private val connected = MutableStateFlow(true)
+    private val pedalRequests = Channel<Unit>(Channel.BUFFERED)
+
+    /** Emits when a pedal tap asks for the primary action ("Try again", or "Finish lesson" in a lesson). */
+    public val pedalContinues: Flow<Unit> = pedalRequests.receiveAsFlow()
+
+    /** True when the results show "Tap the pedal to continue": a pedal tap acts, and the piano is connected. */
+    public val pedalHint: StateFlow<Boolean> =
+        combine(pedalOn, connected, state) { on, link, current -> on && link && current is ResultsState.Ready }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
         retry()
+        pedalReader = viewModelScope.launch { readPedal() }
+        viewModelScope.launch { watchPedalSetting() }
+    }
+
+    /** Stops reading the piano and returns once it is closed, so the next screen can open it. */
+    public suspend fun releasePiano() {
+        connected.value = false
+        withContext(NonCancellable) { pedalReader?.cancelAndJoin() }
+    }
+
+    private suspend fun watchPedalSetting() {
+        try {
+            settings.settings.collect { stored -> pedalOn.value = stored.pedalControlOn }
+        } catch (_: StorageUnavailableException) {
+            // Without the setting the pedal stays a plain pedal.
+        }
+    }
+
+    private suspend fun readPedal() {
+        val detector = PedalTapDetector()
+        try {
+            input.events(device).collect { event ->
+                if (detector.onEvent(event) && pedalHint.value) {
+                    // One request: the host leaves for the next screen.
+                    pedalOn.value = false
+                    pedalRequests.trySend(Unit)
+                }
+            }
+        } catch (_: MidiDeviceUnavailableException) {
+            // The piano is gone: there is no pedal control.
+        }
+        connected.value = false
     }
 
     /**

@@ -32,7 +32,8 @@ public data class PianoChip(
  * [practicedDays] counts them over the last [PRACTICE_WINDOW_DAYS] days. [update] is a newer release to announce, or
  * null.
  * [connecting] is true while the app reconnects the remembered piano in the background: the chip then says so
- * until the piano is listed or the attempt fails.
+ * until the piano is listed or the attempt fails. [pedalControl] is the setting that lets a pedal tap start the first
+ * card.
  */
 public data class TodayState(
     val session: Session? = null,
@@ -44,7 +45,11 @@ public data class TodayState(
     val storageFailed: Boolean = false,
     val update: Release? = null,
     val connecting: Boolean = false,
+    val pedalControl: Boolean = false,
 ) {
+    /** True when the first card's button shows "Tap the pedal to continue": a piano is connected and a card is due. */
+    val pedalHint: Boolean get() = pedalControl && piano != null && session?.cards?.isNotEmpty() == true
+
     /** The cold-open card, if something is due. */
     val coldOpen: Card.ColdOpen? get() = session?.cards?.filterIsInstance<Card.ColdOpen>()?.firstOrNull()
 

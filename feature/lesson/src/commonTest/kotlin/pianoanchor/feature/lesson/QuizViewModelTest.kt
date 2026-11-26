@@ -5,6 +5,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -29,6 +30,7 @@ import pianoanchor.engine.lesson.QuizPrompt
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
+import pianoanchor.testing.FakeSettingsRepository
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -62,6 +64,7 @@ class QuizViewModelTest {
     private val metronome = FakeMetronome(piano.clock)
     private val repository = FakeLearnerRepository()
     private val learner = LearnerModel(Curriculum.graph, repository)
+    private val settings = FakeSettingsRepository()
     private val noon =
         object : Clock {
             override fun now(): Instant = Instant.parse("2026-11-16T12:00:00Z")
@@ -95,6 +98,7 @@ class QuizViewModelTest {
             metronome,
             piano.clock,
             learner,
+            settings,
             noon,
             TimeZone.UTC,
         ) { "${ids++}" }.also { runCurrent() }
@@ -302,5 +306,118 @@ class QuizViewModelTest {
     fun `an empty list of quizzes is refused`() =
         runTest(dispatcher) {
             assertFailsWith<IllegalArgumentException> { viewModel(emptyList()) }
+        }
+
+    private fun TestScope.tapPedal() {
+        piano.play(byteArrayOf(0xB0.toByte(), 64, 127))
+        piano.play(byteArrayOf(0xB0.toByte(), 64, 0))
+        runCurrent()
+    }
+
+    private fun TestScope.collectDone(vm: QuizViewModel): MutableList<Unit> {
+        val done = mutableListOf<Unit>()
+        backgroundScope.launch(dispatcher) { vm.pedalDone.collect { done += it } }
+        runCurrent()
+        return done
+    }
+
+    private fun TestScope.toSummary(vm: QuizViewModel) {
+        press(60)
+        advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS)
+        runCurrent()
+        pass(62)
+        pass(67)
+        assertNotNull(vm.state.value.summary)
+    }
+
+    @Test
+    fun `a pedal tap during the summary asks for Done once`() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            val done = collectDone(vm)
+            toSummary(vm)
+            assertTrue(vm.state.value.pedalHint)
+
+            tapPedal()
+            tapPedal()
+
+            assertEquals(1, done.size)
+            vm.close()
+        }
+
+    @Test
+    fun `the pedal is ignored during a quiz`() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            val done = collectDone(vm)
+
+            tapPedal()
+
+            assertTrue(done.isEmpty())
+            assertEquals(1, vm.state.value.number)
+            assertEquals(false, vm.state.value.pedalHint)
+            vm.close()
+        }
+
+    @Test
+    fun `a pedal press that began during a quiz is not a tap in the summary`() =
+        runTest(dispatcher) {
+            val vm = viewModel(listOf(three[0]))
+            val done = collectDone(vm)
+            piano.play(byteArrayOf(0xB0.toByte(), 64, 127))
+            press(60)
+            advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS)
+            runCurrent()
+            assertNotNull(vm.state.value.summary)
+
+            piano.play(byteArrayOf(0xB0.toByte(), 64, 0))
+            runCurrent()
+
+            assertTrue(done.isEmpty())
+            vm.close()
+        }
+
+    @Test
+    fun `the pedal does nothing with the setting off`() =
+        runTest(dispatcher) {
+            settings.update { it.copy(pedalControlOn = false) }
+            val vm = viewModel()
+            val done = collectDone(vm)
+            toSummary(vm)
+
+            tapPedal()
+
+            assertTrue(done.isEmpty())
+            assertEquals(false, vm.state.value.pedalHint)
+            vm.close()
+        }
+
+    @Test
+    fun `an unreadable setting leaves the pedal alone`() =
+        runTest(dispatcher) {
+            settings.failing = true
+            val vm = viewModel()
+            val done = collectDone(vm)
+            toSummary(vm)
+
+            tapPedal()
+
+            assertTrue(done.isEmpty())
+            vm.close()
+        }
+
+    @Test
+    fun `a pedal tap after leaving asks for nothing`() =
+        runTest(dispatcher) {
+            val vm = viewModel(listOf(three[0]))
+            val done = collectDone(vm)
+            press(60)
+            advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS)
+            runCurrent()
+            vm.close()
+
+            tapPedal()
+
+            assertTrue(done.isEmpty())
         }
 }

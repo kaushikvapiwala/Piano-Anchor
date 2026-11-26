@@ -6,16 +6,20 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
+import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.Rating
@@ -23,12 +27,14 @@ import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.ports.ClockPort
 import pianoanchor.core.ports.MetronomePort
 import pianoanchor.core.ports.MidiInputPort
+import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.lesson.QuizMaker
 import pianoanchor.engine.lesson.TryRun
+import pianoanchor.engine.midi.PedalTapDetector
 import kotlin.time.Clock
 
 private const val NANOS_PER_MILLI = 1_000_000L
@@ -41,10 +47,13 @@ private const val NANOS_PER_MILLI = 1_000_000L
  * of [clock] in [zone] (id from [newId]); a skill that already has a review that day records nothing. Leaving mid-way
  * keeps what was recorded.
  *
+ * With `Settings.pedalControlOn` in [settings], a pedal tap during the summary asks for Done on [pedalDone]; during a
+ * quiz the pedal is ignored as a control.
+ *
  * An input has one reader at a time: [close] returns once the piano is closed and the click has stopped, before
  * another screen opens the piano.
  */
-@Suppress("LongParameterList") // Ports to wire.
+@Suppress("LongParameterList", "TooManyFunctions") // Ports to wire; one small function per step.
 public class QuizViewModel(
     private val device: MidiDevice,
     private val quizzes: List<Quiz>,
@@ -52,6 +61,7 @@ public class QuizViewModel(
     private val metronome: MetronomePort,
     private val time: ClockPort,
     private val learner: LearnerModel,
+    private val settings: SettingsRepositoryPort,
     private val clock: Clock,
     private val zone: TimeZone,
     private val newId: () -> String,
@@ -71,6 +81,13 @@ public class QuizViewModel(
             ),
         )
     public val state: StateFlow<QuizState> = mutableState.asStateFlow()
+
+    private val doneRequests = Channel<Unit>(Channel.BUFFERED)
+
+    /** Emits once when a pedal tap asks for Done; the host closes the quizzes and leaves, as for the button. */
+    public val pedalDone: Flow<Unit> = doneRequests.receiveAsFlow()
+    private val pedal = PedalTapDetector()
+    private var doneAsked = false
 
     private var reader: Job? = null
 
@@ -92,6 +109,7 @@ public class QuizViewModel(
 
     init {
         reader = viewModelScope.launch { readPiano() }
+        viewModelScope.launch { watchPedalSetting() }
         startQuiz()
     }
 
@@ -187,9 +205,20 @@ public class QuizViewModel(
         }
     }
 
+    private suspend fun watchPedalSetting() {
+        try {
+            settings.settings.collect { stored ->
+                mutableState.update { it.copy(pedalControl = stored.pedalControlOn) }
+            }
+        } catch (_: StorageUnavailableException) {
+            // Without the setting the pedal stays a plain pedal.
+        }
+    }
+
     private suspend fun readPiano() {
         try {
             input.events(device).collect { event ->
+                onPedal(event)
                 when (event) {
                     is NoteOn -> onNoteOn(event)
                     is NoteOff -> onNoteOff(event)
@@ -200,6 +229,17 @@ public class QuizViewModel(
             // The piano is gone: the screen says so.
         }
         if (!closed) mutableState.update { it.copy(connection = LessonConnection.DISCONNECTED) }
+    }
+
+    /** A pedal tap during the summary asks for Done, once; a press that began during a quiz does not count. */
+    private fun onPedal(event: MidiEvent) {
+        val current = mutableState.value
+        if (current.summary == null) {
+            pedal.reset()
+        } else if (pedal.onEvent(event) && current.pedalControl && !doneAsked) {
+            doneAsked = true
+            doneRequests.trySend(Unit)
+        }
     }
 
     private fun onNoteOn(event: NoteOn) {

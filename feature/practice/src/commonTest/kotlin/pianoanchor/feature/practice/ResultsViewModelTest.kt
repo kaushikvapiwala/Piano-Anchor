@@ -37,6 +37,7 @@ import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeLearnerRepository
+import pianoanchor.testing.FakePiano
 import pianoanchor.testing.FakeSettingsRepository
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.AfterTest
@@ -72,6 +73,7 @@ private class HeldDispatcher : CoroutineDispatcher() {
 @OptIn(ExperimentalCoroutinesApi::class)
 class ResultsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
+    private val piano = FakePiano()
     private val attempts = FakeAttemptRepository()
     private val settings = FakeSettingsRepository()
     private val learnerRepository = FakeLearnerRepository()
@@ -124,7 +126,16 @@ class ResultsViewModelTest {
         rung: TempoRung = TempoRung.WAIT,
     ): ResultsViewModel {
         saved.forEach { attempts.save(it) }
-        return ResultsViewModel(id, rung, attempts, settings, learner, dispatcher).also { runCurrent() }
+        return ResultsViewModel(
+            id,
+            rung,
+            attempts,
+            settings,
+            learner,
+            piano.device,
+            piano,
+            dispatcher,
+        ).also { runCurrent() }
     }
 
     // 60 BPM is 1000 ms a beat: Standard's band is max(60 ms, 125 ms) = 125 ms, Gentle's max(90 ms, 187.5 ms).
@@ -491,6 +502,8 @@ class ResultsViewModelTest {
                     countOnly,
                     FakeSettingsRepository(),
                     learner,
+                    piano.device,
+                    piano,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -528,6 +541,8 @@ class ResultsViewModelTest {
                     slow,
                     FakeSettingsRepository(),
                     learner,
+                    piano.device,
+                    piano,
                     dispatcher,
                 ).also { runCurrent() }
             assertEquals(ResultsState.Loading, vm.state.value)
@@ -550,6 +565,8 @@ class ResultsViewModelTest {
                     attempts,
                     FakeSettingsRepository(),
                     learner,
+                    piano.device,
+                    piano,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -575,6 +592,8 @@ class ResultsViewModelTest {
                     countFails,
                     FakeSettingsRepository(),
                     learner,
+                    piano.device,
+                    piano,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -593,6 +612,8 @@ class ResultsViewModelTest {
                     attempts,
                     FakeSettingsRepository(),
                     learner,
+                    piano.device,
+                    piano,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -622,6 +643,8 @@ class ResultsViewModelTest {
                     firstHangs,
                     FakeSettingsRepository(),
                     learner,
+                    piano.device,
+                    piano,
                     dispatcher,
                 ).also { runCurrent() }
 
@@ -647,6 +670,8 @@ class ResultsViewModelTest {
                     attempts,
                     FakeSettingsRepository(),
                     learner,
+                    piano.device,
+                    piano,
                     analysis,
                 ).also { runCurrent() }
             assertEquals(ResultsState.Loading, vm.state.value)

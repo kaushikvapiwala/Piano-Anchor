@@ -32,7 +32,8 @@ public data class RecapText(
  * What the lesson screen shows: the concept's [skill] and [card], the current [step], the [tryProgress] of the Try
  * (null outside it), whether the See demo is [playing], the keys lit now ([litKeys], MIDI note numbers: sounding in
  * See, held in Try) and the [recap] (only in the Recap step). [countIn] is the numeral of the count-in (3, 2, 1) of a
- * Try with a click, null otherwise.
+ * Try with a click, null otherwise. [pedalControl] is true while a pedal tap may continue the lesson (the setting is on
+ * and the concept does not use the pedal as music).
  */
 public data class LessonState(
     val skill: Skill,
@@ -44,7 +45,11 @@ public data class LessonState(
     val recap: RecapText?,
     val connection: LessonConnection,
     val countIn: Int? = null,
+    val pedalControl: Boolean = false,
 ) {
+    /** True when the step shows "Tap the pedal to continue": a tap acts here and the piano is connected. */
+    val pedalHint: Boolean get() = pedalControl && connection == LessonConnection.CONNECTED && step != LessonStep.TRY
+
     /** The concept card's looping animation, or null while its unit has none. */
     val scene: CardScene? get() = Curriculum.scene(skill.id)
 
@@ -68,4 +73,16 @@ public data class LessonState(
             val lit = (check as? TryCheck.PlayKey)?.lit == true || check is TryCheck.Sequence
             return if (lit || progress.lastWrong != null) setOf(expected) else emptySet()
         }
+}
+
+/** Where a [LessonViewModel] asks the host to go: the Use step's Practice, the next lesson, or back to Today. */
+public enum class LessonExit {
+    /** Open Practice on the concept's passage (the Use step). */
+    PLAY_IT,
+
+    /** Open the lesson of the next concept (Recap). */
+    NEXT_LESSON,
+
+    /** Leave for Today (Recap at the end of the course). */
+    DONE,
 }

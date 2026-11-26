@@ -40,7 +40,7 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             repository.update { it.copy(dailyBudget = DailyBudget.MIN_15) }
 
             assertEquals(Settings(DailyBudget.MIN_15, updateCheckOn = false), repository.settings.first())
-            assertEquals(11, driver.count("setting"))
+            assertEquals(12, driver.count("setting"))
         }
 
     @Test
@@ -111,6 +111,21 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
 
             repository.update { it.copy(lessonSteps = it.lessonSteps - "middle-c") }
             assertEquals(mapOf("hand-shape" to LessonStep.SEE), repository.settings.first().lessonSteps)
+        }
+
+    @Test
+    fun pedalControlRoundTripsAndOldSettingsReadAsOn() =
+        runTest {
+            val driver = drivers.open()
+            val repository = SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined)
+            assertEquals(true, repository.settings.first().pedalControlOn)
+
+            repository.update { it.copy(pedalControlOn = false) }
+
+            assertEquals(
+                false,
+                SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().pedalControlOn,
+            )
         }
 
     @Test

@@ -78,6 +78,7 @@ class LessonViewModelTest {
     private fun TestScope.viewModel(
         skill: Skill = Skills.MIDDLE_C,
         startAt: LessonStep? = null,
+        pedalIsMusic: Boolean = false,
     ): LessonViewModel =
         LessonViewModel(
             piano.device,
@@ -91,6 +92,7 @@ class LessonViewModelTest {
             LearnerModel(Curriculum.graph, learnerRepository),
             piano.clock,
             startAt,
+            pedalIsMusic,
         ).also { runCurrent() }
 
     private suspend fun savedStep(skill: Skill = Skills.MIDDLE_C) = settings.settings.first().lessonSteps[skill.id]
@@ -237,6 +239,8 @@ class LessonViewModelTest {
             val vm = viewModel()
             vm.goTo(LessonStep.SEE)
             finishDemo()
+            vm.goTo(LessonStep.SEE)
+            runCurrent()
             val first = piano.sent.size
 
             vm.replaySee()
@@ -289,6 +293,9 @@ class LessonViewModelTest {
             runCurrent()
             assertNotNull(metronome.running.value)
 
+            // Played again by hand, so the lesson stays in See when it ends.
+            vm.replaySee()
+            runCurrent()
             finishDemo()
             assertNull(metronome.running.value)
             assertFalse(vm.state.value.playing)

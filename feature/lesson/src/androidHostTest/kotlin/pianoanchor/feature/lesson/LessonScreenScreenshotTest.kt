@@ -35,17 +35,24 @@ class LessonScreenScreenshotTest {
     private fun capture(
         name: String,
         state: LessonState,
+        moreOpen: Boolean = false,
     ) {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             captureRoboImage("screenshots/LessonScreen_${name}_$theme.png") {
-                PianoAnchorTheme(darkTheme = dark) { LessonScreen(state, LessonActions()) }
+                PianoAnchorTheme(darkTheme = dark) { LessonScreen(state, LessonActions(), startMoreOpen = moreOpen) }
             }
         }
     }
 
     @Test
     fun why() = capture("why", lessonState(LessonStep.WHY))
+
+    @Test
+    fun whyWithTheCardOpened() = capture("why_more_open", lessonState(LessonStep.WHY), moreOpen = true)
+
+    @Test
+    fun whyWithThePedalHint() = capture("why_pedal_hint", lessonState(LessonStep.WHY).copy(pedalControl = true))
 
     @Test
     fun seeWhileTheDemoSounds() = capture("see", lessonState(LessonStep.SEE, litKeys = setOf(62)).copy(playing = true))

@@ -53,6 +53,8 @@ import pianoanchor.feature.settings.resources.settings_error_storage
 import pianoanchor.feature.settings.resources.settings_group_playing
 import pianoanchor.feature.settings.resources.settings_group_practice
 import pianoanchor.feature.settings.resources.settings_group_updates
+import pianoanchor.feature.settings.resources.settings_pedal
+import pianoanchor.feature.settings.resources.settings_pedal_note
 import pianoanchor.feature.settings.resources.settings_strictness
 import pianoanchor.feature.settings.resources.settings_strictness_gentle
 import pianoanchor.feature.settings.resources.settings_strictness_gentle_note
@@ -77,7 +79,7 @@ private val TouchTarget = 44.dp
 private val MaxContentWidth = 600.dp
 
 /**
- * The settings, landscape: grouped rows for the daily budget, weekly goal, click, strictness and update check.
+ * The settings, landscape: grouped rows for the daily budget, weekly goal, click, pedal, strictness and update check.
  * Stateless.
  */
 @Composable
@@ -104,6 +106,13 @@ public fun SettingsScreen(
                     WeeklyGoalRow(state.settings.weeklyGoalDays, actions.onWeeklyGoalStep)
                     GroupTitle(Res.string.settings_group_playing)
                     SwitchRow(Res.string.settings_click, null, state.settings.clickOn, actions.onClickOn)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    SwitchRow(
+                        Res.string.settings_pedal,
+                        Res.string.settings_pedal_note,
+                        state.settings.pedalControlOn,
+                        actions.onPedalControlOn,
+                    )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     StrictnessRows(state.settings.strictness, actions.onStrictness)
                     GroupTitle(Res.string.settings_group_updates)

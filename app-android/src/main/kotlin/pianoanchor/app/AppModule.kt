@@ -121,10 +121,12 @@ val appModule =
             LessonViewModel(device, skillId, get(), get(), get(), get(), get(), get(), get(), get(), startAt)
         }
         viewModel { (device: MidiDevice, quizzes: List<Quiz>) ->
-            QuizViewModel(device, quizzes, get(), get(), get(), get(), get(), get()) { Uuid.random().toString() }
+            QuizViewModel(device, quizzes, get(), get(), get(), get(), get(), get(), get()) { Uuid.random().toString() }
         }
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
-        viewModel { (attemptId: String, rung: TempoRung) -> ResultsViewModel(attemptId, rung, get(), get(), get()) }
+        viewModel { (attemptId: String, rung: TempoRung, device: MidiDevice) ->
+            ResultsViewModel(attemptId, rung, get(), get(), get(), device, get())
+        }
         viewModel { SettingsViewModel(get()) }
         viewModel {
             OnboardingViewModel(

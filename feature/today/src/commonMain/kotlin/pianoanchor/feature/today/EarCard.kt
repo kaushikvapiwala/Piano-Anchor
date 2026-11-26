@@ -29,6 +29,7 @@ import pianoanchor.ui.shell.pianoAnchorColors
 internal fun EarCardView(
     card: Card.Ear,
     onStart: (Card.Ear) -> Unit,
+    pedalHint: Boolean = false,
 ) {
     val colors = MaterialTheme.pianoAnchorColors
     OutlinedCard(
@@ -56,17 +57,19 @@ internal fun EarCardView(
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
+            val action = stringResource(Res.string.today_action_ear)
             Button(
                 onClick = { onStart(card) },
-                modifier = Modifier.heightIn(min = TouchTarget),
+                modifier = Modifier.heightIn(min = TouchTarget).withPedalHint(action, pedalHint),
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor = colors.earAccent,
                         contentColor = colors.onEarAccent,
                     ),
             ) {
-                Text(stringResource(Res.string.today_action_ear))
+                Text(action)
             }
+            PedalHint(pedalHint)
         }
     }
 }

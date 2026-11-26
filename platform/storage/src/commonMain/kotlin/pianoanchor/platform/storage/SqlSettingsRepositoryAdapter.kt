@@ -31,6 +31,7 @@ private const val DISMISSED_UPDATE = "dismissed_update"
 private const val STRICTNESS = "strictness"
 private const val LAST_PIANO = "last_piano"
 private const val LESSON_STEPS = "lesson_steps"
+private const val PEDAL_CONTROL_ON = "pedal_control_on"
 
 /** A stored text that is "not set" (the rows of absent values hold it, so every update writes every row). */
 private const val UNSET = ""
@@ -85,6 +86,7 @@ public class SqlSettingsRepositoryAdapter(
                         queries.put(STRICTNESS, updated.strictness.name)
                         queries.put(LAST_PIANO, updated.lastPiano.stored())
                         queries.put(LESSON_STEPS, updated.lessonSteps.stored())
+                        queries.put(PEDAL_CONTROL_ON, updated.pedalControlOn.toString())
                     }
                 }
             }
@@ -119,6 +121,7 @@ private fun Map<String, String>.toSettings(): Settings {
             ) { name -> Strictness.entries.firstOrNull { it.name == name } },
         lastPiano = this[LAST_PIANO]?.toPianoOrNull(),
         lessonSteps = this[LESSON_STEPS]?.toLessonSteps().orEmpty(),
+        pedalControlOn = read(PEDAL_CONTROL_ON, defaults.pedalControlOn, String::toBooleanStrictOrNull),
     )
 }
 
