@@ -118,12 +118,18 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
   for that step only; TalkBack reads "Show hint".
 - **Click switch**: a 44 dp note glyph left of "End run", struck through while off; TalkBack reads "Click on" or
   "Click off". On by default and kept until the app closes.
-- **Status line** (36 dp, between staff and keys, timed rungs only): "Play any key to count in" until the first key; then
-  one pulse dot per beat of the bar (the accent beat larger, the current beat filled), and during the count-in the
+- **Status line** (36 dp, between staff and keys, timed rungs only): "Get ready…" while the run arms itself (link delay measured, then
+  `TEMPO_AUTO_START_DELAY_MS`; keys pressed then are not judged); then one pulse dot per beat of the bar (the accent beat larger, the current beat filled), and during the count-in the
   word "Count-in". The last three beats of the count-in show a large numeral, 96 sp in the primary colour, centred over
   the staff: "3", "2", "1" (a count-in of two beats shows "2", "1"; earlier beats are the pulse dots only), then
   "Play!" for the first beat of the run. Each is announced by TalkBack. The pulse is read as "Beat 2 of 4" and is not a live region (it would
   chatter). The cursor moves in quarter-beat steps, not smoothly, so screenshots stay still.
+- **Restart on a mistake** (timed runs, perform included, spot loops): the first wrong or missed note stops the run and
+  discards the take. A line under the staff (polite live region) says "Wrong note: F4. Again from the top." or
+  "Missed D4. Again from the top." for `TEMPO_RESTART_PAUSE_MS`, then the run arms again on the same rung and mode.
+  Early and late notes never restart. After `TEMPO_RESTARTS_BEFORE_OFFER` restarts in a row a card "This tempo is
+  tough right now." replaces the re-arm, with "Slower" (rung below, Wait from the lowest timed rung) and "Keep trying".
+  The streak resets on a clean finish, a rung or mode change, or leaving.
 - **Live marks** on the staff: a correct note turns blue; a timing-off note is a hollow orange ring (`timing` token)
   with a tag such as "+92 ms" or "−40 ms" above it; unjudged notes keep their colour and the cursor step is amber.
 - **Key strip text** in a timed run: "E4 · on time", "E4 · late, 92 ms", "E4 · early, 40 ms", "F4 · wrong note".

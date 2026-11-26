@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -14,6 +15,7 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.RunMode
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
@@ -56,6 +58,18 @@ class PracticeViewModelSpotTest {
     private val range = BarRange(2, 3)
     private val wrongKey = MidiNote(40)
 
+    private val opened = mutableListOf<PracticeViewModel>()
+
+    /** Like runTest, but closes every loop afterwards: a timed run's ticker never ends on a standing fake clock. */
+    private fun runLoops(body: suspend TestScope.() -> Unit) =
+        runTest(dispatcher) {
+            try {
+                body()
+            } finally {
+                opened.forEach { it.close() }
+            }
+        }
+
     @BeforeTest
     fun setUp() = Dispatchers.setMain(dispatcher)
 
@@ -86,13 +100,24 @@ class PracticeViewModelSpotTest {
             pieceId = pieceId,
         ) {
             "attempt-${++ids}"
-        }.also { runCurrent() }
+        }.also {
+            opened += it
+            runCurrent()
+        }
 
     private fun TestScope.tap(pitch: Int) {
         clock.advanceNanos(300 * ms)
         piano.press(MidiNote(pitch))
         piano.release(MidiNote(pitch))
         runCurrent()
+    }
+
+    private fun TestScope.advance(ms: Long) {
+        repeat((ms / 50).toInt()) {
+            clock.advanceNanos(50 * this@PracticeViewModelSpotTest.ms)
+            advanceTimeBy(50)
+            runCurrent()
+        }
     }
 
     /** Plays the eight notes of the slice, each of [wrong] first preceded by a wrong key. */
@@ -103,7 +128,7 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `the loop starts one rung below the run's`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop(TempoRung.P85)
             assertEquals(TempoRung.P70, vm.state.value.rung)
             assertEquals(
@@ -116,11 +141,11 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `a resumed link restarts a timed loop and keeps its streak`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop(TempoRung.P85)
             try {
                 val before = vm.state.value.spotLoop
-                tap(60) // the starting key: the count-in begins
+                advance(Tunables.TEMPO_AUTO_START_DELAY_MS) // no key: the loop counts in by itself
                 assertEquals(RunPhase.COUNT_IN, vm.state.value.phase)
 
                 piano.dropLink()
@@ -136,8 +161,27 @@ class PracticeViewModelSpotTest {
         }
 
     @Test
+    fun `a timed loop counts in by itself and restarts on a mistake`() =
+        runLoops {
+            val vm = loop(TempoRung.P85)
+            try {
+                advance(Tunables.TEMPO_AUTO_START_DELAY_MS)
+                assertEquals(RunPhase.COUNT_IN, vm.state.value.phase)
+                advance(5_000) // past the count-in, into the first note's window
+                tap(wrongKey.number)
+
+                assertEquals(RestartReason(RestartKind.WRONG, wrongKey), vm.state.value.restartReason)
+                assertNull(attempts.get("attempt-1"))
+                advance(Tunables.TEMPO_RESTART_PAUSE_MS + Tunables.TEMPO_AUTO_START_DELAY_MS)
+                assertEquals(RunPhase.COUNT_IN, vm.state.value.phase)
+            } finally {
+                vm.close()
+            }
+        }
+
+    @Test
     fun `a loop practises the slice, in practice mode`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop(TempoRung.P85)
             assertEquals("test:whole#bars2-3", vm.state.value.passage.id)
             assertEquals(RunMode.PRACTICE, vm.state.value.mode)
@@ -148,13 +192,13 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun aSpotLoopWithoutItsPieceIdIsRejected() =
-        runTest(dispatcher) {
+        runLoops {
             assertFailsWith<IllegalArgumentException> { loop(pieceId = whole.slice(range).id) }
         }
 
     @Test
     fun spotLoopSavesUnderThePieceIdWithItsSpot() =
-        runTest(dispatcher) {
+        runLoops {
             loop()
             playLoop()
 
@@ -166,7 +210,7 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun spotLoopShowsThePieceDoneRungs() =
-        runTest(dispatcher) {
+        runLoops {
             val bpm = checkNotNull(TempoRung.P60.bpm(whole))
             attempts.save(
                 Attempt(
@@ -193,7 +237,7 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `loops restart without Results and carry spot`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop()
             playLoop(wrong = 3)
 
@@ -221,7 +265,7 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `two clean loops in a row offer the full piece`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop()
             playLoop()
             assertEquals(
@@ -255,7 +299,7 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `a non-clean loop resets the streak`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop()
             playLoop()
             playLoop(wrong = 3)
@@ -279,7 +323,7 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `keep looping starts again from zero clean loops`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop()
             playLoop()
             playLoop()
@@ -305,7 +349,7 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `a new rung mid-loop starts the clean streak again`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop()
             playLoop()
             playLoop()
@@ -324,7 +368,7 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `keep looping does nothing outside a spot loop`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop(spot = null)
             vm.keepLooping()
             runCurrent()
@@ -333,14 +377,14 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `loops are never cold checks`() =
-        runTest(dispatcher) {
+        runLoops {
             loop().also { playLoop() }
             assertTrue(learnerRepository.states().isEmpty())
         }
 
     @Test
     fun `a loop that cannot be saved offers retry and does not count`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop()
             attempts.failing = true
             playLoop()
@@ -358,7 +402,7 @@ class PracticeViewModelSpotTest {
 
     @Test
     fun `a full run is unchanged`() =
-        runTest(dispatcher) {
+        runLoops {
             val vm = loop(spot = null)
             (60..71).forEach { tap(it) }
             assertEquals("attempt-1", vm.state.value.finishedAttemptId)

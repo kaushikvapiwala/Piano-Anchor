@@ -126,7 +126,7 @@ class PracticeViewModelPerformTest {
     /** Opens the 60 % rung in perform mode, presses the starting key and plays the count-in. */
     private fun TestScope.startTake(): PracticeViewModel {
         val vm = practice(TempoRung.P60, RunMode.PERFORM)
-        press(c4)
+        advance(Tunables.TEMPO_AUTO_START_DELAY_MS) // no key: the run counts in by itself
         advance(countInMs)
         return vm
     }
@@ -190,6 +190,7 @@ class PracticeViewModelPerformTest {
                 vm.state.value.steps
                     .map { it.status },
             )
+            press(c4) // a missed note would restart the run
             advance(beatMs)
             assertEquals(1, vm.state.value.currentStep) // the cursor still moves with the clock
             assertEquals(
@@ -224,7 +225,7 @@ class PracticeViewModelPerformTest {
     fun switchingModeDiscardsTheRun() =
         perform {
             val vm = practice(TempoRung.P60)
-            press(c4)
+            advance(Tunables.TEMPO_AUTO_START_DELAY_MS)
             advance(countInMs)
             assertEquals(RunPhase.PLAYING, vm.state.value.phase)
 
@@ -232,7 +233,7 @@ class PracticeViewModelPerformTest {
             runCurrent()
             assertEquals(RunPhase.READY, vm.state.value.phase)
             assertEquals(RunMode.PERFORM, vm.state.value.mode)
-            advance(runMs)
+            advance(Tunables.TEMPO_AUTO_START_DELAY_MS / 2) // arming again, not yet counting in
             assertNull(vm.state.value.finishedAttemptId)
 
             vm.selectMode(RunMode.PERFORM) // the mode already selected changes nothing

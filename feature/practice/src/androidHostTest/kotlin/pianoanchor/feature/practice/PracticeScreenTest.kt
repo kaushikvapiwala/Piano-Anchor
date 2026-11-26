@@ -78,8 +78,21 @@ class PracticeScreenTest {
         state: PracticeState,
         onSelectRung: (TempoRung) -> Unit = {},
         onToggleClick: () -> Unit = {},
+        onSlower: () -> Unit = {},
+        onKeepTrying: () -> Unit = {},
     ) = setContent {
-        PianoAnchorTheme { PracticeScreen(state, {}, onSelectRung, onToggleClick, {}, {}) }
+        PianoAnchorTheme {
+            PracticeScreen(
+                state,
+                {},
+                onSelectRung,
+                onToggleClick,
+                {},
+                {},
+                onSlower = onSlower,
+                onKeepTrying = onKeepTrying,
+            )
+        }
     }
 
     @Test
@@ -199,12 +212,52 @@ class PracticeScreenTest {
         }
 
     @Test
-    fun readyTimedRunSaysToPlayAKey() =
+    fun armingTimedRunSaysGetReady() =
         runComposeUiTest {
             show(PracticeState.start(Passages.CDE).copy(rung = TempoRung.P60))
 
-            onNodeWithText("Play any key to count in").assertExists()
+            onNodeWithText("Get ready…").assertExists()
             onNodeWithText("Tempo run · 48 BPM").assertExists()
+        }
+
+    @Test
+    fun aStoppedRunSaysWhyAndDropsGetReady() =
+        runComposeUiTest {
+            show(
+                PracticeState
+                    .start(Passages.CDE)
+                    .copy(rung = TempoRung.P60, restartReason = RestartReason(RestartKind.WRONG, MidiNote(65))),
+            )
+            onNodeWithText("Wrong note: F4. Again from the top.").assertExists()
+            onNodeWithText("Get ready…").assertDoesNotExist()
+        }
+
+    @Test
+    fun aMissedNoteIsNamedToo() =
+        runComposeUiTest {
+            show(
+                PracticeState
+                    .start(Passages.CDE)
+                    .copy(rung = TempoRung.P60, restartReason = RestartReason(RestartKind.MISSED, MidiNote(62))),
+            )
+            onNodeWithText("Missed D4. Again from the top.").assertExists()
+        }
+
+    @Test
+    fun theTooHardCardOffersSlowerAndKeepTrying() =
+        runComposeUiTest {
+            var slower = 0
+            var keep = 0
+            show(
+                PracticeState.start(Passages.CDE).copy(rung = TempoRung.P60, offerSlower = true),
+                onSlower = { slower++ },
+                onKeepTrying = { keep++ },
+            )
+            onNodeWithText("This tempo is tough right now.").assertExists()
+            onNodeWithText("Slower").performClick()
+            onNodeWithText("Keep trying").performClick()
+            assertEquals(1, slower)
+            assertEquals(1, keep)
         }
 
     @Test
@@ -213,7 +266,7 @@ class PracticeScreenTest {
             show(PracticeState.start(Passages.CDE).copy(rung = TempoRung.P60, linkResumed = true))
 
             onNodeWithText("The piano disconnected for a moment. Starting again.").assertExists()
-            onNodeWithText("Play any key to count in").assertExists()
+            onNodeWithText("Get ready…").assertExists()
         }
 
     @Test

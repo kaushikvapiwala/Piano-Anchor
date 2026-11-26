@@ -337,6 +337,8 @@ private fun PracticeRoute(
         onSelectMode = viewModel::selectMode,
         onPlayWhole = { state.spotLoop?.let { loop -> leave { onPlayWhole(loop.fullRung) } } },
         onKeepLooping = viewModel::keepLooping,
+        onSlower = viewModel::slowerRung,
+        onKeepTrying = viewModel::keepTrying,
         onListen = viewModel::listen,
         onSkipListening = viewModel::skipListening,
     )

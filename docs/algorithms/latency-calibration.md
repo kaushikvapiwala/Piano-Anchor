@@ -48,7 +48,11 @@ The owner's probe on a Bluetooth LE piano gave a smallest round trip of 21 ms (m
 `TempoJudge` and `Grader.timedAttempt` subtract it from played times. The attempt keeps its played notes as played and
 stores the offset used (`Attempt.latencyOffsetNanos`), so Results subtract the same value later. The learner sees no
 message about which of the three applied. The measurement is not stored: it follows a link that changed, and the
-store keeps meaning "a tap result". A timed run on a piano without a tap result starts about 0.3 s later on a piano that answers, up to 0.6 s on a silent one.
+store keeps meaning "a tap result". A timed run on a piano without a tap result arms about 0.3 s later on a piano that answers, up to 0.6 s on a silent one.
+
+The measurement now comes first: a timed run arms itself, measures the link delay, waits
+`Tunables.TEMPO_AUTO_START_DELAY_MS` and only then counts in. No starting key exists, so no key can fall into the
+measurement and be dropped; keys pressed while arming or counting in sound and light neutrally but are not judged.
 
 ## Tap calibration ("Fine-tune timing")
 `LatencyCalibration.clickTimes` lays out `CALIBRATION_CLICKS` clicks at `CALIBRATION_BPM` (60 BPM, one click a

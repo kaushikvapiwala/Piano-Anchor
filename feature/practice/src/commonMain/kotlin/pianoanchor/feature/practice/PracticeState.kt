@@ -33,6 +33,9 @@ private const val COUNT_IN_NUMERALS = 3
  * ([showsVerdicts] is false) and lights pressed keys neutrally.
  * [spotLoop] is set while the screen loops a spot of the passage (`docs/algorithms/guidance.md`): [passage] is then
  * the slice.
+ * [restartReason] says why a timed run just stopped and starts again from the top (a wrong or missed note); it shows
+ * until the run arms again. After enough restarts in a row [offerSlower] shows the "too hard" card (Slower,
+ * Keep trying) instead of arming again.
  * [linkResumed] is true from the moment a timed run was restarted because the piano's link dropped and came back
  * (messages in the gap were lost) until the next note; the screen says why the run started over.
  *
@@ -68,6 +71,8 @@ public data class PracticeState(
     val mode: RunMode = RunMode.PRACTICE,
     val spotLoop: SpotLoopState? = null,
     val linkResumed: Boolean = false,
+    val restartReason: RestartReason? = null,
+    val offerSlower: Boolean = false,
     val hint: WrongKeyHint? = null,
     val hintGlow: Set<MidiNote> = emptySet(),
     val playNow: Boolean = false,
@@ -206,7 +211,7 @@ public data class KeyFlash(
 
 /** Where a timed run is. Wait mode stays [READY]. */
 public enum class RunPhase {
-    /** Waiting for the key that starts the count-in. */
+    /** Arming: the run counts in by itself shortly (also the pause after a mistake). */
     READY,
 
     /** The one-bar count-in; [PracticeState.beat] counts it. */
@@ -217,6 +222,21 @@ public enum class RunPhase {
 
     /** The run is over (graded, saved or waiting for a retry). */
     FINISHED,
+}
+
+/** Why a timed run stopped: a [kind] of mistake at [note] (the key played wrong, or the expected key missed). */
+public data class RestartReason(
+    val kind: RestartKind,
+    val note: MidiNote,
+)
+
+/** The mistakes that stop a timed run. */
+public enum class RestartKind {
+    /** A key the step did not ask for. */
+    WRONG,
+
+    /** An expected key whose time passed unplayed. */
+    MISSED,
 }
 
 /** What the live judge made of one score note. */

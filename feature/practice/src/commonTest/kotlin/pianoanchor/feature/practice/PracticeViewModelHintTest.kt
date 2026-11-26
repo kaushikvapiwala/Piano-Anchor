@@ -60,6 +60,18 @@ class PracticeViewModelHintTest {
     private val ms = 1_000_000L
     private var ids = 0
 
+    private val opened = mutableListOf<PracticeViewModel>()
+
+    /** Like runTest, but closes every ViewModel afterwards: a timed run's ticker never ends on a fake clock. */
+    private fun runHints(body: suspend TestScope.() -> Unit) =
+        runTest(dispatcher) {
+            try {
+                body()
+            } finally {
+                opened.forEach { it.close() }
+            }
+        }
+
     @BeforeTest
     fun setUp() = Dispatchers.setMain(dispatcher)
 
@@ -111,7 +123,10 @@ class PracticeViewModelHintTest {
             FakeSettingsRepository(),
         ) {
             "attempt-${++ids}"
-        }.also { runCurrent() }
+        }.also {
+            opened += it
+            runCurrent()
+        }
 
     /** A spot loop on bar 1 of C D E: its attempts are saved under the piece's id. */
     private fun TestScope.loop(): PracticeViewModel =
@@ -134,7 +149,10 @@ class PracticeViewModelHintTest {
             pieceId = Passages.CDE.id,
         ) {
             "attempt-${++ids}"
-        }.also { runCurrent() }
+        }.also {
+            opened += it
+            runCurrent()
+        }
 
     private fun TestScope.tap(
         note: MidiNote,
@@ -160,7 +178,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun aLoopOnAPieceAtOffStartsUnaided() =
-        runTest(dispatcher) {
+        runHints {
             store(*offHistory)
             val vm = loop()
 
@@ -170,7 +188,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun aLoopOnAPieceAtDelayedUsesThePiecesDelay() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             val vm = loop()
 
@@ -184,7 +202,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun hintFadingIgnoresSpotLoopsFillingHistory() =
-        runTest(dispatcher) {
+        runHints {
             store(*offHistory)
             repeat(Tunables.HINT_FADE_HISTORY + 1) { i ->
                 attempts.save(
@@ -202,7 +220,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun aLoopOnANewPieceStartsAtFull() =
-        runTest(dispatcher) {
+        runHints {
             val vm = loop()
 
             assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
@@ -211,7 +229,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun fullShowsTheBandAtOnceAndRecordsAnAidedRun() =
-        runTest(dispatcher) {
+        runHints {
             val vm = practice()
 
             assertEquals(HintLevel.FULL, vm.state.value.hintLevel)
@@ -228,7 +246,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun delayedShowsTheBandOnlyAfterTheDelayAndMarksTheRunAided() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             val vm = practice()
 
@@ -251,7 +269,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun delayedKeyPressedInTimeKeepsTheRunUnaided() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             val vm = practice()
 
@@ -267,7 +285,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun delayedHintDoesNotFireInTheReleaseTailAfterTheLastStep() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             val vm = practice()
             tap(c4)
@@ -283,7 +301,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun offShowsNothingUntilTheHintButtonThenForOneStepOnly() =
-        runTest(dispatcher) {
+        runHints {
             store(*offHistory)
             val vm = practice()
 
@@ -306,7 +324,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun offWithoutTheHintButtonRecordsAnUnaidedRun() =
-        runTest(dispatcher) {
+        runHints {
             store(*offHistory)
             practice()
 
@@ -321,15 +339,13 @@ class PracticeViewModelHintTest {
 
     @Test
     fun delayedTimedStepPlayedEarlyGetsNoHintWhenTheCursorReachesIt() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             val vm = practice()
             vm.selectRung(TempoRung.P60) // 48 BPM: 1250 ms a beat, so the steps are further apart than the delay
             runCurrent()
             val beatMs = 1_250L
-            piano.press(c4) // the key that starts the count-in
-            piano.release(c4)
-            runCurrent()
+            tick(Tunables.TEMPO_AUTO_START_DELAY_MS) // no key: the run counts in by itself
             tick(Tunables.TEMPO_COUNT_IN_LEAD_MS + 4 * beatMs)
             piano.press(c4)
             piano.release(c4)
@@ -356,23 +372,23 @@ class PracticeViewModelHintTest {
 
     @Test
     fun aPerformTakeOnADelayedPassageShowsNoHintButSavesTheLevel() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             val vm = practice()
             vm.selectRung(TempoRung.P60)
             vm.selectMode(RunMode.PERFORM)
             runCurrent()
             val beatMs = 1_250L
-            piano.press(c4) // the key that starts the count-in
-            piano.release(c4)
-            runCurrent()
+            tick(Tunables.TEMPO_AUTO_START_DELAY_MS) // no key: the run counts in by itself
             tick(Tunables.TEMPO_COUNT_IN_LEAD_MS + 4 * beatMs)
 
-            repeat(3) {
-                tick(beatMs) // each step waits past the delay unplayed
+            listOf(c4, d4, e4).forEach {
+                tick(500) // the step waits unplayed (within its window): still no hint in perform
                 assertFalse(vm.state.value.hintVisible)
+                tap(it, gapMs = 0)
+                tick(beatMs - 500)
             }
-            tick(4 * beatMs)
+            tick(3 * beatMs)
 
             val saved = assertNotNull(attempts.get("attempt-1"))
             assertEquals(RunMode.PERFORM, saved.mode)
@@ -382,7 +398,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun anUnreadableStoreStartsAtFull() =
-        runTest(dispatcher) {
+        runHints {
             store(*offHistory)
             attempts.failing = true
 
@@ -407,7 +423,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun theBandStaysHiddenUntilADelayedLevelIsRead() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             val opened = CompletableDeferred<Unit>()
             val vm = practice(slowStore { opened })
@@ -422,7 +438,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun theBandShowsOnceAFullLevelIsRead() =
-        runTest(dispatcher) {
+        runHints {
             val opened = CompletableDeferred<Unit>()
             val vm = practice(slowStore { opened })
 
@@ -436,7 +452,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun aRestartHidesTheBandUntilTheLevelIsReadAgain() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             var gate = CompletableDeferred(Unit)
             val vm = practice(slowStore { gate })
@@ -466,7 +482,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun restartsReuseTheHintLevelOfTheFirstRead() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             var reads = 0
             val vm = practice(countingStore { reads++ })
@@ -483,7 +499,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun anUnreadableStoreIsReadAgainOnTheNextStart() =
-        runTest(dispatcher) {
+        runHints {
             store(*delayedHistory)
             var reads = 0
             attempts.failing = true
@@ -501,7 +517,7 @@ class PracticeViewModelHintTest {
 
     @Test
     fun aFailedSaveMakesTheNextStartReadTheHistoryAgain() =
-        runTest(dispatcher) {
+        runHints {
             var reads = 0
             val vm = practice(countingStore { reads++ })
             tap(c4)

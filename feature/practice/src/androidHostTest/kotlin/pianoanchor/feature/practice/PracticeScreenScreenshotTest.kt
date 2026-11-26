@@ -123,6 +123,17 @@ class PracticeScreenScreenshotTest {
     fun timedRungReady() = capture("timed_ready", timed)
 
     @Test
+    fun timedRunStoppedByAWrongNote() =
+        capture("restart_reason", timed.copy(restartReason = RestartReason(RestartKind.WRONG, f4)))
+
+    @Test
+    fun timedRunTooHardOffersASlowerRung() =
+        capture(
+            "too_hard",
+            timed.copy(restartReason = RestartReason(RestartKind.MISSED, MidiNote(62)), offerSlower = true),
+        )
+
+    @Test
     fun countInShowsTheNumeralTwo() = capture("count_in", timed.copy(phase = RunPhase.COUNT_IN, beat = 3))
 
     @Test
