@@ -40,8 +40,8 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TodayViewModelTest : TodayViewModelFixture() {
-    /** A clean wait-mode run of every passage: every course concept is ticked and no Lesson card is offered. */
-    private suspend fun tickTheWholeCourse() =
+    /** A clean unaided wait-mode run of every passage: every course concept is passed and no Lesson card is offered. */
+    private suspend fun passTheWholeCourse() =
         Curriculum.passages.forEachIndexed { i, passage ->
             playedOn("2026-11-10", id = "tick-$i", passageId = passage.id, band = Band.CLEAN)
         }
@@ -193,7 +193,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
         }
 
     @Test
-    fun theLessonCardOpensTheFirstUntickedConceptOnThePiano() =
+    fun theLessonCardOpensTheFirstUnpassedConceptOnThePiano() =
         runTest(dispatcher) {
             val vm = viewModel()
 
@@ -203,7 +203,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
         }
 
     @Test
-    fun theLessonMovesOnOnceAConceptHasACleanWaitRun() =
+    fun theLessonMovesOnOnceAConceptHasACleanUnaidedWaitRun() =
         runTest(dispatcher) {
             val handShape = checkNotNull(Curriculum.passages.first { Skills.HAND_SHAPE.id in it.skills })
             playedOn("2026-11-10", passageId = handShape.id, band = Band.CLEAN)
@@ -211,6 +211,17 @@ class TodayViewModelTest : TodayViewModelFixture() {
 
             val card = assertIs<Card.Lesson>(assertNotNull(vm.state.value.session).cards.first())
             assertEquals(Skills.MIDDLE_C, card.skill)
+        }
+
+    @Test
+    fun aCleanRunWithHintsKeepsTheLessonOnTheSameConcept() =
+        runTest(dispatcher) {
+            val handShape = checkNotNull(Curriculum.passages.first { Skills.HAND_SHAPE.id in it.skills })
+            playedOn("2026-11-10", passageId = handShape.id, band = Band.CLEAN, hintShown = true)
+            val vm = viewModel()
+
+            val card = assertIs<Card.Lesson>(assertNotNull(vm.state.value.session).cards.first())
+            assertEquals(Skills.HAND_SHAPE, card.skill)
         }
 
     @Test
@@ -413,8 +424,8 @@ class TodayViewModelTest : TodayViewModelFixture() {
     @Test
     fun allCaughtUpState() =
         runTest(dispatcher) {
-            // A learner with every skill introduced, nothing due and every concept ticked: no cold open, no lesson.
-            tickTheWholeCourse()
+            // A learner with every skill introduced, nothing due and every concept passed: no cold open, no lesson.
+            passTheWholeCourse()
             givenStates(
                 *Curriculum.graph.skills
                     .map {
@@ -494,7 +505,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
     @Test
     fun nothingDueOrNewStillOffersTheSongOfALearnedUnit() =
         runTest(dispatcher) {
-            tickTheWholeCourse()
+            passTheWholeCourse()
             givenStates(
                 *Curriculum.graph.skills
                     .map { skillState(it.id, dueDay = LocalDate(2026, 12, 1), learned = true) }

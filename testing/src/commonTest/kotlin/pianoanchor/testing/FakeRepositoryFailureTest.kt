@@ -47,6 +47,7 @@ class FakeRepositoryFailureTest {
             assertFailsWith<StorageUnavailableException> { attempts.countStartedBefore("c-d-e", at) }
             assertFailsWith<StorageUnavailableException> { attempts.cleanTempos("c-d-e") }
             assertFailsWith<StorageUnavailableException> { attempts.hasCleanWaitRun("c-d-e") }
+            assertFailsWith<StorageUnavailableException> { attempts.firstCleanUnaidedWaitRun("c-d-e") }
             assertFailsWith<StorageUnavailableException> { attempts.lastPlayed("c-d-e") }
             assertFailsWith<StorageUnavailableException> { attempts.summariesWithPassagePrefix("sight:") }
             assertFailsWith<StorageUnavailableException> {

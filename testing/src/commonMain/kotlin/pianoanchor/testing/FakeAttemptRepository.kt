@@ -72,6 +72,15 @@ class FakeAttemptRepository : AttemptRepositoryPort {
         }
     }
 
+    override suspend fun firstCleanUnaidedWaitRun(passageId: String): Instant? {
+        failIfFailing("firstCleanUnaidedWaitRun")
+        return attempts.value.values
+            .filter {
+                it.passageId == passageId && it.band == Band.CLEAN && it.tempoBpm == null && it.spot == null &&
+                    !it.hintShown
+            }.minOfOrNull { it.startedAt }
+    }
+
     override suspend fun lastPlayed(passageId: String): Instant? {
         failIfFailing("lastPlayed")
         return attempts.value.values

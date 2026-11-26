@@ -112,6 +112,11 @@ import kotlin.time.Instant
  * way, and its attempt is saved as usual but records no skill review, passed or failed: the onboarding places the
  * skills of the passed units itself, which only works for skills with no state yet.
  * [PracticeState.finishedBand] is the band of the saved attempt.
+ *
+ * An [unaided] run (the Use step of a lesson, `docs/course/beginner-course.md`, "Mastery") has hint level OFF whatever
+ * the passage's history says: no key band, no Unit 0 glow of the next key, no Hint button. The wrong-key line still
+ * shows (it is feedback, not a hint), and the attempt is saved with `hintShown` false, so a clean run passes the
+ * concept.
  */
 @Suppress("TooManyFunctions")
 public class PracticeViewModel(
@@ -133,6 +138,7 @@ public class PracticeViewModel(
     private val player: PassagePlayer? = null,
     private val pieceId: String = passage.id,
     private val placement: Boolean = false,
+    private val unaided: Boolean = false,
     private val newId: () -> String,
 ) : ViewModel() {
     /**
@@ -140,6 +146,9 @@ public class PracticeViewModel(
      * Both are played in wait mode from the staff alone, with no hint, hear-first or Listen.
      */
     private val plain = placement || SightReadingGenerator.parse(passage.id) != null
+
+    /** Whether no hint ever shows: a plain run, or a lesson's Use step ([unaided]). */
+    private val noHints = plain || unaided
 
     private val mutableState =
         MutableStateFlow(
@@ -149,6 +158,7 @@ public class PracticeViewModel(
                     spotLoop = spot?.let { SpotLoopState(it, initialRung) },
                     staffHidden = isUnitZero(passage),
                     sightReading = plain,
+                    unaided = unaided,
                 ),
         )
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
@@ -260,6 +270,7 @@ public class PracticeViewModel(
                     spotLoop = it.spotLoop,
                     canListen = player != null && !plain,
                     sightReading = plain,
+                    unaided = unaided,
                     staffHidden = it.staffHidden,
                     // Hidden until `loadHints` reads the run's level, so a slow store can't flash the band at FULL.
                     hintVisible = false,
@@ -333,7 +344,7 @@ public class PracticeViewModel(
 
     /** Shows the key band on the waiting step, for that step only (the Hint button). */
     public fun showHint() {
-        if (!mutableState.value.showsVerdicts || plain) return
+        if (!mutableState.value.showsVerdicts || noHints) return
         hintShown = true
         mutableState.update { it.copy(hintVisible = true) }
     }
@@ -346,7 +357,7 @@ public class PracticeViewModel(
      */
     private suspend fun loadHints() {
         val known = hintCache
-        if (plain) {
+        if (noHints) {
             hintLevel = HintLevel.OFF
         } else if (known != null) {
             hintLevel = known.first
@@ -655,7 +666,7 @@ public class PracticeViewModel(
                     flash = flash,
                     lastKey = flash,
                 ).withHint(note, flash.correct, needed, advanced)
-                .let { state -> if (plain) state.copy(hintGlow = emptySet()) else state }
+                .let { state -> if (noHints) state.copy(hintGlow = emptySet()) else state }
         }
         flashTimer?.cancel()
         flashTimer =

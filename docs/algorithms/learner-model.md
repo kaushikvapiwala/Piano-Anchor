@@ -111,6 +111,16 @@ recorded for it, passed or failed: a failed piece must not leave a KEEP_PRACTISI
 studied, and a passed piece's review would give those skills a state, so `place` (which skips skills that already have
 one) would not mark them placed. The final `place` call covers every unit before the start unit.
 
+## Course mastery: passed and learned
+A course concept is **passed** by a clean wait-mode run with no hint shown (the Use piece of a lesson runs with hints
+off); `CourseProgress.passed` reads that from the passage history, plus placed skills. The run is also a cold check, so
+the concept enters review and its first quiz is due no earlier than the next learner day. It is **learned** (the star)
+when an unaided review of it, rated Hard, Good or Easy, falls on a learner day after the learner day of the first
+passing run (`CourseProgress.passedOn`, `CourseProgress.learned`); placed skills are learned. A failed quiz leaves it
+passed and the planner schedules it again as for any lapse. Nothing is stored: both are recomputed from attempts and
+reviews, so a concept whose only clean run had hints is simply unpassed. This is separate from the FSRS `learned` flag
+that unlocks skills.
+
 ## Existing progress
 The migration to schema 10 marks every stored review `unaided` (they predate fading hints, and marking them aided would
 lock skills the learner has earned) and gives each state an `unaidedRecalledChecks` equal to its `recalledColdChecks`,

@@ -372,25 +372,95 @@ class LessonViewModelTest {
         }
 
     @Test
-    fun finishingShowsTheTickThenMovesToUse() =
+    fun threeCleanRepsPassTheTryAfterEachTickPause() =
         runTest(dispatcher) {
             val vm = viewModel()
             toTry(vm)
+            assertEquals(3, vm.state.value.repsNeeded)
 
+            repeat(2) { rep ->
+                press(60)
+                piano.release(MidiNote(60))
+                assertTrue(
+                    vm.state.value.tryProgress
+                        ?.finished == true,
+                )
+                assertEquals(rep + 1, vm.state.value.cleanReps)
+                advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS - 1)
+                runCurrent()
+                assertTrue(
+                    vm.state.value.tryProgress
+                        ?.finished == true,
+                )
+                advanceTimeBy(1)
+                runCurrent()
+                // The next rep starts fresh, still in Try.
+                assertEquals(LessonStep.TRY, vm.state.value.step)
+                assertEquals(
+                    false,
+                    vm.state.value.tryProgress
+                        ?.finished,
+                )
+            }
             press(60)
-            assertTrue(
-                vm.state.value.tryProgress
-                    ?.finished == true,
-            )
+            assertEquals(3, vm.state.value.cleanReps)
             assertEquals(LessonStep.TRY, vm.state.value.step)
-
-            advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS - 1)
-            runCurrent()
-            assertEquals(LessonStep.TRY, vm.state.value.step)
-            advanceTimeBy(1)
+            advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS)
             runCurrent()
             assertEquals(LessonStep.USE, vm.state.value.step)
             assertEquals(LessonStep.USE, savedStep())
+        }
+
+    @Test
+    fun aWrongKeyResetsTheCleanRepsToZero() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            toTry(vm)
+            press(60)
+            advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS)
+            runCurrent()
+            assertEquals(1, vm.state.value.cleanReps)
+
+            press(62)
+            assertEquals(0, vm.state.value.cleanReps)
+            // The hint line is still the existing wrong-key feedback.
+            assertEquals(
+                62,
+                vm.state.value.tryProgress
+                    ?.lastWrong,
+            )
+            // The rep that had a wrong key doesn't count when it finishes.
+            press(60)
+            assertEquals(0, vm.state.value.cleanReps)
+            advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS)
+            runCurrent()
+            assertEquals(LessonStep.TRY, vm.state.value.step)
+        }
+
+    @Test
+    fun aLongCheckNeedsTwoCleanReps() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.RH_C_POSITION)
+            toTry(vm)
+            assertEquals(2, vm.state.value.repsNeeded)
+            repeat(2) {
+                listOf(60, 62, 64, 65, 67, 65, 64, 62, 60).forEach { press(it) }
+                advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS)
+                runCurrent()
+            }
+            assertEquals(LessonStep.USE, vm.state.value.step)
+        }
+
+    @Test
+    fun aCheckTheAppCannotVerifyNeedsOneRep() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.HAND_SHAPE)
+            toTry(vm)
+            assertEquals(1, vm.state.value.repsNeeded)
+            press(60)
+            advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS)
+            runCurrent()
+            assertEquals(LessonStep.USE, vm.state.value.step)
         }
 
     @Test
@@ -515,18 +585,18 @@ class LessonViewModelTest {
         }
 
     @Test
-    fun recapNamesTheNextUntickedSkill() =
+    fun recapNamesTheNextUnpassedSkill() =
         runTest(dispatcher) {
             val vm = viewModel(startAt = LessonStep.RECAP)
 
-            // Nothing ticked: this concept counts as done, so the first other one is next.
+            // Nothing passed: this concept counts as done, so the first other one is next.
             assertEquals(
                 RecapText("Middle C", "Sit, hand shape, fingers 1–5", Skills.HAND_SHAPE.id),
                 vm.state.value.recap,
             )
 
-            tickBefore(Skills.RH_C_POSITION)
-            tick(Skills.RH_C_POSITION)
+            passBefore(Skills.RH_C_POSITION)
+            pass(Skills.RH_C_POSITION)
             val later = viewModel(Skills.RH_C_POSITION, startAt = LessonStep.RECAP)
             assertEquals(
                 Skills.STEPS_AND_SKIPS.title,
@@ -553,7 +623,7 @@ class LessonViewModelTest {
     @Test
     fun recapSaysTheCourseIsFinishedAtTheEnd() =
         runTest(dispatcher) {
-            tickBefore(Skills.SHARPS_AND_FLATS)
+            passBefore(Skills.SHARPS_AND_FLATS)
 
             val vm = viewModel(Skills.SHARPS_AND_FLATS, startAt = LessonStep.RECAP)
 
@@ -573,7 +643,7 @@ class LessonViewModelTest {
         }
 
     @Test
-    fun recapFallsBackToMapOrderWhenTheTicksCantBeRead() =
+    fun recapFallsBackToMapOrderWhenThePassesCantBeRead() =
         runTest(dispatcher) {
             attempts.failing = true
 
@@ -629,7 +699,7 @@ class LessonViewModelTest {
             assertEquals(LessonStep.SEE, vm.state.value.step)
         }
 
-    private suspend fun tick(skill: Skill) {
+    private suspend fun pass(skill: Skill) {
         val passage = Curriculum.passages.first { skill.id in it.skills }
         attempts.save(
             Attempt(
@@ -646,14 +716,15 @@ class LessonViewModelTest {
                 events = emptyList(),
                 tempoBpm = null,
                 playedNotes = emptyList(),
+                hintShown = false,
             ),
         )
     }
 
-    private suspend fun tickBefore(skill: Skill) {
+    private suspend fun passBefore(skill: Skill) {
         CourseProgress
             .skills(Curriculum)
             .takeWhile { it != skill }
-            .forEach { tick(it) }
+            .forEach { pass(it) }
     }
 }

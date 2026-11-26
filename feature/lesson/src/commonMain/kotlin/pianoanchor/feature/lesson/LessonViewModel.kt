@@ -41,6 +41,7 @@ import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.lesson.Demo
 import pianoanchor.engine.lesson.LessonDemo
 import pianoanchor.engine.lesson.TryRun
+import pianoanchor.engine.lesson.tryRepsNeeded
 import pianoanchor.engine.matcher.beatNanos
 import pianoanchor.engine.midi.PedalTapDetector
 import pianoanchor.engine.midi.canPlayOn
@@ -65,9 +66,10 @@ private class KeyChange(
  * [startAt] instead when given; reaching Recap removes the entry. See plays the Try's demo ([LessonDemo]) on the piano
  * when [output] lists [device], else on the speaker through [tone] (a failed send moves on to the speaker), lighting
  * keys as they sound. Try reads the piano from [input], opened once for the screen, into a [TryRun]: a Try with a
- * click starts [metronome] with a one-bar count-in, and a passed Try shows its tick for
- * `LESSON_TRY_DONE_PAUSE_MS` and moves on to Use. A concept whose Try is a passage has no Try step: it is part of Use.
- * Recap names the next unticked concept, reading the ticks from [attempts] and the placed skills from [learner];
+ * click starts [metronome] with a one-bar count-in. A Try passes after `tryRepsNeeded` clean checks in a row (a wrong
+ * key sets the count back to 0); each finished check shows its tick for `LESSON_TRY_DONE_PAUSE_MS` before the next
+ * starts, and the passed Try moves on to Use. A concept whose Try is a passage has no Try step: it is part of Use.
+ * Recap names the next unpassed concept, reading the passes from [attempts] and the placed skills from [learner];
  * [time] stamps the piano's notes.
  *
  * Hands-free: with `Settings.pedalControlOn` (and unless [pedalIsMusic], the concept uses the pedal as music) a pedal
@@ -118,6 +120,9 @@ public class LessonViewModel(
     /** The pause that shows a passed Try's tick before moving on. */
     private var finishing: Job? = null
     private var run: TryRun? = null
+
+    /** The clean checks in a row of the Try so far; a wrong key sets it back to 0. */
+    private var cleanReps = 0
 
     /** False during a Try's count-in: notes are not counted. */
     private var accepting = false
@@ -316,8 +321,9 @@ public class LessonViewModel(
     // --- Try ---
 
     private suspend fun tryStep(check: TryCheck) {
+        cleanReps = 0
         run = TryRun(check)
-        mutableState.update { it.copy(tryProgress = run?.progress) }
+        mutableState.update { it.copy(tryProgress = run?.progress, cleanReps = 0, repsNeeded = tryRepsNeeded(check)) }
         val bpm = clickOf(check)
         try {
             if (bpm == null) {
@@ -413,37 +419,50 @@ public class LessonViewModel(
         advance { it.onNoteOff(note, event.timestampNanos / NANOS_PER_MILLI) }
     }
 
-    /** Applies [change] to the Try's run (not during the count-in); a Try just passed starts the tick's pause. */
+    /**
+     * Applies [change] to the Try's run (not during the count-in). A wrong key resets the clean checks in a row; a
+     * check finished with no wrong key adds one. After the tick's pause the Try is passed once
+     * [LessonState.repsNeeded] are clean, else the next check starts.
+     */
     private fun advance(change: (TryRun) -> TryRun) {
         val before = run?.takeIf { accepting } ?: return
         val after = change(before)
         run = after
-        mutableState.update { it.copy(tryProgress = after.progress) }
-        if (after.progress.finished && !before.progress.finished) {
+        if (after.progress.wrongCount > before.progress.wrongCount) cleanReps = 0
+        val finished = after.progress.finished && !before.progress.finished
+        if (finished && after.progress.wrongCount == 0) cleanReps++
+        mutableState.update { it.copy(tryProgress = after.progress, cleanReps = cleanReps) }
+        if (finished) {
             finishing =
                 viewModelScope.launch {
                     delay(Tunables.LESSON_TRY_DONE_PAUSE_MS)
-                    next()
+                    if (cleanReps >= mutableState.value.repsNeeded) next() else startNextRep(after.check)
                 }
         }
+    }
+
+    /** The next check of the Try: the same check from the start (a click that plays goes on). */
+    private fun startNextRep(check: TryCheck) {
+        run = TryRun(check)
+        mutableState.update { it.copy(tryProgress = run?.progress) }
     }
 
     // --- Recap ---
 
     private suspend fun showRecap() {
-        val ticked =
+        val passed =
             try {
-                CourseProgress.ticked(
+                CourseProgress.passed(
                     Curriculum,
                     attempts.passageHistories(Curriculum.passages),
                     learner.placedSkills(),
                 )
             } catch (_: StorageUnavailableException) {
-                // Without the ticks, the next concept is the one after this in map order.
+                // Without the passes, the next concept is the one after this in map order.
                 CourseProgress.skills(Curriculum).takeWhile { it != skill }.mapTo(HashSet()) { it.id }
             }
         // This concept counts as done: the learner has just been through it.
-        val next = CourseProgress.next(Curriculum, ticked + skillId)
+        val next = CourseProgress.next(Curriculum, passed + skillId)
         mutableState.update { it.copy(recap = RecapText(skill.title, next?.title, next?.id)) }
     }
 }

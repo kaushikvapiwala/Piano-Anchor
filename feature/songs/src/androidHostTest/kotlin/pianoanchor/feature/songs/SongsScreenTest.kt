@@ -69,7 +69,7 @@ class SongsScreenTest {
             val state =
                 SongsState(
                     pieces = pieces,
-                    ticked =
+                    passed =
                         setOf(
                             Skills.FINGER_NUMBER_TUNES.id,
                             Skills.STEPS_AND_SKIPS.id,
@@ -83,6 +83,17 @@ class SongsScreenTest {
             onNodeWithContentDescription("${mary.passage.title}. New. Passed").assertIsDisplayed()
             val lightly = pieces.first { it.passage.id == "builtin:lightly-row" }
             onNodeWithContentDescription("${lightly.passage.title}. New. Suggested next").assertIsDisplayed()
+        }
+
+    @Test
+    fun aLearnedPieceIsAnnouncedAsLearned() =
+        runComposeUiTest {
+            val hot = pieces.first { it.passage.id == "builtin:hot-cross-buns" }
+            val concepts = setOf(Skills.FINGER_NUMBER_TUNES.id, Skills.STEPS_AND_SKIPS.id, Skills.QUARTER_AND_HALF.id)
+            val state = SongsState(pieces = pieces, passed = concepts, learned = concepts)
+            setContent { PianoAnchorTheme { SongsScreen(state, SongsActions()) } }
+
+            onNodeWithContentDescription("${hot.passage.title}. New. Learned").assertIsDisplayed()
         }
 
     @Test

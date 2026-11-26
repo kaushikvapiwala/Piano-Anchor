@@ -76,6 +76,12 @@ class ResultsScreenScreenshotTest {
         )
 
     @Test
+    fun lessonPassed() = capture("lesson_passed", clean.copy(lesson = LessonResult.PASSED), fromLesson = true)
+
+    @Test
+    fun cleanWithHints() = capture("clean_with_hints", clean.copy(lesson = LessonResult.CLEAN_WITH_HINTS))
+
+    @Test
     fun finishLessonAfterACleanRun() = capture("finish_lesson", clean, fromLesson = true)
 
     @Test

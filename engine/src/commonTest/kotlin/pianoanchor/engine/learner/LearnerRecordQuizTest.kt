@@ -44,6 +44,17 @@ class LearnerRecordQuizTest {
         }
 
     @Test
+    fun `reads the reviews of the given skills`() =
+        runTest {
+            model.recordQuiz("middle-c", Rating.GOOD, monday, "1")
+            model.recordQuiz("high-and-low", Rating.HARD, monday, "2")
+            model.recordQuiz("middle-c", Rating.GOOD, monday.plus(1, DateTimeUnit.DAY), "3")
+            assertEquals(2, model.reviewsOf(listOf("middle-c")).size)
+            assertEquals(3, model.reviewsOf(setOf("middle-c", "high-and-low", "steady-beat")).size)
+            assertEquals(emptyList(), model.reviewsOf(emptyList()))
+        }
+
+    @Test
     fun `replay rebuilds the state from quiz reviews`() =
         runTest {
             model.recordQuiz("middle-c", Rating.GOOD, monday, "1")

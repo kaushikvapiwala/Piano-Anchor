@@ -62,7 +62,7 @@ public sealed interface Card {
     ) : PassageCard
 
     /**
-     * The first unticked course concept (`CourseProgress.next`), opened as a five-step lesson; [passage] is the
+     * The first unpassed course concept (`CourseProgress.next`), opened as a five-step lesson; [passage] is the
      * concept's first passage (the lesson's Use step) and [unlockedBy] names its prerequisites ("why now").
      */
     public data class Lesson(
@@ -126,15 +126,16 @@ public object SessionComposer {
      * Composes the session for [plan] over [curriculum], splitting [budget] by the SESSION_SHARE tunables.
      * [history] is keyed by passage id; a passage missing from it was never played. [learned] are the ids of every
      * learned skill (the plan lists only due and new ones); [graph] gives each skill its track. The cold open uses only
-     * passages whose skills are all learned, never the lesson's passage. The lesson is the first course concept without
-     * a clean wait-mode run in [history]; the plan's new skills play no part. Up to QUIZ_MAX_PER_DAY of the due core
-     * skills that have a quiz (fewer by [quizzesDone], the quizzes already recorded that day) come first as a Quizzes
-     * card (seeded by [day] and the skill id, so a day's quiz is stable); the cold open takes the other due skills.
+     * passages whose skills are all learned, never the lesson's passage. The lesson is the first course
+     * concept not passed (`CourseProgress.passed`, from [history]); the plan's new skills play no part. Up to
+     * QUIZ_MAX_PER_DAY of the due core skills that have a quiz (fewer by [quizzesDone], the quizzes already recorded
+     * that day) come first as a Quizzes card (seeded by [day] and the skill id, so a day's quiz is stable); the cold
+     * open takes the other due skills.
      * The quizzes' minutes are part of the Review segment.
      * The song is a piece with no lock: played before new, then public domain before original, then curriculum order.
      * A Sight-reading card follows the song when [sightLevel] is at least 1 (0 means closed) and [sightDoneToday] is
      * false: the exercise of that level seeded by [day]'s epoch day. The skills in [placed] (the onboarding's placement
-     * test) count as taught: their concepts are ticked, so the lesson is the first concept after them.
+     * test) count as taught: their concepts count as passed, so the lesson is the first concept after them.
      */
     public fun compose(
         plan: DailyPlan,
@@ -150,7 +151,7 @@ public object SessionComposer {
         placed: Set<String> = emptySet(),
     ): Session {
         val (dueEar, dueNotEar) = plan.due.partition { graph.byId(it.skillId)?.track == Track.EAR }
-        val taught = CourseProgress.ticked(curriculum, history, placed)
+        val taught = CourseProgress.passed(curriculum, history, placed)
         val quizzes = quizzes(dueNotEar, graph, taught, day, Tunables.QUIZ_MAX_PER_DAY - quizzesDone)
         val quizzed = quizzes.map { it.skillId }.toSet()
         val dueOther = dueNotEar.filter { it.skillId !in quizzed }
@@ -255,7 +256,7 @@ public object SessionComposer {
         graph: SkillGraph,
         placed: Set<String>,
     ): Card.Lesson? {
-        val skill = CourseProgress.next(curriculum, CourseProgress.ticked(curriculum, history, placed)) ?: return null
+        val skill = CourseProgress.next(curriculum, CourseProgress.passed(curriculum, history, placed)) ?: return null
         // Every course concept has a passage (checked by the content tests).
         val passage = curriculum.passages.first { skill.id in it.skills }
         return Card.Lesson(passage, TempoRung.WAIT, 0, skill, graph.skills.filter { it.id in skill.prerequisites })

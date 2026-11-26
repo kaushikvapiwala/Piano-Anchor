@@ -8,7 +8,7 @@ FSRS planner decides which skills are due; `QuizMaker` (`lesson/QuizMaker.kt` in
 
 ## Which quiz
 Each skill has one kind of quiz, varied by a random source seeded from the learner day and the skill id. The variety is
-limited to what the learner has been taught (ticked skills plus the quiz's own skill): without white-key names only
+limited to what the learner has been taught (passed skills plus the quiz's own skill): without white-key names only
 middle C and the C below are named, and the C chord joins the chord quiz once it was taught.
 
 | Skill | Quiz |

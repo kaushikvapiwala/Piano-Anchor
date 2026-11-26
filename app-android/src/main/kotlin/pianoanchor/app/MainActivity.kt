@@ -311,7 +311,13 @@ private fun PracticeRoute(
             parametersOf(
                 practice.device,
                 practice.passageId,
-                PracticeStart(practice.rung, practice.mode, practice.spot, practice.placement),
+                PracticeStart(
+                    practice.rung,
+                    practice.mode,
+                    practice.spot,
+                    practice.placement,
+                    practice.fromLesson != null,
+                ),
             )
         }
     val state by viewModel.state.collectAsState()

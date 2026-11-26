@@ -28,6 +28,12 @@ Rejected:
 - Free black-key play as the first sound: the owner chose middle C.
 - Patching the current units without a new map: the order itself was part of the problem.
 
+## Amendment (2026-11-26): mastery
+Lessons stay open, but passing now means more (owner device test, 2026-11-25): the Try is clean several times in a row,
+the Use piece is played clean once with no key hints, and the concept is Learned only after it passes as a quiz on a
+later day. This changes only what "passed" and "Learned" mean (`docs/course/beginner-course.md`, "Mastery"); nothing is
+locked by them.
+
 ## Consequences
 The content model gains concept cards and lesson steps, the practice flow gains See, Try and Recap, and the skill
 graph's `unlocked` becomes a suggestion. Existing passages are moved into the new map. The work is split into ROADMAP

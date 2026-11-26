@@ -41,9 +41,11 @@ import pianoanchor.feature.songs.resources.songs_new
 import pianoanchor.feature.songs.resources.songs_next
 import pianoanchor.feature.songs.resources.songs_progress
 import pianoanchor.feature.songs.resources.songs_row_description
+import pianoanchor.feature.songs.resources.songs_row_description_learned
 import pianoanchor.feature.songs.resources.songs_row_description_next
 import pianoanchor.feature.songs.resources.songs_row_description_passed
 import pianoanchor.feature.songs.resources.songs_tick
+import pianoanchor.feature.songs.resources.songs_tick_learned
 import pianoanchor.feature.songs.resources.songs_title
 import pianoanchor.ui.shell.AppNavRail
 import pianoanchor.ui.shell.RailDestination
@@ -100,7 +102,7 @@ public fun SongsScreen(
                         )
                     }
                     items(pieces, key = { it.passage.id }) {
-                        PieceCard(it, state.isTicked(it), state.isNext(it), actions.onOpen)
+                        PieceCard(it, state.isPassed(it), state.isLearned(it), state.isNext(it), actions.onOpen)
                     }
                 }
             }
@@ -130,7 +132,8 @@ private fun ErrorCard(onRetry: () -> Unit) {
 @Composable
 private fun PieceCard(
     piece: PieceView,
-    ticked: Boolean,
+    passed: Boolean,
+    learned: Boolean,
     next: Boolean,
     onOpen: (PieceView) -> Unit,
 ) {
@@ -138,7 +141,8 @@ private fun PieceCard(
     val description =
         stringResource(
             when {
-                ticked -> Res.string.songs_row_description_passed
+                learned -> Res.string.songs_row_description_learned
+                passed -> Res.string.songs_row_description_passed
                 next -> Res.string.songs_row_description_next
                 else -> Res.string.songs_row_description
             },
@@ -161,9 +165,9 @@ private fun PieceCard(
             verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (ticked) {
+                if (passed) {
                     Text(
-                        stringResource(Res.string.songs_tick),
+                        stringResource(if (learned) Res.string.songs_tick_learned else Res.string.songs_tick),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )

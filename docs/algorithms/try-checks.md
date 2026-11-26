@@ -73,5 +73,9 @@ phone speaker, lighting the keys as they sound:
 | AnyKey | nothing to hear: the screen says "Watch the hand" |
 
 A Try with a click (Repeat, Hold, StressBeatOne) starts the metronome with a one-bar count-in ("3, 2, 1") before notes
-count. A passed Try shows its tick for `LESSON_TRY_DONE_PAUSE_MS`, then the lesson moves to Use. A `Passage` check has no
+count. A Try passes after `tryRepsNeeded` clean checks in a row: `LESSON_TRY_REPS`, or `LESSON_TRY_REPS_LONG` when the
+check has `LESSON_TRY_LONG_NOTES` or more notes, or 1 for a check the app can't verify (`AnyKey`, `Passage`). A wrong
+key (or a hold released early) sets the count to 0 and the check goes on; a check finished with a wrong key doesn't
+count. The screen shows "Clean 2 of 3" beside the check's own progress (not when 1 is needed). Each finished check
+shows its tick for `LESSON_TRY_DONE_PAUSE_MS`, then the next check starts, or the lesson moves to Use after the last. A `Passage` check has no
 Try step: it is part of Use.

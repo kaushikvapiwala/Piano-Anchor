@@ -269,8 +269,9 @@ per piece in content order. Cards are at least 56 dp high; the grid scrolls and 
 - **Unlocked card**: the title and a progress line: "New", "rung 3 of 5" (the next rung to play, as on Today's Song
   card) or "✓ Mastered". Tapping opens Practice on that piece at its next rung (a mastered piece at its top rung);
   with no piano connected it opens Pianos.
-- **Ticks**: a piece whose course concepts are all passed (a clean wait-mode run) shows a plum "✓" before its title and
-  TalkBack adds "Passed". A piece that exercises the suggested next concept shows a "Next" chip beside its title and
+- **Ticks**: a piece whose course concepts are all passed (a clean wait-mode run with no hint) shows a plum "✓" before
+  its title and TalkBack adds "Passed"; when they are all Learned too (quizzed unaided on a later day) it shows "✓★" and
+  TalkBack says "Learned". A piece that exercises the suggested next concept shows a "Next" chip beside its title and
   TalkBack adds "Suggested next".
 - **Locked card**: dimmed, with a lock and "Needs: <skill title>"; not tappable. TalkBack reads "Locked. Needs <skill
   title>."
@@ -372,7 +373,7 @@ weekly goal dots, "Practised 9 of the last 16 days" and the update banner.
   again. Below it, the weekly goal dots (one per goal day, plum for each day practised since Monday).
 - TalkBack reads the plan first, then the side pane.
 - **Cold open** card: dark (`#2A2730`, light text, light button) with "Start cold open", the skill, its minutes and
-  "n more to review". **New lesson**: surface with a border titled with the first unticked concept, its passage and minutes, "Begin" and the "why now" line; it opens the lesson (absent once every concept is ticked). **Song**: "♩ = 72 · rung 3
+  "n more to review". **New lesson**: surface with a border titled with the first unpassed concept, its passage and minutes, "Begin" and the "why now" line; it opens the lesson (absent once every concept is passed). **Song**: "♩ = 72 · rung 3
   of 5" (wait mode reads "Wait mode · rung 1 of 5") and "Continue". Each opens Practice on the card's passage and
   rung (the lesson card opens the lesson); with no piano connected a card opens Pianos.
 - **Quizzes** card (first, when due skills have a quiz): surface with a 2 dp border in the primary colour, "Quick

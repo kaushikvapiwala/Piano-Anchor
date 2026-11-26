@@ -147,6 +147,12 @@ public class LearnerModel(
             .flatMap { repository.reviews(it) }
             .count { it.attemptId.startsWith(QUIZ_ATTEMPT_ID_PREFIX) && it.day == day }
 
+    /**
+     * Every review of the skills in [skillIds] (any order). Throws StorageUnavailableException like the repository.
+     */
+    public suspend fun reviewsOf(skillIds: Collection<String>): List<Review> =
+        skillIds.flatMap { repository.reviews(it) }
+
     /** Stores [review] unless the skill ([before] is its state) has a review that day already: the first one counts. */
     private suspend fun recordColdCheck(
         before: SkillState?,

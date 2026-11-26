@@ -59,6 +59,14 @@ public interface AttemptRepositoryPort {
     public suspend fun hasCleanWaitRun(passageId: String): Boolean
 
     /**
+     * When the earliest wait-mode attempt (no tempo) of [passageId] whose band is CLEAN and that showed no hint
+     * ([pianoanchor.core.model.Attempt.hintShown] false) started, spot-loop attempts excluded; null when there is none.
+     * Adapters that store [pianoanchor.core.model.Attempt.startedAt] coarser answer at that precision. Throws
+     * [StorageUnavailableException] when the store can't be read or written.
+     */
+    public suspend fun firstCleanUnaidedWaitRun(passageId: String): Instant?
+
+    /**
      * When [passageId] was last played: the latest [Attempt.startedAt] of its attempts, spot-loop ones included, or
      * null for a passage never played. Adapters that store [Attempt.startedAt] coarser answer at that precision. Throws
      * [StorageUnavailableException] when the store can't be read or written.
