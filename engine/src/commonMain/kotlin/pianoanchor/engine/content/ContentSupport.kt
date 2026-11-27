@@ -1,6 +1,7 @@
 package pianoanchor.engine.content
 
 import kotlinx.datetime.LocalDate
+import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.Rights
 import pianoanchor.core.model.RightsStatus
@@ -41,7 +42,7 @@ internal fun publicDomainRights(
         checkedOn = CHECKED_ON,
     )
 
-/** A built-in passage whose notes are note text (see `NoteText`) in [timeSignature]. */
+/** A built-in passage whose notes are note text (see `NoteText`) in [timeSignature] and [keySignature]. */
 internal fun builtinPassage(
     id: String,
     title: String,
@@ -51,6 +52,7 @@ internal fun builtinPassage(
     rights: Rights,
     timeSignature: TimeSignature = FOUR_FOUR,
     piece: Boolean = false,
+    keySignature: KeySignature = KeySignature.C,
 ): Passage =
     Passage(
         id = "builtin:$id",
@@ -61,4 +63,5 @@ internal fun builtinPassage(
         rights = rights,
         skills = skills,
         piece = piece,
+        keySignature = keySignature,
     )

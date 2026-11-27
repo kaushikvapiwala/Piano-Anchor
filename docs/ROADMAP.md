@@ -44,9 +44,10 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     hand-drawn hand over the keys whose fingers press in time with See and Listen (drawn in Compose, ADR 0026), a
     one-tap session that runs today's plan in a row, play-along backing for songs, "Day 1 vs today" playback and a
     weekly recap. The owner keeps the plum palette. Specs follow an approved mock.
-2. **Staff notation** (spec #272; grill 2026-11-25): stems, flags, beams, dots, rests, key signatures and natural
-    signs on the practice staff, with every music glyph from the Bravura font (ADR 0010); the clef no longer relies on
-    the system font.
+2. **Staff notation** (spec #272; grill 2026-11-25; needs-owner: #272): the engraving rules (rests, stems, beams,
+    flags, dots, accidentals, key signatures) are in the engine; left is drawing them on the practice staff with every
+    music glyph from the Bravura font (ADR 0010). Waits on the owner: a grand staff (treble and bass) or the single
+    treble staff of today.
 3. **Course 2, Unit 4: eighth notes and the dotted quarter (M6.4)** (spec #273) [#272]: four concepts, a timed Rhythm
     Try, the Jingle Bells chorus, sight-reading levels 9–10 and Unit 4's placement piece.
 4. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand

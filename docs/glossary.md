@@ -10,7 +10,9 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | All Notes Off | MIDI control change 123 (also implied by 124–127): every key still down comes up; the sustain pedal still holds them. A piano sends it to clear stuck notes. |
 | All Sound Off | MIDI control change 120: every key comes up and every sounding note stops at once, pedal-held ones included. |
 | Attempt | One completed run of a passage, from the first note to `PassageComplete` (`Attempt` in `:core:model`): its counts, accuracy, band and match events, stored by `AttemptRepositoryPort`. Abandoned runs are not saved. |
+| Augmentation dot | A dot after a notehead that lengthens the note by half (dotted quarter, dotted half). Part of a `NoteValue` (`docs/algorithms/engraving.md`). |
 | Band | The result of an attempt named for the learner: `CLEAN`, `GOOD` or `KEEP_PRACTISING`, from its accuracy and the `BAND_*_MIN_ACCURACY` tunables. |
+| Beam | The bar joining the stems of two or more eighth notes in one beat, instead of a flag on each (`docs/algorithms/engraving.md`). |
 | BLE MIDI | MIDI over Bluetooth Low Energy. A BLE MIDI piano is found by a scan and must be connected from the app (`MidiDiscoveryPort`); pairing in the system settings pairs only Bluetooth audio. |
 | Card scene | A concept card's short looping animation, written as data (`CardScene` in `:core:model`: a stage, timed cues in one fixed vocabulary and a description for TalkBack) and drawn by one renderer so every card looks and moves the same (`docs/ui/living-studio.md`, "Card animations"). |
 | Chord window | The `CHORD_CLUSTER_MS` span from a step's first pressed note in which its other notes must follow; the matcher reports an incomplete chord when it runs out. |
@@ -29,7 +31,9 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Contribution kit | One `.json` file saved from the note monitor (`docs/contribute-a-piano.md`): the app version, the piano's Identity Reply and a short fixture. Attached to a "Support for my piano" issue. |
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hint level | How much help a run of a passage starts with: Full (amber key band at once), Delayed (after the learner's usual pause) or Off (only on the Hint button). Faded by clean runs, restored by keep-practising runs (`HintFading`, `docs/algorithms/guidance.md`). |
+| Key signature | The sharps (or flats) written after the clef that say which letters are raised all piece long (`KeySignature`, `Passage.keySignature`); C major has none. |
 | Landmark hint | The one plain line shown after a wrong key in wait mode: how to find the key to play from the groups of two and three black keys (`wrongKeyHint`, `docs/algorithms/wrong-key-hint.md`). |
+| Natural sign | The sign that cancels a raised note in the key or earlier in the bar, e.g. an F natural in G major (`Accidental.NATURAL`). |
 | Note names on keys | The letters ("C", "D", "C♯") written on the key strips, chosen by `NoteNameRule` from `Settings.noteNames` and the course progress: every white key until "C D E, then F G A B" is passed, only the key to play until it is learned, then none; black keys only after "Sharps and flats" is passed. A wrong-key hint letters its keys at any stage; Off shows none. |
 | Pedal tap | A quick press and release of the sustain pedal (down, then up within `PEDAL_TAP_MAX_MS`), read by `PedalTapDetector`. Outside a run it means "continue" (the screen's primary action) while `Settings.pedalControlOn`; a longer press is a hold, which is music. |
 | Lesson step | One of a beginner lesson's five steps: Why (the concept card), See (the app plays it), Try (one action the piano checks), Use (a tiny piece), Recap. |

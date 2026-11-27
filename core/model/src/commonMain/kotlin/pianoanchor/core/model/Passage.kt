@@ -58,12 +58,43 @@ public data class TimeSignature(
     val barTicks: Int get() = beats * QUARTERS_PER_WHOLE * TICKS_PER_QUARTER / beatUnit
 }
 
+private const val LETTERS_PER_OCTAVE = 7
+
+/** Letter indexes (C = 0 … B = 6) in the order sharps are added to a key signature: F C G D A E B. */
+private val SHARP_ORDER = listOf(3, 0, 4, 1, 5, 2, 6)
+
+/** Letter indexes in the order flats are added: B E A D G C F. */
+private val FLAT_ORDER = listOf(6, 2, 5, 1, 4, 0, 3)
+
+/** A key by its [sharps] (1..7) or flats (-1..-7); 0 = C major / A minor. */
+public data class KeySignature(
+    val sharps: Int,
+) {
+    init {
+        require(
+            sharps in -LETTERS_PER_OCTAVE..LETTERS_PER_OCTAVE,
+        ) { "key signature must have -7..7 sharps, was $sharps" }
+    }
+
+    /**
+     * Letter indexes (C = 0 … B = 6) the key raises (sharps > 0) or lowers (< 0), in signature order
+     * F C G D A E B / B E A D G C F.
+     */
+    val alteredLetters: List<Int>
+        get() = if (sharps >= 0) SHARP_ORDER.take(sharps) else FLAT_ORDER.take(-sharps)
+
+    public companion object {
+        public val C: KeySignature = KeySignature(0)
+        public val G: KeySignature = KeySignature(1)
+    }
+}
+
 /**
  * A piece of music to practise. [id] is stable (stored with attempts) and not blank; [steps] is not empty and
  * their onsets strictly increase. [tempoBpm] is the written tempo in quarter notes per minute
  * ([MIN_TEMPO_BPM]..[MAX_TEMPO_BPM]). [rights] says why it may ship. [skills] are the ids of the [Skill]s a run
  * exercises (may be empty: such a passage is never scheduled). A [piece] is a tune or song, listed on the Songs
- * screen; an exercise is not.
+ * screen; an exercise is not. [keySignature] is the key the staff draws (C by default).
  */
 public data class Passage(
     val id: String,
@@ -74,6 +105,7 @@ public data class Passage(
     val rights: Rights,
     val skills: Set<String> = emptySet(),
     val piece: Boolean = false,
+    val keySignature: KeySignature = KeySignature.C,
 ) {
     init {
         require(id.isNotBlank()) { "passage id must not be blank" }
