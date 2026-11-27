@@ -26,12 +26,14 @@ material, and levels open in order: if level 3 is closed, level 4 stays closed e
 | 12 | G and D7 chords | the level 11 tune over one held left-hand chord per bar: G (G2 B2 D3), then G or D7, then D7, then G |
 
 Levels 9 and 10 stay in the right hand, C4 to G4, 4/4, with no left hand. Level 9 needs melody and chords as well as
-eighth notes, because the levels open in order. Their new rhythm cells (ticks; a quarter is 960). Levels 11 and 12 add no cells: they draw from level 10's.
+eighth notes, because the levels open in order. Their new rhythm cells (ticks; a quarter is 960):
 
 | Level | Cells added |
 |---|---|
 | 9 | 480 480 960 960 960; 960 960 480 480 960; 960 480 480 1920; 480 480 480 480 1920 |
 | 10 | 1440 480 960 960; 1440 480 1920; 960 1440 480 960 |
+
+Levels 11 and 12 add no cells: they draw from level 10's.
 
 ## Generating an exercise
 

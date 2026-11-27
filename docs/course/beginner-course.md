@@ -32,7 +32,7 @@ hook: middle C glows, the learner plays it, and the app asks how to find it with
 the answer.
 
 ## Concept card
-Every concept has a card with four required one-line fields. A content test fails if any field is empty. The 27 cards are
+Every concept has a card with four required one-line fields. A content test fails if any field is empty. The 32 cards are
 in `ConceptCards.kt` (type `ConceptCard`); showing and animating them comes later.
 
 | Field | Answers | Black keys, for example |

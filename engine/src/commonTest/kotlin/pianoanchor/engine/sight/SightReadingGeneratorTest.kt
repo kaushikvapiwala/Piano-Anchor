@@ -13,10 +13,13 @@ import kotlin.test.assertTrue
 private const val SEEDS = 200
 private const val DISTINCT_SEEDS = 20
 private const val MIN_DISTINCT = 15
-private const val LEVELS = 10
+private const val LEVELS = 12
 private const val LAST_LEVEL = 8
 private const val FIRST_HAND_SPLIT = 60
 private val RIGHT_HAND = setOf(60, 62, 64, 65, 67)
+private val RIGHT_HAND_IN_G = listOf(67, 69, 71, 72, 74)
+private val G_AND_D7_NOTES = setOf(42, 43, 47, 48, 50)
+private const val FIRST_G_LEVEL = 11
 private val LEFT_HAND = setOf(48, 50, 52, 53, 55)
 private val WHITE_PITCH_CLASSES = listOf(0, 2, 4, 5, 7)
 private val C_CHORD = setOf(0, 4, 7)
@@ -78,6 +81,8 @@ class SightReadingGeneratorTest {
                     in 1..3 -> RIGHT_HAND
                     4 -> LEFT_HAND
                     5, 6 -> RIGHT_HAND + LEFT_HAND
+                    FIRST_G_LEVEL -> RIGHT_HAND_IN_G.toSet()
+                    FIRST_G_LEVEL + 1 -> RIGHT_HAND_IN_G.toSet() + G_AND_D7_NOTES
                     else -> RIGHT_HAND + LEFT_HAND + setOf(41, 43, 45, 47, 57, 59)
                 }
             passage.steps.forEach { step ->
@@ -91,8 +96,15 @@ class SightReadingGeneratorTest {
         forEveryPassage { level, passage ->
             val maxJump = if (level == 1) 1 else 2
             tune(level, passage)
-                .map { WHITE_PITCH_CLASSES.indexOf(it % 12) }
-                .zipWithNext()
+                .map {
+                    if (level >=
+                        FIRST_G_LEVEL
+                    ) {
+                        RIGHT_HAND_IN_G.indexOf(it)
+                    } else {
+                        WHITE_PITCH_CLASSES.indexOf(it % 12)
+                    }
+                }.zipWithNext()
                 .forEach { (a, b) -> assertTrue(kotlin.math.abs(a - b) <= maxJump, "level $level: $a to $b") }
         }
     }
@@ -125,11 +137,12 @@ class SightReadingGeneratorTest {
     }
 
     @Test
-    fun startsAndEndsOnC() {
+    fun startsAndEndsOnTheTonic() {
         forEveryPassage { level, passage ->
             val notes = tune(level, passage)
-            assertEquals(0, notes.first() % 12)
-            assertEquals(0, notes.last() % 12)
+            val tonic = if (level >= FIRST_G_LEVEL) 7 else 0
+            assertEquals(tonic, notes.first() % 12)
+            assertEquals(tonic, notes.last() % 12)
             if (level in 4..6) assertEquals(48, notes.last())
             val lastBar = bars(passage).getValue(3)
             val lengths =

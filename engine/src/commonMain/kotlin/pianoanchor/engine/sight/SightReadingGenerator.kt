@@ -31,7 +31,7 @@ private const val DOTTED_QUARTER_LEVEL = 10
 private const val DOTTED_QUARTER_EIGHTHS = 3
 private const val G_POSITION_LEVEL = 11
 private const val G_CHORDS_LEVEL = 12
-private const val CHORDS_BAR_TWO = 2
+private const val D7_BAR = 2
 
 private const val QUARTER = TICKS_PER_QUARTER
 private const val HALF = 2 * TICKS_PER_QUARTER
@@ -44,7 +44,7 @@ private const val DOTTED_QUARTER = DOTTED_QUARTER_EIGHTHS * EIGHTH
 private val POSITION_STEPS = listOf(0, 2, 4, 5, 7)
 private val NOTE_INDICES = POSITION_STEPS.indices
 
-/** The tonic (first and last note) of the right-hand tune in C and in G position, and of the left-hand level. */
+/** The first and last note of the walk: right hand in C position, left hand (level 4), right hand in G position. */
 private const val C4_TONIC = 60
 private const val C3_TONIC = 48
 private const val G4_TONIC = 67
@@ -196,7 +196,7 @@ public object SightReadingGenerator {
         else -> C4_TONIC
     }
 
-    /** The left-hand notes held through each bar at levels 7 (one note) and 8 (a triad); empty before. */
+    /** The left-hand notes held through each bar at levels 7 (one note), 8 and 12 (a chord); empty otherwise. */
     private fun heldNotes(
         level: Int,
         random: Random,
@@ -218,7 +218,7 @@ public object SightReadingGenerator {
                 List(Tunables.SIGHT_BARS) { bar ->
                     when {
                         isEdge(bar) -> G_POSITION_G_CHORD
-                        bar == CHORDS_BAR_TWO -> D7_SHORTCUT
+                        bar == D7_BAR -> D7_SHORTCUT
                         else -> listOf(G_POSITION_G_CHORD, D7_SHORTCUT).random(random)
                     }
                 }

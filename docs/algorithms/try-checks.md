@@ -1,6 +1,6 @@
 # Try checks
 
-Each of the 27 course concepts ends its Try step with one small task the piano can check: play the glowing key, find
+Each of the 32 course concepts ends its Try step with one small task the piano can check: play the glowing key, find
 every C, hold a note for two clicks. `TryRun` in the engine's lesson package turns live note events into progress for
 the lesson screen and, later, review quizzes. It is pure and immutable: every event returns the next run. The check
 data (`TryCheck`) is in `core/model`; the table of checks is `TryChecks.kt` in the engine's content package, read
