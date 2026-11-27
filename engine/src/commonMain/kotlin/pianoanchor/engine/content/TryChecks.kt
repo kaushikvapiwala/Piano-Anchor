@@ -14,13 +14,17 @@ private const val PITCH_CLASS_C = 0
 private const val PITCH_CLASS_F = 5
 private const val BEATS_PER_MINUTE = 60
 private const val EIGHTH_NOTES_TAPS = 8
+private const val PITCH_CLASS_F_SHARP = 6
+private val G_POSITION_RUN = listOf(67, 69, 71, 72, 74, 72, 71, 69, 67)
+private val LEFT_HAND_G_RUN = listOf(50, 48, 47, 45, 43)
+private val D7_SHORTCUT = setOf(42, 48, 50)
 private const val QUARTER = TICKS_PER_QUARTER
 private const val EIGHTH = QUARTER / 2
 private const val DOTTED_QUARTER = QUARTER + EIGHTH
 private const val HALF = 2 * QUARTER
 
 /**
- * The Try check of each of the 27 course skills (`docs/algorithms/try-checks.md`), keyed by skill id. Keyboard-wide
+ * The Try check of each of the 32 course skills (`docs/algorithms/try-checks.md`), keyed by skill id. Keyboard-wide
  * checks assume 88 keys (A0 to C8). Piece concepts check their first passage, the same one the Use step plays.
  */
 internal object TryChecks {
@@ -59,6 +63,11 @@ internal object TryChecks {
             Skills.DOTTED_QUARTER.id to
                 TryCheck.Rhythm(MIDDLE_C, listOf(DOTTED_QUARTER, EIGHTH, HALF), BEATS_PER_MINUTE),
             Skills.RHYTHM_SONG.id to passage(Skills.RHYTHM_SONG),
+            Skills.RH_G_POSITION.id to TryCheck.Sequence(G_POSITION_RUN),
+            Skills.LH_G_POSITION.id to TryCheck.Sequence(LEFT_HAND_G_RUN),
+            Skills.KEY_OF_G.id to TryCheck.FindAll(PITCH_CLASS_F_SHARP, LOWEST_KEY..HIGHEST_KEY),
+            Skills.G_AND_D7_CHORDS.id to TryCheck.Chord(D7_SHORTCUT),
+            Skills.MELODY_CHORDS_IN_G.id to passage(Skills.MELODY_CHORDS_IN_G),
         )
 
     private fun passage(skill: Skill): TryCheck =

@@ -34,10 +34,18 @@ class PlacementTestTest {
     }
 
     @Test
-    fun allFivePassedStartsAt5() {
-        val bands = List(5) { Band.GOOD }
+    fun allSixPassedStartsAt6() {
+        val bands = List(6) { Band.GOOD }
+        assertNull(PlacementTest.next(bands))
+        assertEquals(6, PlacementTest.startUnit(bands))
+    }
+
+    @Test
+    fun failingTheUnit5PieceStartsAt5() {
+        val bands = List(5) { Band.GOOD } + Band.KEEP_PRACTISING
         assertNull(PlacementTest.next(bands))
         assertEquals(5, PlacementTest.startUnit(bands))
+        assertEquals(5, PlacementTest.next(List(5) { Band.GOOD }))
     }
 
     @Test

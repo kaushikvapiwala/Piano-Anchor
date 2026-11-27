@@ -49,25 +49,26 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     after a one-bar count-in; pieces get a chord line.
 4. **Progress tab** (spec #271) [#268]: the weekly recap and "Day 1 vs today", the learner's first full run of a
     piece next to the latest one.
-5. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
-    D7 shortcut, Go Tell Aunt Rhody, sight-reading levels 11–12 and Unit 5's placement piece.
-6. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
+5. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
     thumb-under. Built like Units 4–5; each unit adds sight-reading levels and a placement piece. The pedal unit sets
     the lesson's pedalIsMusic flag for its concepts (ADR 0027).
-7. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
+6. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
     learner skipped its Try or Use, so its "next" can differ from Today's Next card; name the next unpassed concept.
-8. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
+7. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
     come from engine strings; return a pitch class and accidental from the note-name rule and map it to
     Compose string resources in the UI, so the names can be translated.
-9. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
+8. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
     Unit 0 wide strip and at font scale 2.0; a "not loaded yet" state so a beginner's strip doesn't open blank and
     letter itself a moment later; Practice takes the note-labels use case from Koin like Lesson and Quiz.
-10. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
+9. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
     keys as flats in flat keys (today a flat key reads "in F major" with no flats drawn); beam 6/8 eighths in threes
     and use dotted-quarter rests on its beats.
-11. **Rhythm Try: drift against the click** (follow-up of #273; needs an owner decision, the grill chose interval
+10. **Rhythm Try: drift against the click** (follow-up of #273; needs an owner decision, the grill chose interval
     judging): the Rhythm check judges each tap only against the one before, so a steady tempo about a third off
     still passes; decide whether to also measure taps from the first tap's onset so the error can't build up.
+11. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
+    48..52 chromatically (C, C♯, D, D♯, E) instead of the white keys C D E F G; use an explicit key list like the
+    left-hand G scene and re-record its screenshots.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
@@ -116,7 +117,7 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2, M3.3 settings, M3.4 Today, M3.5 onboarding, M3.6 update check and M3.7 release pipeline done; v0.1.0 and the dogfood are the owner's) | Dogfood (`docs/RELEASING.md`): the owner uses the released APK; Today's practice-day line shows 14 practice days within 16, and no open `dogfood` issue is labelled `blocker` |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (✅ done: tracks in the daily plan #151, ear #152, songs and chords #153, the contribute-a-piano kit #154) | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting (✅ done: M5.1 hint fading, M5.2 perform mode, M5.3 spot loops and M5.4 unaided pass and strictness) | Unaided pass required before "learned" |
-| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245), M6.2 (daily sight-reading card, #246) and M6.3 (played placement test, #247) done; staff notation done (#272); M6.4 (Unit 4, eighth notes and the dotted quarter, #273) done; M6.5 specced (#274) | Placement reproducible |
+| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245), M6.2 (daily sight-reading card, #246) and M6.3 (played placement test, #247) done; staff notation done (#272); M6.4 (Unit 4, eighth notes and the dotted quarter, #273) done; M6.5 (Unit 5, G position and the key of G, #274) done | Placement reproducible |
 | M7 | Heatmaps, recordings, calibration report | Predicted vs observed retention plotted |
 | M8 | Optional Google Drive sync | Round-trip sync between two devices |
 | M9 | Kids (ages 6–8+): research pass, age-appropriate content | — |

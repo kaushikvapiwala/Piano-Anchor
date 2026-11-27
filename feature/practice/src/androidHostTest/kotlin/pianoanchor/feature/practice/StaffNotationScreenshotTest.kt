@@ -29,6 +29,7 @@ private const val FONT_SCALE_LARGE = 2f
 @Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
 class StaffNotationScreenshotTest {
     private val odeWithChords = Curriculum.passage("builtin:ode-to-joy-held-bass")!!
+    private val auntRhody = Curriculum.passage("builtin:go-tell-aunt-rhody")!!
     private val turnTaking = Curriculum.passages.first { it.title == "Turn-taking" }
     private val gMajor =
         Passage(
@@ -72,6 +73,9 @@ class StaffNotationScreenshotTest {
 
     @Test
     fun aKeySignatureAndANaturalSign() = capture("g_major", gMajor)
+
+    @Test
+    fun goTellAuntRhodyShowsTheKeySignatureOnBothStaves() = capture("aunt_rhody", auntRhody)
 
     @Test
     fun odeWithChordsAtFontScale2() = capture("ode_with_chords_font2", odeWithChords, FONT_SCALE_LARGE)

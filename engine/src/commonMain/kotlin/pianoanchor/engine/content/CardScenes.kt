@@ -122,6 +122,32 @@ private val JINGLE_BELLS_CUES =
         cue(SONG_START_MS + at * SONG_EIGHTH_MS, eighths * SONG_EIGHTH_MS - SONG_GAP_MS, LightKey(key, finger))
     }
 
+private const val G4 = 67
+private const val F_SHARP_4 = 66
+private const val G_POSITION_TOP = 74
+private const val LOW_G = 43
+private const val LEFT_G_POSITION_TOP = 50
+private const val F_SHARP_2 = 42
+private const val C3 = 48
+private const val D3 = 50
+private const val B2 = 47
+private const val G_KEY_START_MS = 300
+private const val G_KEY_NOTE_MS = 800
+private const val F_SHARP_AT_MS = G_KEY_START_MS + G_KEY_NOTE_MS
+private const val KEY_NOTES_AT_MS = 2100
+private const val KEY_NOTE_MS = 300
+private const val RHODY_START_MS = 200
+private const val RHODY_NOTE_MS = 700
+private const val RHODY_GAP_MS = 40
+private val G_POSITION_NOTES = listOf(67, 69, 71, 72, 74)
+private val LEFT_G_POSITION_NOTES = listOf(43, 45, 47, 48, 50)
+
+/** The notes of the key of G the scene lights after the F sharp, from F sharp up to D. */
+private val G_KEY_NOTES = listOf(F_SHARP_4) + G_POSITION_NOTES
+
+/** The start of Go Tell Aunt Rhody as (key, finger): B B A G G. */
+private val RHODY_START = listOf(71 to 3, 71 to 3, 69 to 2, 67 to 1, 67 to 1)
+
 private val CS = intArrayOf(36, 48, 60, 72, 84)
 private val WHITE_NAMES = listOf("C" to 48, "D" to 50, "E" to 52, "F" to 53, "G" to 55, "A" to 57, "B" to 59)
 
@@ -147,7 +173,7 @@ private fun beats(vararg keyLengths: Pair<Int, Int>): List<SceneCue> =
 
 /**
  * The looping animations of the concept cards, one per skill, written in the shared scene vocabulary so every card
- * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 4 now;
+ * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 5 now;
  * later units add theirs.
  */
 internal object CardScenes {
@@ -507,6 +533,65 @@ internal object CardScenes {
             "The right hand lights E, E, E, then E, G, C and D, the Jingle Bells chorus, with its finger numbers.",
         )
 
+    private val rhGPosition =
+        CardScene(
+            SceneStage(G4..G_POSITION_TOP, hand = SceneHand.RIGHT),
+            listOf(cue(0, CARD_SCENE_LOOP_MS, SceneAction.HandPose(curved = true, overNote = G4))) +
+                G_POSITION_NOTES.mapIndexed { i, note ->
+                    cue(FIRST_FINGER_MS_LEFT + i * RUN_MS, RUN_MS, LightKey(note, finger = i + 1))
+                } +
+                cue(RUN_START_MS, CAPTION_END_MS - RUN_START_MS, Caption("G position")),
+            "The right hand sits curved on the G above middle C and fingers 1 to 5 light G, A, B, C and D in turn.",
+        )
+
+    private val lhGPosition =
+        CardScene(
+            SceneStage(LOW_G..LEFT_G_POSITION_TOP, hand = SceneHand.LEFT),
+            listOf(
+                cue(0, CARD_SCENE_LOOP_MS, SceneAction.HandPose(curved = true, overNote = LEFT_G_POSITION_TOP)),
+            ) +
+                LEFT_G_POSITION_NOTES.mapIndexed { i, note ->
+                    cue(FIRST_FINGER_MS_LEFT + i * RUN_MS, RUN_MS, LightKey(note, finger = 5 - i))
+                } +
+                cue(RUN_START_MS, CAPTION_END_MS - RUN_START_MS, Caption("Left hand on G")),
+            "The left hand sits curved on the low G and fingers 5 down to 1 light G, A, B, C and D in turn.",
+        )
+
+    private val keyOfG =
+        CardScene(
+            SceneStage(E_ABOVE_MIDDLE_C..G_POSITION_TOP),
+            listOf(
+                cue(G_KEY_START_MS, G_KEY_NOTE_MS, LightKey(F_ABOVE_MIDDLE_C)),
+                cue(F_SHARP_AT_MS, KEY_NOTES_AT_MS - F_SHARP_AT_MS, LightKey(F_SHARP_4, strong = true)),
+                cue(F_SHARP_AT_MS, CAPTION_END_MS - F_SHARP_AT_MS, Caption("F\u266F in G")),
+            ) +
+                G_KEY_NOTES.mapIndexed { i, note ->
+                    cue(KEY_NOTES_AT_MS + i * KEY_NOTE_MS, KEY_NOTE_MS, LightKey(note))
+                },
+            "F lights, then the black key just right of it for F sharp, then the notes of the key of G, F sharp to D.",
+        )
+
+    private val gAndD7Chords =
+        CardScene(
+            SceneStage(41..52),
+            listOf(
+                chord(SYMBOL_AT_MS, "G", listOf(LOW_G, B2, D3)),
+                chord(SYMBOL_AT_MS + SYMBOL_MS, "D7", listOf(F_SHARP_2, C3, D3)),
+            ).flatten(),
+            "The G chord lights as G, B and D, then the D7 shortcut lights as F sharp, C and D.",
+        )
+
+    private val melodyChordsInG =
+        CardScene(
+            SceneStage(G4..G_POSITION_TOP, hand = SceneHand.RIGHT),
+            listOf(cue(0, CARD_SCENE_LOOP_MS, SceneAction.HandPose(curved = true, overNote = G4))) +
+                RHODY_START.mapIndexed { i, (note, finger) ->
+                    cue(RHODY_START_MS + i * RHODY_NOTE_MS, RHODY_NOTE_MS - RHODY_GAP_MS, LightKey(note, finger))
+                } +
+                cue(RHODY_START_MS, CAPTION_END_MS - RHODY_START_MS, Caption("Aunt Rhody")),
+            "The right hand lights B, B, A, G and G with its finger numbers, the start of Go Tell Aunt Rhody.",
+        )
+
     /** Every card scene by the id of its skill. */
     val all: Map<String, CardScene> =
         mapOf(
@@ -537,5 +622,10 @@ internal object CardScenes {
             Skills.EIGHTH_PAIRS.id to eighthPairs,
             Skills.DOTTED_QUARTER.id to dottedQuarter,
             Skills.RHYTHM_SONG.id to rhythmSong,
+            Skills.RH_G_POSITION.id to rhGPosition,
+            Skills.LH_G_POSITION.id to lhGPosition,
+            Skills.KEY_OF_G.id to keyOfG,
+            Skills.G_AND_D7_CHORDS.id to gAndD7Chords,
+            Skills.MELODY_CHORDS_IN_G.id to melodyChordsInG,
         )
 }
