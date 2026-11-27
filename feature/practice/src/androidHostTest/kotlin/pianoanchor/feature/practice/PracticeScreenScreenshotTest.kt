@@ -14,6 +14,8 @@ import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.guidance.wrongKeyHint
+import pianoanchor.engine.lesson.NoteLabels
+import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.ui.shell.PianoAnchorTheme
 
@@ -42,6 +44,20 @@ class PracticeScreenScreenshotTest {
             }
         }
     }
+
+    @Test
+    fun everyWhiteKeyLettered() =
+        capture(
+            "letters_all_white",
+            start.copy(noteLabels = NoteLabels(NoteNameStage.ALL_WHITE, sharpsPassed = true, hints = true)),
+        )
+
+    @Test
+    fun onlyTheKeyToPlayLettered() =
+        capture(
+            "letters_target_only",
+            start.copy(noteLabels = NoteLabels(NoteNameStage.TARGET_ONLY, sharpsPassed = true, hints = true)),
+        )
 
     @Test
     fun waitingForTheFirstNote() = capture("start", start)

@@ -31,6 +31,8 @@ import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
+import pianoanchor.engine.lesson.NoteLabelsUseCase
+import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.lesson.QuizMaker
 import pianoanchor.engine.lesson.TryRun
@@ -61,6 +63,7 @@ public class QuizViewModel(
     private val metronome: MetronomePort,
     private val time: ClockPort,
     private val learner: LearnerModel,
+    private val noteLabels: NoteLabelsUseCase,
     private val settings: SettingsRepositoryPort,
     private val clock: Clock,
     private val zone: TimeZone,
@@ -107,9 +110,17 @@ public class QuizViewModel(
     private var clean = 0
     private var closed = false
 
+    /** Letters the strip's keys as the learner's setting and progress say, once they are read. */
+    private suspend fun loadNoteLabels() {
+        // A quiz asks for a key by name: no letters but a wrong-key hint's.
+        val labels = noteLabels.load().copy(stage = NoteNameStage.NONE)
+        mutableState.update { it.copy(noteLabels = labels) }
+    }
+
     init {
         reader = viewModelScope.launch { readPiano() }
         viewModelScope.launch { watchPedalSetting() }
+        viewModelScope.launch { loadNoteLabels() }
         startQuiz()
     }
 

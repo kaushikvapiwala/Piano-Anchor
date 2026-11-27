@@ -30,6 +30,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hint level | How much help a run of a passage starts with: Full (amber key band at once), Delayed (after the learner's usual pause) or Off (only on the Hint button). Faded by clean runs, restored by keep-practising runs (`HintFading`, `docs/algorithms/guidance.md`). |
 | Landmark hint | The one plain line shown after a wrong key in wait mode: how to find the key to play from the groups of two and three black keys (`wrongKeyHint`, `docs/algorithms/wrong-key-hint.md`). |
+| Note names on keys | The letters ("C", "D", "C♯") written on the key strips, chosen by `NoteNameRule` from `Settings.noteNames` and the course progress: every white key until "C D E, then F G A B" is passed, only the key to play until it is learned, then none; black keys only after "Sharps and flats" is passed. A wrong-key hint letters its keys at any stage; Off shows none. |
 | Pedal tap | A quick press and release of the sustain pedal (down, then up within `PEDAL_TAP_MAX_MS`), read by `PedalTapDetector`. Outside a run it means "continue" (the screen's primary action) while `Settings.pedalControlOn`; a longer press is a hold, which is music. |
 | Lesson step | One of a beginner lesson's five steps: Why (the concept card), See (the app plays it), Try (one action the piano checks), Use (a tiny piece), Recap. |
 | Perform run | An attempt played in perform mode: one take at a timed rung with no hints and no live verdicts (`mode` PERFORM). |

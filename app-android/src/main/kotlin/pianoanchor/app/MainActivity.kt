@@ -594,6 +594,7 @@ private fun SettingsRoute(onBack: () -> Unit) {
             onWeeklyGoalStep = viewModel::changeWeeklyGoalDays,
             onClickOn = viewModel::setClickOn,
             onPedalControlOn = viewModel::setPedalControlOn,
+            onNoteNames = viewModel::setNoteNames,
             onStrictness = viewModel::setStrictness,
             onUpdateCheckOn = viewModel::setUpdateCheckOn,
             onDismissError = viewModel::dismissError,

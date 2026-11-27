@@ -12,6 +12,7 @@ import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.NoteNames
 import pianoanchor.core.model.Release
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.Strictness
@@ -32,6 +33,7 @@ private const val STRICTNESS = "strictness"
 private const val LAST_PIANO = "last_piano"
 private const val LESSON_STEPS = "lesson_steps"
 private const val PEDAL_CONTROL_ON = "pedal_control_on"
+private const val NOTE_NAMES = "note_names"
 
 /** A stored text that is "not set" (the rows of absent values hold it, so every update writes every row). */
 private const val UNSET = ""
@@ -87,6 +89,7 @@ public class SqlSettingsRepositoryAdapter(
                         queries.put(LAST_PIANO, updated.lastPiano.stored())
                         queries.put(LESSON_STEPS, updated.lessonSteps.stored())
                         queries.put(PEDAL_CONTROL_ON, updated.pedalControlOn.toString())
+                        queries.put(NOTE_NAMES, updated.noteNames.name)
                     }
                 }
             }
@@ -122,6 +125,7 @@ private fun Map<String, String>.toSettings(): Settings {
         lastPiano = this[LAST_PIANO]?.toPianoOrNull(),
         lessonSteps = this[LESSON_STEPS]?.toLessonSteps().orEmpty(),
         pedalControlOn = read(PEDAL_CONTROL_ON, defaults.pedalControlOn, String::toBooleanStrictOrNull),
+        noteNames = read(NOTE_NAMES, defaults.noteNames) { name -> NoteNames.entries.firstOrNull { it.name == name } },
     )
 }
 

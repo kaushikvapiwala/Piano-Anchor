@@ -1,6 +1,7 @@
 package pianoanchor.feature.settings
 
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.NoteNames
 import pianoanchor.core.model.Strictness
 
 /** What the user can do on the [SettingsScreen]; the composition root wires these to the ViewModel and navigation. */
@@ -11,6 +12,7 @@ public data class SettingsActions(
     val onWeeklyGoalStep: (Int) -> Unit = {},
     val onClickOn: (Boolean) -> Unit = {},
     val onPedalControlOn: (Boolean) -> Unit = {},
+    val onNoteNames: (NoteNames) -> Unit = {},
     val onStrictness: (Strictness) -> Unit = {},
     val onUpdateCheckOn: (Boolean) -> Unit = {},
     val onDismissError: () -> Unit = {},

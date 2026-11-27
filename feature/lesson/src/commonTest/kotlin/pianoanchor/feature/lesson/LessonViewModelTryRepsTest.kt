@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Skill
@@ -17,6 +18,7 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
@@ -57,6 +59,12 @@ class LessonViewModelTryRepsTest {
             settings,
             FakeAttemptRepository(),
             LearnerModel(Curriculum.graph, FakeLearnerRepository()),
+            NoteLabelsUseCase(
+                settings,
+                FakeAttemptRepository(),
+                LearnerModel(Curriculum.graph, FakeLearnerRepository()),
+                TimeZone.UTC,
+            ),
             piano.clock,
         ).also { runCurrent() }
 

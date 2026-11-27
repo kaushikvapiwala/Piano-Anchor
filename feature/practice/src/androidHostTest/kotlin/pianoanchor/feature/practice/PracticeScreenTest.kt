@@ -1,10 +1,13 @@
 package pianoanchor.feature.practice
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
@@ -14,9 +17,11 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.Density
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -28,6 +33,8 @@ import pianoanchor.core.model.TimeSignature
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.guidance.wrongKeyHint
+import pianoanchor.engine.lesson.NoteLabels
+import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.ui.shell.PianoAnchorTheme
 import pianoanchor.ui.shell.pianoAnchorColors
@@ -557,3 +564,135 @@ class PracticeScreenTest {
 }
 
 private const val GREY_TOLERANCE = 0.02f
+
+private val LETTER = Regex("[A-G][♯♭]?")
+
+/** The letters the practice key strip writes on its keys, on Robolectric. */
+@OptIn(ExperimentalTestApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
+class PracticeKeyLettersTest {
+    private val start = PracticeState.start(Passages.CDE)
+
+    /** The letters on show (they hide from TalkBack, so the unmerged tree is read). */
+    private fun ComposeUiTest.lettersOf(state: PracticeState): List<String> {
+        setContent { PianoAnchorTheme { KeyStrip(state) } }
+        return onAllNodes(
+            SemanticsMatcher("a key letter") {
+                it.config.getOrNull(SemanticsProperties.Text)?.any { text -> LETTER.matches(text.text) } == true
+            },
+            useUnmergedTree = true,
+        ).fetchSemanticsNodes().flatMap { node -> node.config[SemanticsProperties.Text].map { it.text } }
+    }
+
+    private fun labels(
+        stage: NoteNameStage,
+        sharps: Boolean = false,
+    ) = NoteLabels(stage, sharps, hints = true)
+
+    @Test
+    fun everyWhiteKeyIsLetteredAtFirstAndBlackKeysWaitForSharps() =
+        runComposeUiTest {
+            val whites = lettersOf(start.copy(noteLabels = labels(NoteNameStage.ALL_WHITE)))
+
+            assertTrue(whites.isNotEmpty() && whites.all { it.length == 1 }, whites.toString())
+        }
+
+    @Test
+    fun blackKeysGetSharpNamesOnceSharpsArePassed() =
+        runComposeUiTest {
+            val letters = lettersOf(start.copy(noteLabels = labels(NoteNameStage.ALL_WHITE, sharps = true)))
+
+            assertTrue("C♯" in letters, letters.toString())
+        }
+
+    @Test
+    fun onlyTheWaitingKeyIsLetteredOnceKeyNamesArePassed() =
+        runComposeUiTest {
+            assertEquals(listOf("C"), lettersOf(start.copy(noteLabels = labels(NoteNameStage.TARGET_ONLY))))
+        }
+
+    @Test
+    fun noLettersOnceKeyNamesAreLearned() =
+        runComposeUiTest {
+            assertEquals(emptyList(), lettersOf(start.copy(noteLabels = labels(NoteNameStage.NONE))))
+        }
+
+    @Test
+    fun aWrongKeyHintLettersTheTwoKeysAtAnyStage() =
+        runComposeUiTest {
+            val hinted =
+                start.copy(
+                    noteLabels = labels(NoteNameStage.NONE),
+                    hint = wrongKeyHint(played = 65, expected = 60),
+                )
+
+            assertEquals(listOf("C", "F"), lettersOf(hinted))
+        }
+
+    @Test
+    fun aPerformTakeShowsNoLetters() =
+        runComposeUiTest {
+            val perform =
+                start.copy(
+                    noteLabels = labels(NoteNameStage.ALL_WHITE),
+                    mode = RunMode.PERFORM,
+                    rung = TempoRung.P70,
+                )
+
+            assertEquals(emptyList(), lettersOf(perform))
+        }
+
+    /** Whether every letter on the strip's target key sits inside its band, at [fontScale]. */
+    private fun ComposeUiTest.lettersSitOnTheBand(
+        state: PracticeState,
+        names: Set<String>,
+        fontScale: Float,
+    ): Boolean {
+        setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                PianoAnchorTheme { KeyStrip(state) }
+            }
+        }
+        val band = onNodeWithTag(TARGET_BAND_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val letters =
+            onAllNodes(
+                SemanticsMatcher("a target letter") {
+                    it.config.getOrNull(SemanticsProperties.Text)?.any { text -> text.text in names } == true
+                },
+                useUnmergedTree = true,
+            ).fetchSemanticsNodes()
+        return letters.size == names.size && letters.all { it.boundsInRoot.top >= band.top - 1f }
+    }
+
+    @Test
+    fun aBlackTargetKeysTwoNamesSitOnItsBand() =
+        runComposeUiTest {
+            val black =
+                start.copy(
+                    passage = Passages.CDE,
+                    noteLabels = NoteLabels(NoteNameStage.TARGET_ONLY, sharpsPassed = true, hints = true),
+                    steps =
+                        start.steps.mapIndexed { i, step ->
+                            if (i ==
+                                0
+                            ) {
+                                step.copy(notes = setOf(MidiNote(61)))
+                            } else {
+                                step
+                            }
+                        },
+                )
+
+            assertTrue(lettersSitOnTheBand(black, setOf("C♯", "D♭"), fontScale = 1f))
+        }
+
+    @Test
+    fun aWhiteTargetKeysLetterSitsOnItsBandAtLargeFonts() =
+        runComposeUiTest {
+            val white = start.copy(noteLabels = labels(NoteNameStage.TARGET_ONLY))
+
+            assertTrue(lettersSitOnTheBand(white, setOf("C"), fontScale = 2f))
+        }
+}

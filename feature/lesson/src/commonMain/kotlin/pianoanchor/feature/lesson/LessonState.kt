@@ -7,6 +7,7 @@ import pianoanchor.core.model.Passage
 import pianoanchor.core.model.Skill
 import pianoanchor.core.model.TryCheck
 import pianoanchor.engine.content.Curriculum
+import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.engine.lesson.TryProgress
 
 /** The link to the piano during the lesson. */
@@ -49,6 +50,7 @@ public data class LessonState(
     val pedalControl: Boolean = false,
     val cleanReps: Int = 0,
     val repsNeeded: Int = 1,
+    val noteLabels: NoteLabels = NoteLabels(),
 ) {
     /** True when the step shows "Tap the pedal to continue": a tap acts here and the piano is connected. */
     val pedalHint: Boolean

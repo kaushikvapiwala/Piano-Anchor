@@ -55,6 +55,7 @@ import pianoanchor.engine.guidance.HintFading
 import pianoanchor.engine.guidance.wrongKeyHint
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.matcher.LiveVerdict
 import pianoanchor.engine.matcher.MatchState
 import pianoanchor.engine.matcher.TempoJudge
@@ -210,6 +211,7 @@ public class PracticeViewModel(
         require(spot == null || pieceId != passage.id) { "a spot loop needs the id of its piece" }
         viewModelScope.launch { refreshDoneRungs() }
         viewModelScope.launch { seedClickOn() }
+        viewModelScope.launch { loadNoteLabels() }
         start(if (spot == null) initialRung else initialRung.below(), initialMode)
     }
 
@@ -426,6 +428,12 @@ public class PracticeViewModel(
             // The run ended (and stopped the click) while this start ran: don't leave it clicking.
             if (on && pattern !== running) metronome.stop()
         }
+    }
+
+    /** Letters the keys as the learner's setting and progress say; the strip shows none until this has read them. */
+    private suspend fun loadNoteLabels() {
+        val labels = NoteLabelsUseCase(settings, attempts, learner, zone).load()
+        mutableState.update { it.copy(noteLabels = labels) }
     }
 
     /**

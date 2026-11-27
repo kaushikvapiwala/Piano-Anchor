@@ -1,5 +1,8 @@
 package pianoanchor.core.model
 
+/** The pitch-class names of an octave from C, sharps only ("C", "C#", ... "B"), as [MidiNote.name] spells them. */
+public val PITCH_CLASS_NAMES: List<String> = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+
 /**
  * A MIDI note number (0–127). Middle C is 60 and is named "C4" (scientific pitch notation).
  *
@@ -14,13 +17,12 @@ public data class MidiNote(
 
     /** Scientific pitch name, e.g. 60 → "C4", 61 → "C#4", 21 → "A0". */
     val name: String
-        get() = PITCH_CLASSES[number % SEMITONES_PER_OCTAVE] + (number / SEMITONES_PER_OCTAVE - 1)
+        get() = PITCH_CLASS_NAMES[number % SEMITONES_PER_OCTAVE] + (number / SEMITONES_PER_OCTAVE - 1)
 
     public companion object {
         public val RANGE: IntRange = 0..127
         public val MIDDLE_C: MidiNote = MidiNote(60)
 
         private const val SEMITONES_PER_OCTAVE = 12
-        private val PITCH_CLASSES = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
     }
 }

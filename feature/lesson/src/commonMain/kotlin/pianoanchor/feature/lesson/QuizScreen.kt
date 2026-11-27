@@ -120,6 +120,7 @@ public fun QuizScreen(
                     state.glowKeys,
                     state.progress?.lastWrong,
                     Modifier.padding(top = 6.dp),
+                    state.noteLabels,
                 )
             }
         }

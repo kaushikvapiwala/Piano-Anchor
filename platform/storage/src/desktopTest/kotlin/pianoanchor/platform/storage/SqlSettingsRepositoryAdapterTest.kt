@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.runTest
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiDevice
+import pianoanchor.core.model.NoteNames
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.Strictness
@@ -40,7 +41,7 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             repository.update { it.copy(dailyBudget = DailyBudget.MIN_15) }
 
             assertEquals(Settings(DailyBudget.MIN_15, updateCheckOn = false), repository.settings.first())
-            assertEquals(12, driver.count("setting"))
+            assertEquals(13, driver.count("setting"))
         }
 
     @Test
@@ -125,6 +126,26 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             assertEquals(
                 false,
                 SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().pedalControlOn,
+            )
+        }
+
+    @Test
+    fun noteNamesRoundTripAndOldSettingsReadAsAuto() =
+        runTest {
+            val driver = drivers.open()
+            val repository = SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined)
+            assertEquals(NoteNames.AUTO, repository.settings.first().noteNames)
+
+            repository.update { it.copy(noteNames = NoteNames.OFF) }
+
+            assertEquals(
+                NoteNames.OFF,
+                SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().noteNames,
+            )
+            driver.exec("UPDATE setting SET text_value = 'SHOUTING' WHERE key = 'note_names'")
+            assertEquals(
+                NoteNames.AUTO,
+                SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().noteNames,
             )
         }
 
