@@ -23,7 +23,7 @@
     <string name="onboarding_key_highlighted">%1$s, play this key</string>
     <string name="onboarding_start_title">Where do you want to start?</string>
     <string name="onboarding_start_test">Test me</string>
-    <string name="onboarding_start_test_summary">Play up to four short pieces. You start at the first one that doesn't go well.</string>
+    <string name="onboarding_start_test_summary">Play up to five short pieces. You start at the first one that doesn't go well.</string>
     <string name="onboarding_start_beginning">Start from the beginning</string>
     <string name="onboarding_start_beginning_summary">Unit 0 · %1$s. Nothing is assumed.</string>
     <string name="onboarding_placement_header">Piece %1$s of %2$s · %3$s</string>

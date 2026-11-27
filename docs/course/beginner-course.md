@@ -32,7 +32,7 @@ hook: middle C glows, the learner plays it, and the app asks how to find it with
 the answer.
 
 ## Concept card
-Every concept has a card with four required one-line fields. A content test fails if any field is empty. The 23 cards are
+Every concept has a card with four required one-line fields. A content test fails if any field is empty. The 27 cards are
 in `ConceptCards.kt` (type `ConceptCard`); showing and animating them comes later.
 
 | Field | Answers | Black keys, for example |
@@ -57,7 +57,9 @@ Every lesson has five steps:
 Rules:
 - **Hear it first:** every passage plays once before the learner tries it, and they can skip that.
 - **Beat from day 1:** the click is there from the beat lesson on, but timing isn't judged until the course says so.
-  A timed run shows a visible count-in ("3, 2, 1, play") and a clear start cue.
+  A timed run shows a visible count-in ("3, 2, 1, play") and a clear start cue. Timing is judged only where it is the
+  concept itself: how long a note is held, the accent on beat 1 and, from Unit 4, the spacing of taps in a rhythm. The
+  Try of such a concept says what was off ("That one came early") and the check goes on.
 - **Wrong key:** the key pressed flashes grey and the right key glows. One plain line explains, for example "That was
   D. C is just left of the two black keys." No red, no sound, and the app waits.
 - **Nothing locked:** every lesson is open. Today shows one suggested "Next" card that moves only past passed
@@ -135,7 +137,29 @@ along the bottom and lights keys. Only the right side changes between steps. A d
 | 22 | Melody plus chords | The goal. | Ode to Joy with chords. |
 | 23 | Sharps and flats | The black keys' second job, closing the loop from step 3. | Play C♯. |
 
-Left for the next course: eighth notes, the G position, the pedal and scales.
+Left for the next course (Course 2, below): the G position, the pedal and scales.
+
+## Course 2
+Course 2 builds on the finished first course (Units 0 to 3) and continues the numbering: Units 4 to 7 are planned
+(eighth notes, G position, pedal, scales; ADR 0026). Only Unit 4 exists so far. Its concepts are on the CORE track
+like the first 23 and continue the map order. Prerequisites only steer "Next"; every lesson stays open.
+
+### Unit 4: Eighth notes and the dotted quarter (right-hand C position, Unit 3's left-hand chords)
+| # | Concept | Why here | Try |
+|---|---|---|---|
+| 24 | Eighth notes, "1 and" | Music moves faster than the beat; two even notes in one click. | Eight even taps at 60 BPM, each half a click apart. |
+| 25 | Eighth pairs in tunes | A beam shows which notes share a click. | One click of quarters, a beamed pair, then a quarter: 1 2 3 & 4. |
+| 26 | Dotted quarter and eighth | A dot adds half a length: the long-short swing of Jingle Bells and Ode to Joy. | Count 1 (2) &, then the next click. |
+| 27 | A song with eighths | Puts eighths and the dotted quarter into music the learner knows. | The Jingle Bells chorus with left-hand chords, played in Use (no separate Try). |
+
+The prerequisites are bars-and-counting and melody-and-chords for eighth notes, then each concept needs the one before
+it; the song also needs melody-and-chords. A Rhythm Try plays with the click after a one-bar count-in and judges each
+gap between taps (`docs/algorithms/try-checks.md`).
+
+Passages: Running steps (eighth notes), Skipping eighths (eighth pairs, both hands), Long, short (dotted quarter) and
+Jingle Bells (chorus only, public domain, 1857; the left-hand chords are our own arrangement). The sight-reading
+staircase gains levels 9 and 10 with these note values (`docs/algorithms/sight-reading.md`), and the placement test
+gains a fifth piece, Jingle Bells (`docs/algorithms/learner-model.md`).
 
 ## Existing content
 The new map came first, then each existing passage was kept under the concept it exercises. Done in issue 181. Ids

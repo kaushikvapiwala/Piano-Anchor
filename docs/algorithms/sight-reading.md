@@ -7,7 +7,7 @@ exercises are generated from a seed and never repeat by design. The seed is stor
 
 ## Levels
 
-Eight levels, four bars each (`SIGHT_BARS`). A level opens when the learner has the skill that introduces its
+Ten levels, four bars each (`SIGHT_BARS`). A level opens when the learner has the skill that introduces its
 material, and levels open in order: if level 3 is closed, level 4 stays closed even if bass clef is learned.
 
 | Level | Opens with | Material |
@@ -20,13 +20,23 @@ material, and levels open in order: if level 3 is closed, level 4 stays closed e
 | 6 | 3/4 time | the turns of level 5 in 3/4, with dotted halves |
 | 7 | hands together, held | right-hand tune over one held left-hand note per bar (C3 or G3) |
 | 8 | melody and chords | right-hand tune over a held C, F or G triad per bar, last bar C |
+| 9 | eighth notes | the right-hand material of level 3 plus beamed eighth pairs |
+| 10 | dotted quarter | level 9 plus a dotted quarter followed by an eighth |
+
+Levels 9 and 10 stay in the right hand, C4 to G4, 4/4, with no left hand. Level 9 needs melody and chords as well as
+eighth notes, because the levels open in order. Their new rhythm cells (ticks; a quarter is 960):
+
+| Level | Cells added |
+|---|---|
+| 9 | 480 480 960 960 960; 960 960 480 480 960; 960 480 480 1920; 480 480 480 480 1920 |
+| 10 | 1440 480 960 960; 1440 480 1920; 960 1440 480 960 |
 
 ## Generating an exercise
 
 Each bar is filled from a short fixed list of rhythm cells that each add up to one bar. The pitches are a walk over the
 five white keys from C, moving by the level's allowed jump (a step, plus a skip from level 2) or staying put, and never
 leaving the range. The walk starts on C and ends on C; the last bar uses only a cell with no rest whose last note is its
-longest, so the phrase closes on a long C. At level 8 the chords are C, then F or G, then F or G, then C, and the
+longest, so the phrase closes on a long C (rule unchanged at levels 9 and 10: a cell ending on an eighth or a dotted quarter never closes it). At level 8 the chords are C, then F or G, then F or G, then C, and the
 right-hand note on beat 1 of each bar is a tone of that bar's chord. Because those constraints can leave a dead end, the
 walk backtracks and tries another note; a valid walk always exists. The tempo is only a placeholder, since sight
 reading runs in wait mode. The passage lists no skills, so saving a sight attempt records no skill review.

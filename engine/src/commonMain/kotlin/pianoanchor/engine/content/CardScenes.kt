@@ -82,6 +82,46 @@ private val LOW_C_CHORD_NOTES = listOf(LOW_C, E_ABOVE_LOW_C, G_ABOVE_LOW_C)
 private val FIVE_FINGER_NOTES = listOf(60, 62, 64, 65, 67)
 private val RUN_NOTES = FIVE_FINGER_NOTES + FIVE_FINGER_NOTES.dropLast(1).reversed()
 
+private const val EIGHTH_MS = BEAT_MS / 2
+private const val EIGHTH_LIGHT_MS = EIGHTH_MS - 100
+private const val QUARTER_LIGHT_MS = BEAT_MS - 100
+private const val DOTTED_QUARTER_LIGHT_MS = BEAT_MS * 3 / 2 - 100
+private const val EIGHTHS_PER_BEAT = 2
+private const val SONG_START_MS = 150
+private const val SONG_EIGHTH_MS = 225
+private const val SONG_GAP_MS = 40
+private const val C_FINGER = 1
+private const val D_FINGER = 2
+private const val E_FINGER = 3
+private const val G_FINGER = 5
+
+/** The eighth-pairs scene: where each light starts, in eighth notes from the first beat, and how long it lasts. */
+private val PAIRS_LIGHTS =
+    listOf(0 to QUARTER_LIGHT_MS, 2 to QUARTER_LIGHT_MS, 4 to EIGHTH_LIGHT_MS, 5 to EIGHTH_LIGHT_MS) +
+        listOf(6 to QUARTER_LIGHT_MS)
+
+/** The dotted-quarter scene, twice: a long light on the beat and a short one on the half beat after the dot. */
+private val DOTTED_LIGHTS = listOf(0 to DOTTED_QUARTER_LIGHT_MS, 3 to EIGHTH_LIGHT_MS)
+
+/** The Jingle Bells chorus start as (key, finger, length in eighth notes): E E E, then E G C. D. */
+private val JINGLE_BELLS =
+    listOf(
+        Triple(E_ABOVE_MIDDLE_C, E_FINGER, 2),
+        Triple(E_ABOVE_MIDDLE_C, E_FINGER, 2),
+        Triple(E_ABOVE_MIDDLE_C, E_FINGER, 4),
+        Triple(E_ABOVE_MIDDLE_C, E_FINGER, 2),
+        Triple(G_ABOVE_MIDDLE_C, G_FINGER, 2),
+        Triple(MIDDLE_C, C_FINGER, 3),
+        Triple(D_ABOVE_MIDDLE_C, D_FINGER, 1),
+    )
+
+/** The lights of [JINGLE_BELLS], each starting where the one before ends and lasting its length less a gap. */
+private val JINGLE_BELLS_CUES =
+    JINGLE_BELLS.runningFold(0) { at, (_, _, eighths) -> at + eighths }.zip(JINGLE_BELLS).map { (at, note) ->
+        val (key, finger, eighths) = note
+        cue(SONG_START_MS + at * SONG_EIGHTH_MS, eighths * SONG_EIGHTH_MS - SONG_GAP_MS, LightKey(key, finger))
+    }
+
 private val CS = intArrayOf(36, 48, 60, 72, 84)
 private val WHITE_NAMES = listOf("C" to 48, "D" to 50, "E" to 52, "F" to 53, "G" to 55, "A" to 57, "B" to 59)
 
@@ -107,7 +147,7 @@ private fun beats(vararg keyLengths: Pair<Int, Int>): List<SceneCue> =
 
 /**
  * The looping animations of the concept cards, one per skill, written in the shared scene vocabulary so every card
- * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 3 now;
+ * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 4 now;
  * later units add theirs.
  */
 internal object CardScenes {
@@ -423,6 +463,50 @@ internal object CardScenes {
             "C lights, then the black key just right of it for C sharp; D lights, then the same black key for D flat.",
         )
 
+    private val eighthNotes =
+        CardScene(
+            SceneStage(60..67),
+            beats() +
+                List(BEATS * EIGHTHS_PER_BEAT) {
+                    cue(FIRST_BEAT_MS + it * EIGHTH_MS, EIGHTH_LIGHT_MS, LightKey(MIDDLE_C))
+                } +
+                cue(FIRST_BEAT_MS, CAPTION_END_MS - FIRST_BEAT_MS, Caption("1 & 2 &")),
+            "A dot pulses on each beat while middle C lights twice per pulse, on the beat and halfway: 1 & 2 &.",
+        )
+
+    private val eighthPairs =
+        CardScene(
+            SceneStage(60..67),
+            beats() +
+                PAIRS_LIGHTS.map { (eighths, length) ->
+                    cue(FIRST_BEAT_MS + eighths * EIGHTH_MS, length, LightKey(MIDDLE_C))
+                } +
+                cue(FIRST_BEAT_MS, CAPTION_END_MS - FIRST_BEAT_MS, Caption("1 2 3 & 4")),
+            "Middle C lights on two clicks, twice within one click, then once more, counted 1 2 3 & 4.",
+        )
+
+    private val dottedQuarter =
+        CardScene(
+            SceneStage(60..67),
+            beats() +
+                listOf(0, 2 * EIGHTHS_PER_BEAT).flatMap { bar ->
+                    DOTTED_LIGHTS.map { (eighths, length) ->
+                        cue(FIRST_BEAT_MS + (bar + eighths) * EIGHTH_MS, length, LightKey(MIDDLE_C))
+                    }
+                } +
+                cue(FIRST_BEAT_MS, CAPTION_END_MS - FIRST_BEAT_MS, Caption("1 (2) &")),
+            "Middle C lights for a beat and a half, then for half a beat, and the long-short pair plays again.",
+        )
+
+    private val rhythmSong =
+        CardScene(
+            SceneStage(60..67, hand = SceneHand.RIGHT),
+            listOf(cue(0, CARD_SCENE_LOOP_MS, SceneAction.HandPose(curved = true, overNote = MIDDLE_C))) +
+                JINGLE_BELLS_CUES +
+                cue(SONG_START_MS, CAPTION_END_MS - SONG_START_MS, Caption("Jingle bells")),
+            "The right hand lights E, E, E, then E, G, C and D, the Jingle Bells chorus, with its finger numbers.",
+        )
+
     /** Every card scene by the id of its skill. */
     val all: Map<String, CardScene> =
         mapOf(
@@ -449,5 +533,9 @@ internal object CardScenes {
             Skills.G_AND_F_CHORDS.id to gAndFChords,
             Skills.MELODY_AND_CHORDS.id to melodyAndChords,
             Skills.SHARPS_AND_FLATS.id to sharpsAndFlats,
+            Skills.EIGHTH_NOTES.id to eighthNotes,
+            Skills.EIGHTH_PAIRS.id to eighthPairs,
+            Skills.DOTTED_QUARTER.id to dottedQuarter,
+            Skills.RHYTHM_SONG.id to rhythmSong,
         )
 }

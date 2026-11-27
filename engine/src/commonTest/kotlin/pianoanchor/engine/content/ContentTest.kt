@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 class ContentTest {
     @Test
     fun builtInGraphIsValid() {
-        assertEquals(34, Curriculum.graph.skills.size)
+        assertEquals(38, Curriculum.graph.skills.size)
         assertEquals(setOf("finger-number-tunes"), Curriculum.graph.byId("bars-and-counting")!!.prerequisites)
     }
 
@@ -17,7 +17,7 @@ class ContentTest {
 
     @Test
     fun placementPassagesExistAndAreInTheirUnits() {
-        assertEquals(4, PlacementTest.passageIds.size)
+        assertEquals(5, PlacementTest.passageIds.size)
         PlacementTest.passageIds.forEachIndexed { unit, id ->
             assertTrue(Curriculum.units[unit].passages.any { it.id == id }, "$id is not in unit $unit")
         }

@@ -31,6 +31,8 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.TryCheck
 import pianoanchor.engine.guidance.wrongKeyHint
 import pianoanchor.engine.lesson.TryProgress
+import pianoanchor.engine.lesson.TryTiming
+import pianoanchor.engine.lesson.rhythmCount
 import pianoanchor.feature.lesson.resources.Res
 import pianoanchor.feature.lesson.resources.lesson_card_how
 import pianoanchor.feature.lesson.resources.lesson_card_why
@@ -42,11 +44,14 @@ import pianoanchor.feature.lesson.resources.lesson_next_lesson
 import pianoanchor.feature.lesson.resources.lesson_play_again
 import pianoanchor.feature.lesson.resources.lesson_recap
 import pianoanchor.feature.lesson.resources.lesson_recap_done
+import pianoanchor.feature.lesson.resources.lesson_see_count
 import pianoanchor.feature.lesson.resources.lesson_see_listen
 import pianoanchor.feature.lesson.resources.lesson_see_watch_hand
 import pianoanchor.feature.lesson.resources.lesson_skip
 import pianoanchor.feature.lesson.resources.lesson_try_clean
 import pianoanchor.feature.lesson.resources.lesson_try_done
+import pianoanchor.feature.lesson.resources.lesson_try_early
+import pianoanchor.feature.lesson.resources.lesson_try_late
 import pianoanchor.feature.lesson.resources.lesson_try_progress
 import pianoanchor.feature.lesson.resources.lesson_try_wrong_any
 import pianoanchor.feature.lesson.resources.lesson_use_play
@@ -144,6 +149,11 @@ private fun SeePane(
         Buttons { PrimaryButton(stringResource(Res.string.lesson_next), actions.onNext, state.pedalHint) }
     } else {
         Body(stringResource(Res.string.lesson_see_listen))
+        (state.check as? TryCheck.Rhythm)?.let {
+            Body(
+                stringResource(Res.string.lesson_see_count, rhythmCount(it.lengths)),
+            )
+        }
         Buttons {
             SecondaryButton(stringResource(Res.string.lesson_play_again), actions.onPlayAgain, enabled = !state.playing)
             PrimaryButton(stringResource(Res.string.lesson_skip), actions.onSkip, state.pedalHint)
@@ -185,7 +195,7 @@ private fun TryPane(
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
-        wrongKeyLine(progress)?.let {
+        (wrongKeyLine(progress) ?: timingLine(progress))?.let {
             Text(
                 it,
                 style = MaterialTheme.typography.bodyMedium,
@@ -221,6 +231,15 @@ private fun wrongKeyLine(progress: TryProgress): String? {
         wrongKeyHintText(wrongKeyHint(wrong, expected))
     }
 }
+
+/** The line after a rhythm tap that came too early or too late, else null. */
+@Composable
+private fun timingLine(progress: TryProgress): String? =
+    when (progress.timing) {
+        TryTiming.EARLY -> stringResource(Res.string.lesson_try_early)
+        TryTiming.LATE -> stringResource(Res.string.lesson_try_late)
+        null -> null
+    }
 
 @Composable
 private fun UsePane(

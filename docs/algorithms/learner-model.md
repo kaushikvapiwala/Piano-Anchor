@@ -99,9 +99,9 @@ Lesson card starts at the first concept of the start unit rather than at Unit 0.
 ### The placement test
 The onboarding's "Test me" replaces a self-chosen start point with a short played test (`PlacementTest`, pure). One
 existing passage per unit is played in order, in wait mode, at first sight: Unit 0 `all-the-cs`, Unit 1
-`mary-had-a-little-lamb`, Unit 2 `held-bass`, Unit 3 `ode-to-joy-with-chords`. A piece passes with band GOOD or CLEAN. The test
+`mary-had-a-little-lamb`, Unit 2 `held-bass`, Unit 3 `ode-to-joy-with-chords`, Unit 4 `jingle-bells`; the test covers Units 0 to 4. A piece passes with band GOOD or CLEAN. The test
 stops at the first piece not passed and the learner starts at that piece's unit: the skills of every earlier unit are
-placed with `place`. All four passed starts at 4, the course done (all course skills placed; Today moves on to More
+placed with `place`. All five passed starts at 5, the course done (all course skills placed; Today moves on to More
 songs). "Stop here" on a piece counts as failing it. The same bands always give the same start unit. "Start from the
 beginning" is start unit 0 with nothing placed. The test is offered in the onboarding only.
 

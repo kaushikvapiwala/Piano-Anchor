@@ -1,5 +1,6 @@
 package pianoanchor.engine.lesson
 
+import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.core.model.TryCheck
 import pianoanchor.engine.Tunables
 import kotlin.math.abs
@@ -9,10 +10,17 @@ private const val NOTES_PER_OCTAVE = 12
 private const val MS_PER_MINUTE = 60_000.0
 private const val BEATS_PER_BAR = 4
 
+/** An eighth note lasts `30000 / bpm` ms. */
+private const val MS_PER_EIGHTH_AT_ONE_BPM = 30_000.0
+
+/** Why a rhythm attempt was reset: a tap came too [EARLY] or too [LATE] against the pattern. */
+public enum class TryTiming { EARLY, LATE }
+
 /**
  * Progress of one Try: [done] of [total] parts, the [lastWrong] key pressed against [expected] (for the gentle hint),
  * [finished]. [expected] is the next key to play, or null where no single key is next. [wrongCount] counts wrong
- * keys and failed attempts.
+ * keys and failed attempts. [timing] is why the last rhythm reset happened (for the hint), null when the last press
+ * was not a reset.
  */
 public data class TryProgress(
     val done: Int,
@@ -21,6 +29,7 @@ public data class TryProgress(
     val lastWrong: Int?,
     val finished: Boolean,
     val wrongCount: Int,
+    val timing: TryTiming? = null,
 )
 
 private data class TryState(
@@ -32,9 +41,10 @@ private data class TryState(
     val wrongCount: Int = 0,
     val lastWrong: Int? = null,
     val finished: Boolean = false,
+    val timing: TryTiming? = null,
 ) {
     /** This state after the wrong key [note]. */
-    fun wrong(note: Int): TryState = copy(wrongCount = wrongCount + 1, lastWrong = note)
+    fun wrong(note: Int): TryState = copy(wrongCount = wrongCount + 1, lastWrong = note, timing = null)
 }
 
 /**
@@ -56,6 +66,7 @@ public class TryRun private constructor(
             lastWrong = state.lastWrong,
             finished = state.finished,
             wrongCount = state.wrongCount,
+            timing = state.timing,
         )
 
     /** The run after [note] went down at [atMs] with [velocity] (1-127). */
@@ -96,6 +107,8 @@ public class TryRun private constructor(
 
             is TryCheck.StressBeatOne -> check.bars * BEATS_PER_BAR
 
+            is TryCheck.Rhythm -> check.lengths.size
+
             is TryCheck.Chord -> check.notes.size
 
             is TryCheck.Passage -> throw IllegalArgumentException(
@@ -118,6 +131,8 @@ public class TryRun private constructor(
             is TryCheck.SoftThenLoud -> check.note
 
             is TryCheck.StressBeatOne -> check.note
+
+            is TryCheck.Rhythm -> check.note
 
             // No single next key: any key, or a chord (a passage is rejected by total() first).
             else -> null
@@ -168,6 +183,10 @@ public class TryRun private constructor(
 
             is TryCheck.StressBeatOne -> {
                 single(note, check.note) { state.pressStress(total(), velocity) }
+            }
+
+            is TryCheck.Rhythm -> {
+                single(note, check.note) { state.pressRhythm(check, atMs) }
             }
 
             is TryCheck.Chord -> {
@@ -232,6 +251,26 @@ private fun TryState.pressStress(
         copy(velocities = presses, done = presses.size, lastWrong = null, finished = true)
     } else {
         copy(velocities = emptyList(), done = 0, lastWrong = null, wrongCount = wrongCount + 1)
+    }
+}
+
+/**
+ * A press of the rhythm's note at [atMs]: the first starts the pattern; a later one must come the written length after
+ * the one before, within the tolerance, else the attempt restarts with this press as its first.
+ */
+private fun TryState.pressRhythm(
+    rhythm: TryCheck.Rhythm,
+    atMs: Long,
+): TryState {
+    val wanted = rhythm.lengths[maxOf(done - 1, 0)] * MS_PER_MINUTE / (rhythm.bpm * TICKS_PER_QUARTER)
+    val error = if (done == 0) 0.0 else atMs - startMs - wanted
+    val tolerance = Tunables.TRY_RHYTHM_TOLERANCE * MS_PER_EIGHTH_AT_ONE_BPM / rhythm.bpm
+    return if (abs(error) > tolerance) {
+        val timing = if (error < 0) TryTiming.EARLY else TryTiming.LATE
+        copy(done = 1, startMs = atMs, lastWrong = null, wrongCount = wrongCount + 1, timing = timing)
+    } else {
+        val next = done + 1
+        copy(done = next, startMs = atMs, lastWrong = null, timing = null, finished = next == rhythm.lengths.size)
     }
 }
 

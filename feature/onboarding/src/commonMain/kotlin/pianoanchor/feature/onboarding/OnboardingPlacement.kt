@@ -69,7 +69,7 @@ private fun pieceHeader(piece: PlacementPiece): String =
         piece.title,
     )
 
-/** "Piece n of 4 · title" with "Stop here", over the hosted run. */
+/** "Piece n of 5 · title" with "Stop here", over the hosted run. */
 @Composable
 internal fun PlacementRun(
     piece: PlacementPiece,

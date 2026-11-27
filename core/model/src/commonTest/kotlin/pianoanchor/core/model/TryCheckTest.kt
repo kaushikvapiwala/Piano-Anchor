@@ -2,6 +2,7 @@ package pianoanchor.core.model
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class TryCheckTest {
     @Test
@@ -17,8 +18,18 @@ class TryCheckTest {
         TryCheck.Hold(60, 2, 70).let { assertEquals(Triple(60, 2, 70), Triple(it.note, it.clicks, it.bpm)) }
         assertEquals(60, TryCheck.SoftThenLoud(60).note)
         TryCheck.StressBeatOne(60, 2, 60).let { assertEquals(Triple(60, 2, 60), Triple(it.note, it.bars, it.bpm)) }
+        TryCheck.Rhythm(60, listOf(480, 480), 60).let {
+            assertEquals(Triple(60, listOf(480, 480), 60), Triple(it.note, it.lengths, it.bpm))
+        }
         assertEquals(setOf(60, 64, 67), TryCheck.Chord(setOf(60, 64, 67)).notes)
         assertEquals("hot-cross-buns", TryCheck.Passage("hot-cross-buns").passageId)
         assertEquals("AnyKey", TryCheck.AnyKey.toString())
+    }
+
+    @Test
+    fun `a rhythm needs two lengths and every length above zero`() {
+        assertFailsWith<IllegalArgumentException> { TryCheck.Rhythm(60, listOf(480), 60) }
+        assertFailsWith<IllegalArgumentException> { TryCheck.Rhythm(60, listOf(480, 0), 60) }
+        assertFailsWith<IllegalArgumentException> { TryCheck.Rhythm(60, listOf(480, -480), 60) }
     }
 }

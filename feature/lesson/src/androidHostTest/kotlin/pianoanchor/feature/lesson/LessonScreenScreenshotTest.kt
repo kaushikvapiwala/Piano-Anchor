@@ -85,6 +85,29 @@ class LessonScreenScreenshotTest {
         )
 
     @Test
+    fun tryRhythmMidWay() =
+        capture(
+            "try_rhythm",
+            lessonState(
+                LessonStep.TRY,
+                Skills.EIGHTH_NOTES,
+                rhythmProgress(0, 500, 1_000, 1_500),
+                litKeys = setOf(60),
+            ),
+        )
+
+    @Test
+    fun tryRhythmAfterAnEarlyTap() =
+        capture(
+            "try_rhythm_early",
+            lessonState(LessonStep.TRY, Skills.EIGHTH_NOTES, rhythmProgress(0, 500, 700), litKeys = setOf(60)),
+        )
+
+    @Test
+    fun seeARhythmNamesTheCount() =
+        capture("see_rhythm", lessonState(LessonStep.SEE, Skills.EIGHTH_NOTES, litKeys = setOf(60)))
+
+    @Test
     fun tryPassed() = capture("try_done", lessonState(LessonStep.TRY, Skills.MIDDLE_C, finishedMiddleC()))
 
     @Test

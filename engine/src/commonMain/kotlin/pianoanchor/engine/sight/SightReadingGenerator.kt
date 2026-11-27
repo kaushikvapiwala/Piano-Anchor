@@ -26,11 +26,16 @@ private const val WHOLE_QUARTERS = 4
 private const val MAX_STEP = 1
 private const val MAX_SKIP = 2
 private const val FIRST_CHORD_BAR = 0
+private const val EIGHTH_LEVEL = 9
+private const val DOTTED_QUARTER_LEVEL = 10
+private const val DOTTED_QUARTER_EIGHTHS = 3
 
 private const val QUARTER = TICKS_PER_QUARTER
 private const val HALF = 2 * TICKS_PER_QUARTER
 private const val DOTTED_HALF = DOTTED_HALF_QUARTERS * TICKS_PER_QUARTER
 private const val WHOLE = WHOLE_QUARTERS * TICKS_PER_QUARTER
+private const val EIGHTH = TICKS_PER_QUARTER / 2
+private const val DOTTED_QUARTER = DOTTED_QUARTER_EIGHTHS * EIGHTH
 
 /** Five white keys from C: right hand C4 to G4, left hand C3 to G3. */
 private val RIGHT_HAND = listOf(60, 62, 64, 65, 67)
@@ -51,6 +56,25 @@ private val CELLS_LEVEL_3 =
             listOf(WHOLE),
             listOf(QUARTER, QUARTER, QUARTER, -QUARTER),
             listOf(HALF, QUARTER, -QUARTER),
+        )
+
+/** Level 9 adds beamed eighth pairs, each pair filling one beat. */
+private val CELLS_LEVEL_9 =
+    CELLS_LEVEL_3 +
+        listOf(
+            listOf(EIGHTH, EIGHTH, QUARTER, QUARTER, QUARTER),
+            listOf(QUARTER, QUARTER, EIGHTH, EIGHTH, QUARTER),
+            listOf(QUARTER, EIGHTH, EIGHTH, HALF),
+            listOf(EIGHTH, EIGHTH, EIGHTH, EIGHTH, HALF),
+        )
+
+/** Level 10 adds the dotted quarter followed by an eighth. */
+private val CELLS_LEVEL_10 =
+    CELLS_LEVEL_9 +
+        listOf(
+            listOf(DOTTED_QUARTER, EIGHTH, QUARTER, QUARTER),
+            listOf(DOTTED_QUARTER, EIGHTH, HALF),
+            listOf(QUARTER, DOTTED_QUARTER, EIGHTH, QUARTER),
         )
 private val CELLS_THREE_FOUR =
     listOf(
@@ -86,9 +110,9 @@ public object SightReadingGenerator {
     public const val ID_PREFIX: String = "$ID_NAME:"
 
     /**
-     * The exercise for [level] (1..8) and [seed]: id "sight:<level>:<seed>", SIGHT_BARS bars, rights ORIGINAL,
+     * The exercise for [level] (1..10) and [seed]: id "sight:<level>:<seed>", SIGHT_BARS bars, rights ORIGINAL,
      * skills empty, piece false. Same inputs give an equal [Passage]. Throws [IllegalArgumentException] for a level
-     * outside 1..8.
+     * outside 1..10.
      */
     public fun passage(
         level: Int,
@@ -184,6 +208,8 @@ public object SightReadingGenerator {
         when (level) {
             1, 2 -> CELLS_LEVEL_1
             THREE_FOUR_LEVEL -> CELLS_THREE_FOUR
+            EIGHTH_LEVEL -> CELLS_LEVEL_9
+            DOTTED_QUARTER_LEVEL -> CELLS_LEVEL_10
             else -> CELLS_LEVEL_3
         }
 

@@ -55,6 +55,10 @@ public object LessonDemo {
                 }
             }
 
+            is TryCheck.Rhythm -> {
+                clicked(check.bpm) { beat -> rhythm(check, beat) }
+            }
+
             is TryCheck.Hold -> {
                 clicked(check.bpm) { beat -> listOf(Tone(note(check.note), 0, check.clicks * beat)) }
             }
@@ -103,6 +107,19 @@ public object LessonDemo {
     ): Demo {
         val beat = MS_PER_MINUTE / bpm
         return Demo(build(beat).map { it.copy(startMs = it.startMs + beat) }, clickBpm = bpm, leadMs = beat)
+    }
+
+    /** The pattern's notes, each sounding for half its written length, from the first click. */
+    private fun rhythm(
+        check: TryCheck.Rhythm,
+        beat: Long,
+    ): List<Tone> {
+        var onset = 0
+        return check.lengths.map { length ->
+            val start = onset * beat / TICKS_PER_QUARTER
+            onset += length
+            Tone(note(check.note), start, length * beat / TICKS_PER_QUARTER / 2)
+        }
     }
 
     private fun stress(

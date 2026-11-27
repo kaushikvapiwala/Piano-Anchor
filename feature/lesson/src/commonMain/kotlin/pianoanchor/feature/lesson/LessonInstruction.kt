@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.TryCheck
+import pianoanchor.engine.lesson.rhythmCount
 import pianoanchor.feature.lesson.resources.Res
 import pianoanchor.feature.lesson.resources.lesson_try_any_key
 import pianoanchor.feature.lesson.resources.lesson_try_chord
@@ -12,6 +13,7 @@ import pianoanchor.feature.lesson.resources.lesson_try_hold
 import pianoanchor.feature.lesson.resources.lesson_try_play
 import pianoanchor.feature.lesson.resources.lesson_try_play_lit
 import pianoanchor.feature.lesson.resources.lesson_try_repeat
+import pianoanchor.feature.lesson.resources.lesson_try_rhythm
 import pianoanchor.feature.lesson.resources.lesson_try_sequence
 import pianoanchor.feature.lesson.resources.lesson_try_soft_loud
 import pianoanchor.feature.lesson.resources.lesson_try_stress
@@ -59,6 +61,10 @@ internal fun instruction(check: TryCheck?): String =
 
         is TryCheck.StressBeatOne -> {
             stringResource(Res.string.lesson_try_stress, MidiNote(check.note).name)
+        }
+
+        is TryCheck.Rhythm -> {
+            stringResource(Res.string.lesson_try_rhythm, MidiNote(check.note).name, rhythmCount(check.lengths))
         }
 
         is TryCheck.Chord -> {

@@ -23,9 +23,27 @@ class SightLevelsTest {
     }
 
     @Test
-    fun everySkillOpensAll8() {
-        assertEquals(8, SightLevels.all.size)
-        assertEquals((1..8).toList(), SightLevels.all.map { it.number })
-        assertEquals(8, SightLevels.open(SightLevels.all.map { it.skill }.toSet()))
+    fun everySkillOpensAll10() {
+        assertEquals(10, SightLevels.all.size)
+        assertEquals((1..10).toList(), SightLevels.all.map { it.number })
+        assertEquals(10, SightLevels.open(SightLevels.all.map { it.skill }.toSet()))
+    }
+
+    @Test
+    fun eighthNotesWithoutMelodyAndChordsStaysAtLevel8() {
+        val learned =
+            SightLevels.all
+                .take(8)
+                .map { it.skill }
+                .toSet() - Skills.MELODY_AND_CHORDS.id
+        assertEquals(7, SightLevels.open(learned + Skills.EIGHTH_NOTES.id))
+        val upToChords =
+            SightLevels.all
+                .take(8)
+                .map { it.skill }
+                .toSet()
+        assertEquals(8, SightLevels.open(upToChords + Skills.DOTTED_QUARTER.id))
+        assertEquals(9, SightLevels.open(upToChords + Skills.EIGHTH_NOTES.id))
+        assertEquals(10, SightLevels.open(upToChords + Skills.EIGHTH_NOTES.id + Skills.DOTTED_QUARTER.id))
     }
 }

@@ -1,6 +1,7 @@
 package pianoanchor.engine.content
 
 import pianoanchor.core.model.Skill
+import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.core.model.TryCheck
 
 private const val MIDDLE_C = 60
@@ -12,9 +13,14 @@ private const val HIGHEST_KEY = 108
 private const val PITCH_CLASS_C = 0
 private const val PITCH_CLASS_F = 5
 private const val BEATS_PER_MINUTE = 60
+private const val EIGHTH_NOTES_TAPS = 8
+private const val QUARTER = TICKS_PER_QUARTER
+private const val EIGHTH = QUARTER / 2
+private const val DOTTED_QUARTER = QUARTER + EIGHTH
+private const val HALF = 2 * QUARTER
 
 /**
- * The Try check of each of the 23 course skills (`docs/algorithms/try-checks.md`), keyed by skill id. Keyboard-wide
+ * The Try check of each of the 27 course skills (`docs/algorithms/try-checks.md`), keyed by skill id. Keyboard-wide
  * checks assume 88 keys (A0 to C8). Piece concepts check their first passage, the same one the Use step plays.
  */
 internal object TryChecks {
@@ -43,6 +49,16 @@ internal object TryChecks {
             Skills.G_AND_F_CHORDS.id to passage(Skills.G_AND_F_CHORDS),
             Skills.MELODY_AND_CHORDS.id to passage(Skills.MELODY_AND_CHORDS),
             Skills.SHARPS_AND_FLATS.id to TryCheck.PlayKey(C_SHARP_ABOVE_MIDDLE_C, lit = false),
+            Skills.EIGHTH_NOTES.id to TryCheck.Rhythm(MIDDLE_C, List(EIGHTH_NOTES_TAPS) { EIGHTH }, BEATS_PER_MINUTE),
+            Skills.EIGHTH_PAIRS.id to
+                TryCheck.Rhythm(
+                    MIDDLE_C,
+                    listOf(QUARTER, QUARTER, EIGHTH, EIGHTH, QUARTER),
+                    BEATS_PER_MINUTE,
+                ),
+            Skills.DOTTED_QUARTER.id to
+                TryCheck.Rhythm(MIDDLE_C, listOf(DOTTED_QUARTER, EIGHTH, HALF), BEATS_PER_MINUTE),
+            Skills.RHYTHM_SONG.id to passage(Skills.RHYTHM_SONG),
         )
 
     private fun passage(skill: Skill): TryCheck =

@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 private const val SEEDS = 200
 private const val DISTINCT_SEEDS = 20
 private const val MIN_DISTINCT = 15
-private const val LEVELS = 8
+private const val LEVELS = 10
 private const val LAST_LEVEL = 8
 private const val FIRST_HAND_SPLIT = 60
 private val RIGHT_HAND = setOf(60, 62, 64, 65, 67)
@@ -212,6 +212,43 @@ class SightReadingGeneratorTest {
         }
     }
 
+    /** The rhythm of each bar of the right-hand tune, in ticks. */
+    private fun cells(passage: Passage) =
+        bars(passage).toSortedMap().values.map { steps -> steps.map { step -> step.notes.maxOf { it.lengthTicks } } }
+
+    @Test
+    fun level9AndLevel10UseTheirNewCells() {
+        val level9 =
+            listOf(
+                listOf(480, 480, 960, 960, 960),
+                listOf(960, 960, 480, 480, 960),
+                listOf(960, 480, 480, 1920),
+                listOf(480, 480, 480, 480, 1920),
+            )
+        val level10 = listOf(listOf(1440, 480, 960, 960), listOf(1440, 480, 1920), listOf(960, 1440, 480, 960))
+        for ((level, added, earlier) in listOf(Triple(9, level9, emptyList()), Triple(10, level10, level9))) {
+            val seen = (0L until SEEDS).flatMap { cells(SightReadingGenerator.passage(level, it)) }.toSet()
+            assertTrue(added.all { it in seen }, "level $level never drew one of its new cells")
+            assertTrue(earlier.all { it in seen }, "level $level lost a cell of the level before")
+        }
+        val level8Cells = (0L until SEEDS).flatMap { cells(SightReadingGenerator.passage(8, it)) }.toSet()
+        assertTrue((level9 + level10).none { it in level8Cells })
+        val nineCells = (0L until SEEDS).flatMap { cells(SightReadingGenerator.passage(9, it)) }.toSet()
+        assertTrue(level10.none { it in nineCells })
+    }
+
+    @Test
+    fun level9AndLevel10CloseOnALongC() {
+        for (level in 9..10) {
+            for (seed in 0L until SEEDS) {
+                val passage = SightReadingGenerator.passage(level, seed)
+                val last = cells(passage).last()
+                assertEquals(last.max(), last.last(), "level $level seed $seed")
+                assertEquals(0, tune(level, passage).last() % 12)
+            }
+        }
+    }
+
     @Test
     fun idRoundTrips() {
         assertEquals(3 to 42L, SightReadingGenerator.parse(SightReadingGenerator.idOf(3, 42)))
@@ -221,7 +258,7 @@ class SightReadingGeneratorTest {
 
     @Test
     fun parseRejectsOtherIds() {
-        listOf("ode-to-joy", "sight:x:1", "sight:9:1", "sight:0:1", "sight:1:y", "sight:1", "song:1:1", "sight:1:2:3")
+        listOf("ode-to-joy", "sight:x:1", "sight:11:1", "sight:0:1", "sight:1:y", "sight:1", "song:1:1", "sight:1:2:3")
             .forEach { assertNull(SightReadingGenerator.parse(it), it) }
     }
 
@@ -234,6 +271,6 @@ class SightReadingGeneratorTest {
     @Test
     fun levelOutsideRangeThrows() {
         assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(0, 1) }
-        assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(9, 1) }
+        assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(11, 1) }
     }
 }

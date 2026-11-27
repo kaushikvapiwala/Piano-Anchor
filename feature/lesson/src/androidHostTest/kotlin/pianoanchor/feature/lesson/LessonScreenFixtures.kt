@@ -40,6 +40,13 @@ internal fun sequenceProgress(vararg played: Int): TryProgress {
     return run.progress
 }
 
+/** The Try of eighth notes after taps of middle C at the millisecond times [taps]. */
+internal fun rhythmProgress(vararg taps: Long): TryProgress {
+    var run = TryRun(checkNotNull(Curriculum.tryCheck(Skills.EIGHTH_NOTES.id)))
+    taps.forEach { run = run.onNoteOn(60, 64, it) }
+    return run.progress
+}
+
 /** The finished Try of middle C. */
 internal fun finishedMiddleC(): TryProgress =
     TryRun(checkNotNull(Curriculum.tryCheck(Skills.MIDDLE_C.id))).onNoteOn(60, 64, 0).progress

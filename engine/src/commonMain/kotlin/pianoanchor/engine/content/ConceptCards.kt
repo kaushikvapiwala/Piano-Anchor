@@ -3,7 +3,7 @@ package pianoanchor.engine.content
 import pianoanchor.core.model.ConceptCard
 
 /**
- * The concept cards of the 23 course skills, in map order (`docs/course/beginner-course.md`). Each field is one plain
+ * The concept cards of the 27 course skills, in map order (`docs/course/beginner-course.md`). Each field is one plain
  * sentence for a total beginner and uses no term the course hasn't introduced by that concept. Text lives here, like
  * passage titles, and is translated with all content later. More songs and ear skills have no card.
  */
@@ -190,6 +190,34 @@ internal object ConceptCards {
                         "white keys and give songs other sounds.",
                 how = "A sharp (♯) means play the black key to the right, and a flat (♭) the black key to the left.",
                 whenMet = "Now, to finish the course and close the loop on the black keys; later songs use them.",
+            ),
+            ConceptCard(
+                Skills.EIGHTH_NOTES.id,
+                what = "Eighth notes are two even notes in one click, counted \"1 and\".",
+                why = "Music moves faster than the beat; splitting the click in two keeps those notes even.",
+                how = "Count \"1 & 2 & 3 & 4 &\" and play on every word.",
+                whenMet = "Now, and in most songs from here on.",
+            ),
+            ConceptCard(
+                Skills.EIGHTH_PAIRS.id,
+                what = "Eighths are joined by a beam in pairs, one pair per click.",
+                why = "The beam shows at a glance which notes share a click.",
+                how = "Read a beamed pair as one click split in two, and quarters as one click each.",
+                whenMet = "Now, mixing quarters and eighths in tunes.",
+            ),
+            ConceptCard(
+                Skills.DOTTED_QUARTER.id,
+                what = "A dot adds half a note's length, so a dotted quarter lasts one and a half clicks.",
+                why = "It makes the long-short swing in many songs.",
+                how = "Count \"1 (2) &\": hold through 2, play the eighth on \"and\".",
+                whenMet = "Now; Jingle Bells and Ode to Joy use it.",
+            ),
+            ConceptCard(
+                Skills.RHYTHM_SONG.id,
+                what = "The Jingle Bells chorus with left-hand chords.",
+                why = "It puts eighths and the dotted quarter together in music you know.",
+                how = "Play the tune with the right hand while the left hand holds C, F and G chords.",
+                whenMet = "Now, to finish the unit.",
             ),
         )
 }
