@@ -23,7 +23,7 @@
     <string name="practice_too_hard_keep_trying">Keep trying</string>
     <string name="practice_count_in">Count-in</string>
     <string name="practice_beat">Beat %1$s of %2$s</string>
-    <string name="practice_staff_cursor">Treble staff, %1$s. Notes %2$s. Cursor on %3$s.</string>
+    <string name="practice_staff_cursor">%1$s, %2$s. Notes %3$s. Cursor on %4$s.</string>
     <string name="practice_timing_late_tag">+%1$s ms</string>
     <string name="practice_timing_early_tag">−%1$s ms</string>
     <string name="practice_last_key_on_time">%1$s · on time</string>
@@ -35,8 +35,8 @@
     <string name="practice_end_run">End run</string>
     <string name="practice_legend_correct">correct</string>
     <string name="practice_legend_waiting">waiting for you</string>
-    <string name="practice_staff_waiting">Treble staff, %1$s. Notes %2$s. Waiting for %3$s.</string>
-    <string name="practice_staff_done">Treble staff, %1$s. Notes %2$s. Done.</string>
+    <string name="practice_staff_waiting">%1$s, %2$s. Notes %3$s. Waiting for %4$s.</string>
+    <string name="practice_staff_done">%1$s, %2$s. Notes %3$s. Done.</string>
     <!-- Major keys from 7 flats to 7 sharps, in order: TalkBack reads one after "in". -->
     <string-array name="practice_major_keys">
         <item>C flat</item>
@@ -55,6 +55,9 @@
         <item>F sharp</item>
         <item>C sharp</item>
     </string-array>
+    <string name="practice_staff_treble">Treble staff</string>
+    <string name="practice_staff_bass">Bass staff</string>
+    <string name="practice_staff_grand">Grand staff</string>
     <string name="practice_time_key">%1$s, in %2$s major</string>
     <string name="practice_time_signature">%1$s/%2$s</string>
     <string name="practice_keys_label">Live keys · play the piano</string>

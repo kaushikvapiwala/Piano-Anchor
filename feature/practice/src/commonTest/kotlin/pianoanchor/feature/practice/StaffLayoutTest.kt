@@ -8,6 +8,7 @@ import pianoanchor.core.model.Step
 import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.core.model.TimeSignature
 import pianoanchor.engine.content.NoteText
+import pianoanchor.engine.notation.Engraving
 import pianoanchor.engine.notation.Staff
 import pianoanchor.testing.TEST_RIGHTS
 import kotlin.math.abs
@@ -185,7 +186,8 @@ class StaffLayoutTest {
                 WIDE,
             )
 
-        assertEquals(listOf(emptySet(), setOf(c4), setOf(c4), setOf(g4)), layout.hollow)
+        // The step with C4 (a quarter) and G4 (a half) is one chord of quarter value: both heads filled.
+        assertEquals(listOf(emptySet(), setOf(c4), setOf(c4), emptySet()), layout.hollow)
     }
 
     private fun noteText(
@@ -326,5 +328,35 @@ class StaffLayoutTest {
         assertEquals(1, layout.restX.size)
         assertEquals(1, layout.barLineX.size)
         assertTrue(layout.barLineX.single() < layout.noteX[0])
+    }
+
+    @Test
+    fun `every head of a chord follows the chord's value`() {
+        val layout = staffLayout(noteText("[C4 E4]h rh"), WIDE)
+        val mixed =
+            staffLayout(
+                passage(Step(0, setOf(ScoreNote(c4, 4 * Q), ScoreNote(e4, Q)))),
+                WIDE,
+            )
+
+        assertEquals(listOf(setOf(c4, e4)), layout.hollow)
+        assertEquals(listOf(emptySet()), mixed.hollow)
+    }
+
+    @Test
+    fun `a held bass under a quarter melody note keeps its own hollow head`() {
+        val c3 = MidiNote(48)
+        val layout = staffLayout(passage(Step(0, setOf(ScoreNote(c3, 4 * Q), ScoreNote(e4, Q)))), WIDE)
+
+        assertEquals(listOf(setOf(c3)), layout.hollow)
+    }
+
+    @Test
+    fun `the staff box is taller for a grand staff`() {
+        assertEquals(SINGLE_STAFF_HEIGHT_DP, staffHeightDp(Engraving.engrave(noteText("C4w"))))
+        assertEquals(SINGLE_STAFF_HEIGHT_DP, staffHeightDp(Engraving.engrave(noteText("C3w"))))
+        assertEquals(GRAND_STAFF_HEIGHT_DP, staffHeightDp(Engraving.engrave(noteText("[C3 C4]w"))))
+        // Two staves of 64 dp, a 32 dp gap and 40 dp above and below.
+        assertTrue(GRAND_STAFF_HEIGHT_DP >= 160f + 2 * 40f)
     }
 }

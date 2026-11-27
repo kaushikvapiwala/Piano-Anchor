@@ -46,6 +46,16 @@ private val TREBLE_SHARP_POSITIONS = listOf(8, 5, 9, 6, 3, 7, 4)
 /** The bass clef's sharps sit this many half spaces (two octaves) below the treble clef's. */
 private const val BASS_SHARP_SHIFT = 14
 
+/** Height of the staff box with one staff: 64 dp of lines, a cursor overhang and room for a tag above a high head. */
+internal const val SINGLE_STAFF_HEIGHT_DP = 196f
+
+/**
+ * Height of the staff box of a grand staff: 160 dp from the treble's top line to the bass's bottom line, and 40 dp
+ * above and below it, enough for the cursor's overhang, a timing tag over an F5 head and the legend, which sits above
+ * the top line.
+ */
+internal const val GRAND_STAFF_HEIGHT_DP = 240f
+
 /** Space between the time signature and the first note's centre, in dp (room for a sharp before it). */
 private const val LEAD_DP = 28f
 
@@ -58,12 +68,12 @@ private const val MIN_GAP_DP = 28f
 /** The most a bar line sits before the note that starts its bar, in dp: clear of its sharp when gaps allow. */
 private const val BAR_CLEARANCE_DP = 30f
 
-/** Notes this long or longer (a half note) are drawn hollow. */
+/** Chords of this value or longer (a half note) are drawn hollow, every head of them. */
 private const val HOLLOW_MIN_TICKS = 2 * TICKS_PER_QUARTER
 
 /**
  * Where the staff draws a passage, in dp from its left edge: each step's [noteX], the inner [barLineX], the
- * [finalBarX] double bar, per step the pitches drawn [hollow] (written length at least a half note), the width
+ * [finalBarX] double bar, per step the pitches drawn [hollow] (their chord's value is at least a half note), the width
  * [keyWidth] the key signature reserves after the clef, each rest's [restX] and the [chords] and [beams] to draw, in
  * the order of the [Engraved] they were laid out from. Vertical places are staff positions (half spaces above E4).
  */
@@ -105,6 +115,14 @@ internal data class BeamShape(
     val position: Int,
     val up: Boolean,
 )
+
+/** The height of the staff box that fits [engraved]'s staves: taller when both staves are drawn. */
+internal fun staffHeightDp(engraved: Engraved): Float =
+    if (Staff.entries.all { staff -> engraved.chords.any { it.staff == staff } }) {
+        GRAND_STAFF_HEIGHT_DP
+    } else {
+        SINGLE_STAFF_HEIGHT_DP
+    }
 
 /** The staff positions the key signature's sharps sit on, for [staff]: none for C and for flat keys (not drawn yet). */
 internal fun keySignaturePositions(
@@ -164,8 +182,10 @@ internal fun staffLayout(
         barLineX = barLineX,
         finalBarX = x(endTicks),
         hollow =
-            steps.map { step ->
-                step.notes.filter { it.lengthTicks >= HOLLOW_MIN_TICKS }.mapTo(LinkedHashSet()) { it.pitch }
+            steps.indices.map { i ->
+                engraved.chords
+                    .filter { it.stepIndex == i && it.value.ticks >= HOLLOW_MIN_TICKS }
+                    .flatMapTo(LinkedHashSet()) { chord -> chord.notes.map { it.pitch } }
             },
         keyWidth = keyWidth,
         restX = engraved.rests.map { x(it.onsetTicks) },

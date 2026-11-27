@@ -34,6 +34,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.KeySignature
@@ -52,8 +53,11 @@ import pianoanchor.feature.practice.resources.practice_legend_correct
 import pianoanchor.feature.practice.resources.practice_legend_waiting
 import pianoanchor.feature.practice.resources.practice_list_join
 import pianoanchor.feature.practice.resources.practice_major_keys
+import pianoanchor.feature.practice.resources.practice_staff_bass
 import pianoanchor.feature.practice.resources.practice_staff_cursor
 import pianoanchor.feature.practice.resources.practice_staff_done
+import pianoanchor.feature.practice.resources.practice_staff_grand
+import pianoanchor.feature.practice.resources.practice_staff_treble
 import pianoanchor.feature.practice.resources.practice_staff_waiting
 import pianoanchor.feature.practice.resources.practice_time_key
 import pianoanchor.feature.practice.resources.practice_time_signature
@@ -72,7 +76,6 @@ private val DOUBLE_BAR_SPACE = 3.dp
 private const val NOTEHEAD_ANGLE = -18f
 private val LEDGER_HALF_WIDTH = 15.dp
 private val CURSOR_WIDTH = 3.dp
-private val CURSOR_HEIGHT = 110.dp
 private val CURSOR_GAP = 22.dp
 private const val CURSOR_ALPHA = 0.85f
 private val ACCIDENTAL_GAP = 22.dp
@@ -148,17 +151,18 @@ internal fun StaffView(
             val style = TextStyle(colors.upcomingNote, 26.sp, FontWeight.Bold, fontFamily = display)
             measurer.measure(time.beats.toString(), style) to measurer.measure(time.beatUnit.toString(), style)
         }
-    val description = staffDescription(steps, time, passage.keySignature, timed)
+    val description = staffDescription(steps, time, passage.keySignature, engraved, timed)
     val tags = timingTags(liveMarks)
     val tagStyle = TextStyle(colors.timing, TAG_SP.sp, FontWeight.SemiBold)
     val primary = MaterialTheme.colorScheme.primary
+    val cache = remember(measurer, notation) { StaffCache() }
+    val placed = remember(engraved) { placedNotes(engraved) }
     Box(modifier) {
         Canvas(Modifier.fillMaxSize().semantics { contentDescription = description }) {
-            val layout = staffLayout(passage, size.width.toDp().value, engraved)
-            val painter = StaffPainter(this, colors, measurer, notation, engraved, layout)
+            val layout = cache.layout(passage, size.width.toDp().value, engraved)
+            val painter = StaffPainter(this, colors, measurer, notation, engraved, layout, cache.glyphs)
             painter.drawStaves(passage.keySignature.sharps, timeNumbers)
             painter.drawRests()
-            val placed = placedNotes(engraved)
             steps.forEachIndexed { i, step ->
                 val x = layout.noteX[i].dp.toPx()
                 step.notes.forEach { note ->
@@ -187,6 +191,23 @@ private fun placedNotes(engraved: Engraved): Map<ScoreNoteRef, Pair<Staff, Accid
         .flatMap { c -> c.notes.map { ScoreNoteRef(c.stepIndex, it.pitch) to (c.staff to it.accidental) } }
         .toMap()
 
+/** What a staff keeps between frames: the last layout (for its passage and width) and every glyph measured so far. */
+private class StaffCache {
+    val glyphs = HashMap<Triple<String, Color, Float>, TextLayoutResult>()
+    private var key: Pair<Passage, Float>? = null
+    private var layout: StaffLayout? = null
+
+    fun layout(
+        passage: Passage,
+        widthDp: Float,
+        engraved: Engraved,
+    ): StaffLayout =
+        layout.takeIf { key == passage to widthDp } ?: staffLayout(passage, widthDp, engraved).also {
+            key = passage to widthDp
+            layout = it
+        }
+}
+
 /**
  * Draws one [engraved] passage laid out by [layout] into [scope]: the staves that carry notes (treble, bass or both),
  * and the symbols on them. Vertical places are staff positions (half spaces above E4) turned into y by [y].
@@ -198,6 +219,7 @@ private class StaffPainter(
     private val notation: FontFamily,
     private val engraved: Engraved,
     private val layout: StaffLayout,
+    private val glyphs: MutableMap<Triple<String, Color, Float>, TextLayoutResult>,
 ) {
     private val gap = with(scope) { LINE_GAP.toPx() }
     private val staves = Staff.entries.filter { staff -> engraved.chords.any { it.staff == staff } }
@@ -214,7 +236,9 @@ private class StaffPainter(
     private fun glyph(
         text: String,
         color: Color,
-    ) = measurer.measure(text, TextStyle(color, with(scope) { (EM_SPACES * gap).toSp() }, fontFamily = notation))
+    ) = glyphs.getOrPut(Triple(text, color, gap)) {
+        measurer.measure(text, TextStyle(color, with(scope) { (EM_SPACES * gap).toSp() }, fontFamily = notation))
+    }
 
     /** Draws a Bravura glyph with its origin (left edge, baseline) at [origin]. */
     private fun music(
@@ -294,11 +318,12 @@ private class StaffPainter(
         x: Float,
         color: Color,
     ) = with(scope) {
-        val spanTop = y(top) - CURSOR_OVERHANG.toPx()
+        val spanTop = maxOf(0f, y(top) - CURSOR_OVERHANG.toPx())
+        val spanBottom = minOf(scope.size.height, y(bottom) + CURSOR_OVERHANG.toPx())
         drawRect(
             color.copy(alpha = CURSOR_ALPHA),
             topLeft = Offset(x - CURSOR_GAP.toPx(), spanTop),
-            size = Size(CURSOR_WIDTH.toPx(), y(bottom) + CURSOR_OVERHANG.toPx() - spanTop),
+            size = Size(CURSOR_WIDTH.toPx(), spanBottom - spanTop),
         )
     }
 
@@ -336,6 +361,17 @@ private class StaffPainter(
     }
 }
 
+/** The string naming the staves drawn: treble, bass or both as a grand staff. */
+internal fun staffNameResource(engraved: Engraved): StringResource {
+    val treble = engraved.chords.any { it.staff == Staff.TREBLE }
+    val bass = engraved.chords.any { it.staff == Staff.BASS }
+    return when {
+        treble && bass -> Res.string.practice_staff_grand
+        bass -> Res.string.practice_staff_bass
+        else -> Res.string.practice_staff_treble
+    }
+}
+
 /**
  * TalkBack's text for the staff: "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."); in a [timed]
  * run the cursor is read instead: "… Cursor on D4."
@@ -345,31 +381,25 @@ private fun staffDescription(
     steps: List<StepView>,
     time: TimeSignature,
     key: KeySignature,
+    engraved: Engraved,
     timed: Boolean,
 ): String {
+    val staffName = stringResource(staffNameResource(engraved))
     val signature = stringResource(Res.string.practice_time_signature, time.beats.toString(), time.beatUnit.toString())
     val timeText =
-        if (key ==
-            KeySignature.C
-        ) {
+        if (key == KeySignature.C) {
             signature
         } else {
-            stringResource(
-                Res.string.practice_time_key,
-                signature,
-                stringArrayResource(Res.array.practice_major_keys)[
-                    key.sharps +
-                        MAX_ACCIDENTALS,
-                ],
-            )
+            val keyName = stringArrayResource(Res.array.practice_major_keys)[key.sharps + MAX_ACCIDENTALS]
+            stringResource(Res.string.practice_time_key, signature, keyName)
         }
     val names = steps.map { it.notes.chordName() }.joinToString(stringResource(Res.string.practice_list_join))
     val waiting = steps.firstOrNull { it.status == StepStatus.WAITING }
     return if (waiting == null) {
-        stringResource(Res.string.practice_staff_done, timeText, names)
+        stringResource(Res.string.practice_staff_done, staffName, timeText, names)
     } else {
         val text = if (timed) Res.string.practice_staff_cursor else Res.string.practice_staff_waiting
-        stringResource(text, timeText, names, waiting.notes.chordName())
+        stringResource(text, staffName, timeText, names, waiting.notes.chordName())
     }
 }
 
