@@ -1,13 +1,13 @@
 package pianoanchor.engine.lesson
 
 import pianoanchor.core.model.NoteNames
+import pianoanchor.core.model.PITCH_CLASS_NAMES
 import pianoanchor.engine.content.Skills
 
 /** How many keys of a strip carry a letter (`docs/ui/living-studio.md`, "Key strip"). */
 public enum class NoteNameStage { ALL_WHITE, TARGET_ONLY, NONE }
 
 private const val SEMITONES = 12
-private val SHARP_NAMES = listOf("C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B")
 private val FLAT_NAMES = listOf("C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B")
 
 /**
@@ -51,7 +51,7 @@ public object NoteNameRule {
                     NoteNameStage.TARGET_ONLY -> note in target
                     NoteNameStage.NONE -> false
                 }
-        val name = SHARP_NAMES[note % SEMITONES]
+        val name = PITCH_CLASS_NAMES[note % SEMITONES].replace('#', '♯')
         return name.takeIf { shown && (name.length == 1 || sharpsPassed) }
     }
 

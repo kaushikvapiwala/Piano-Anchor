@@ -115,7 +115,8 @@ internal fun KeyStrip(
     labels: NoteLabels = NoteLabels(),
 ) {
     val notes = range.map(::MidiNote)
-    val hinted = if (wrong == null) emptySet() else glowKeys + wrong
+    // The hint shows only while the check is live (a glow); a stale wrong key letters nothing.
+    val hinted = if (wrong == null || glowKeys.isEmpty()) emptySet() else glowKeys + wrong
     val whites = notes.filterNot { it.isBlack }
     val width = WHITE_PITCH * whites.size - (WHITE_PITCH - WHITE_KEY_WIDTH)
     Box(modifier.horizontalScroll(rememberScrollState()).size(width, WHITE_KEY_HEIGHT)) {

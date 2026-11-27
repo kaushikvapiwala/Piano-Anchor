@@ -1,8 +1,10 @@
 package pianoanchor.feature.practice
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -15,9 +17,11 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.Density
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -566,7 +570,7 @@ private val LETTER = Regex("[A-G][♯♭]?")
 /** The letters the practice key strip writes on its keys, on Robolectric. */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land")
+@Config(sdk = [SDK], qualifiers = "w915dp-h412dp-land-xxhdpi")
 class PracticeKeyLettersTest {
     private val start = PracticeState.start(Passages.CDE)
 
@@ -637,5 +641,58 @@ class PracticeKeyLettersTest {
                 )
 
             assertEquals(emptyList(), lettersOf(perform))
+        }
+
+    /** Whether every letter on the strip's target key sits inside its band, at [fontScale]. */
+    private fun ComposeUiTest.lettersSitOnTheBand(
+        state: PracticeState,
+        names: Set<String>,
+        fontScale: Float,
+    ): Boolean {
+        setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                PianoAnchorTheme { KeyStrip(state) }
+            }
+        }
+        val band = onNodeWithTag(TARGET_BAND_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val letters =
+            onAllNodes(
+                SemanticsMatcher("a target letter") {
+                    it.config.getOrNull(SemanticsProperties.Text)?.any { text -> text.text in names } == true
+                },
+                useUnmergedTree = true,
+            ).fetchSemanticsNodes()
+        return letters.size == names.size && letters.all { it.boundsInRoot.top >= band.top - 1f }
+    }
+
+    @Test
+    fun aBlackTargetKeysTwoNamesSitOnItsBand() =
+        runComposeUiTest {
+            val black =
+                start.copy(
+                    passage = Passages.CDE,
+                    noteLabels = NoteLabels(NoteNameStage.TARGET_ONLY, sharpsPassed = true, hints = true),
+                    steps =
+                        start.steps.mapIndexed { i, step ->
+                            if (i ==
+                                0
+                            ) {
+                                step.copy(notes = setOf(MidiNote(61)))
+                            } else {
+                                step
+                            }
+                        },
+                )
+
+            assertTrue(lettersSitOnTheBand(black, setOf("C♯", "D♭"), fontScale = 1f))
+        }
+
+    @Test
+    fun aWhiteTargetKeysLetterSitsOnItsBandAtLargeFonts() =
+        runComposeUiTest {
+            val white = start.copy(noteLabels = labels(NoteNameStage.TARGET_ONLY))
+
+            assertTrue(lettersSitOnTheBand(white, setOf("C"), fontScale = 2f))
         }
 }

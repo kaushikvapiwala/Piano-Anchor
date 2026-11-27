@@ -13,6 +13,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -58,6 +59,32 @@ fun keyLetterColor(
         DarkText
     }
 
+@Composable
+private fun letterSize(keyWidth: Dp): TextUnit =
+    with(LocalDensity.current) {
+        minOf(LETTER_SIZE.toPx(), (keyWidth * MAX_LETTER_SHARE).toPx()).toSp()
+    }
+
+private fun namesOn(
+    sharp: String,
+    flat: String?,
+    keyWidth: Dp,
+): List<String> = listOfNotNull(sharp, flat.takeIf { keyWidth >= TWO_NAMES_WIDTH })
+
+/**
+ * The height of the letters [KeyLetters] writes on a key [keyWidth] wide, at the current font scale: a strip makes
+ * a coloured band under the letters at least this tall (plus its padding) so every line sits on the band.
+ */
+@Composable
+fun keyLettersHeight(
+    sharp: String,
+    flat: String?,
+    keyWidth: Dp,
+): Dp {
+    val size = letterSize(keyWidth)
+    return with(LocalDensity.current) { size.toDp() * namesOn(sharp, flat, keyWidth).size }
+}
+
 /**
  * The letter(s) written at the bottom of a key [keyWidth] wide: [sharp] (a white key's letter or a black key's sharp
  * name), with [flat] under it when the key is wide enough. Inter 500 at 12 sp, at most 40% of the key's width. Hidden
@@ -71,12 +98,9 @@ fun KeyLetters(
     keyWidth: Dp,
     modifier: Modifier = Modifier,
 ) {
-    val size =
-        with(LocalDensity.current) {
-            minOf(LETTER_SIZE.toPx(), (keyWidth * MAX_LETTER_SHARE).toPx()).toSp()
-        }
+    val size = letterSize(keyWidth)
     Column(modifier.fillMaxWidth().clearAndSetSemantics {}) {
-        for (name in listOfNotNull(sharp, flat.takeIf { keyWidth >= TWO_NAMES_WIDTH })) {
+        for (name in namesOn(sharp, flat, keyWidth)) {
             Text(
                 name,
                 color = color,

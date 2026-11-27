@@ -89,6 +89,15 @@ class KeyLettersTest {
         }
 
     @Test
+    fun aStaleWrongKeyLettersNothingOnceTheCheckIsOver() =
+        runComposeUiTest {
+            assertEquals(
+                emptyList(),
+                lettersOf(NoteLabels(NoteNameStage.NONE, sharpsPassed = false, hints = true), wrong = C4),
+            )
+        }
+
+    @Test
     fun offLettersNothingEvenForAWrongKey() =
         runComposeUiTest {
             assertEquals(

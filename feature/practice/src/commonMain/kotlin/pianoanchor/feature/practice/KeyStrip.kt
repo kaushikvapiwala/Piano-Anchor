@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
@@ -53,6 +55,7 @@ import pianoanchor.feature.practice.resources.practice_last_key_wrong_timed
 import pianoanchor.ui.shell.KeyLetters
 import pianoanchor.ui.shell.PianoAnchorColors
 import pianoanchor.ui.shell.keyLetterColor
+import pianoanchor.ui.shell.keyLettersHeight
 import pianoanchor.ui.shell.pianoAnchorColors
 import kotlin.math.abs
 
@@ -68,6 +71,9 @@ private val TALL_WHITE_HEIGHT = 240.dp
 private val TALL_BLACK_HEIGHT = 150.dp
 private val GLOW_BORDER = 3.dp
 private val LETTER_BOTTOM = 2.dp
+
+/** The test tag of a target key's band. */
+internal const val TARGET_BAND_TAG = "target-band"
 
 /**
  * The live key strip: the label row with the last key's verdict, then two octaves of keys (`keyStripRange`). Target
@@ -233,29 +239,52 @@ private fun Key(
                 .then(outline(glow, black, accent, colors, shape))
                 .semantics { contentDescription = name },
     ) {
-        val banded = target && !lit && !glow
-        if (banded) {
-            Box(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(TARGET_BAND)
-                    .background(colors.targetBand),
-            )
-        }
-        val letter = state.keyLetter(note, target)
-        if (letter != null) {
-            KeyLetters(
-                letter,
-                NoteNameRule.flatLabel(note.number).takeIf { black },
-                keyLetterColor(
-                    if (banded) colors.targetBand else fill,
-                    if (black) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-                width,
-                Modifier.align(Alignment.BottomCenter).padding(bottom = LETTER_BOTTOM),
-            )
-        }
+        KeyContent(note, state, target, target && !lit && !glow, fill, colors, width, black)
+    }
+}
+
+/** A key's target band (when [banded]) and its letters (a [target] key keeps its own), at the key's bottom. */
+@Composable
+private fun BoxScope.KeyContent(
+    note: MidiNote,
+    state: PracticeState,
+    target: Boolean,
+    banded: Boolean,
+    fill: Color,
+    colors: PianoAnchorColors,
+    width: Dp,
+    black: Boolean,
+) {
+    val letter = state.keyLetter(note, target)
+    val flat = NoteNameRule.flatLabel(note.number).takeIf { black }
+    if (banded) {
+        // A lettered band is as tall as its letters and their padding, so the letters sit wholly on the band.
+        val bandHeight =
+            if (letter == null) {
+                TARGET_BAND
+            } else {
+                maxOf(TARGET_BAND, keyLettersHeight(letter, flat, width) + LETTER_BOTTOM * 2)
+            }
+        Box(
+            Modifier
+                .testTag(TARGET_BAND_TAG)
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(bandHeight)
+                .background(colors.targetBand),
+        )
+    }
+    if (letter != null) {
+        KeyLetters(
+            letter,
+            flat,
+            keyLetterColor(
+                if (banded) colors.targetBand else fill,
+                if (black) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+            width,
+            Modifier.align(Alignment.BottomCenter).padding(bottom = LETTER_BOTTOM),
+        )
     }
 }
 

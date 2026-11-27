@@ -66,7 +66,7 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
 - **Key strip**: "Live keys · play the piano" and the last key's verdict ("E4 · correct, moving on"), then two octaves from the C at or below the passage's lowest note. White keys 60 dp on a
   62 dp pitch, black keys 34×46 dp; the waiting step's keys carry an 18 dp amber band; held and flashing keys turn
   correct (blue) or wrong (grey, never red) with a 150 ms colour change; the flash lasts `KEY_FLASH_MS`. All Notes Off and All Sound Off clear every held and wrong key.
-- **Note names on keys** (practice, lesson, quiz and Ear-echo strips; `NoteNameRule` decides, the strip draws): while
+- **Note names on keys** (practice and lesson strips; the quiz strip only for hints; `NoteNameRule` decides, the strip draws; see `docs/algorithms/note-names.md`): while
   the learner has not passed "C D E, then F G A B" every white key carries its letter; once it is passed only the
   key(s) to play keep theirs; once it is learned none do. Black keys stay blank until "Sharps and flats" is passed,
   then show "C♯" with "D♭" under it when the key is at least 30 dp wide, else "C♯" alone. Inter 500, 12 sp (so it grows
@@ -74,7 +74,10 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
   colour, on black keys white, and on a lit, wrong, glowing or banded key in whichever of white or near-black keeps
   4.5:1 contrast. A wrong-key hint letters the pressed key and the right one at any stage. A perform take shows no
   letters (no hint shows there). With the setting Off there are no letters at all. The letters are hidden from
-  TalkBack: each key already reads its name.
+  TalkBack: each key already reads its name. A target key's amber band grows to hold its letters (both names of a
+  black key, large font scales) so every line sits on the band and keeps its contrast. The Ear echo card and the
+  onboarding echo are out of the fading: they always name their five keys (they have no black keys, so the name is
+  the only way to tell them apart), and so is the card animations' keyboard.
 - **Wrong key in wait mode**: the played key flashes grey while the key to play glows in the theme's primary colour
   (a 3 dp primary outline on a tint of it) until it is played. One line under the staff says what was played and how to
   find the right key by the black keys: "That was F4. C is just left of the two black keys." ("D is between the two
@@ -315,7 +318,8 @@ the current step; only this pane changes between steps. A key strip runs along t
 - **Key strip**: whole octaves around the Try's notes (at least two; the whole keyboard for "every C"). Sounding or
   held keys are blue, the key of a wrong press grey, and the expected key glows in the accent (always for a lit key or
   a sequence, after a wrong key for the rest). Letters on the keys follow the same rules as the practice strip's
-  (the glowing keys are the ones to play); keys are 24 dp wide, so the letter is capped at 40% of that.
+  (the glowing keys are the ones to play; a wrong key's hint letters show only while the check is live); keys are
+  24 dp wide, so the letter is capped at 40% of that.
 - The step is saved as it changes and the lesson reopens there; a finished lesson reopens at Why.
 
 ## Quiz screen
@@ -329,6 +333,8 @@ strip runs along the bottom: held keys lit, the wrong key grey, the expected key
 See step and no card. After the last quiz the right pane reads "3 quizzes: 2 clean" with "Done" back to Today; a pedal
 tap there is "Done" too, with the "Tap the pedal to continue" line beside the button (not during a quiz). The
 piano is handed over as practice does: leaving closes it first.
+- **Note names**: the quiz strip never letters keys by stage (a prompt like "Play the E" must not be answerable by reading letters); only a wrong key's hint letters the pressed and the right key while the check is live, and none with the setting Off.
+
 
 ## Card animations
 

@@ -115,7 +115,6 @@ val appModule =
                 get(),
                 get(),
                 get(),
-                get(),
                 Random(get<Clock>().now().toEpochMilliseconds()),
             ) {
                 Uuid.random().toString()

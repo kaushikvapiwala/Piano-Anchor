@@ -32,6 +32,7 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.lesson.NoteLabelsUseCase
+import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.lesson.QuizMaker
 import pianoanchor.engine.lesson.TryRun
@@ -111,7 +112,8 @@ public class QuizViewModel(
 
     /** Letters the strip's keys as the learner's setting and progress say, once they are read. */
     private suspend fun loadNoteLabels() {
-        val labels = noteLabels.load()
+        // A quiz asks for a key by name: no letters but a wrong-key hint's.
+        val labels = noteLabels.load().copy(stage = NoteNameStage.NONE)
         mutableState.update { it.copy(noteLabels = labels) }
     }
 

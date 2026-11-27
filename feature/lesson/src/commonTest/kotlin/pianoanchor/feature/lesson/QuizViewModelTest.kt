@@ -18,6 +18,7 @@ import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiEvent
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.NoteNames
 import pianoanchor.core.model.Rating
 import pianoanchor.core.model.TryCheck
 import pianoanchor.core.ports.MidiInputPort
@@ -25,6 +26,7 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.lesson.Quiz
@@ -122,11 +124,21 @@ class QuizViewModelTest {
     private suspend fun rating(skillId: String): Rating? = repository.reviews(skillId).singleOrNull()?.rating
 
     @Test
-    fun theStripLettersEveryWhiteKeyForANewLearner() =
+    fun aQuizStripNeverLettersKeysButStillHintsAWrongKey() =
         runTest(dispatcher) {
             val vm = viewModel()
 
-            assertEquals(NoteNameStage.ALL_WHITE, vm.state.value.noteLabels.stage)
+            assertEquals(NoteLabels(NoteNameStage.NONE, sharpsPassed = false, hints = true), vm.state.value.noteLabels)
+            vm.close()
+        }
+
+    @Test
+    fun aQuizStripWithNoteNamesOffLettersNothing() =
+        runTest(dispatcher) {
+            settings.update { it.copy(noteNames = NoteNames.OFF) }
+            val vm = viewModel()
+
+            assertEquals(NoteLabels(NoteNameStage.NONE, sharpsPassed = false, hints = false), vm.state.value.noteLabels)
             vm.close()
         }
 

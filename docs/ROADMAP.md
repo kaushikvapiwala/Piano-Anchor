@@ -40,29 +40,36 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Note names on the key strips** (spec #266; owner's device test): letters on the app's keys, fading as the key
-    names are passed and Learned, with an Auto/Off setting.
-2. **Lesson and practice redesign** (needs a grill session with Lazyweb design research; owner's device test): a
+1. **Lesson and practice redesign** (needs a grill session with Lazyweb design research; owner's device test): a
     hand-drawn hand over the keys whose fingers press in time with See and Listen (drawn in Compose, ADR 0026), a
     one-tap session that runs today's plan in a row, play-along backing for songs, "Day 1 vs today" playback and a
     weekly recap. The owner keeps the plum palette. Specs follow an approved mock.
-3. **Staff notation** (spec #272; grill 2026-11-25): stems, flags, beams, dots, rests, key signatures and natural
+2. **Staff notation** (spec #272; grill 2026-11-25): stems, flags, beams, dots, rests, key signatures and natural
     signs on the practice staff, with every music glyph from the Bravura font (ADR 0010); the clef no longer relies on
     the system font.
-4. **Course 2, Unit 4: eighth notes and the dotted quarter (M6.4)** (spec #273) [#272]: four concepts, a timed Rhythm
+3. **Course 2, Unit 4: eighth notes and the dotted quarter (M6.4)** (spec #273) [#272]: four concepts, a timed Rhythm
     Try, the Jingle Bells chorus, sight-reading levels 9–10 and Unit 4's placement piece.
-5. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
+4. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
     D7 shortcut, Go Tell Aunt Rhody, sight-reading levels 11–12 and Unit 5's placement piece.
-6. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
+5. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
     thumb-under. Built like Units 4–5; each unit adds sight-reading levels and a placement piece. The pedal unit sets
     the lesson's pedalIsMusic flag for its concepts (ADR 0027).
-7. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
+6. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
     learner skipped its Try or Use, so its "next" can differ from Today's Next card; name the next unpassed concept.
+7. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
+    come from engine strings; return a pitch class and accidental from the note-name rule and map it to
+    Compose string resources in the UI, so the names can be translated.
+8. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
+    Unit 0 wide strip and at font scale 2.0; a "not loaded yet" state so a beginner's strip doesn't open blank and
+    letter itself a moment later; Practice takes the note-labels use case from Koin like Lesson and Quiz.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
 pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md` (`scripts/capture_session.sh` records a session).
 
+- **Note names on keys (#266):** a new learner sees C to B on every white key; after the "C D E, then F G A B"
+  concept passes only the key to play keeps its letter, and after its quiz none; Settings → "Note names on keys" →
+  Off clears them; letters stay readable in light and dark.
 - **Lesson mastery (#265):** a Try needs 3 clean reps (2 for long ones), the lesson's Use piece runs with no hints and
   passes the concept, and the next day's quiz turns the tick into a ★ on Songs.
 - **First release and dogfood (M3 exit):** cut v0.1.0 by following `docs/RELEASING.md` (keystore, secrets, the

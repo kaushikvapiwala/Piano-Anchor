@@ -2,7 +2,6 @@ package pianoanchor.feature.ear
 
 import pianoanchor.core.model.EarExercise
 import pianoanchor.engine.Tunables
-import pianoanchor.engine.lesson.NoteLabels
 
 /** What the line under the item says. */
 public enum class EarFeedback {
@@ -39,7 +38,6 @@ public data class EarState(
     val feedback: EarFeedback = EarFeedback.NONE,
     val summary: EarSummary? = null,
     val storageFailed: Boolean = false,
-    val noteLabels: NoteLabels = NoteLabels(),
 ) {
     /** "Show me" is offered after the first wrong answer. */
     val canShowMe: Boolean get() = feedback == EarFeedback.TRY_AGAIN
