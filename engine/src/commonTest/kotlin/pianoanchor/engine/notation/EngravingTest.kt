@@ -281,5 +281,21 @@ class EngravingTest {
         }
     }
 
+    @Test
+    fun stemPointsDownWhenTheOuterNotesAreEquallyFarFromTheMiddle() {
+        assertEquals(StemDirection.DOWN, engrave("[G4 D5]q rh.").chords.single().stem)
+    }
+
+    @Test
+    fun gapOffTheEighthGridStillGetsTheLongestRestThatFits() {
+        val steps =
+            listOf(
+                Step(0, setOf(ScoreNote(MidiNote(60), 720))),
+                Step(1920, setOf(ScoreNote(MidiNote(62), 1920))),
+            )
+        val rests = Engraving.engrave(passage(steps)).rests
+        assertEquals(listOf(720 to NoteValue.QUARTER), rests.map { it.onsetTicks to it.value })
+    }
+
     private fun passage(steps: List<Step>) = Passage("odd", "Odd", steps, FOUR_FOUR, 80, exerciseRights("test"))
 }

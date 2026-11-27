@@ -183,13 +183,16 @@ public object Engraving {
         }
     }
 
-    /** Up when the note farthest from the middle line is below it, down when it is on or above it. */
+    /**
+     * Up when the note farthest from the middle line is below it, down when it is on or above it (and down when the
+     * lowest and highest notes are equally far).
+     */
     private fun stemFor(
         pitches: List<MidiNote>,
         staff: Staff,
     ): StemDirection {
-        val farthest = pitches.map { diatonic(it) - staff.middle() }.maxBy { kotlin.math.abs(it) }
-        return if (farthest < 0) StemDirection.UP else StemDirection.DOWN
+        val offsets = pitches.map { diatonic(it) - staff.middle() }
+        return if (-offsets.min() > offsets.max()) StemDirection.UP else StemDirection.DOWN
     }
 
     /** Per draft: the id of the beam its eighth belongs to, or null (not an eighth, or alone in its beat). */
@@ -231,7 +234,10 @@ public object Engraving {
         return rests
     }
 
-    /** Rests from [from] to [to], cut at bar lines: a whole bar is a whole rest, else aligned half/quarter/eighth. */
+    /**
+     * Rests from [from] to [to], cut at bar lines: a whole bar is a whole rest, else aligned half/quarter/eighth (off
+     * the eighth grid, the longest that fits).
+     */
     private fun fillGap(
         staff: Staff,
         from: Int,
@@ -248,9 +254,9 @@ public object Engraving {
             } else {
                 var q = at
                 while (q < segmentEnd) {
-                    val value =
-                        REST_VALUES.firstOrNull { (q - barStart) % it.ticks == 0 && q + it.ticks <= segmentEnd }
-                            ?: break
+                    val fits = REST_VALUES.filter { q + it.ticks <= segmentEnd }
+                    // Off the eighth grid no rest is aligned: take the longest that fits; under an eighth stays blank.
+                    val value = fits.firstOrNull { (q - barStart) % it.ticks == 0 } ?: fits.firstOrNull() ?: break
                     rests += EngravedRest(staff, q, value)
                     q += value.ticks
                 }

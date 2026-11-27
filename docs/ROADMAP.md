@@ -63,6 +63,9 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 8. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
     Unit 0 wide strip and at font scale 2.0; a "not loaded yet" state so a beginner's strip doesn't open blank and
     letter itself a moment later; Practice takes the note-labels use case from Koin like Lesson and Quiz.
+9. **One pitch-class table** (follow-up of #272): the letter-of-pitch-class and black-key tables are copied in
+    the engine's engraving, the practice and lesson staffs, the key strips and the card scene; keep one public copy in
+    the model next to the pitch-class names and reuse it.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never

@@ -19,13 +19,15 @@ Per staff, a gap runs from the end of the staff's last sounding note (or the bar
 gap runs to the passage end, which is the end of the last note rounded up to a whole bar. A gap is cut at bar lines.
 A whole empty bar is a whole rest, in any metre. Any other stretch is filled left to right with the longest of half,
 quarter or eighth that starts on a multiple of its own length within the bar and fits, so `C4q` then three beats of
-silence gives a quarter rest at beat 2 and a half rest at beat 3, never a dotted rest. A staff with no notes at all
-gets no rests, so a one-hand piece stays clean.
+silence gives a quarter rest at beat 2 and a half rest at beat 3, never a dotted rest. A stretch that starts off the
+eighth grid takes the longest rest that fits instead; a leftover shorter than an eighth stays blank. A staff with no
+notes at all gets no rests, so a one-hand piece stays clean.
 
 ## Stems, beams and flags
 
 - Whole notes have no stem. Otherwise the stem points up when the notehead farthest from the staff's middle line (B4
-  treble, D3 bass) is below it, and down when it is on or above it. In a chord the farthest note decides.
+  treble, D3 bass) is below it, and down when it is on or above it. In a chord the farthest note decides; when the
+  lowest and highest notes are equally far, the stem points down.
 - Consecutive eighths on one staff in the same beat form a beam group; the beat is a quarter's span from the bar start,
   whatever the metre. All stems of a group follow the group's farthest note. A lone eighth gets a flag instead.
 
