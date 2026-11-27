@@ -1,6 +1,7 @@
 package pianoanchor.engine.content
 
 import pianoanchor.core.model.CurriculumUnit
+import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.Rights
 import pianoanchor.core.model.Step
@@ -133,8 +134,9 @@ internal fun chordPassage(
     rights: Rights,
     right: String? = null,
     piece: Boolean = false,
+    keySignature: KeySignature = KeySignature.C,
 ): Passage {
-    val chords = builtinPassage(id, title, left, tempoBpm, skills, rights, piece = piece)
+    val chords = builtinPassage(id, title, left, tempoBpm, skills, rights, piece = piece, keySignature = keySignature)
     val melody = right?.let { NoteText.parse(it, FOUR_FOUR) }.orEmpty()
     val steps =
         (chords.steps + melody)

@@ -2,7 +2,9 @@ package pianoanchor.feature.practice
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -79,6 +81,22 @@ class PracticeScreenTest {
             }
 
             onNodeWithContentDescription("Treble staff, 3/4. Notes C4, D4, E4. Done.").assertExists()
+        }
+
+    @Test
+    fun aStaffWithBothHandsIsCalledAGrandStaffAndALeftHandOneABassStaff() =
+        runComposeUiTest {
+            val turns = Curriculum.passages.first { it.title == "Turn-taking" }
+            val left = Curriculum.passages.first { it.id == "builtin:left-hand-walk" }
+            var state by mutableStateOf(PracticeState.start(turns))
+            setContent {
+                PianoAnchorTheme { PracticeScreen(state, {}, {}, {}, {}, {}) }
+            }
+
+            onNodeWithContentDescription("Grand staff, 4/4.", substring = true).assertExists()
+
+            state = PracticeState.start(left)
+            onNodeWithContentDescription("Bass staff, 4/4.", substring = true).assertExists()
         }
 
     private fun ComposeUiTest.show(

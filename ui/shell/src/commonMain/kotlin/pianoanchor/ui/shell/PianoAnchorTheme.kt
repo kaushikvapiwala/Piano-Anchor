@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.FontResource
 import pianoanchor.ui.shell.resources.Res
+import pianoanchor.ui.shell.resources.bravura
 import pianoanchor.ui.shell.resources.inter
 import pianoanchor.ui.shell.resources.space_grotesk
 
@@ -133,6 +134,14 @@ private val SPACE_GROTESK_WEIGHTS = listOf(FontWeight.Medium, FontWeight.Bold)
 val displayFontFamily: FontFamily
     @Composable
     get() = variableFamily(Res.font.space_grotesk, SPACE_GROTESK_WEIGHTS)
+
+/**
+ * Bravura (SIL OFL 1.1, Steinberg), the SMuFL reference music font: clefs, accidentals, flags, rests and dots on the
+ * practice staff. Shipped unmodified (the licence reserves the name). One em is four staff spaces.
+ */
+val notationFontFamily: FontFamily
+    @Composable
+    get() = FontFamily(Font(Res.font.bravura))
 
 @Composable
 private fun variableFamily(

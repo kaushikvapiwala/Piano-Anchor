@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.engine.matcher.TempoRung
+import pianoanchor.engine.notation.Engraving
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_listen
 import pianoanchor.feature.practice.resources.practice_next_key
@@ -36,7 +38,6 @@ import pianoanchor.feature.practice.resources.practice_skip
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.wrongKeyHintText
 
-private val STAFF_HEIGHT = 196.dp
 private val HIDDEN_STAFF_HEIGHT = 72.dp
 private val COUNT_IN_SIZE = 96.sp
 private const val NUMERAL_BACKDROP_ALPHA = 0.9f
@@ -48,11 +49,12 @@ private const val NUMERAL_BACKDROP_ALPHA = 0.9f
 @Composable
 internal fun StaffArea(state: PracticeState) {
     val next = state.nextKeyDescription()
+    val staffHeight = remember(state.passage) { staffHeightDp(Engraving.engrave(state.passage)).dp }
     Box(
         Modifier
             .padding(start = 20.dp, end = 20.dp, top = 6.dp)
             .fillMaxWidth()
-            .height(if (state.staffHidden) HIDDEN_STAFF_HEIGHT else STAFF_HEIGHT),
+            .height(if (state.staffHidden) HIDDEN_STAFF_HEIGHT else staffHeight),
         contentAlignment = Alignment.Center,
     ) {
         if (state.staffHidden) {
@@ -69,7 +71,7 @@ internal fun StaffArea(state: PracticeState) {
                 liveMarks = state.liveMarks,
                 timed = state.rung != TempoRung.WAIT,
                 legend = state.showsVerdicts,
-                modifier = Modifier.fillMaxWidth().height(STAFF_HEIGHT),
+                modifier = Modifier.fillMaxWidth().height(staffHeight),
             )
         }
     }
