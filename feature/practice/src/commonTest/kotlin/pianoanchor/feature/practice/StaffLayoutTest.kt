@@ -1,11 +1,14 @@
 package pianoanchor.feature.practice
 
+import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.ScoreNote
 import pianoanchor.core.model.Step
 import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.core.model.TimeSignature
+import pianoanchor.engine.content.NoteText
+import pianoanchor.engine.notation.Staff
 import pianoanchor.testing.TEST_RIGHTS
 import kotlin.math.abs
 import kotlin.test.Test
@@ -147,10 +150,10 @@ class StaffLayoutTest {
 
     @Test
     fun `final bar after the last note's end`() {
-        // The last note is a whole note: the final bar sits a whole note's width after it, not at its onset.
-        val layout = staffLayout(passage(step(0), step(Q, 4 * Q)), WIDE)
+        // The last note is a dotted half: the final bar sits its width after it, not at its onset.
+        val layout = staffLayout(passage(step(0), step(Q, 3 * Q)), WIDE)
 
-        assertNear(4 * (layout.noteX[1] - layout.noteX[0]), layout.finalBarX - layout.noteX[1])
+        assertNear(3 * (layout.noteX[1] - layout.noteX[0]), layout.finalBarX - layout.noteX[1])
     }
 
     @Test
@@ -183,5 +186,145 @@ class StaffLayoutTest {
             )
 
         assertEquals(listOf(emptySet(), setOf(c4), setOf(c4), setOf(g4)), layout.hollow)
+    }
+
+    private fun noteText(
+        text: String,
+        key: KeySignature = KeySignature.C,
+    ) = passage(*NoteText.parse(text, TimeSignature(4, 4)).toTypedArray()).copy(keySignature = key)
+
+    @Test
+    fun `key signature width is reserved only when the key is not C`() {
+        val c = staffLayout(noteText("C4w"), WIDE)
+        val g = staffLayout(noteText("C4w", KeySignature.G), WIDE)
+        val d = staffLayout(noteText("C4w", KeySignature(2)), WIDE)
+
+        assertNear(0f, c.keyWidth)
+        assertNear(KEY_SHARP_WIDTH_DP, g.keyWidth)
+        assertNear(2 * KEY_SHARP_WIDTH_DP, d.keyWidth)
+        assertNear(KEY_SHARP_WIDTH_DP, g.noteX[0] - c.noteX[0])
+    }
+
+    @Test
+    fun `flat keys reserve nothing yet`() {
+        assertNear(0f, staffLayout(noteText("C4w", KeySignature(-2)), WIDE).keyWidth)
+        assertEquals(emptyList(), keySignaturePositions(-2, Staff.TREBLE))
+    }
+
+    @Test
+    fun `key signature sharps sit in the standard positions`() {
+        assertEquals(listOf(8, 5, 9, 6, 3, 7, 4), keySignaturePositions(7, Staff.TREBLE))
+        assertEquals(listOf(-6, -9), keySignaturePositions(2, Staff.BASS))
+        assertEquals(emptyList(), keySignaturePositions(0, Staff.TREBLE))
+    }
+
+    @Test
+    fun `an up stem grows from the lowest head to 3 and a half spaces above the highest`() {
+        val layout = staffLayout(noteText("[C4 E4]q rq rh"), WIDE)
+
+        val stem = layout.chords.single().stem!!
+        assertTrue(stem.up)
+        assertEquals(-2, stem.fromPosition)
+        assertEquals(0 + 7, stem.tipPosition)
+        assertNear(layout.noteX[0] + 8.75f, stem.x)
+        assertTrue(
+            layout.chords
+                .single()
+                .dotPositions
+                .isEmpty(),
+        )
+    }
+
+    @Test
+    fun `a down stem hangs on the left from the highest head`() {
+        val layout = staffLayout(noteText("B4q rq rh"), WIDE)
+
+        val stem = layout.chords.single().stem!!
+        assertTrue(!stem.up)
+        assertEquals(4, stem.fromPosition)
+        assertEquals(4 - 7, stem.tipPosition)
+        assertNear(layout.noteX[0] - 8.75f, stem.x)
+    }
+
+    @Test
+    fun `a whole note has no stem`() {
+        assertEquals(null, staffLayout(noteText("C4w"), WIDE).chords.single().stem)
+    }
+
+    @Test
+    fun `a lone eighth is flagged at its stem tip`() {
+        val layout = staffLayout(noteText("C4e re D4q E4h"), WIDE)
+
+        assertTrue(layout.chords[0].flag)
+        assertEquals(-2 + 7, layout.chords[0].stem!!.tipPosition)
+        assertTrue(layout.beams.isEmpty())
+    }
+
+    @Test
+    fun `a beam joins its stems at the farthest tip`() {
+        val layout = staffLayout(noteText("C4e E4e rq rh"), WIDE)
+
+        val beam = layout.beams.single()
+        assertEquals(0 + 7, beam.position)
+        assertTrue(beam.up)
+        assertNear(layout.chords[0].stem!!.x, beam.x1)
+        assertNear(layout.chords[1].stem!!.x, beam.x2)
+        assertTrue(layout.chords.all { it.stem!!.tipPosition == 7 && !it.flag })
+    }
+
+    @Test
+    fun `a down beam ends at the lowest tip`() {
+        val layout = staffLayout(noteText("G4e B5e rq rh"), WIDE)
+
+        val beam = layout.beams.single()
+        assertTrue(!beam.up)
+        assertEquals(2 - 7, beam.position)
+    }
+
+    @Test
+    fun `a dot sits right of the head, in the space above when the head is on a line`() {
+        val layout = staffLayout(noteText("E4q. G4e rh"), WIDE)
+
+        val (online, onspace) = layout.chords
+        assertEquals(listOf(1), online.dotPositions) // E4 is on the bottom line, position 0
+        assertNear(layout.noteX[0] + 17f, online.dotX)
+        assertTrue(onspace.dotPositions.isEmpty())
+        assertEquals(listOf(1), staffLayout(noteText("F4h. rq"), WIDE).chords.single().dotPositions) // F4: a space
+    }
+
+    @Test
+    fun `a chord's dots in one space are drawn once`() {
+        val layout = staffLayout(noteText("[C4 D4]h. rq"), WIDE)
+
+        assertEquals(listOf(-1), layout.chords.single().dotPositions)
+    }
+
+    @Test
+    fun `a rest gets space like a note`() {
+        val layout = staffLayout(noteText("C4q rq E4h"), WIDE)
+
+        assertNear(layout.restX.single() - layout.noteX[0], layout.noteX[1] - layout.restX.single())
+    }
+
+    @Test
+    fun `a trailing rest moves the final bar out`() {
+        val layout = staffLayout(noteText("C4q rh."), WIDE)
+
+        assertTrue(layout.finalBarX > layout.restX.last())
+        assertEquals(2, layout.restX.size)
+    }
+
+    @Test
+    fun `a whole rest fills its bar in any metre`() {
+        val three = TimeSignature(3, 4)
+        val layout =
+            staffLayout(
+                Passage("t", "T", NoteText.parse("rq rq rq | C4h.", three), three, 100, TEST_RIGHTS),
+                WIDE,
+            )
+
+        assertEquals(1, layout.restX.size)
+        assertEquals(1, layout.barLineX.size)
+        assertTrue(layout.barLineX.single() < layout.noteX[0])
     }
 }

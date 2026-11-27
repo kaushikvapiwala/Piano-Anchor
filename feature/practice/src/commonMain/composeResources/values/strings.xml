@@ -37,6 +37,25 @@
     <string name="practice_legend_waiting">waiting for you</string>
     <string name="practice_staff_waiting">Treble staff, %1$s. Notes %2$s. Waiting for %3$s.</string>
     <string name="practice_staff_done">Treble staff, %1$s. Notes %2$s. Done.</string>
+    <!-- Major keys from 7 flats to 7 sharps, in order: TalkBack reads one after "in". -->
+    <string-array name="practice_major_keys">
+        <item>C flat</item>
+        <item>G flat</item>
+        <item>D flat</item>
+        <item>A flat</item>
+        <item>E flat</item>
+        <item>B flat</item>
+        <item>F</item>
+        <item>C</item>
+        <item>G</item>
+        <item>D</item>
+        <item>A</item>
+        <item>E</item>
+        <item>B</item>
+        <item>F sharp</item>
+        <item>C sharp</item>
+    </string-array>
+    <string name="practice_time_key">%1$s, in %2$s major</string>
     <string name="practice_time_signature">%1$s/%2$s</string>
     <string name="practice_keys_label">Live keys · play the piano</string>
     <string name="practice_last_key_correct">%1$s · correct, moving on</string>

@@ -10,8 +10,10 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | All Notes Off | MIDI control change 123 (also implied by 124–127): every key still down comes up; the sustain pedal still holds them. A piano sends it to clear stuck notes. |
 | All Sound Off | MIDI control change 120: every key comes up and every sounding note stops at once, pedal-held ones included. |
 | Attempt | One completed run of a passage, from the first note to `PassageComplete` (`Attempt` in `:core:model`): its counts, accuracy, band and match events, stored by `AttemptRepositoryPort`. Abandoned runs are not saved. |
+| Augmentation dot | The dot after a notehead that lengthens it by half (dotted quarter = 1440 ticks); drawn right of the head, in the space above when the head sits on a line. |
 | Band | The result of an attempt named for the learner: `CLEAN`, `GOOD` or `KEEP_PRACTISING`, from its accuracy and the `BAND_*_MIN_ACCURACY` tunables. |
 | BLE MIDI | MIDI over Bluetooth Low Energy. A BLE MIDI piano is found by a scan and must be connected from the app (`MidiDiscoveryPort`); pairing in the system settings pairs only Bluetooth audio. |
+| Beam | The thick line joining the stems of consecutive eighths inside one beat (one horizontal beam at the stem ends); a lone eighth has a flag instead (`docs/algorithms/engraving.md`). |
 | Card scene | A concept card's short looping animation, written as data (`CardScene` in `:core:model`: a stage, timed cues in one fixed vocabulary and a description for TalkBack) and drawn by one renderer so every card looks and moves the same (`docs/ui/living-studio.md`, "Card animations"). |
 | Chord window | The `CHORD_CLUSTER_MS` span from a step's first pressed note in which its other notes must follow; the matcher reports an incomplete chord when it runs out. |
 | Cold check | The first saved attempt on a learner day that exercises a skill, in any mode and at any tempo; it becomes the skill's review for that day, rated from its band (`docs/algorithms/learner-model.md`). Later attempts that day change nothing. |
@@ -29,6 +31,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Contribution kit | One `.json` file saved from the note monitor (`docs/contribute-a-piano.md`): the app version, the piano's Identity Reply and a short fixture. Attached to a "Support for my piano" issue. |
 | Fake | Deterministic test implementation of a port, in `testing/`. |
 | Hint level | How much help a run of a passage starts with: Full (amber key band at once), Delayed (after the learner's usual pause) or Off (only on the Hint button). Faded by clean runs, restored by keep-practising runs (`HintFading`, `docs/algorithms/guidance.md`). |
+| Key signature | The sharps (or flats) written after the clef that every note of a letter carries (`KeySignature`, `Passage.keySignature`; G major = one sharp, F). Flat keys are in the model; drawing them waits for a lesson that teaches one. |
 | Landmark hint | The one plain line shown after a wrong key in wait mode: how to find the key to play from the groups of two and three black keys (`wrongKeyHint`, `docs/algorithms/wrong-key-hint.md`). |
 | Note names on keys | The letters ("C", "D", "C♯") written on the key strips, chosen by `NoteNameRule` from `Settings.noteNames` and the course progress: every white key until "C D E, then F G A B" is passed, only the key to play until it is learned, then none; black keys only after "Sharps and flats" is passed. A wrong-key hint letters its keys at any stage; Off shows none. |
 | Pedal tap | A quick press and release of the sustain pedal (down, then up within `PEDAL_TAP_MAX_MS`), read by `PedalTapDetector`. Outside a run it means "continue" (the screen's primary action) while `Settings.pedalControlOn`; a longer press is a hold, which is music. |
@@ -43,6 +46,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Incomplete chord | `ChordIncomplete`: the chord window of a step ran out before all its notes were pressed; the step must be played again. |
 | Learned | A skill that has `LEARNED_MIN_RECALLED_COLD_CHECKS` recalled (Hard or Good) cold checks on distinct days, at least `LEARNED_MIN_CLEAN_COLD_CHECKS` of them clean, and stability of at least `LEARNED_MIN_STABILITY_DAYS`. Sticky: it stays learned after a lapse, and it unlocks the skills that depend on it. |
 | Learner day | A calendar date (`kotlinx.datetime.LocalDate`) in the learner's own time zone; a skill gets at most one review per learner day. Stored as ISO `yyyy-mm-dd` text (ADR 0022). |
+| Natural sign | The accidental (U+E261 in Bravura) that cancels a key signature's sharp for the rest of the bar, e.g. an F in G major. |
 | Note text | The compact text line a passage's notes are written in, e.g. `C4q D4q E4h`; parsed by `NoteText`. See `docs/algorithms/note-text.md`. |
 | Review | One FSRS review (`Review` in `:core:model`): a cold check of a skill on a learner day that produced a rating, from one attempt. |
 | Review log | The append-only list of reviews kept by `LearnerRepositoryPort`: the source of truth. The cached state per skill (`SkillState`) is derived from it and can be rebuilt by replaying the log. |

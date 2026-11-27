@@ -23,7 +23,7 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
 3. Does the Kotlin stdlib, Compose or the Android platform already provide it?
 4. Does a dependency we already have provide it?
 5. Does a maintained, licence-compatible library provide it? Apache-2.0/MIT/BSD/EPL only, never GPL/AGPL/LGPL;
-   Kotlin Multiplatform for shared modules. Propose it with a new `docs/adr/` record. No dependency for a few
+   Kotlin Multiplatform for shared modules. SIL OFL 1.1 is allowed for fonts only (ADR 0010). Propose it with a new `docs/adr/` record. No dependency for a few
    lines of code. `core/*` and `engine` stay free of non-kotlinx libraries: libraries live in adapters behind
    ports, and every spec fills "Hexagon placement" to say where each new type goes.
 6. Only then write new code: the smallest version that is tested. Never cut validation, error handling,

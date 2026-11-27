@@ -1,5 +1,6 @@
 package pianoanchor.engine.sight
 
+import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.ScoreNote
@@ -122,6 +123,7 @@ public object SightReadingGenerator {
             timeSignature = signature,
             tempoBpm = Tunables.SIGHT_TEMPO_BPM,
             rights = exerciseRights("sight-reading"),
+            keySignature = KeySignature.C,
         )
     }
 

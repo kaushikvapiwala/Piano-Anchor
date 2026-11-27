@@ -30,7 +30,8 @@ The app's look, from the owner's Living Studio mock. Code: `PianoAnchorTheme` an
   the owner wants one.
 - **Fonts**, bundled (SIL OFL 1.1, licences in `ui/shell/src/commonMain/composeResources/files/licenses/`): Inter
   400/500/600 for body and labels, Space Grotesk 500/700 for titles and headlines. Both are variable fonts; one file
-  each serves every weight.
+  each serves every weight. Bravura (SMuFL, unmodified, since the licence reserves the name) draws every music glyph
+  on the staff.
 - **Errors** sit in an `errorContainer` card at the top of the screen, with the action that fixes them (open
   settings, turn on Bluetooth, back to pianos) and Dismiss where it applies; buttons use the card's content colour.
   A piano the monitor couldn't store shows as usual under the card "Couldn't save this piano. It will be forgotten
@@ -49,11 +50,16 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
 - **Top bar** 52 dp with a divider: back (44 dp), title (Space Grotesk 700, 16 sp) and "Wait mode" (Inter 11 sp),
   the tempo ladder (30 dp chips, radius 15, 1.5 dp border; the selected rung in plum, see Tempo runs) and
   the "End run" pill (36 dp), which discards the run.
-- **Staff** 196 dp: five 1.5 dp lines 16 dp apart, treble clef, then the time signature (two numbers stacked,
-  Space Grotesk 700 26 sp, ink). One notehead per step (19×14 dp ellipse at −18°, chords stacked), ledger lines
-  below and above the staff. Done notes blue, the waiting note amber, upcoming notes ink; a written length of a half
+- **Staff** 196 dp: five 1.5 dp lines 16 dp apart per staff that carries notes (treble, bass, or both as a grand staff
+  joined by a line at the left edge), each with its clef (Bravura, one em = 4 staff spaces = 64 dp, so it ignores the
+  font scale), the key signature (sharps, 14 dp each; none for C) and the time signature (two numbers stacked,
+  Space Grotesk 700 26 sp, ink). One notehead per step and staff (19×14 dp ellipse at −18°, chords stacked), ledger
+  lines beyond each staff. Stems (1.5 dp, 3.5 spaces from the outer head), flags, horizontal beams (8 dp), dots,
+  rests and accidentals (sharp, natural) follow `docs/algorithms/engraving.md`; stems, flags and dots take their
+  notehead's colour, a beam the colour of its first unplayed note (blue once all are played), rests, key signature
+  and clefs the staff line colour. Done notes blue, the waiting note amber, upcoming notes ink; a written length of a half
   note or more is hollow (a 2.5 dp ring in the same colour), shorter notes filled. A 3×110 dp plum cursor (85 %)
-  left of the waiting note; legend "correct" and "waiting for you" top right. No stems, rests or timing marks yet.
+  left of the waiting note; legend "correct" and "waiting for you" top right. Timing marks are the live marks below.
 - **Spacing** (`StaffLayout.kt`): x is linear in ticks from just after the time signature to the final bar, which
   sits at the last note's end. Every gap between steps (and the last note's gap to the final bar) is at least 28 dp;
   the other gaps share the rest in proportion. If even 28 dp gaps don't fit (about 28 steps), every gap gets the

@@ -24,7 +24,7 @@ Tokens are separated by whitespace (spaces, tabs or newlines).
 - **Bar line:** `|`, optional.
 
 Each note, chord or rest starts where the previous one ended; the first starts at tick 0. A rest only moves later
-onsets: it produces no step, and the staff does not draw it until stems and rests land.
+onsets: it produces no step, and the staff draws it as a rest (`docs/algorithms/engraving.md`).
 
 ## Checks
 
