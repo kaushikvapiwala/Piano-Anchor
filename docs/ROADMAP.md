@@ -40,28 +40,33 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Lesson and practice redesign** (needs a grill session with Lazyweb design research; owner's device test): a
-    hand-drawn hand over the keys whose fingers press in time with See and Listen (drawn in Compose, ADR 0026), a
-    one-tap session that runs today's plan in a row, play-along backing for songs, "Day 1 vs today" playback and a
-    weekly recap. The owner keeps the plum palette. Specs follow an approved mock.
-2. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
+1. **One-tap session with recap and weekly pause** (spec #268; redesign, design mock R1/R4): Today becomes one Start
+    button that runs the day's plan as a chain of steps with a 10 s card between them, a session recap, and a weekly
+    days goal with "Pause this week".
+2. **Hand demo in the lesson See step** (spec #269; redesign, mock R2): drawn fingers (no palm) press the key strip in
+    time with the See demo, then a "Your turn" cue.
+3. **Play along with chords and click** (spec #270) [#268]: a soft chord backing and the click under today's song,
+    after a one-bar count-in; pieces get a chord line.
+4. **Progress tab** (spec #271) [#268]: the weekly recap and "Day 1 vs today", the learner's first full run of a
+    piece next to the latest one.
+5. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
     thumb-under. Built like Units 4–5; each unit adds sight-reading levels and a placement piece. The pedal unit sets
     the lesson's pedalIsMusic flag for its concepts (ADR 0027).
-3. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
+6. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
     learner skipped its Try or Use, so its "next" can differ from Today's Next card; name the next unpassed concept.
-4. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
+7. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
     come from engine strings; return a pitch class and accidental from the note-name rule and map it to
     Compose string resources in the UI, so the names can be translated.
-5. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
+8. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
     Unit 0 wide strip and at font scale 2.0; a "not loaded yet" state so a beginner's strip doesn't open blank and
     letter itself a moment later; Practice takes the note-labels use case from Koin like Lesson and Quiz.
-6. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
+9. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
     keys as flats in flat keys (today a flat key reads "in F major" with no flats drawn); beam 6/8 eighths in threes
     and use dotted-quarter rests on its beats.
-7. **Rhythm Try: drift against the click** (follow-up of #273; needs an owner decision, the grill chose interval
+10. **Rhythm Try: drift against the click** (follow-up of #273; needs an owner decision, the grill chose interval
     judging): the Rhythm check judges each tap only against the one before, so a steady tempo about a third off
     still passes; decide whether to also measure taps from the first tap's onset so the error can't build up.
-8. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
+11. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
     48..52 chromatically (C, C♯, D, D♯, E) instead of the white keys C D E F G; use an explicit key list like the
     left-hand G scene and re-record its screenshots.
 
