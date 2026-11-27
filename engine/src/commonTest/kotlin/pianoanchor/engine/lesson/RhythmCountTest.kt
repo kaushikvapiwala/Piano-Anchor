@@ -2,6 +2,7 @@ package pianoanchor.engine.lesson
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class RhythmCountTest {
     @Test
@@ -17,4 +18,19 @@ class RhythmCountTest {
 
     @Test
     fun `the beat numbers start again after four`() = assertEquals("1 2 3 4 1", rhythmCount(List(5) { 960 }))
+
+    @Test
+    fun `no lengths cannot be counted`() {
+        assertFailsWith<IllegalArgumentException> { rhythmCount(emptyList()) }
+    }
+
+    @Test
+    fun `lengths shorter than an eighth cannot be counted`() {
+        assertFailsWith<IllegalArgumentException> { rhythmCount(listOf(240, 240, 480)) }
+    }
+
+    @Test
+    fun `a zero length cannot be counted`() {
+        assertFailsWith<IllegalArgumentException> { rhythmCount(listOf(0, 480)) }
+    }
 }

@@ -904,8 +904,8 @@ public object Tunables {
      * How far a tap of a rhythm Try may stray from where the pattern puts it, each side, as a fraction of an eighth
      * note (a half beat; 175 ms at 60 BPM).
      *
-     * Why: loose enough for a beginner's wobble, tight enough that one tap per click (an error of a whole eighth) or a
-     * dotted rhythm played even (an error of half an eighth, 0.5 > 0.35) fails.
+     * Why: loose enough for a beginner's wobble, tight enough that one tap per click or a dotted rhythm
+     * played even (each an error of a whole eighth, nearly three times the window) fails.
      *
      * Source: owner's choice in the grill (2026-11-25); a beginner's tapping spread of roughly 50-100 ms at slow
      * tempi is well inside it.

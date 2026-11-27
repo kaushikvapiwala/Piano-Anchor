@@ -44,7 +44,7 @@ class OnboardingScreenTest {
             }
         }
 
-    private val piece = PlacementPiece(3, 4, "builtin:held-bass", "Hold and play")
+    private val piece = PlacementPiece(3, 5, "builtin:held-bass", "Hold and play")
 
     @Test
     fun connectShowsTheSearchThenThePianoListAfterTheHint() =
@@ -157,7 +157,7 @@ class OnboardingScreenTest {
         runComposeUiTest {
             show(OnboardingState(OnboardingStep.START_POINT, piano, piece = piece))
 
-            onNodeWithText("Piece 3 of 4 · Hold and play").assertExists()
+            onNodeWithText("Piece 3 of 5 · Hold and play").assertExists()
             onNodeWithText("run of builtin:held-bass").assertExists()
             onNodeWithText("Stop here").performClick()
 

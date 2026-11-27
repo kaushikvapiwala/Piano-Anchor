@@ -489,9 +489,9 @@ internal object CardScenes {
         CardScene(
             SceneStage(60..67),
             beats() +
-                listOf(0, 2 * EIGHTHS_PER_BEAT).flatMap { bar ->
+                listOf(0, 2 * EIGHTHS_PER_BEAT).flatMap { pairStartEighths ->
                     DOTTED_LIGHTS.map { (eighths, length) ->
-                        cue(FIRST_BEAT_MS + (bar + eighths) * EIGHTH_MS, length, LightKey(MIDDLE_C))
+                        cue(FIRST_BEAT_MS + (pairStartEighths + eighths) * EIGHTH_MS, length, LightKey(MIDDLE_C))
                     }
                 } +
                 cue(FIRST_BEAT_MS, CAPTION_END_MS - FIRST_BEAT_MS, Caption("1 (2) &")),
