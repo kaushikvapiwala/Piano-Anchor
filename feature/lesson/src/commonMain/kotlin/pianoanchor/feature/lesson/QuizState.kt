@@ -1,5 +1,6 @@
 package pianoanchor.feature.lesson
 
+import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.lesson.TryProgress
 
@@ -25,6 +26,7 @@ public data class QuizState(
     val summary: QuizSummary?,
     val storageFailed: Boolean,
     val pedalControl: Boolean = false,
+    val noteLabels: NoteLabels = NoteLabels(),
 ) {
     /** True when the summary shows "Tap the pedal to continue": a pedal tap acts as Done and the piano is connected. */
     val pedalHint: Boolean get() = pedalControl && summary != null && connection == LessonConnection.CONNECTED

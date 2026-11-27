@@ -66,6 +66,15 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
 - **Key strip**: "Live keys · play the piano" and the last key's verdict ("E4 · correct, moving on"), then two octaves from the C at or below the passage's lowest note. White keys 60 dp on a
   62 dp pitch, black keys 34×46 dp; the waiting step's keys carry an 18 dp amber band; held and flashing keys turn
   correct (blue) or wrong (grey, never red) with a 150 ms colour change; the flash lasts `KEY_FLASH_MS`. All Notes Off and All Sound Off clear every held and wrong key.
+- **Note names on keys** (practice, lesson, quiz and Ear-echo strips; `NoteNameRule` decides, the strip draws): while
+  the learner has not passed "C D E, then F G A B" every white key carries its letter; once it is passed only the
+  key(s) to play keep theirs; once it is learned none do. Black keys stay blank until "Sharps and flats" is passed,
+  then show "C♯" with "D♭" under it when the key is at least 30 dp wide, else "C♯" alone. Inter 500, 12 sp (so it grows
+  with font scale) but at most 40% of the key's width, at the bottom of the key: on white keys in the secondary text
+  colour, on black keys white, and on a lit, wrong, glowing or banded key in whichever of white or near-black keeps
+  4.5:1 contrast. A wrong-key hint letters the pressed key and the right one at any stage. A perform take shows no
+  letters (no hint shows there). With the setting Off there are no letters at all. The letters are hidden from
+  TalkBack: each key already reads its name.
 - **Wrong key in wait mode**: the played key flashes grey while the key to play glows in the theme's primary colour
   (a 3 dp primary outline on a tint of it) until it is played. One line under the staff says what was played and how to
   find the right key by the black keys: "That was F4. C is just left of the two black keys." ("D is between the two
@@ -210,7 +219,9 @@ Grouped rows under plum group titles, every target at least 44 dp, every change 
 - **Playing**: the "Click in timed runs" switch, the same choice as the practice screen's click glyph.
 - **Pedal to continue** (below the click switch): a switch, on by default, with the note "Tap the sustain pedal to go
   on in lessons, quizzes and results." Stored at once.
-- **Strictness** (below the pedal switch, in the Playing group): "Strictness" with three radio rows, each a title and
+- **Note names on keys** (below the pedal switch, in the Playing group): two radio rows, "Auto: shown while you
+  learn them, then faded" (the default) and "Off". Stored at once; applies when the next screen opens.
+- **Strictness** (below the note names rows, in the Playing group): "Strictness" with three radio rows, each a title and
   a one-line description: "Gentle: more room for timing and slips", "Standard: the default", "Strict: tight timing,
   few slips". The whole row selects and reads as a radio button; a change applies to the next run.
 - **Updates**: the "Check for updates" switch with the note "Checks GitHub once a day for a new version. Sends
@@ -303,7 +314,8 @@ the current step; only this pane changes between steps. A key strip runs along t
   does not move on. Any tap or pedal tap moves on early; dots and back still work.
 - **Key strip**: whole octaves around the Try's notes (at least two; the whole keyboard for "every C"). Sounding or
   held keys are blue, the key of a wrong press grey, and the expected key glows in the accent (always for a lit key or
-  a sequence, after a wrong key for the rest).
+  a sequence, after a wrong key for the rest). Letters on the keys follow the same rules as the practice strip's
+  (the glowing keys are the ones to play); keys are 24 dp wide, so the letter is capped at 40% of that.
 - The step is saved as it changes and the lesson reopens there; a finished lesson reopens at Why.
 
 ## Quiz screen

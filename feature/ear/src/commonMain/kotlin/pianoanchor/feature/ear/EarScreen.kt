@@ -40,6 +40,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.EarChoice
 import pianoanchor.core.model.EarExercise
+import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.feature.ear.resources.Res
 import pianoanchor.feature.ear.resources.ear_answer_mark
 import pianoanchor.feature.ear.resources.ear_answer_marked
@@ -209,7 +210,7 @@ private fun Answers(
 ) {
     when (exercise) {
         is EarExercise.Identify -> Choices(exercise, state.answerShown, !state.playing, actions.onAnswer)
-        is EarExercise.Echo -> KeyStrip(exercise, state.answerShown)
+        is EarExercise.Echo -> KeyStrip(exercise, state.answerShown, state.noteLabels)
     }
 }
 
@@ -268,6 +269,7 @@ private fun choiceName(choice: EarChoice): StringResource =
 private fun KeyStrip(
     exercise: EarExercise.Echo,
     answerShown: Boolean,
+    labels: NoteLabels,
 ) {
     val answer = exercise.sounds.flatMapTo(HashSet()) { group -> group.map { it.number } }
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -288,12 +290,22 @@ private fun KeyStrip(
                         ).padding(bottom = 8.dp)
                         .semantics { contentDescription = described },
             ) {
-                Text(
-                    if (inAnswer) stringResource(Res.string.ear_answer_mark) + " " + name else name,
-                    fontWeight = FontWeight.Bold,
-                    color = if (inAnswer) colors.onPrimaryContainer else colors.onSurfaceVariant,
-                    modifier = Modifier.clearAndSetSemantics {},
-                )
+                val shown =
+                    listOfNotNull(
+                        stringResource(Res.string.ear_answer_mark).takeIf { inAnswer },
+                        name.takeIf {
+                            labels.label(number) !=
+                                null
+                        },
+                    )
+                if (shown.isNotEmpty()) {
+                    Text(
+                        shown.joinToString(" "),
+                        fontWeight = FontWeight.Bold,
+                        color = if (inAnswer) colors.onPrimaryContainer else colors.onSurfaceVariant,
+                        modifier = Modifier.clearAndSetSemantics {},
+                    )
+                }
             }
         }
     }

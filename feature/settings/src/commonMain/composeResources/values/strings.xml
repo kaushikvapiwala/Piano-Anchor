@@ -18,6 +18,9 @@
     <string name="settings_click">Click in timed runs</string>
     <string name="settings_pedal">Pedal to continue</string>
     <string name="settings_pedal_note">Tap the sustain pedal to go on in lessons, quizzes and results.</string>
+    <string name="settings_note_names">Note names on keys</string>
+    <string name="settings_note_names_auto">Auto: shown while you learn them, then faded</string>
+    <string name="settings_note_names_off">Off</string>
     <string name="settings_strictness">Strictness</string>
     <string name="settings_strictness_gentle">Gentle</string>
     <string name="settings_strictness_gentle_note">More room for timing and slips</string>

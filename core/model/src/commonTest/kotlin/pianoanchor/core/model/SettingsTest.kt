@@ -52,6 +52,12 @@ class SettingsTest {
     }
 
     @Test
+    fun noteNamesAreAutoByDefault() {
+        assertEquals(NoteNames.AUTO, Settings().noteNames)
+        assertEquals(NoteNames.OFF, Settings(noteNames = NoteNames.OFF).noteNames)
+    }
+
+    @Test
     fun budgetsKnowTheirMinutes() {
         assertEquals(listOf(15, 20, 30), DailyBudget.entries.map { it.minutes })
     }

@@ -41,6 +41,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.NoteNames
 import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.WEEKLY_GOAL_DAYS_RANGE
 import pianoanchor.feature.settings.resources.Res
@@ -53,6 +54,9 @@ import pianoanchor.feature.settings.resources.settings_error_storage
 import pianoanchor.feature.settings.resources.settings_group_playing
 import pianoanchor.feature.settings.resources.settings_group_practice
 import pianoanchor.feature.settings.resources.settings_group_updates
+import pianoanchor.feature.settings.resources.settings_note_names
+import pianoanchor.feature.settings.resources.settings_note_names_auto
+import pianoanchor.feature.settings.resources.settings_note_names_off
 import pianoanchor.feature.settings.resources.settings_pedal
 import pianoanchor.feature.settings.resources.settings_pedal_note
 import pianoanchor.feature.settings.resources.settings_strictness
@@ -79,7 +83,8 @@ private val TouchTarget = 44.dp
 private val MaxContentWidth = 600.dp
 
 /**
- * The settings, landscape: grouped rows for the daily budget, weekly goal, click, pedal, strictness and update check.
+ * The settings, landscape: grouped rows for the daily budget, weekly goal, click, pedal, note names, strictness and
+ * update check.
  * Stateless.
  */
 @Composable
@@ -113,6 +118,8 @@ public fun SettingsScreen(
                         state.settings.pedalControlOn,
                         actions.onPedalControlOn,
                     )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    NoteNamesRows(state.settings.noteNames, actions.onNoteNames)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     StrictnessRows(state.settings.strictness, actions.onStrictness)
                     GroupTitle(Res.string.settings_group_updates)
@@ -247,6 +254,43 @@ private fun SwitchRow(
             }
         }
         Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
+/** The note-names choice: two selectable rows, "Auto" (shown while learning, then faded) and "Off". */
+@Composable
+private fun NoteNamesRows(
+    selected: NoteNames,
+    onSelect: (NoteNames) -> Unit,
+) {
+    Column(modifier = Modifier.selectableGroup().padding(vertical = 4.dp)) {
+        Text(stringResource(Res.string.settings_note_names), style = MaterialTheme.typography.bodyLarge)
+        NoteNames.entries.forEach { choice ->
+            val title =
+                when (choice) {
+                    NoteNames.AUTO -> Res.string.settings_note_names_auto
+                    NoteNames.OFF -> Res.string.settings_note_names_off
+                }
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = TouchTarget)
+                        .selectable(
+                            selected = choice == selected,
+                            onClick = { onSelect(choice) },
+                            role = Role.RadioButton,
+                        ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = choice == selected, onClick = null)
+                Text(
+                    stringResource(title),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f).padding(start = 16.dp),
+                )
+            }
+        }
     }
 }
 

@@ -32,6 +32,8 @@ import pianoanchor.engine.ear.EarGrading
 import pianoanchor.engine.ear.tones
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
+import pianoanchor.engine.lesson.NoteLabels
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.midi.canPlayOn
 import pianoanchor.engine.midi.playTones
 import kotlin.random.Random
@@ -65,6 +67,7 @@ public class EarViewModel(
     private val output: MidiOutputPort,
     private val tone: TonePort,
     private val learner: LearnerModel,
+    private val noteLabels: NoteLabelsUseCase,
     private val clock: Clock,
     private val zone: TimeZone,
     private val random: Random,
@@ -77,6 +80,9 @@ public class EarViewModel(
     private var work: Job? = null
     private var item: ItemRun? = null
     private var skillIndex = 0
+
+    /** The letters the echo strip writes, once read; each new item carries them. */
+    private var labels = NoteLabels()
     private var itemIndex = 0
     private val drawn = ArrayList<EarExercise>()
     private val outcomes = ArrayList<EarItemOutcome>()
@@ -87,6 +93,10 @@ public class EarViewModel(
     private var closed = false
 
     init {
+        viewModelScope.launch {
+            labels = noteLabels.load()
+            mutableState.update { it.copy(noteLabels = labels) }
+        }
         launchWork { if (skills.isEmpty()) summarise() else showItem() }
     }
 
@@ -158,6 +168,7 @@ public class EarViewModel(
                 itemNumber = itemIndex + 1,
                 exercise = exercise,
                 storageFailed = storageFailed,
+                noteLabels = labels,
             )
         present(run)
     }
@@ -242,6 +253,7 @@ public class EarViewModel(
                 skillCount = skills.size,
                 summary = EarSummary(skillIndex, firstTry, itemsDone),
                 storageFailed = storageFailed,
+                noteLabels = labels,
             )
     }
 

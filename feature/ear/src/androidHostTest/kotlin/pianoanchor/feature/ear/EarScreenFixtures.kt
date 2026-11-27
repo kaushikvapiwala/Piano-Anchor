@@ -3,6 +3,8 @@ package pianoanchor.feature.ear
 import pianoanchor.core.model.EarChoice
 import pianoanchor.core.model.EarExercise
 import pianoanchor.core.model.MidiNote
+import pianoanchor.engine.lesson.NoteLabels
+import pianoanchor.engine.lesson.NoteNameStage
 
 private fun notes(vararg numbers: Int) = numbers.map { setOf(MidiNote(it)) }
 
@@ -27,4 +29,5 @@ internal val ECHO_STATE =
         skillCount = 3,
         itemNumber = 1,
         exercise = ECHO,
+        noteLabels = NoteLabels(NoteNameStage.ALL_WHITE, sharpsPassed = false, hints = true),
     )

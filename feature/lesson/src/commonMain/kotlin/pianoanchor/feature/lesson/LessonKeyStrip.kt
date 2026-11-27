@@ -7,14 +7,17 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -23,6 +26,10 @@ import androidx.compose.ui.unit.dp
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.TryCheck
+import pianoanchor.engine.lesson.NoteLabels
+import pianoanchor.engine.lesson.NoteNameRule
+import pianoanchor.ui.shell.KeyLetters
+import pianoanchor.ui.shell.keyLetterColor
 import pianoanchor.ui.shell.pianoAnchorColors
 
 private val WHITE_KEY_WIDTH = 24.dp
@@ -31,6 +38,7 @@ private val BLACK_KEY_WIDTH = 16.dp
 private val WHITE_KEY_HEIGHT = 76.dp
 private val BLACK_KEY_HEIGHT = 46.dp
 private val GLOW_BORDER = 3.dp
+private val LETTER_BOTTOM = 2.dp
 private const val KEY_COLOR_MS = 150
 private const val GLOW_ALPHA = 0.55f
 private const val NOTES_PER_OCTAVE = 12
@@ -90,10 +98,13 @@ internal fun LessonKeyStrip(
     modifier: Modifier = Modifier,
 ) {
     val wrong = state.tryProgress?.lastWrong.takeIf { state.step == LessonStep.TRY }
-    KeyStrip(lessonKeyRange(state), state.litKeys, state.glowKeys, wrong, modifier)
+    KeyStrip(lessonKeyRange(state), state.litKeys, state.glowKeys, wrong, modifier, state.noteLabels)
 }
 
-/** A strip of the keys in [range]: [litKeys] light up, [glowKeys] glow in the accent and the [wrong] key shows grey. */
+/**
+ * A strip of the keys in [range]: [litKeys] light up, [glowKeys] glow in the accent and the [wrong] key shows grey.
+ * [labels] decide the letters: the glowing keys are the ones to play, and a wrong key letters itself and them.
+ */
 @Composable
 internal fun KeyStrip(
     range: IntRange,
@@ -101,18 +112,40 @@ internal fun KeyStrip(
     glowKeys: Set<Int>,
     wrong: Int?,
     modifier: Modifier = Modifier,
+    labels: NoteLabels = NoteLabels(),
 ) {
     val notes = range.map(::MidiNote)
+    val hinted = if (wrong == null) emptySet() else glowKeys + wrong
     val whites = notes.filterNot { it.isBlack }
     val width = WHITE_PITCH * whites.size - (WHITE_PITCH - WHITE_KEY_WIDTH)
     Box(modifier.horizontalScroll(rememberScrollState()).size(width, WHITE_KEY_HEIGHT)) {
         whites.forEachIndexed { i, note ->
-            Key(note, litKeys, glowKeys, wrong, WHITE_KEY_WIDTH, WHITE_KEY_HEIGHT, WHITE_PITCH * i, black = false)
+            Key(
+                note,
+                litKeys,
+                glowKeys,
+                wrong,
+                labels.label(note.number, glowKeys, hinted),
+                WHITE_KEY_WIDTH,
+                WHITE_KEY_HEIGHT,
+                WHITE_PITCH * i,
+                black = false,
+            )
         }
         notes.filter { it.isBlack }.forEach { note ->
             val whitesBelow = whites.count { it.number < note.number }
             val x = WHITE_PITCH * whitesBelow - (WHITE_PITCH - WHITE_KEY_WIDTH) / 2 - BLACK_KEY_WIDTH / 2
-            Key(note, litKeys, glowKeys, wrong, BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT, x, black = true)
+            Key(
+                note,
+                litKeys,
+                glowKeys,
+                wrong,
+                labels.label(note.number, glowKeys, hinted),
+                BLACK_KEY_WIDTH,
+                BLACK_KEY_HEIGHT,
+                x,
+                black = true,
+            )
         }
     }
 }
@@ -123,6 +156,7 @@ private fun Key(
     litKeys: Set<Int>,
     glowKeys: Set<Int>,
     wrong: Int?,
+    letter: String?,
     width: Dp,
     height: Dp,
     x: Dp,
@@ -157,5 +191,18 @@ private fun Key(
             .background(fill)
             .then(outline)
             .semantics { contentDescription = name },
-    )
+    ) {
+        if (letter != null) {
+            KeyLetters(
+                letter,
+                NoteNameRule.flatLabel(note.number).takeIf { black },
+                keyLetterColor(
+                    fill,
+                    if (black) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+                width,
+                Modifier.align(Alignment.BottomCenter).padding(bottom = LETTER_BOTTOM),
+            )
+        }
+    }
 }

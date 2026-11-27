@@ -25,8 +25,11 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabelsUseCase
+import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.lesson.QuizPrompt
+import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
 import pianoanchor.testing.FakePiano
@@ -98,6 +101,7 @@ class QuizViewModelTest {
             metronome,
             piano.clock,
             learner,
+            NoteLabelsUseCase(settings, FakeAttemptRepository(), learner, TimeZone.UTC),
             settings,
             noon,
             TimeZone.UTC,
@@ -116,6 +120,15 @@ class QuizViewModelTest {
     }
 
     private suspend fun rating(skillId: String): Rating? = repository.reviews(skillId).singleOrNull()?.rating
+
+    @Test
+    fun theStripLettersEveryWhiteKeyForANewLearner() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+
+            assertEquals(NoteNameStage.ALL_WHITE, vm.state.value.noteLabels.stage)
+            vm.close()
+        }
 
     @Test
     fun `starts on the first quiz`() =

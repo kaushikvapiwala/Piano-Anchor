@@ -27,9 +27,13 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.EarSkills
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabelsUseCase
+import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.midi.MidiEncoder
+import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakePiano
+import pianoanchor.testing.FakeSettingsRepository
 import pianoanchor.testing.FakeTone
 import pianoanchor.testing.FakeWallClock
 import kotlin.random.Random
@@ -86,6 +90,12 @@ class EarViewModelTest {
             piano,
             tone,
             LearnerModel(Curriculum.graph, repository),
+            NoteLabelsUseCase(
+                FakeSettingsRepository(),
+                FakeAttemptRepository(),
+                LearnerModel(Curriculum.graph, repository),
+                TimeZone.UTC,
+            ),
             clock,
             TimeZone.UTC,
             random,
@@ -138,6 +148,15 @@ class EarViewModelTest {
     }
 
     private suspend fun ratingOf(skill: Skill) = repository.reviews(skill.id).map { it.rating }
+
+    @Test
+    fun theEchoStripLettersItsKeysForANewLearner() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+
+            assertEquals(NoteNameStage.ALL_WHITE, vm.state.value.noteLabels.stage)
+            vm.close()
+        }
 
     @Test
     fun `an item plays through the piano when it lists an output`() =

@@ -33,7 +33,7 @@ public val WEEKLY_GOAL_DAYS_RANGE: IntRange = 1..MAX_WEEKLY_GOAL_DAYS
  * tolerance and the grading bands of the next run. [lastPiano] is the piano connected last through onboarding or
  * Pianos, reconnected when Today opens; null when none or forgotten. [lessonSteps] is the step each unfinished lesson
  * was left at, by skill id (a finished lesson has no entry). [pedalControlOn] lets a tap of the sustain pedal act as
- * "continue" outside a run.
+ * "continue" outside a run. [noteNames] is whether the key strips write letter names on the keys.
  */
 public data class Settings(
     val dailyBudget: DailyBudget = DailyBudget.MIN_20,
@@ -50,6 +50,7 @@ public data class Settings(
     /** The lesson step each unfinished course lesson stopped at, by skill id; absent = start at WHY. */
     val lessonSteps: Map<String, LessonStep> = emptyMap(),
     val pedalControlOn: Boolean = true,
+    val noteNames: NoteNames = NoteNames.AUTO,
 ) {
     init {
         require(weeklyGoalDays in WEEKLY_GOAL_DAYS_RANGE) {

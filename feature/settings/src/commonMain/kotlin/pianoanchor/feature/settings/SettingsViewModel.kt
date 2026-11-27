@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.NoteNames
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.Strictness
@@ -50,6 +51,9 @@ public class SettingsViewModel(
 
     /** Turns the sustain-pedal tap as "continue" on or off. */
     public fun setPedalControlOn(on: Boolean): Unit = change { it.copy(pedalControlOn = on) }
+
+    /** Sets whether the key strips write note names on the keys; applies from the next screen open. */
+    public fun setNoteNames(noteNames: NoteNames): Unit = change { it.copy(noteNames = noteNames) }
 
     /** Sets how strictly the next run is graded. */
     public fun setStrictness(strictness: Strictness): Unit = change { it.copy(strictness = strictness) }

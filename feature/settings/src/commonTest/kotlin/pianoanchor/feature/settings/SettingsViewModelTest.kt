@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.DailyBudget
+import pianoanchor.core.model.NoteNames
 import pianoanchor.core.model.Settings
 import pianoanchor.core.model.Strictness
 import pianoanchor.testing.FakeSettingsRepository
@@ -114,6 +115,19 @@ class SettingsViewModelTest {
 
             assertFalse(repository.settings.first().pedalControlOn)
             assertFalse(vm.state.value.settings.pedalControlOn)
+        }
+
+    @Test
+    fun noteNamesChoiceIsSavedAndReadBack() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            assertEquals(NoteNames.AUTO, vm.state.value.settings.noteNames)
+
+            vm.setNoteNames(NoteNames.OFF)
+            runCurrent()
+
+            assertEquals(NoteNames.OFF, repository.settings.first().noteNames)
+            assertEquals(NoteNames.OFF, vm.state.value.settings.noteNames)
         }
 
     @Test

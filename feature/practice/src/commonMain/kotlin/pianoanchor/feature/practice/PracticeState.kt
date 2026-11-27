@@ -8,6 +8,7 @@ import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.ScoreNoteRef
 import pianoanchor.engine.guidance.WrongKeyHint
+import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.engine.matcher.TempoRung
 
 private const val COUNT_IN_NUMERALS = 3
@@ -86,6 +87,7 @@ public data class PracticeState(
     val sightReading: Boolean = false,
     val unaided: Boolean = false,
     val finishedBand: Band? = null,
+    val noteLabels: NoteLabels = NoteLabels(),
 ) {
     init {
         require(steps.size == passage.steps.size) {

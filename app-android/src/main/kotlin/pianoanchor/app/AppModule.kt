@@ -23,6 +23,7 @@ import pianoanchor.core.ports.UpdateCheckPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.sight.SightReadingGenerator
@@ -73,6 +74,7 @@ val appModule =
         single<SettingsRepositoryPort> { SqlSettingsRepositoryAdapter(get(), Dispatchers.IO) }
         single<UpdateCheckPort> { GitHubUpdateCheckAdapter(BuildConfig.VERSION_NAME, BuildConfig.UPDATE_REPOSITORY) }
         factory { LearnerModel(Curriculum.graph, get()) }
+        factory { NoteLabelsUseCase(get(), get(), get(), get()) }
         viewModel { MonitorViewModel(get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME) }
         viewModel { (device: MidiDevice, passageId: String, start: PracticeStart) ->
             val passage =
@@ -113,16 +115,28 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
                 Random(get<Clock>().now().toEpochMilliseconds()),
             ) {
                 Uuid.random().toString()
             }
         }
         viewModel { (device: MidiDevice, skillId: String, startAt: LessonStep?) ->
-            LessonViewModel(device, skillId, get(), get(), get(), get(), get(), get(), get(), get(), startAt)
+            LessonViewModel(device, skillId, get(), get(), get(), get(), get(), get(), get(), get(), get(), startAt)
         }
         viewModel { (device: MidiDevice, quizzes: List<Quiz>) ->
-            QuizViewModel(device, quizzes, get(), get(), get(), get(), get(), get(), get()) { Uuid.random().toString() }
+            QuizViewModel(
+                device,
+                quizzes,
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+            ) { Uuid.random().toString() }
         }
         viewModel { (device: MidiDevice) -> CalibrationViewModel(device, get(), get(), get(), get()) }
         viewModel { (attemptId: String, rung: TempoRung, device: MidiDevice) ->

@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.RunMode
+import pianoanchor.engine.lesson.NoteNameRule
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.practice.resources.Res
 import pianoanchor.feature.practice.resources.practice_announce_correct
@@ -48,7 +50,9 @@ import pianoanchor.feature.practice.resources.practice_last_key_late
 import pianoanchor.feature.practice.resources.practice_last_key_on_time
 import pianoanchor.feature.practice.resources.practice_last_key_wrong
 import pianoanchor.feature.practice.resources.practice_last_key_wrong_timed
+import pianoanchor.ui.shell.KeyLetters
 import pianoanchor.ui.shell.PianoAnchorColors
+import pianoanchor.ui.shell.keyLetterColor
 import pianoanchor.ui.shell.pianoAnchorColors
 import kotlin.math.abs
 
@@ -63,6 +67,7 @@ private const val GLOW_ALPHA = 0.55f
 private val TALL_WHITE_HEIGHT = 240.dp
 private val TALL_BLACK_HEIGHT = 150.dp
 private val GLOW_BORDER = 3.dp
+private val LETTER_BOTTOM = 2.dp
 
 /**
  * The live key strip: the label row with the last key's verdict, then two octaves of keys (`keyStripRange`). Target
@@ -228,7 +233,8 @@ private fun Key(
                 .then(outline(glow, black, accent, colors, shape))
                 .semantics { contentDescription = name },
     ) {
-        if (target && !lit && !glow) {
+        val banded = target && !lit && !glow
+        if (banded) {
             Box(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -237,7 +243,33 @@ private fun Key(
                     .background(colors.targetBand),
             )
         }
+        val letter = state.keyLetter(note, target)
+        if (letter != null) {
+            KeyLetters(
+                letter,
+                NoteNameRule.flatLabel(note.number).takeIf { black },
+                keyLetterColor(
+                    if (banded) colors.targetBand else fill,
+                    if (black) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+                width,
+                Modifier.align(Alignment.BottomCenter).padding(bottom = LETTER_BOTTOM),
+            )
+        }
     }
+}
+
+/**
+ * The letter of [note] on the strip, or null: none in a perform take (no hint shows there), else the rule's label
+ * for the stage; a wrong-key hint letters the pressed key and the right one while it shows.
+ */
+private fun PracticeState.keyLetter(
+    note: MidiNote,
+    target: Boolean,
+): String? {
+    if (mode == RunMode.PERFORM) return null
+    val hinted = hint?.let { setOf(it.played, it.expected) }.orEmpty()
+    return noteLabels.label(note.number, if (target) setOf(note.number) else emptySet(), hinted)
 }
 
 /** Held, flashing or playing for the learner (hear it first). */

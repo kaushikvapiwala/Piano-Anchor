@@ -40,6 +40,8 @@ import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.lesson.Demo
 import pianoanchor.engine.lesson.LessonDemo
+import pianoanchor.engine.lesson.NoteLabels
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.lesson.TryRun
 import pianoanchor.engine.lesson.tryRepsNeeded
 import pianoanchor.engine.matcher.beatNanos
@@ -92,6 +94,7 @@ public class LessonViewModel(
     private val settings: SettingsRepositoryPort,
     private val attempts: AttemptRepositoryPort,
     private val learner: LearnerModel,
+    private val noteLabels: NoteLabelsUseCase,
     private val time: ClockPort,
     private val startAt: LessonStep? = null,
     private val pedalIsMusic: Boolean = false,
@@ -129,9 +132,16 @@ public class LessonViewModel(
     private var speakerOnly = false
     private var closed = false
 
+    /** Letters the strip's keys as the learner's setting and progress say, once they are read. */
+    private suspend fun loadNoteLabels() {
+        val labels = noteLabels.load()
+        mutableState.update { it.copy(noteLabels = labels) }
+    }
+
     init {
         reader = viewModelScope.launch { readPiano() }
         viewModelScope.launch { watchPedalSetting() }
+        viewModelScope.launch { loadNoteLabels() }
         viewModelScope.launch {
             val saved = if (startAt == null) savedStep() else null
             // A lesson reopened at Use (back from Practice) stays there: it opens Practice only when the learner gets

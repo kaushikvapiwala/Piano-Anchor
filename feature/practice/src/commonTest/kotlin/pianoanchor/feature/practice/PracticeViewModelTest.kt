@@ -16,6 +16,7 @@ import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiNote
+import pianoanchor.core.model.NoteNames
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.Rating
 import pianoanchor.core.model.ScoreNoteRef
@@ -29,6 +30,8 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabels
+import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeCalibrationRepository
@@ -98,6 +101,10 @@ class PracticeViewModelTest {
             "attempt-${++ids}"
         }.also { runCurrent() }
 
+    /** [state] as a new learner's screen shows it: the strip letters every white key. */
+    private fun withLabels(state: PracticeState) =
+        state.copy(noteLabels = NoteLabels(NoteNameStage.ALL_WHITE, sharpsPassed = false, hints = true))
+
     private fun TestScope.playCde() {
         tap(c4)
         tap(d4)
@@ -144,7 +151,8 @@ class PracticeViewModelTest {
         runTest(dispatcher) {
             val vm = practice()
 
-            assertEquals(PracticeState.start(Passages.CDE), vm.state.value) // a Unit 1 passage keeps its staff
+            // A Unit 1 passage keeps its staff.
+            assertEquals(withLabels(PracticeState.start(Passages.CDE)), vm.state.value)
             assertEquals(listOf(StepStatus.WAITING, StepStatus.UPCOMING, StepStatus.UPCOMING), vm.statuses())
             assertEquals(Passages.CDE, vm.state.value.passage)
         }
@@ -379,6 +387,26 @@ class PracticeViewModelTest {
             tap(e4)
 
             assertEquals(Band.GOOD, assertNotNull(attempts.get("attempt-1")).band) // 0.75 is Gentle's Good bar
+        }
+
+    @Test
+    fun aNewLearnerSeesEveryWhiteKeyLettered() =
+        runTest(dispatcher) {
+            val vm = practice()
+
+            assertEquals(
+                NoteLabels(NoteNameStage.ALL_WHITE, sharpsPassed = false, hints = true),
+                vm.state.value.noteLabels,
+            )
+        }
+
+    @Test
+    fun turningNoteNamesOffLettersNothing() =
+        runTest(dispatcher) {
+            settings.update { it.copy(noteNames = NoteNames.OFF) }
+            val vm = practice()
+
+            assertEquals(NoteLabels(NoteNameStage.NONE, sharpsPassed = false, hints = false), vm.state.value.noteLabels)
         }
 
     @Test
@@ -739,7 +767,8 @@ class PracticeViewModelTest {
             vm.retrySave()
             runCurrent()
 
-            assertEquals(PracticeState.start(Passages.CDE), vm.state.value) // a Unit 1 passage keeps its staff
+            // A Unit 1 passage keeps its staff.
+            assertEquals(withLabels(PracticeState.start(Passages.CDE)), vm.state.value)
         }
 
     @Test

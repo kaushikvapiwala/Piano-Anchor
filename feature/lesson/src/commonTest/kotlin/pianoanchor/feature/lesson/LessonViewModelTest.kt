@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
 import pianoanchor.core.model.LessonStep
@@ -26,6 +27,8 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
+import pianoanchor.engine.lesson.NoteLabelsUseCase
+import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
@@ -90,6 +93,7 @@ class LessonViewModelTest {
             settings,
             attempts,
             LearnerModel(Curriculum.graph, learnerRepository),
+            NoteLabelsUseCase(settings, attempts, LearnerModel(Curriculum.graph, learnerRepository), TimeZone.UTC),
             piano.clock,
             startAt,
             pedalIsMusic,
@@ -114,6 +118,15 @@ class LessonViewModelTest {
         vm.goTo(LessonStep.TRY)
         runCurrent()
     }
+
+    @Test
+    fun theStripLettersEveryWhiteKeyForANewLearner() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+
+            assertEquals(NoteNameStage.ALL_WHITE, vm.state.value.noteLabels.stage)
+            vm.close()
+        }
 
     @Test
     fun opensAtWhyWithNoSavedStep() =
