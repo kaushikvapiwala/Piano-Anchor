@@ -57,6 +57,7 @@
     <string name="quiz_click_times">Play %1$s %2$s times with the click</string>
     <string name="quiz_soft_loud">Play %1$s softly, then loudly</string>
     <string name="quiz_accent">Play %1$s on every click, louder on beat 1</string>
+    <string name="quiz_tap_rhythm">Tap %1$s in this rhythm: %2$s</string>
     <string name="quiz_chord">Play the %1$s chord</string>
     <string name="quiz_summary">%1$s quizzes: %2$s clean</string>
     <string name="quiz_summary_one">1 quiz: %1$s clean</string>

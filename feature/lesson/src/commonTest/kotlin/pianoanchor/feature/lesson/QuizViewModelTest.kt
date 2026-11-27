@@ -259,6 +259,39 @@ class QuizViewModelTest {
         }
 
     @Test
+    fun `a rhythm quiz counts in then judges the taps`() =
+        runTest(dispatcher) {
+            val rhythm =
+                Quiz(
+                    Skills.EIGHTH_NOTES.id,
+                    TryCheck.Rhythm(60, listOf(480, 480), 60),
+                    QuizPrompt.TapRhythm(60, listOf(480, 480)),
+                )
+            val vm = viewModel(listOf(rhythm, three[0]))
+            assertNotNull(metronome.running.value)
+            advanceTimeBy(5_000)
+            runCurrent()
+            press(60)
+            assertEquals(
+                1,
+                vm.state.value.progress
+                    ?.done,
+            )
+            piano.clock.advanceNanos(500_000_000)
+            press(60)
+            assertEquals(
+                true,
+                vm.state.value.progress
+                    ?.finished,
+            )
+            assertEquals(
+                0,
+                vm.state.value.progress
+                    ?.wrongCount,
+            )
+        }
+
+    @Test
     fun `a quiz with a click counts in and stops the click when it ends`() =
         runTest(dispatcher) {
             val beat = Quiz(Skills.STEADY_BEAT.id, TryCheck.Repeat(60, 2, 60), QuizPrompt.ClickTimes(60, 2))

@@ -234,7 +234,7 @@ private fun wrongKeyLine(progress: TryProgress): String? {
 
 /** The line after a rhythm tap that came too early or too late, else null. */
 @Composable
-private fun timingLine(progress: TryProgress): String? =
+internal fun timingLine(progress: TryProgress): String? =
     when (progress.timing) {
         TryTiming.EARLY -> stringResource(Res.string.lesson_try_early)
         TryTiming.LATE -> stringResource(Res.string.lesson_try_late)

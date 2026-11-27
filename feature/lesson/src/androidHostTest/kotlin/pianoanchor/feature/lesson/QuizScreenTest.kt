@@ -58,6 +58,21 @@ class QuizScreenTest {
         }
 
     @Test
+    fun aRhythmQuizNamesTheCountAndHintsAtEarlyTaps() =
+        runComposeUiTest {
+            val rhythm =
+                Quiz(
+                    "eighth-pairs",
+                    TryCheck.Rhythm(60, listOf(960, 960, 480, 480, 960), 60),
+                    QuizPrompt.TapRhythm(60, listOf(960, 960, 480, 480, 960)),
+                )
+            val early = TryRun(rhythm.check).onNoteOn(60, 64, 0).onNoteOn(60, 64, 300).progress
+            setContent { PianoAnchorTheme { QuizScreen(quizState(rhythm, progress = early), QuizActions()) } }
+            onNodeWithText("Tap C4 in this rhythm: 1 2 3 & 4").assertIsDisplayed()
+            onNodeWithText("That one came early. Keep the taps even with the click.").assertIsDisplayed()
+        }
+
+    @Test
     fun aChordGivesAPlainTryAgain() =
         runComposeUiTest {
             val chord =

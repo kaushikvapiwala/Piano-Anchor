@@ -74,6 +74,20 @@ class QuizMakerTest {
     }
 
     @Test
+    fun `the rhythm skills quiz their Try pattern at the quiz tempo`() {
+        mapOf(
+            Skills.EIGHTH_NOTES.id to List(8) { 480 },
+            Skills.EIGHTH_PAIRS.id to listOf(960, 960, 480, 480, 960),
+            Skills.DOTTED_QUARTER.id to listOf(1440, 480, 1920),
+        ).forEach { (id, lengths) ->
+            assertEquals(QuizPrompt.TapRhythm(60, lengths), make(id).prompt, id)
+            assertEquals(TryCheck.Rhythm(60, lengths, 60), make(id).check, id)
+            assertEquals(Curriculum.tryCheck(id), make(id).check, id)
+        }
+        assertNull(QuizMaker.make(Skills.RHYTHM_SONG.id, emptySet(), Random(1)))
+    }
+
+    @Test
     fun `right hand position steps up from a white key`() {
         val starts = every(Skills.RH_C_POSITION.id).map { assertIs<QuizPrompt.StepUpFrom>(it.prompt).note }
         assertEquals(setOf(60, 62, 64, 65), starts.toSet())
