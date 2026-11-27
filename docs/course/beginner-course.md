@@ -141,7 +141,7 @@ Left for the next course (Course 2, below): the G position, the pedal and scales
 
 ## Course 2
 Course 2 builds on the finished first course (Units 0 to 3) and continues the numbering: Units 4 to 7 are planned
-(eighth notes, G position, pedal, scales; ADR 0026). Only Unit 4 exists so far. Its concepts are on the CORE track
+(eighth notes, G position, pedal, scales; ADR 0026). Units 4 and 5 exist so far. Its concepts are on the CORE track
 like the first 23 and continue the map order. Prerequisites only steer "Next"; every lesson stays open.
 
 ### Unit 4: Eighth notes and the dotted quarter (right-hand C position, Unit 3's left-hand chords)
@@ -160,6 +160,27 @@ Passages: Running steps (eighth notes), Skipping eighths (eighth pairs, both han
 Jingle Bells (chorus only, public domain, 1857; the left-hand chords are our own arrangement). The sight-reading
 staircase gains levels 9 and 10 with these note values (`docs/algorithms/sight-reading.md`), and the placement test
 gains a fifth piece, Jingle Bells (`docs/algorithms/learner-model.md`).
+
+### Unit 5: G position and the key of G (both hands on G A B C D, one sharp)
+| # | Concept | Why here | Try |
+|---|---|---|---|
+| 28 | Right-hand G position | A new home lets tunes that sit higher be played without moving the hand. | G A B C D and back, thumb on the G above middle C. |
+| 29 | Left-hand G position | The left hand moves to G with the right, so both hands can play in G. | D3 down to G2, thumb to little finger. |
+| 30 | The key of G | A scale on G needs F sharp; the sharp at the start of each staff means every F is F sharp. | Find every F sharp on the keyboard (7 keys). |
+| 31 | G and D7 chords | The two main chords in G; D7 in its short form (F sharp, C, D) moves only two fingers. | F sharp, C and D together. |
+| 32 | Melody plus chords in G | Puts the key, both positions and the chords together. | Go Tell Aunt Rhody with chords, played in Use (no separate Try). |
+
+Prerequisites: right-hand G position needs the C position and the song of Unit 4; the left-hand position needs the
+left-hand C position and the right-hand G position; the key needs sharps and flats and the right-hand G position; the
+chords need the left-hand position and the key; the song needs the chords. The left hand sits on G2 to D3, which stays
+on the bass staff without ledger lines, and the D7 shortcut's F sharp is the key just below it.
+
+Passages (all in the key of G, so both staves show one sharp): G position walk, Left hand in G, F sharp in G (finger 1
+stretches down one key to F sharp), G and D7 (both hands) and Go Tell Aunt Rhody (public domain: an American folk song
+of the 19th century whose tune goes back to a melody in Rousseau's 1752 opera Le Devin du village; this simplified
+melody and the left-hand chords are our own arrangement). The sight-reading staircase gains levels 11 and 12
+(`docs/algorithms/sight-reading.md`) and the placement test a sixth piece, Go Tell Aunt Rhody
+(`docs/algorithms/learner-model.md`). Scales and thumb-under wait for Unit 7.
 
 ## Existing content
 The new map came first, then each existing passage was kept under the concept it exercises. Done in issue 181. Ids

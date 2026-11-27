@@ -113,7 +113,7 @@ class OnboardingViewModelPlacementTest {
             runCurrent()
 
             val piece = assertNotNull(vm.state.value.piece)
-            assertEquals(PlacementPiece(1, 5, "builtin:all-the-cs", "All the Cs"), piece)
+            assertEquals(PlacementPiece(1, 6, "builtin:all-the-cs", "All the Cs"), piece)
             assertNull(vm.state.value.verdict)
             assertFalse(vm.state.value.finished)
             assertTrue(learnerRepository.states().isEmpty())
@@ -180,14 +180,14 @@ class OnboardingViewModelPlacementTest {
             toStartPoint(vm)
             vm.testMe()
             runCurrent()
-            playTest(vm, Band.CLEAN, Band.GOOD, Band.GOOD, Band.CLEAN)
+            playTest(vm, Band.CLEAN, Band.GOOD, Band.GOOD, Band.CLEAN, Band.GOOD)
 
             vm.placementRunFinished(Band.CLEAN)
             assertEquals(PlacementVerdict.START_HERE, vm.state.value.verdict)
             vm.continueTest()
             runCurrent()
 
-            assertEquals(placedSkills(5), learnerRepository.states().keys)
+            assertEquals(placedSkills(6), learnerRepository.states().keys)
             assertTrue(vm.state.value.finished)
         }
 

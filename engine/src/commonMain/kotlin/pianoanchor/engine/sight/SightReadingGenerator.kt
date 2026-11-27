@@ -29,6 +29,9 @@ private const val FIRST_CHORD_BAR = 0
 private const val EIGHTH_LEVEL = 9
 private const val DOTTED_QUARTER_LEVEL = 10
 private const val DOTTED_QUARTER_EIGHTHS = 3
+private const val G_POSITION_LEVEL = 11
+private const val G_CHORDS_LEVEL = 12
+private const val CHORDS_BAR_TWO = 2
 
 private const val QUARTER = TICKS_PER_QUARTER
 private const val HALF = 2 * TICKS_PER_QUARTER
@@ -37,10 +40,16 @@ private const val WHOLE = WHOLE_QUARTERS * TICKS_PER_QUARTER
 private const val EIGHTH = TICKS_PER_QUARTER / 2
 private const val DOTTED_QUARTER = DOTTED_QUARTER_EIGHTHS * EIGHTH
 
-/** Five white keys from C: right hand C4 to G4, left hand C3 to G3. */
-private val RIGHT_HAND = listOf(60, 62, 64, 65, 67)
-private val LEFT_HAND = listOf(48, 50, 52, 53, 55)
-private val NOTE_INDICES = RIGHT_HAND.indices
+/** The five white keys of a hand position, as semitones above its first key (a C position and a G position agree). */
+private val POSITION_STEPS = listOf(0, 2, 4, 5, 7)
+private val NOTE_INDICES = POSITION_STEPS.indices
+
+/** The tonic (first and last note) of the right-hand tune in C and in G position, and of the left-hand level. */
+private const val C4_TONIC = 60
+private const val C3_TONIC = 48
+private const val G4_TONIC = 67
+
+private fun position(tonic: Int) = POSITION_STEPS.map { tonic + it }
 
 /** A negative length is a rest. Each cell fills one bar. */
 private val CELLS_LEVEL_1 =
@@ -91,6 +100,12 @@ private val F_TRIAD = listOf(48, 53, 57)
 private val G_TRIAD = listOf(47, 50, 55)
 private val MIDDLE_CHORDS = listOf(F_TRIAD, G_TRIAD)
 
+/** The left-hand G chord and the D7 shortcut of level 12 as note numbers, and the right-hand tones each offers. */
+private val G_POSITION_G_CHORD = listOf(43, 47, 50)
+private val D7_SHORTCUT = listOf(42, 48, 50)
+private val G_CHORD_TONES = setOf(7, 11, 2)
+private val D7_TONES = setOf(9, 0, 2)
+
 /** The held left-hand notes of level 7. */
 private val HELD_NOTES = listOf(48, 55)
 
@@ -110,9 +125,9 @@ public object SightReadingGenerator {
     public const val ID_PREFIX: String = "$ID_NAME:"
 
     /**
-     * The exercise for [level] (1..10) and [seed]: id "sight:<level>:<seed>", SIGHT_BARS bars, rights ORIGINAL,
+     * The exercise for [level] (1..12) and [seed]: id "sight:<level>:<seed>", SIGHT_BARS bars, rights ORIGINAL,
      * skills empty, piece false. Same inputs give an equal [Passage]. Throws [IllegalArgumentException] for a level
-     * outside 1..10.
+     * outside 1..12.
      */
     public fun passage(
         level: Int,
@@ -124,17 +139,15 @@ public object SightReadingGenerator {
         val held = heldNotes(level, random)
         val slots = slots(level, signature.barTicks, random)
         val chordClasses =
-            if (level ==
-                CHORD_LEVEL
-            ) {
-                held.map { chord -> chord.map { it % OCTAVE }.toSet() }
-            } else {
-                emptyList()
+            when (level) {
+                CHORD_LEVEL -> held.map { chord -> chord.map { it % OCTAVE }.toSet() }
+                G_CHORDS_LEVEL -> held.map { chord -> if (chord == D7_SHORTCUT) D7_TONES else G_CHORD_TONES }
+                else -> emptyList()
             }
-        val indices = walk(slots, chordClasses, if (level == 1) MAX_STEP else MAX_SKIP, random)
+        val indices = walk(level, slots, chordClasses, if (level == 1) MAX_STEP else MAX_SKIP, random)
         val steps =
             slots.zip(indices).map { (slot, index) ->
-                val notes = mutableSetOf(ScoreNote(MidiNote(hand(level, slot.bar)[index]), slot.length))
+                val notes = mutableSetOf(ScoreNote(MidiNote(position(tonic(level, slot.bar))[index]), slot.length))
                 if (slot.first && held.isNotEmpty()) {
                     held[slot.bar].forEach { notes += ScoreNote(MidiNote(it), signature.barTicks) }
                 }
@@ -147,7 +160,7 @@ public object SightReadingGenerator {
             timeSignature = signature,
             tempoBpm = Tunables.SIGHT_TEMPO_BPM,
             rights = exerciseRights("sight-reading"),
-            keySignature = KeySignature.C,
+            keySignature = if (level >= G_POSITION_LEVEL) KeySignature.G else KeySignature.C,
         )
     }
 
@@ -168,14 +181,19 @@ public object SightReadingGenerator {
         return if (sight && level != null && seed != null) level to seed else null
     }
 
-    /** The keys that play the tune in [bar]: level 4 is left; 5 and 6 alternate, starting right; the rest right. */
-    private fun hand(
+    /**
+     * The first key of the position that plays the tune in [bar], which is also the note the walk starts and ends on:
+     * level 4 is left (C3); 5 and 6 alternate, starting right (C4); 11 and 12 are right hand in G position (G4);
+     * the rest right (C4).
+     */
+    private fun tonic(
         level: Int,
         bar: Int,
     ) = when {
-        level == LEFT_HAND_LEVEL -> LEFT_HAND
-        level == TURNS_LEVEL || level == THREE_FOUR_LEVEL -> if (bar % 2 == 0) RIGHT_HAND else LEFT_HAND
-        else -> RIGHT_HAND
+        level == LEFT_HAND_LEVEL -> C3_TONIC
+        level == TURNS_LEVEL || level == THREE_FOUR_LEVEL -> if (bar % 2 == 0) C4_TONIC else C3_TONIC
+        level >= G_POSITION_LEVEL -> G4_TONIC
+        else -> C4_TONIC
     }
 
     /** The left-hand notes held through each bar at levels 7 (one note) and 8 (a triad); empty before. */
@@ -196,12 +214,22 @@ public object SightReadingGenerator {
                 ) { bar -> if (isEdge(bar)) C_TRIAD else MIDDLE_CHORDS.random(random) }
             }
 
+            G_CHORDS_LEVEL -> {
+                List(Tunables.SIGHT_BARS) { bar ->
+                    when {
+                        isEdge(bar) -> G_POSITION_G_CHORD
+                        bar == CHORDS_BAR_TWO -> D7_SHORTCUT
+                        else -> listOf(G_POSITION_G_CHORD, D7_SHORTCUT).random(random)
+                    }
+                }
+            }
+
             else -> {
                 emptyList()
             }
         }
 
-    /** The first and last bar are on C. */
+    /** The first and last bar are on the tonic. */
     private fun isEdge(bar: Int) = bar == FIRST_CHORD_BAR || bar == Tunables.SIGHT_BARS - 1
 
     private fun cells(level: Int) =
@@ -209,7 +237,7 @@ public object SightReadingGenerator {
             1, 2 -> CELLS_LEVEL_1
             THREE_FOUR_LEVEL -> CELLS_THREE_FOUR
             EIGHTH_LEVEL -> CELLS_LEVEL_9
-            DOTTED_QUARTER_LEVEL -> CELLS_LEVEL_10
+            DOTTED_QUARTER_LEVEL, G_POSITION_LEVEL, G_CHORDS_LEVEL -> CELLS_LEVEL_10
             else -> CELLS_LEVEL_3
         }
 
@@ -236,10 +264,12 @@ public object SightReadingGenerator {
         }
 
     /**
-     * The key index (0..4) of every slot: a random walk from C by the allowed jumps (it may stay put) that ends on C
-     * and, when [chordClasses] is given, puts each bar's beat-1 note in that bar's chord. Backtracks out of dead ends.
+     * The key index (0..4) of every slot: a random walk from the tonic by the allowed jumps (it may stay put) that
+     * ends on the tonic and, when [chordClasses] is given, puts each bar's beat-1 note in that bar's chord. Backtracks
+     * out of dead ends.
      */
     private fun walk(
+        level: Int,
         slots: List<Slot>,
         chordClasses: List<Set<Int>>,
         maxJump: Int,
@@ -250,8 +280,12 @@ public object SightReadingGenerator {
             index: Int,
         ): Boolean {
             val s = slots[slot]
-            val edgeOnC = (slot != 0 && slot != slots.lastIndex) || index == 0
-            return edgeOnC && (!s.first || chordClasses.isEmpty() || RIGHT_HAND[index] % OCTAVE in chordClasses[s.bar])
+            val edgeOnTonic = (slot != 0 && slot != slots.lastIndex) || index == 0
+            return edgeOnTonic &&
+                (
+                    !s.first || chordClasses.isEmpty() ||
+                        position(tonic(level, s.bar))[index] % OCTAVE in chordClasses[s.bar]
+                )
         }
 
         fun extend(path: List<Int>): List<Int> =

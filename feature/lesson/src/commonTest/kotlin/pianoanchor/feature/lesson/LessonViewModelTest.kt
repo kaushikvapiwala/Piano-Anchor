@@ -600,9 +600,9 @@ class LessonViewModelTest {
     @Test
     fun recapSaysTheCourseIsFinishedAtTheEnd() =
         runTest(dispatcher) {
-            passBefore(Skills.RHYTHM_SONG)
+            passBefore(Skills.MELODY_CHORDS_IN_G)
 
-            val vm = viewModel(Skills.RHYTHM_SONG, startAt = LessonStep.RECAP)
+            val vm = viewModel(Skills.MELODY_CHORDS_IN_G, startAt = LessonStep.RECAP)
 
             assertNull(
                 vm.state.value.recap
@@ -613,7 +613,7 @@ class LessonViewModelTest {
                     ?.nextSkillId,
             )
             assertEquals(
-                Skills.RHYTHM_SONG.title,
+                Skills.MELODY_CHORDS_IN_G.title,
                 vm.state.value.recap
                     ?.learned,
             )

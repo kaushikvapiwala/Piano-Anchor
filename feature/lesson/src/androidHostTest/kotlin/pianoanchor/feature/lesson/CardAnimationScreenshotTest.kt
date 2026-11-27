@@ -126,6 +126,21 @@ class CardAnimationScreenshotTest {
     fun rhythmSong() = skill(Skills.RHYTHM_SONG.id)
 
     @Test
+    fun rhGPosition() = skill(Skills.RH_G_POSITION.id)
+
+    @Test
+    fun lhGPosition() = skill(Skills.LH_G_POSITION.id)
+
+    @Test
+    fun keyOfG() = skill(Skills.KEY_OF_G.id)
+
+    @Test
+    fun gAndD7Chords() = skill(Skills.G_AND_D7_CHORDS.id)
+
+    @Test
+    fun melodyChordsInG() = skill(Skills.MELODY_CHORDS_IN_G.id)
+
+    @Test
     fun leftHandMirrorsTheRight() {
         val right = checkNotNull(Curriculum.scene(Skills.HAND_SHAPE.id))
         val cues =

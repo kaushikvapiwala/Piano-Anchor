@@ -7,7 +7,7 @@ exercises are generated from a seed and never repeat by design. The seed is stor
 
 ## Levels
 
-Ten levels, four bars each (`SIGHT_BARS`). A level opens when the learner has the skill that introduces its
+Twelve levels, four bars each (`SIGHT_BARS`). A level opens when the learner has the skill that introduces its
 material, and levels open in order: if level 3 is closed, level 4 stays closed even if bass clef is learned.
 
 | Level | Opens with | Material |
@@ -22,9 +22,11 @@ material, and levels open in order: if level 3 is closed, level 4 stays closed e
 | 8 | melody and chords | right-hand tune over a held C, F or G triad per bar, last bar C |
 | 9 | eighth notes | the right-hand material of level 3 plus beamed eighth pairs |
 | 10 | dotted quarter | level 9 plus a dotted quarter followed by an eighth |
+| 11 | right-hand G position | level 10's cells in right-hand G position (G4 to D5), key of G, from and back to G4 |
+| 12 | G and D7 chords | the level 11 tune over one held left-hand chord per bar: G (G2 B2 D3), then G or D7, then D7, then G |
 
 Levels 9 and 10 stay in the right hand, C4 to G4, 4/4, with no left hand. Level 9 needs melody and chords as well as
-eighth notes, because the levels open in order. Their new rhythm cells (ticks; a quarter is 960):
+eighth notes, because the levels open in order. Their new rhythm cells (ticks; a quarter is 960). Levels 11 and 12 add no cells: they draw from level 10's.
 
 | Level | Cells added |
 |---|---|
@@ -34,10 +36,10 @@ eighth notes, because the levels open in order. Their new rhythm cells (ticks; a
 ## Generating an exercise
 
 Each bar is filled from a short fixed list of rhythm cells that each add up to one bar. The pitches are a walk over the
-five white keys from C, moving by the level's allowed jump (a step, plus a skip from level 2) or staying put, and never
-leaving the range. The walk starts on C and ends on C; the last bar uses only a cell with no rest whose last note is its
-longest, so the phrase closes on a long C (rule unchanged at levels 9 and 10: a cell ending on an eighth or a dotted quarter never closes it). At level 8 the chords are C, then F or G, then F or G, then C, and the
-right-hand note on beat 1 of each bar is a tone of that bar's chord. Because those constraints can leave a dead end, the
+five white keys from the level's tonic, moving by the level's allowed jump (a step, plus a skip from level 2) or staying put, and never
+leaving the range. The walk starts and ends on the tonic, the first key of the position (C4 for levels 1 to 3 and 7 to 10, C3 for 4, the turns levels keep C4 and C3, G4 for 11 and 12); the last bar uses only a cell with no rest whose last note is its
+longest, so the phrase closes on a long tonic (rule unchanged at levels 9 and 10: a cell ending on an eighth or a dotted quarter never closes it). At level 8 the chords are C, then F or G, then F or G, then C, and the
+right-hand note on beat 1 of each bar is a tone of that bar's chord. At level 12 the chords are G, then G or D7, then D7, then G, and the beat-1 note is a tone of G (G B D) or of D7 (A C D). Each exercise carries its key: C for levels 1 to 10 and G for 11 and 12, so the staff draws the sharp. Because those constraints can leave a dead end, the
 walk backtracks and tries another note; a valid walk always exists. The tempo is only a placeholder, since sight
 reading runs in wait mode. The passage lists no skills, so saving a sight attempt records no skill review.
 

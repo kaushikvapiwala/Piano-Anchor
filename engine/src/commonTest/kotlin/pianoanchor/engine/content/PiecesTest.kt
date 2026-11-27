@@ -85,6 +85,7 @@ class PiecesTest {
                 "Left hand, then both hands",
                 "Chords and songs",
                 "Eighth notes and the dotted quarter",
+                "G position and the key of G",
                 "More songs",
             ),
             units,

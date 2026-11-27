@@ -100,6 +100,26 @@ public object Skills {
     public val RHYTHM_SONG: Skill =
         Skill("rhythm-song", "A song with eighths", setOf(DOTTED_QUARTER.id, MELODY_AND_CHORDS.id))
 
+    /** Playing G A B C D with the right hand, thumb on the G above middle C. */
+    public val RH_G_POSITION: Skill =
+        Skill("rh-g-position", "Right-hand G position", setOf(RH_C_POSITION.id, RHYTHM_SONG.id))
+
+    /** Playing G A B C D with the left hand, little finger on the low G. */
+    public val LH_G_POSITION: Skill =
+        Skill("lh-g-position", "Left-hand G position", setOf(LH_C_POSITION.id, RH_G_POSITION.id))
+
+    /** Reading the one sharp (F sharp) of the key signature of G. */
+    public val KEY_OF_G: Skill =
+        Skill("key-of-g", "The key of G", setOf(SHARPS_AND_FLATS.id, RH_G_POSITION.id))
+
+    /** Playing the G chord and the D7 shortcut (F sharp, C, D) with the left hand. */
+    public val G_AND_D7_CHORDS: Skill =
+        Skill("g-and-d7-chords", "G and D7 chords", setOf(LH_G_POSITION.id, KEY_OF_G.id))
+
+    /** Playing Go Tell Aunt Rhody with G and D7 chords under the melody. */
+    public val MELODY_CHORDS_IN_G: Skill =
+        Skill("melody-chords-in-g", "Melody plus chords in G", setOf(G_AND_D7_CHORDS.id))
+
     /** Playing F and G in first inversion, so the left hand stays close to C. */
     public val MORE_INVERSIONS: Skill =
         Skill(

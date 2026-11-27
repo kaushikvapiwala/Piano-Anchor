@@ -1,5 +1,6 @@
 package pianoanchor.engine.sight
 
+import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.RightsStatus
 import pianoanchor.core.model.TICKS_PER_QUARTER
@@ -250,6 +251,117 @@ class SightReadingGeneratorTest {
     }
 
     @Test
+    fun levels1To10KeepTheirOutputForAFixedSeed() {
+        val golden =
+            mapOf(
+                1 to -1403727910,
+                2 to -1360771874,
+                3 to 1231011641,
+                4 to -986532498,
+                5 to -146363772,
+                6 to -995799761,
+                7 to -481410807,
+                8 to -285839106,
+                9 to -1169345127,
+                10 to -976897058,
+            )
+        golden.forEach { (level, hash) ->
+            val text =
+                SightReadingGenerator.passage(level, 42).steps.joinToString(",") { step ->
+                    "${step.onsetTicks}:" +
+                        step.notes
+                            .map { "${it.pitch.number}/${it.lengthTicks}" }
+                            .sorted()
+                            .joinToString("+")
+                }
+            assertEquals(hash, text.hashCode(), "level $level changed")
+        }
+        for (level in 1..10) {
+            for (seed in 0L until SEEDS) {
+                assertEquals(KeySignature.C, SightReadingGenerator.passage(level, seed).keySignature)
+            }
+        }
+    }
+
+    @Test
+    fun level11StaysInGPositionStartsAndEndsOnGInTheKeyOfG() {
+        val g = setOf(67, 69, 71, 72, 74)
+        for (seed in 0L until SEEDS) {
+            val passage = SightReadingGenerator.passage(11, seed)
+            assertEquals(KeySignature.G, passage.keySignature)
+            assertEquals(4, passage.timeSignature.beats)
+            val tune =
+                passage.steps.map { step ->
+                    step.notes
+                        .single()
+                        .pitch.number
+                }
+            assertTrue(tune.all { it in g }, "seed $seed")
+            assertEquals(67, tune.first(), "seed $seed")
+            assertEquals(67, tune.last(), "seed $seed")
+            tune.zipWithNext().forEach { (a, b) -> assertTrue(kotlin.math.abs(g.indexOf(a) - g.indexOf(b)) <= 2) }
+        }
+    }
+
+    @Test
+    fun level12FollowsGThenGOrD7ThenD7ThenGWithChordTonesOnBeatOne() {
+        val gChord = setOf(43, 47, 50)
+        val d7 = setOf(42, 48, 50)
+        val seenSecondBars = mutableSetOf<Set<Int>>()
+        for (seed in 0L until SEEDS) {
+            val passage = SightReadingGenerator.passage(12, seed)
+            assertEquals(KeySignature.G, passage.keySignature)
+            val barSteps = bars(passage).toSortedMap().values.toList()
+            assertEquals(4, barSteps.size)
+            val chords =
+                barSteps.map { steps ->
+                    steps
+                        .first()
+                        .notes
+                        .filter { it.pitch.number < 60 }
+                        .map { it.pitch.number }
+                        .toSet()
+                }
+            assertEquals(gChord, chords[0], "seed $seed")
+            assertTrue(chords[1] == gChord || chords[1] == d7, "seed $seed")
+            assertEquals(d7, chords[2], "seed $seed")
+            assertEquals(gChord, chords[3], "seed $seed")
+            seenSecondBars += chords[1]
+            barSteps.forEachIndexed { bar, steps ->
+                val tones = if (chords[bar] == d7) setOf(69, 72, 74) else setOf(67, 71, 74)
+                val first = steps.first().notes.single { it.pitch.number >= 60 }
+                assertTrue(first.pitch.number in tones, "seed $seed bar $bar")
+                assertTrue(
+                    steps.flatMap { it.notes }.filter { it.pitch.number >= 60 }.all { it.pitch.number in 67..74 },
+                )
+                steps.drop(1).forEach { assertEquals(1, it.notes.size, "only the first step of a bar has the chord") }
+            }
+            val tune =
+                barSteps.flatten().map { s ->
+                    s.notes
+                        .single { it.pitch.number >= 60 }
+                        .pitch.number
+                }
+            assertEquals(67, tune.first())
+            assertEquals(67, tune.last())
+        }
+        assertEquals(setOf(gChord, d7), seenSecondBars)
+    }
+
+    @Test
+    fun levels11And12UseTheLevel10Cells() {
+        fun rightHandCells(passage: Passage) =
+            bars(passage).toSortedMap().values.map { steps ->
+                steps.map { step -> step.notes.filter { it.pitch.number >= FIRST_HAND_SPLIT }.maxOf { it.lengthTicks } }
+            }
+        val level10Cells = (0L until SEEDS).flatMap { rightHandCells(SightReadingGenerator.passage(10, it)) }.toSet()
+        for (level in 11..12) {
+            val seen = (0L until SEEDS).flatMap { rightHandCells(SightReadingGenerator.passage(level, it)) }.toSet()
+            assertEquals(level10Cells, seen, "level $level")
+        }
+    }
+
+    @Test
     fun idRoundTrips() {
         assertEquals(3 to 42L, SightReadingGenerator.parse(SightReadingGenerator.idOf(3, 42)))
         assertEquals(2 to -5L, SightReadingGenerator.parse(SightReadingGenerator.idOf(2, -5)))
@@ -258,7 +370,7 @@ class SightReadingGeneratorTest {
 
     @Test
     fun parseRejectsOtherIds() {
-        listOf("ode-to-joy", "sight:x:1", "sight:11:1", "sight:0:1", "sight:1:y", "sight:1", "song:1:1", "sight:1:2:3")
+        listOf("ode-to-joy", "sight:x:1", "sight:13:1", "sight:0:1", "sight:1:y", "sight:1", "song:1:1", "sight:1:2:3")
             .forEach { assertNull(SightReadingGenerator.parse(it), it) }
     }
 
@@ -271,6 +383,6 @@ class SightReadingGeneratorTest {
     @Test
     fun levelOutsideRangeThrows() {
         assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(0, 1) }
-        assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(11, 1) }
+        assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(13, 1) }
     }
 }

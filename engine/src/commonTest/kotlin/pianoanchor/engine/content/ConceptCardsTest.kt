@@ -17,7 +17,7 @@ class ConceptCardsTest {
 
     @Test
     fun `every course skill has exactly one card`() {
-        assertEquals(27, courseIds.size)
+        assertEquals(32, courseIds.size)
         courseIds.forEach { id -> assertEquals(1, ConceptCards.all.count { it.skillId == id }, id) }
         assertEquals(courseIds.toSet(), ConceptCards.all.map { it.skillId }.toSet())
         assertEquals(courseIds.size, ConceptCards.all.size)
