@@ -18,6 +18,7 @@
     <string name="lesson_skip">Skip</string>
     <string name="lesson_play_again">Play again</string>
     <string name="lesson_see_listen">Watch and listen: the keys light as they sound.</string>
+    <string name="lesson_see_count">Count it: %1$s</string>
     <string name="lesson_see_watch_hand">Watch the hand</string>
     <string name="lesson_try_any_key">Press any key with finger 3.</string>
     <string name="lesson_try_play_lit">Play the glowing key, %1$s.</string>
@@ -28,9 +29,12 @@
     <string name="lesson_try_hold">Hold %1$s for %2$s clicks.</string>
     <string name="lesson_try_soft_loud">Play %1$s softly, then loudly.</string>
     <string name="lesson_try_stress">Play %1$s on every click, louder on beat 1.</string>
+    <string name="lesson_try_rhythm">Play %1$s to this count, with the click: %2$s.</string>
     <string name="lesson_try_chord">Play %1$s together.</string>
     <string name="lesson_try_progress">%1$s of %2$s</string>
     <string name="lesson_try_clean">Clean %1$s of %2$s</string>
+    <string name="lesson_try_early">That one came early. Keep the taps even with the click.</string>
+    <string name="lesson_try_late">That one came late. Keep the taps even with the click.</string>
     <string name="lesson_try_done">✓ Well done</string>
     <string name="lesson_try_wrong_any">That was %1$s. Try again.</string>
     <string name="lesson_count_in">Count-in %1$s</string>
@@ -53,6 +57,7 @@
     <string name="quiz_click_times">Play %1$s %2$s times with the click</string>
     <string name="quiz_soft_loud">Play %1$s softly, then loudly</string>
     <string name="quiz_accent">Play %1$s on every click, louder on beat 1</string>
+    <string name="quiz_tap_rhythm">Tap %1$s in this rhythm: %2$s</string>
     <string name="quiz_chord">Play the %1$s chord</string>
     <string name="quiz_summary">%1$s quizzes: %2$s clean</string>
     <string name="quiz_summary_one">1 quiz: %1$s clean</string>

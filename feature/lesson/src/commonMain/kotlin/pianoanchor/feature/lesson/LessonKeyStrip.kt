@@ -68,6 +68,7 @@ internal fun keyRange(
             is TryCheck.Hold -> listOf(check.note)
             is TryCheck.SoftThenLoud -> listOf(check.note)
             is TryCheck.StressBeatOne -> listOf(check.note)
+            is TryCheck.Rhythm -> listOf(check.note)
             is TryCheck.Chord -> check.notes.toList()
             is TryCheck.Passage -> emptyList()
         } + extra

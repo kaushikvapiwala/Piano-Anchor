@@ -29,6 +29,7 @@ import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.lesson.NoteNameStage
+import pianoanchor.engine.lesson.TryTiming
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
@@ -450,6 +451,61 @@ class LessonViewModelTest {
             assertNull(metronome.running.value)
         }
 
+    private fun TestScope.pressAfter(ms: Long) {
+        piano.clock.advanceNanos(ms * 1_000_000)
+        press(60)
+    }
+
+    @Test
+    fun aRhythmCountsInFirstThenJudgesTheIntervalsBetweenTaps() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.EIGHTH_NOTES)
+            toTry(vm)
+            assertNotNull(metronome.running.value)
+            // During the count-in nothing counts, not even a wrong rhythm.
+            press(60)
+            pressAfter(1_000)
+            assertEquals(
+                0,
+                vm.state.value.tryProgress
+                    ?.done,
+            )
+            assertEquals(
+                0,
+                vm.state.value.tryProgress
+                    ?.wrongCount,
+            )
+
+            advanceTimeBy(5_000)
+            runCurrent()
+            assertNull(vm.state.value.countIn)
+            press(60)
+            pressAfter(1_000)
+            assertEquals(
+                TryTiming.LATE,
+                vm.state.value.tryProgress
+                    ?.timing,
+            )
+            assertEquals(
+                1,
+                vm.state.value.tryProgress
+                    ?.done,
+            )
+            assertEquals(
+                1,
+                vm.state.value.tryProgress
+                    ?.wrongCount,
+            )
+            repeat(7) { pressAfter(500) }
+            assertEquals(
+                true,
+                vm.state.value.tryProgress
+                    ?.finished,
+            )
+            assertEquals(0, vm.state.value.cleanReps)
+            vm.close()
+        }
+
     @Test
     fun aFirstBeatPlayedJustBeforeTheEndOfTheCountInCounts() =
         runTest(dispatcher) {
@@ -544,9 +600,9 @@ class LessonViewModelTest {
     @Test
     fun recapSaysTheCourseIsFinishedAtTheEnd() =
         runTest(dispatcher) {
-            passBefore(Skills.SHARPS_AND_FLATS)
+            passBefore(Skills.RHYTHM_SONG)
 
-            val vm = viewModel(Skills.SHARPS_AND_FLATS, startAt = LessonStep.RECAP)
+            val vm = viewModel(Skills.RHYTHM_SONG, startAt = LessonStep.RECAP)
 
             assertNull(
                 vm.state.value.recap
@@ -557,7 +613,7 @@ class LessonViewModelTest {
                     ?.nextSkillId,
             )
             assertEquals(
-                Skills.SHARPS_AND_FLATS.title,
+                Skills.RHYTHM_SONG.title,
                 vm.state.value.recap
                     ?.learned,
             )

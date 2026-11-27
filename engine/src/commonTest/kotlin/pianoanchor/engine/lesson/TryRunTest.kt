@@ -180,6 +180,77 @@ class TryRunTest {
         assertEquals(TryProgress(0, 1, null, 62, false, 1), TryRun(TryCheck.Chord(setOf(60))).press(62).progress)
     }
 
+    private val eighths = TryCheck.Rhythm(60, List(8) { 480 }, 60)
+    private val dotted = TryCheck.Rhythm(60, listOf(1440, 480, 1920), 60)
+
+    private fun TryRun.tapAt(vararg times: Long): TryRun = times.fold(this) { run, at -> run.press(60, at = at) }
+
+    @Test
+    fun `rhythm finishes on even eighths at 60 bpm`() {
+        val start = TryRun(eighths)
+        assertEquals(TryProgress(0, 8, 60, null, false, 0, null), start.progress)
+        val half = start.tapAt(0, 500, 1000, 1500)
+        assertEquals(TryProgress(4, 8, 60, null, false, 0, null), half.progress)
+        val done = half.tapAt(2000, 2500, 3000, 3500)
+        assertEquals(TryProgress(8, 8, null, null, true, 0, null), done.progress)
+    }
+
+    @Test
+    fun `rhythm taken one tap per click resets as late and starts again from that tap`() {
+        val late = TryRun(eighths).tapAt(0, 500, 1500)
+        assertEquals(TryProgress(1, 8, 60, null, false, 1, TryTiming.LATE), late.progress)
+        assertEquals(TryProgress(2, 8, 60, null, false, 1, null), late.tapAt(2000).progress)
+    }
+
+    @Test
+    fun `rhythm tolerance is a third of an eighth each side`() {
+        val early = TryRun(eighths).tapAt(0, 320)
+        assertEquals(TryProgress(1, 8, 60, null, false, 1, TryTiming.EARLY), early.progress)
+        assertEquals(2, TryRun(eighths).tapAt(0, 330).progress.done)
+        assertEquals(2, TryRun(eighths).tapAt(0, 670).progress.done)
+        assertEquals(TryTiming.LATE, TryRun(eighths).tapAt(0, 680).progress.timing)
+    }
+
+    @Test
+    fun `rhythm played even instead of dotted resets`() {
+        val ok = TryRun(dotted).tapAt(0, 1500, 2000)
+        assertEquals(TryProgress(3, 3, null, null, true, 0, null), ok.progress)
+        val even = TryRun(dotted).tapAt(0, 1000)
+        assertEquals(TryProgress(1, 3, 60, null, false, 1, TryTiming.EARLY), even.progress)
+        assertEquals(TryTiming.EARLY, TryRun(dotted).tapAt(0, 1500, 1700).progress.timing)
+        assertEquals(TryTiming.LATE, TryRun(dotted).tapAt(0, 1500, 2500).progress.timing)
+        assertEquals(TryTiming.LATE, TryRun(dotted).tapAt(0, 1500, 2400).progress.timing)
+    }
+
+    @Test
+    fun `rhythm scales with the tempo and ignores the last note's length`() {
+        val fast = TryRun(TryCheck.Rhythm(60, listOf(960, 960, 1920), 120))
+        assertEquals(3, fast.tapAt(0, 500, 1000).progress.done)
+        assertEquals(TryTiming.LATE, fast.tapAt(0, 600).progress.timing)
+    }
+
+    @Test
+    fun `rhythm treats another key as wrong and keeps the count`() {
+        val run = TryRun(eighths).tapAt(0, 500).press(62, at = 700)
+        assertEquals(TryProgress(2, 8, 60, 62, false, 1, null), run.progress)
+        assertEquals(TryProgress(3, 8, 60, null, false, 1, null), run.press(60, at = 1000).progress)
+    }
+
+    @Test
+    fun `a wrong key clears the timing of the reset before it`() {
+        val run = TryRun(eighths).tapAt(0, 100).press(62, at = 200)
+        assertNull(run.progress.timing)
+    }
+
+    @Test
+    fun `rhythm ignores note offs and a finished run`() {
+        val run = TryRun(TryCheck.Rhythm(60, listOf(480, 480), 60)).tapAt(0)
+        assertSame(run, run.onNoteOff(60, 100))
+        val done = run.tapAt(500)
+        assertTrue(done.progress.finished)
+        assertSame(done, done.press(60, at = 9000))
+    }
+
     @Test
     fun `passage checks are not evaluated here`() {
         assertFailsWith<IllegalArgumentException> { TryRun(TryCheck.Passage("hot-cross-buns")) }

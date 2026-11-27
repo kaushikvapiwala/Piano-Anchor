@@ -109,7 +109,8 @@ class SongsViewModelTest {
             assertEquals(PieceStatus.NEW, vm.piece("when-the-saints-go-marching-in").status)
             // Nothing is learned, yet the last piece is as open as the first.
             assertEquals(PieceStatus.NEW, vm.piece("four-chord-walk").status)
-            assertEquals(10, checkNotNull(vm.state.value.pieces).size)
+            assertEquals(PieceStatus.NEW, vm.piece("jingle-bells").status)
+            assertEquals(11, checkNotNull(vm.state.value.pieces).size)
             assertFalse(vm.state.value.storageFailed)
         }
 

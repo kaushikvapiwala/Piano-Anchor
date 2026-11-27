@@ -5,6 +5,7 @@ import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.MidiNote
 import pianoanchor.engine.lesson.ChordName
 import pianoanchor.engine.lesson.QuizPrompt
+import pianoanchor.engine.lesson.rhythmCount
 import pianoanchor.feature.lesson.resources.Res
 import pianoanchor.feature.lesson.resources.quiz_accent
 import pianoanchor.feature.lesson.resources.quiz_chord
@@ -16,6 +17,7 @@ import pianoanchor.feature.lesson.resources.quiz_play_key_staff
 import pianoanchor.feature.lesson.resources.quiz_skip_up_from
 import pianoanchor.feature.lesson.resources.quiz_soft_loud
 import pianoanchor.feature.lesson.resources.quiz_step_up_from
+import pianoanchor.feature.lesson.resources.quiz_tap_rhythm
 
 private val FLAT_LETTERS = listOf("C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B")
 private val SHARP_LETTERS = listOf("C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B")
@@ -71,6 +73,10 @@ internal fun quizPromptText(prompt: QuizPrompt): String =
 
         is QuizPrompt.AccentBeatOne -> {
             stringResource(Res.string.quiz_accent, MidiNote(prompt.note).name)
+        }
+
+        is QuizPrompt.TapRhythm -> {
+            stringResource(Res.string.quiz_tap_rhythm, MidiNote(prompt.note).name, rhythmCount(prompt.lengths))
         }
 
         is QuizPrompt.ChordOf -> {

@@ -11,15 +11,15 @@ import pianoanchor.core.model.TryCheck
 public object Curriculum {
     /**
      * The units in teaching order: 0 "Meet the piano", 1 "Five-finger tunes", 2 "Left hand, then both hands",
-     * 3 "Chords and songs", then the optional "More songs".
+     * 3 "Chords and songs", 4 "Eighth notes and the dotted quarter", then the optional "More songs".
      */
-    public val units: List<CurriculumUnit> = listOf(UNIT_0, UNIT_1, UNIT_2, UNIT_3, MORE_SONGS_UNIT)
+    public val units: List<CurriculumUnit> = listOf(UNIT_0, UNIT_1, UNIT_2, UNIT_3, UNIT_4, MORE_SONGS_UNIT)
 
     /** Every passage of every unit, in teaching order. */
     public val passages: List<Passage> = units.flatMap { it.passages }
 
     /**
-     * Every skill, with its prerequisites: the 23 course skills in map order, the "More songs" skills, then the ear
+     * Every skill, with its prerequisites: the 27 course skills in map order, the "More songs" skills, then the ear
      * skills (no passage, no unit).
      */
     public val graph: SkillGraph =
@@ -48,6 +48,10 @@ public object Curriculum {
                 Skills.G_AND_F_CHORDS,
                 Skills.MELODY_AND_CHORDS,
                 Skills.SHARPS_AND_FLATS,
+                Skills.EIGHTH_NOTES,
+                Skills.EIGHTH_PAIRS,
+                Skills.DOTTED_QUARTER,
+                Skills.RHYTHM_SONG,
                 Skills.MORE_INVERSIONS,
                 Skills.MORE_A_MINOR,
                 Skills.MORE_FOUR_CHORDS,

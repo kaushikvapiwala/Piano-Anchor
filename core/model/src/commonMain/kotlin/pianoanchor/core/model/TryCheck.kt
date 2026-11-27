@@ -51,6 +51,22 @@ public sealed interface TryCheck {
         val bpm: Int,
     ) : TryCheck
 
+    /**
+     * Play [note] in the rhythm [lengths] (ticks, `TICKS_PER_QUARTER` = a quarter) with the click at [bpm]; intervals
+     * are judged.
+     */
+    public data class Rhythm(
+        val note: Int,
+        val lengths: List<Int>,
+        val bpm: Int,
+    ) : TryCheck {
+        init {
+            require(lengths.size >= 2 && lengths.all { it > 0 }) {
+                "a rhythm needs at least two lengths, all above 0: $lengths"
+            }
+        }
+    }
+
     /** Play [notes] together. */
     public data class Chord(
         val notes: Set<Int>,

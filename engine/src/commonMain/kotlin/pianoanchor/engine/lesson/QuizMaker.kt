@@ -3,6 +3,7 @@ package pianoanchor.engine.lesson
 import pianoanchor.core.model.Rating
 import pianoanchor.core.model.TryCheck
 import pianoanchor.engine.Tunables
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import kotlin.random.Random
 
@@ -39,7 +40,16 @@ private val FIXED: Map<String, QuizPrompt> =
         Skills.BARS_AND_COUNTING.id to QuizPrompt.AccentBeatOne(MIDDLE_C),
         Skills.TREBLE_CLEF.id to QuizPrompt.PlayKey(G_ABOVE_MIDDLE_C, onStaff = true),
         Skills.C_CHORD.id to QuizPrompt.ChordOf(ChordName.C),
+        Skills.EIGHTH_NOTES.id to tapRhythm(Skills.EIGHTH_NOTES.id),
+        Skills.EIGHTH_PAIRS.id to tapRhythm(Skills.EIGHTH_PAIRS.id),
+        Skills.DOTTED_QUARTER.id to tapRhythm(Skills.DOTTED_QUARTER.id),
     )
+
+/** The quiz of a rhythm concept is its Try: the same note and lengths. */
+private fun tapRhythm(skillId: String): QuizPrompt {
+    val rhythm = Curriculum.tryCheck(skillId) as TryCheck.Rhythm
+    return QuizPrompt.TapRhythm(rhythm.note, rhythm.lengths)
+}
 
 /** The three chords of the course. */
 public enum class ChordName { C, G, F }
@@ -91,6 +101,12 @@ public sealed interface QuizPrompt {
     /** Play [note] on every click, louder on beat 1. */
     public data class AccentBeatOne(
         val note: Int,
+    ) : QuizPrompt
+
+    /** Tap [note] in the rhythm [lengths] with the click. */
+    public data class TapRhythm(
+        val note: Int,
+        val lengths: List<Int>,
     ) : QuizPrompt
 
     /** Play the chord [name]. */
@@ -196,6 +212,7 @@ public object QuizMaker {
             is QuizPrompt.ClickTimes -> TryCheck.Repeat(prompt.note, prompt.times, Tunables.QUIZ_BPM)
             is QuizPrompt.SoftThenLoud -> TryCheck.SoftThenLoud(prompt.note)
             is QuizPrompt.AccentBeatOne -> TryCheck.StressBeatOne(prompt.note, ACCENT_BARS, Tunables.QUIZ_BPM)
+            is QuizPrompt.TapRhythm -> TryCheck.Rhythm(prompt.note, prompt.lengths, Tunables.QUIZ_BPM)
             is QuizPrompt.ChordOf -> TryCheck.Chord(chordNotes(prompt.name))
         }
 

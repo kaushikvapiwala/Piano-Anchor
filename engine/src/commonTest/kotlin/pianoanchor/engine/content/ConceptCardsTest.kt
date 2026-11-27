@@ -2,6 +2,7 @@ package pianoanchor.engine.content
 
 import pianoanchor.core.model.Track
 import pianoanchor.engine.Tunables
+import pianoanchor.engine.lesson.CourseProgress
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -16,7 +17,7 @@ class ConceptCardsTest {
 
     @Test
     fun `every course skill has exactly one card`() {
-        assertEquals(23, courseIds.size)
+        assertEquals(27, courseIds.size)
         courseIds.forEach { id -> assertEquals(1, ConceptCards.all.count { it.skillId == id }, id) }
         assertEquals(courseIds.toSet(), ConceptCards.all.map { it.skillId }.toSet())
         assertEquals(courseIds.size, ConceptCards.all.size)
@@ -27,7 +28,8 @@ class ConceptCardsTest {
         ConceptCards.all.forEach { assertNotNull(Curriculum.graph.byId(it.skillId), it.skillId) }
 
     @Test
-    fun `cards follow map order`() = assertEquals(courseIds, ConceptCards.all.map { it.skillId })
+    fun `cards follow map order`() =
+        assertEquals(CourseProgress.skills(Curriculum).map { it.id }, ConceptCards.all.map { it.skillId })
 
     @Test
     fun `every field is one non-blank line within the length limit`() {

@@ -80,7 +80,13 @@ class PiecesTest {
         val views = list()
         val units = views.map { it.unitTitle }.distinct()
         assertEquals(
-            listOf("Five-finger tunes", "Left hand, then both hands", "Chords and songs", "More songs"),
+            listOf(
+                "Five-finger tunes",
+                "Left hand, then both hands",
+                "Chords and songs",
+                "Eighth notes and the dotted quarter",
+                "More songs",
+            ),
             units,
         )
         assertEquals(views.map { it.unitTitle }, views.map { it.unitTitle }.sortedBy { units.indexOf(it) })

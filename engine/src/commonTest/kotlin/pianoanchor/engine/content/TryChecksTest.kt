@@ -16,7 +16,7 @@ class TryChecksTest {
 
     @Test
     fun `every course skill has a check`() {
-        assertEquals(23, courseIds.size)
+        assertEquals(27, courseIds.size)
         courseIds.forEach { assertNotNull(Curriculum.tryCheck(it), it) }
         assertEquals(courseIds.toSet(), TryChecks.all.keys)
     }
@@ -24,7 +24,7 @@ class TryChecksTest {
     @Test
     fun `every passage check names a passage of its skill`() {
         val passageChecks = courseIds.filter { Curriculum.tryCheck(it) is TryCheck.Passage }
-        assertEquals(6, passageChecks.size)
+        assertEquals(7, passageChecks.size)
         passageChecks.forEach { id ->
             val check = Curriculum.tryCheck(id) as TryCheck.Passage
             val passage = Curriculum.passage(check.passageId)
@@ -42,6 +42,14 @@ class TryChecksTest {
             )
         }
         assertNull(Curriculum.tryCheck("no-such-skill"))
+    }
+
+    @Test
+    fun `the unit 4 checks are the rhythms of the spec and Jingle Bells in Use`() {
+        assertEquals(TryCheck.Rhythm(60, List(8) { 480 }, 60), Curriculum.tryCheck("eighth-notes"))
+        assertEquals(TryCheck.Rhythm(60, listOf(960, 960, 480, 480, 960), 60), Curriculum.tryCheck("eighth-pairs"))
+        assertEquals(TryCheck.Rhythm(60, listOf(1440, 480, 1920), 60), Curriculum.tryCheck("dotted-quarter"))
+        assertEquals(TryCheck.Passage("builtin:jingle-bells"), Curriculum.tryCheck("rhythm-song"))
     }
 
     @Test

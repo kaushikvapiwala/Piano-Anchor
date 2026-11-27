@@ -901,6 +901,18 @@ public object Tunables {
     public const val TRY_HOLD_TOLERANCE: Double = 0.15
 
     /**
+     * How far a tap of a rhythm Try may stray from where the pattern puts it, each side, as a fraction of an eighth
+     * note (a half beat; 175 ms at 60 BPM).
+     *
+     * Why: loose enough for a beginner's wobble, tight enough that one tap per click or a dotted rhythm
+     * played even (each an error of a whole eighth, nearly three times the window) fails.
+     *
+     * Source: owner's choice in the grill (2026-11-25); a beginner's tapping spread of roughly 50-100 ms at slow
+     * tempi is well inside it.
+     */
+    public const val TRY_RHYTHM_TOLERANCE: Double = 0.35
+
+    /**
      * The loudest velocity (MIDI 1-127) that counts as the soft press of the soft-then-loud Try.
      *
      * Why: a clear gap below the playback velocity (80).

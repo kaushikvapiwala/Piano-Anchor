@@ -65,6 +65,36 @@ class CardScenesTest {
     }
 
     @Test
+    fun `every Unit 4 skill has a scene with a description and a caption`() =
+        listOf("eighth-notes", "eighth-pairs", "dotted-quarter", "rhythm-song").forEach { id ->
+            val scene = checkNotNull(Curriculum.scene(id), { id })
+            assertTrue(scene.description.isNotBlank(), id)
+            assertTrue(scene.cues.any { it.action is SceneAction.Caption }, id)
+        }
+
+    @Test
+    fun `eighth notes light the key twice per pulse`() {
+        val cues = checkNotNull(Curriculum.scene("eighth-notes")).cues
+        assertEquals(4, cues.count { it.action is SceneAction.Pulse })
+        assertEquals(8, cues.count { it.action is SceneAction.LightKey })
+    }
+
+    @Test
+    fun `dotted quarter lights a beat and a half then half a beat, twice`() {
+        val lights = checkNotNull(Curriculum.scene("dotted-quarter")).cues.filter { it.action is SceneAction.LightKey }
+        assertEquals(listOf(1100, 300, 1100, 300), lights.map { it.lengthMs })
+        assertEquals(listOf(300, 1500, 1900, 3100), lights.map { it.atMs })
+    }
+
+    @Test
+    fun `rhythm song lights E E E then E G C D with fingers`() {
+        val lights =
+            checkNotNull(Curriculum.scene("rhythm-song")).cues.mapNotNull { it.action as? SceneAction.LightKey }
+        assertEquals(listOf(64, 64, 64, 64, 67, 60, 62), lights.map { it.note })
+        assertEquals(listOf(3, 3, 3, 3, 5, 1, 2), lights.map { it.finger })
+    }
+
+    @Test
     fun `every Unit 0 skill has a scene`() = unit0.forEach { assertNotNull(Curriculum.scene(it), it) }
 
     @Test

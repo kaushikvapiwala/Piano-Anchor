@@ -29,6 +29,9 @@ middle C and the C below are named, and the C chord joins the chord quiz once it
 | c-chord | the C chord |
 | g-and-f-chords | a random chord of C, G, F |
 | sharps-and-flats | a random black key C#4 to A#4, named with a sharp or a flat |
+| eighth-notes | tap C4 in eight even eighths with the click (the Try's `Rhythm` pattern, at `QUIZ_BPM`) |
+| eighth-pairs | tap C4 in quarter, quarter, eighth, eighth, quarter: 1 2 3 & 4 |
+| dotted-quarter | tap C4 in dotted quarter, eighth, half: 1 (2) & 3 |
 | everything else | none: passage concepts keep the cold-open passage review; hand-shape has nothing to check |
 
 `QUIZ_RANGE` (three octaves around middle C) keeps "play every F" to 3 or 4 targets, and the click quizzes run at 60 BPM

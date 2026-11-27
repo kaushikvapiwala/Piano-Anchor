@@ -39,6 +39,16 @@ class LessonDemoTest {
     }
 
     @Test
+    fun rhythmPlaysThePatternAfterOneBeat() {
+        val demo = LessonDemo.of(TryCheck.Rhythm(60, listOf(1440, 480, 1920), bpm = 60))
+        assertEquals(60, demo.clickBpm)
+        assertEquals(1000L, demo.leadMs)
+        assertEquals(listOf(1000L, 2500L, 3000L), demo.tones.map { it.startMs })
+        assertEquals(listOf(750L, 250L, 1000L), demo.tones.map { it.lengthMs })
+        assertEquals(setOf(60), demo.tones.map { it.note.number }.toSet())
+    }
+
+    @Test
     fun holdSoundsForItsClicks() {
         val demo = LessonDemo.of(TryCheck.Hold(60, clicks = 2, bpm = 60))
         assertEquals(2000L, demo.tones.single().lengthMs)

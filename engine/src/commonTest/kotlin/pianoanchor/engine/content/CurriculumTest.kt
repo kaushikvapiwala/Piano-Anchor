@@ -245,10 +245,75 @@ class CurriculumTest {
         }
     }
 
+    private val unit4 get() = Curriculum.units.first { it.id == "unit-4" }
+
+    @Test
+    fun `unit 4 comes after unit 3 and before More songs with four core skills`() {
+        assertEquals(
+            listOf("unit-0", "unit-1", "unit-2", "unit-3", "unit-4", "unit-more-songs"),
+            Curriculum.units.map { it.id },
+        )
+        assertEquals("Eighth notes and the dotted quarter", unit4.title)
+        assertEquals(listOf("eighth-notes", "eighth-pairs", "dotted-quarter", "rhythm-song"), unit4.skills)
+        unit4.skills.forEach { assertEquals(Track.CORE, Curriculum.graph.byId(it)!!.track, it) }
+    }
+
+    @Test
+    fun `unit 4 skills have the prerequisites that steer Next`() {
+        val prerequisites = unit4.skills.associateWith { Curriculum.graph.byId(it)!!.prerequisites }
+        assertEquals(
+            mapOf(
+                "eighth-notes" to setOf("bars-and-counting", "melody-and-chords"),
+                "eighth-pairs" to setOf("eighth-notes"),
+                "dotted-quarter" to setOf("eighth-pairs"),
+                "rhythm-song" to setOf("dotted-quarter", "melody-and-chords"),
+            ),
+            prerequisites,
+        )
+    }
+
+    @Test
+    fun `unit 4 passages are the four of the spec and only Jingle Bells is a public domain piece`() {
+        assertEquals(
+            listOf("running-steps", "skipping-eighths", "long-short", "jingle-bells"),
+            unit4.passages.map { it.id.removePrefix("builtin:") },
+        )
+        assertEquals(listOf(72, 72, 66, 80), unit4.passages.map { it.tempoBpm })
+        assertEquals(listOf(false, false, false, true), unit4.passages.map { it.piece })
+        val jingle = unit4.passages.last()
+        assertEquals(RightsStatus.PUBLIC_DOMAIN, jingle.rights.status)
+        assertEquals(setOf("rhythm-song", "eighth-notes", "dotted-quarter"), jingle.skills)
+        unit4.passages.dropLast(1).forEach { assertEquals(RightsStatus.ORIGINAL, it.rights.status, it.id) }
+        unit4.passages.forEach { passage ->
+            val notes = passage.steps.flatMap { it.notes }
+            notes.filter { it.pitch.number >= C4 }.let { right ->
+                assertTrue(right.isNotEmpty(), passage.id)
+                right.forEach { assertTrue(it.pitch.number in C4..G4, passage.id) }
+            }
+        }
+    }
+
+    @Test
+    fun `unit 4 passages use the rhythm their concept teaches`() {
+        fun lengths(id: String) =
+            Curriculum
+                .passage("builtin:$id")!!
+                .steps
+                .flatMap { s -> s.notes.map { it.lengthTicks } }
+                .toSet()
+        assertTrue(480 in lengths("running-steps") && 1440 !in lengths("running-steps"))
+        assertTrue(480 in lengths("skipping-eighths"))
+        assertTrue(1440 in lengths("long-short") && 480 in lengths("long-short"))
+        assertTrue(1440 in lengths("jingle-bells") && 480 in lengths("jingle-bells"))
+        val jingle = Curriculum.passage("builtin:jingle-bells")!!
+        val end = jingle.steps.maxOf { s -> s.onsetTicks + s.notes.maxOf { it.lengthTicks } }
+        assertEquals(16 * jingle.timeSignature.barTicks, end)
+    }
+
     @Test
     fun `More songs is the last unit and teaches the songs track`() {
         val more = Curriculum.units.last()
-        assertEquals(5, Curriculum.units.size)
+        assertEquals(6, Curriculum.units.size)
         assertEquals("unit-more-songs", more.id)
         assertEquals("More songs", more.title)
         assertEquals(listOf("more-inversions", "more-a-minor", "more-four-chords"), more.skills)

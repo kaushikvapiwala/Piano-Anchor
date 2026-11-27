@@ -85,6 +85,21 @@ public object Skills {
     /** Playing the black key just above (sharp) or below (flat) a white key. */
     public val SHARPS_AND_FLATS: Skill = Skill("sharps-and-flats", "Sharps and flats", setOf(MELODY_AND_CHORDS.id))
 
+    /** Playing two even notes in one click, counted "1 and". */
+    public val EIGHTH_NOTES: Skill =
+        Skill("eighth-notes", "Eighth notes", setOf(BARS_AND_COUNTING.id, MELODY_AND_CHORDS.id))
+
+    /** Reading beamed eighth pairs mixed with quarters in tunes. */
+    public val EIGHTH_PAIRS: Skill = Skill("eighth-pairs", "Eighth pairs in tunes", setOf(EIGHTH_NOTES.id))
+
+    /** Counting a dotted quarter (one and a half clicks) followed by an eighth. */
+    public val DOTTED_QUARTER: Skill =
+        Skill("dotted-quarter", "Dotted quarter and eighth", setOf(EIGHTH_PAIRS.id))
+
+    /** Playing the Jingle Bells chorus, which puts eighths and the dotted quarter together over left-hand chords. */
+    public val RHYTHM_SONG: Skill =
+        Skill("rhythm-song", "A song with eighths", setOf(DOTTED_QUARTER.id, MELODY_AND_CHORDS.id))
+
     /** Playing F and G in first inversion, so the left hand stays close to C. */
     public val MORE_INVERSIONS: Skill =
         Skill(
