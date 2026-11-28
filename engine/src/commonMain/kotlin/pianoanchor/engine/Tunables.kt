@@ -1239,6 +1239,24 @@ public object Tunables {
     public const val HAND_HOLD_AFTER_MS: Long = 600
 
     /**
+     * How long the See hand takes to fade out after its hold, in milliseconds; See waits for it before Try.
+     *
+     * Why: the hand's fade-out after the hold, now shared with the wait before Try.
+     *
+     * Source: moved, unchanged, from the See hand's private fade length.
+     */
+    public const val HAND_FADE_MS: Long = 300
+
+    /**
+     * How long the "Your turn" cue shows after the hand has faded, in milliseconds, before See moves on to Try.
+     *
+     * Why: long enough to read "Your turn" before the Try appears.
+     *
+     * Source: owner decision 2026-11-28, tune on device.
+     */
+    public const val HAND_YOUR_TURN_MS: Long = 800
+
+    /**
      * The most white keys a See demo may span for the hand to show: one hand position, no finger crossing.
      *
      * Why: five fingers cover five white keys; a wider demo would need a position change the hand can't draw.

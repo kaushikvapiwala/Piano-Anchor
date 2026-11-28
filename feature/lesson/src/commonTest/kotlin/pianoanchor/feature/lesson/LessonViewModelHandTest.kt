@@ -34,6 +34,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+private const val DEMO_STEP_MS = 10L
+
 /** The See step's hand (`HandDemo`): its timeline and elapsed time while the demo plays. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class LessonViewModelHandTest {
@@ -143,6 +145,70 @@ class LessonViewModelHandTest {
             // The lone C3 is the little finger of the left-hand C position (C3..G3), the thumb on G3.
             assertEquals(MidiNote(55), hand.thumbNote)
             assertEquals(listOf(5), hand.presses.map { it.finger })
+            vm.close()
+        }
+
+    private val handWaitMs = Tunables.HAND_HOLD_AFTER_MS + Tunables.HAND_FADE_MS + Tunables.HAND_YOUR_TURN_MS
+
+    /** Runs the demo to its end and returns the virtual time at which it stopped. */
+    private fun TestScope.untilDemoEnds(vm: LessonViewModel): Long {
+        while (vm.state.value.playing) {
+            advanceTimeBy(DEMO_STEP_MS)
+            runCurrent()
+        }
+        return testScheduler.currentTime
+    }
+
+    @Test
+    fun seeWaitsForTheHandsCueBeforeTry() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.RH_C_POSITION)
+            vm.goTo(LessonStep.SEE)
+            runCurrent()
+            untilDemoEnds(vm)
+            assertNotNull(vm.state.value.seeHand)
+
+            advanceTimeBy(handWaitMs - DEMO_STEP_MS)
+            runCurrent()
+            assertEquals(LessonStep.SEE, vm.state.value.step)
+            advanceTimeBy(DEMO_STEP_MS)
+            runCurrent()
+
+            assertEquals(LessonStep.TRY, vm.state.value.step)
+            vm.close()
+        }
+
+    @Test
+    fun seeWithoutAHandMovesToTryRightAfterTheDemo() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.HIGH_AND_LOW)
+            vm.goTo(LessonStep.SEE)
+            runCurrent()
+            untilDemoEnds(vm)
+
+            assertNull(vm.state.value.seeHand)
+            assertEquals(LessonStep.TRY, vm.state.value.step)
+            vm.close()
+        }
+
+    @Test
+    fun playAgainDuringTheHandWaitRestartsTheDemoAndTheWait() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.RH_C_POSITION)
+            vm.goTo(LessonStep.SEE)
+            runCurrent()
+            untilDemoEnds(vm)
+            advanceTimeBy(handWaitMs - DEMO_STEP_MS)
+            runCurrent()
+
+            vm.replaySee()
+            runCurrent()
+            assertTrue(vm.state.value.playing)
+            untilDemoEnds(vm)
+            advanceTimeBy(handWaitMs - DEMO_STEP_MS)
+            runCurrent()
+            // Played again by hand, so the lesson stays in See.
+            assertEquals(LessonStep.SEE, vm.state.value.step)
             vm.close()
         }
 }

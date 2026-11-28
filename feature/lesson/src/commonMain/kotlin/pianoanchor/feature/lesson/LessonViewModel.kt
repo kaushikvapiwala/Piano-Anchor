@@ -262,6 +262,10 @@ public class LessonViewModel(
                     if (auto) delay(Tunables.LESSON_WHY_AUTO_MS)
                 } else {
                     playDemo(demo)
+                    // The hand's hold, fade and "Your turn" cue show before Try (the same total with reduce motion).
+                    if (auto && mutableState.value.seeHand != null) {
+                        delay(Tunables.HAND_HOLD_AFTER_MS + Tunables.HAND_FADE_MS + Tunables.HAND_YOUR_TURN_MS)
+                    }
                 }
                 if (auto) next()
             }

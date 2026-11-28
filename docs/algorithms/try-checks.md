@@ -132,7 +132,9 @@ There is no hand (null, and the See step looks plain) when the demo has no tones
 than `HAND_MAX_WHITE_SPAN` white keys: the app never invents a fingering. The lesson passes the concept's hand (its
 card scene's, right when it has none). The ViewModel exposes the timeline and the time into the demo; the screen
 puts a finger down while its press is active, keeps the hand `HAND_HOLD_AFTER_MS` after the last press, fades it and
-shows "Your turn". A See step that moves on by itself drops the hand with the step.
+shows "Your turn". A See step that moves on by itself and shows a hand waits for that cue first (`HAND_HOLD_AFTER_MS` +
+`HAND_FADE_MS` + `HAND_YOUR_TURN_MS`, the same with reduce motion; a pedal tap skips the rest of the wait, "Play again" or
+leaving cancels it); one without a hand moves on at once. The step then drops the hand.
 
 A Try with a click (Repeat, Hold, StressBeatOne, Rhythm) starts the metronome with a one-bar count-in ("3, 2, 1") before notes
 count. A Try passes after `tryRepsNeeded` clean checks in a row: `LESSON_TRY_REPS`, or `LESSON_TRY_REPS_LONG` when the
