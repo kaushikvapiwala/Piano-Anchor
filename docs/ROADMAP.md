@@ -40,21 +40,18 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Session steps: Results and stored progress** (spec #297): Practise and Sight-read steps of the one-tap session
-    end on Results with "Continue"; the day's finished steps are stored so a restart resumes; the streak read is
-    bounded.
-2. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
+1. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
     48..52 chromatically (C, C♯, D, D♯, E) instead of the white keys C D E F G; use an explicit key list like the
     left-hand G scene and re-record its screenshots.
-3. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
+2. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
     fade and a short "Your turn" moment.
-4. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
+3. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
     major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
     placement piece; closes course 2.
-5. **Wrong-key hint names from Compose resources** (spec #309; found reviewing #304): the hint text beside the strips still
+4. **Wrong-key hint names from Compose resources** (spec #309; found reviewing #304): the hint text beside the strips still
     names notes with English letters from `MidiNote.spoken()`, so a translated build would name the same key two ways;
     spell the hint's notes with the key-name string resources the strips use.
-6. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
+5. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
     flat, so a leading-tone sharp (C♯ in D minor) reads as D♭; and the lesson cards' staff still spells sharps in every
     key. Spell by the key's scale degrees and make the card staff use the engine's spelled step.
 
@@ -75,7 +72,8 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
   sound; the left-hand C position shows finger 5 on C3; reduce motion keeps the hand still.
 - **One-tap session (#268):** Start on Today runs the day's steps in a row with the 10 s card between them (Pause,
   Skip step, a pedal tap goes now), back mid-step asks "Leave today's session?", the recap names minutes, steps and
-  a tip, and "Pause this week" keeps the streak.
+  a tip, and "Pause this week" keeps the streak. Since #297 a Practise or Sight-read step ends on Results with "Continue" (or a
+  pedal tap), and killing the app mid-session resumes after the finished steps.
 - **Note names on keys (#266):** a new learner sees C to B on every white key; after the "C D E, then F G A B"
   concept passes only the key to play keeps its letter, and after its quiz none; Settings → "Note names on keys" →
   Off clears them; letters stay readable in light and dark and fade in just after a lesson or practice screen opens
