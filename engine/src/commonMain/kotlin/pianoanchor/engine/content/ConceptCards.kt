@@ -254,5 +254,33 @@ internal object ConceptCards {
                 how = "Right hand in G position, left hand changes chord on beat 1.",
                 whenMet = "Now, to finish the unit.",
             ),
+            ConceptCard(
+                Skills.LEGATO_TOUCH.id,
+                what = "Legato means joined: each key goes down as the one before comes up.",
+                why = "Joined notes sing like a voice instead of sounding one at a time.",
+                how = "Keep each finger down until the next one presses, then lift it.",
+                whenMet = "Now, for slow tunes and wherever there is no other mark.",
+            ),
+            ConceptCard(
+                Skills.SUSTAIN_PEDAL.id,
+                what = "The right-hand pedal under the piano keeps notes sounding after you lift your hands.",
+                why = "It joins sounds your hands can't reach and makes the piano ring.",
+                how = "Heel on the floor, press with the ball of the foot before you play; lift to stop the sound.",
+                whenMet = "Now, wherever the music shows a pedal line under the staff.",
+            ),
+            ConceptCard(
+                Skills.PEDAL_CHANGES.id,
+                what = "Lift the pedal and press it again right after each new chord.",
+                why = "Held through a chord change, the old chord blurs into the new one.",
+                how = "Play the new chord, then lift and press the pedal quickly while your fingers hold the keys.",
+                whenMet = "Now; the notch in the pedal line shows each change.",
+            ),
+            ConceptCard(
+                Skills.PEDAL_SONG.id,
+                what = "Amazing Grace in 3/4, with a pedal change every bar.",
+                why = "It puts legato, the pedal and pedal changes together in a slow song.",
+                how = "Change the pedal just after each left-hand chord; the right hand moves on long notes.",
+                whenMet = "Now, to finish the unit.",
+            ),
         )
 }

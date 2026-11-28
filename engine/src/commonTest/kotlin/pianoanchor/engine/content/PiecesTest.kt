@@ -86,6 +86,7 @@ class PiecesTest {
                 "Chords and songs",
                 "Eighth notes and the dotted quarter",
                 "G position and the key of G",
+                "Legato and the pedal",
                 "More songs",
             ),
             units,

@@ -16,7 +16,7 @@ class TryChecksTest {
 
     @Test
     fun `every course skill has a check`() {
-        assertEquals(32, courseIds.size)
+        assertEquals(36, courseIds.size)
         courseIds.forEach { assertNotNull(Curriculum.tryCheck(it), it) }
         assertEquals(courseIds.toSet(), TryChecks.all.keys)
     }
@@ -24,7 +24,7 @@ class TryChecksTest {
     @Test
     fun `every passage check names a passage of its skill`() {
         val passageChecks = courseIds.filter { Curriculum.tryCheck(it) is TryCheck.Passage }
-        assertEquals(8, passageChecks.size)
+        assertEquals(9, passageChecks.size)
         passageChecks.forEach { id ->
             val check = Curriculum.tryCheck(id) as TryCheck.Passage
             val passage = Curriculum.passage(check.passageId)
@@ -62,6 +62,22 @@ class TryChecksTest {
         assertEquals(TryCheck.FindAll(6, 21..108), Curriculum.tryCheck("key-of-g"))
         assertEquals(TryCheck.Chord(setOf(42, 48, 50)), Curriculum.tryCheck("g-and-d7-chords"))
         assertEquals(TryCheck.Passage("builtin:go-tell-aunt-rhody"), Curriculum.tryCheck("melody-chords-in-g"))
+    }
+
+    @Test
+    fun `the unit 6 checks are the four rows of the spec`() {
+        assertEquals(
+            TryCheck.Legato(listOf(60, 62, 64, 65, 67, 65, 64, 62, 60)),
+            Curriculum.tryCheck("legato-touch"),
+        )
+        assertEquals(TryCheck.PedalHold(setOf(48, 52, 55)), Curriculum.tryCheck("sustain-pedal"))
+        assertEquals(
+            TryCheck.PedalChange(
+                listOf(setOf(48, 52, 55), setOf(45, 48, 53), setOf(47, 50, 55), setOf(48, 52, 55)),
+            ),
+            Curriculum.tryCheck("pedal-changes"),
+        )
+        assertEquals(TryCheck.Passage("builtin:amazing-grace"), Curriculum.tryCheck("pedal-song"))
     }
 
     @Test

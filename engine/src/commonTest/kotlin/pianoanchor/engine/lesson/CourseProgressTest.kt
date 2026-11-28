@@ -23,12 +23,12 @@ class CourseProgressTest {
     private val firstPassage = Curriculum.passages.first { Skills.MIDDLE_C.id in it.skills }
 
     @Test
-    fun theCourseIsTheThirtyTwoCoreSkillsInMapOrder() {
+    fun theCourseIsTheThirtySixCoreSkillsInMapOrder() {
         val course = CourseProgress.skills(Curriculum)
-        assertEquals(32, course.size)
+        assertEquals(36, course.size)
         assertTrue(course.all { it.track == Track.CORE })
         assertEquals(Skills.HAND_SHAPE, course.first())
-        assertEquals(Skills.MELODY_CHORDS_IN_G, course.last())
+        assertEquals(Skills.PEDAL_SONG, course.last())
     }
 
     @Test
@@ -87,7 +87,7 @@ class CourseProgressTest {
     fun everyPassageCleanGivesNull() {
         val all = Curriculum.passages.associate { waitClean(it.id) }
         val passed = CourseProgress.passed(Curriculum, all)
-        assertEquals(32, passed.size)
+        assertEquals(36, passed.size)
         assertNull(CourseProgress.next(Curriculum, passed))
     }
 

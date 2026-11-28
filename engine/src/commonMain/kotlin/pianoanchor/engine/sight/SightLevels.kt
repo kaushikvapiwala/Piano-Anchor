@@ -2,16 +2,16 @@ package pianoanchor.engine.sight
 
 import pianoanchor.engine.content.Skills
 
-/** One staircase level: [number] 1..12, the [skill] that opens it, the hands and material it uses. */
+/** One staircase level: [number] 1..13, the [skill] that opens it, the hands and material it uses. */
 public data class SightLevel(
     val number: Int,
     val skill: String,
     val description: String,
 )
 
-/** The twelve sight-reading levels (`docs/algorithms/sight-reading.md`). */
+/** The thirteen sight-reading levels (`docs/algorithms/sight-reading.md`). */
 public object SightLevels {
-    /** The 12 levels, in order. */
+    /** The 13 levels, in order. */
     public val all: List<SightLevel> =
         listOf(
             SightLevel(1, Skills.STAFF_STEPS.id, "Right hand, C to G, steps, quarters and halves"),
@@ -26,6 +26,7 @@ public object SightLevels {
             SightLevel(10, Skills.DOTTED_QUARTER.id, "Level 9 plus a dotted quarter and an eighth"),
             SightLevel(11, Skills.RH_G_POSITION.id, "Level 10 material in right-hand G position, key of G"),
             SightLevel(12, Skills.G_AND_D7_CHORDS.id, "Right-hand tune in G over left-hand G and D7 chords"),
+            SightLevel(13, Skills.PEDAL_CHANGES.id, "Level 8 or level 12 material with a pedal span per bar"),
         )
 
     /** The highest level n such that levels 1..n all have their skill in [learned]; 0 when level 1 is closed. */

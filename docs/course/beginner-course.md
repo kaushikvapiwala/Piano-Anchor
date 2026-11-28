@@ -180,7 +180,29 @@ stretches down one key to F sharp), G and D7 (both hands) and Go Tell Aunt Rhody
 of the 19th century whose tune goes back to a melody in Rousseau's 1752 opera Le Devin du village; this simplified
 melody and the left-hand chords are our own arrangement). The sight-reading staircase gains levels 11 and 12
 (`docs/algorithms/sight-reading.md`) and the placement test a sixth piece, Go Tell Aunt Rhody
-(`docs/algorithms/learner-model.md`). Scales and thumb-under wait for Unit 7.
+(`docs/algorithms/learner-model.md`).
+
+### Unit 6: Legato and the pedal (joined notes, the sustain pedal, 3/4)
+| # | Concept | Why here | Try |
+|---|---|---|---|
+| 33 | Legato touch | Joined notes sing like a voice instead of sounding one at a time. | C D E F G F E D C, each key down as the one before comes up. |
+| 34 | The sustain pedal | It keeps the sound ringing after the hands lift and joins what the hands cannot reach. | Pedal down, the C chord, lift the hand, let it ring. |
+| 35 | Changing the pedal | Held through a chord change the old chord blurs, so the pedal changes after each chord. | C, F, G, C chords, the pedal changing after each. |
+| 36 | A song with pedal | Puts legato, the pedal and pedal changes together in a slow song. | Amazing Grace in 3/4, played in Use (no separate Try). |
+
+Prerequisites: legato needs the right-hand C position and the song of Unit 5; the pedal needs legato and the C chord;
+pedal changes need the pedal and the G and F chords; the song needs pedal changes and 3/4 time. Pedal marks show as a
+line under the staff with a notch at each change; they are drawn, never judged in Practice or Results. A concept that
+uses the pedal as music (the pedal, pedal changes, the song) turns off the pedal tap's "continue" in its lesson.
+
+Passages: Joined steps (4/4), Ringing chords (the pedal rings through the rest bars), Pedal changes (one pedal span per
+bar) and Amazing Grace (3/4, 72 BPM, public domain: the hymn tune "New Britain", printed 1829, words by John Newton,
+1779; this simplified melody and the left-hand chords are our own arrangement). Amazing Grace starts with a bar of a
+half rest and the pickup quarter (pickup bars are not supported), so that bar has no left hand and no pedal; the pedal
+changes once in each of the 14 bars after it. Where the right hand's G3 would repeat the C chord's G, the chord is
+played in second inversion (G2 C3 E3). The sight-reading staircase gains level 13 (`docs/algorithms/sight-reading.md`)
+and the placement test a seventh piece, Amazing Grace (`docs/algorithms/learner-model.md`). Scales and thumb-under wait
+for Unit 7.
 
 ## Existing content
 The new map came first, then each existing passage was kept under the concept it exercises. Done in issue 181. Ids

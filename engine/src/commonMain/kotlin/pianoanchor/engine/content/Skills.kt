@@ -120,6 +120,22 @@ public object Skills {
     public val MELODY_CHORDS_IN_G: Skill =
         Skill("melody-chords-in-g", "Melody plus chords in G", setOf(G_AND_D7_CHORDS.id))
 
+    /** Playing notes joined: each key goes down as the one before comes up. */
+    public val LEGATO_TOUCH: Skill =
+        Skill("legato-touch", "Legato touch", setOf(RH_C_POSITION.id, MELODY_CHORDS_IN_G.id))
+
+    /** Pressing the sustain pedal before playing and lifting it to stop the sound. */
+    public val SUSTAIN_PEDAL: Skill =
+        Skill("sustain-pedal", "The sustain pedal", setOf(LEGATO_TOUCH.id, C_CHORD.id))
+
+    /** Lifting and pressing the pedal again right after each new chord. */
+    public val PEDAL_CHANGES: Skill =
+        Skill("pedal-changes", "Changing the pedal", setOf(SUSTAIN_PEDAL.id, G_AND_F_CHORDS.id))
+
+    /** Playing Amazing Grace in 3/4 with a pedal change every bar. */
+    public val PEDAL_SONG: Skill =
+        Skill("pedal-song", "A song with pedal", setOf(PEDAL_CHANGES.id, THREE_FOUR_TIME.id))
+
     /** Playing F and G in first inversion, so the left hand stays close to C. */
     public val MORE_INVERSIONS: Skill =
         Skill(

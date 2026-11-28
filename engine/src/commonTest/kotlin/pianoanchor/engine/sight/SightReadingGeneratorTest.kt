@@ -2,6 +2,7 @@ package pianoanchor.engine.sight
 
 import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.PedalSpan
 import pianoanchor.core.model.RightsStatus
 import pianoanchor.core.model.TICKS_PER_QUARTER
 import kotlin.test.Test
@@ -264,7 +265,7 @@ class SightReadingGeneratorTest {
     }
 
     @Test
-    fun levels1To10KeepTheirOutputForAFixedSeed() {
+    fun levels1To12KeepTheirOutputForAFixedSeed() {
         val golden =
             mapOf(
                 1 to -1403727910,
@@ -277,6 +278,8 @@ class SightReadingGeneratorTest {
                 8 to -285839106,
                 9 to -1169345127,
                 10 to -976897058,
+                11 to 966084911,
+                12 to -91969490,
             )
         golden.forEach { (level, hash) ->
             val text =
@@ -375,6 +378,37 @@ class SightReadingGeneratorTest {
     }
 
     @Test
+    fun level13DrawsLevel8MaterialInCOrLevel12MaterialInGWithOnePedalSpanPerBar() {
+        val seenKeys = mutableSetOf<KeySignature>()
+        for (seed in 0L until SEEDS) {
+            val passage = SightReadingGenerator.passage(13, seed)
+            assertEquals("sight:13:$seed", passage.id)
+            assertEquals(4, bars(passage).size)
+            val bar = passage.timeSignature.barTicks
+            assertEquals((0 until 4).map { PedalSpan(it * bar, (it + 1) * bar) }, passage.pedal, "seed $seed")
+            val base = if (passage.keySignature == KeySignature.C) 8 else 12
+            seenKeys += passage.keySignature
+            val sameMaterial = SightReadingGenerator.passage(base, seed)
+            assertEquals(sameMaterial.steps, passage.steps, "seed $seed")
+            assertEquals(RightsStatus.ORIGINAL, passage.rights.status)
+            assertTrue(passage.skills.isEmpty())
+            assertEquals(false, passage.piece)
+        }
+        assertEquals(setOf(KeySignature.C, KeySignature.G), seenKeys)
+    }
+
+    @Test
+    fun levels1To12CarryNoPedalMarks() {
+        forEveryPassage { level, passage -> assertTrue(passage.pedal.isEmpty(), "level $level") }
+    }
+
+    @Test
+    fun level13IsRebuiltFromItsId() {
+        assertEquals(SightReadingGenerator.passage(13, 9), SightReadingGenerator.fromId("sight:13:9"))
+        assertEquals(13 to 9L, SightReadingGenerator.parse("sight:13:9"))
+    }
+
+    @Test
     fun idRoundTrips() {
         assertEquals(3 to 42L, SightReadingGenerator.parse(SightReadingGenerator.idOf(3, 42)))
         assertEquals(2 to -5L, SightReadingGenerator.parse(SightReadingGenerator.idOf(2, -5)))
@@ -383,7 +417,7 @@ class SightReadingGeneratorTest {
 
     @Test
     fun parseRejectsOtherIds() {
-        listOf("ode-to-joy", "sight:x:1", "sight:13:1", "sight:0:1", "sight:1:y", "sight:1", "song:1:1", "sight:1:2:3")
+        listOf("ode-to-joy", "sight:x:1", "sight:14:1", "sight:0:1", "sight:1:y", "sight:1", "song:1:1", "sight:1:2:3")
             .forEach { assertNull(SightReadingGenerator.parse(it), it) }
     }
 
@@ -396,6 +430,6 @@ class SightReadingGeneratorTest {
     @Test
     fun levelOutsideRangeThrows() {
         assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(0, 1) }
-        assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(13, 1) }
+        assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(14, 1) }
     }
 }

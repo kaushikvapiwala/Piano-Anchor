@@ -1,10 +1,12 @@
 package pianoanchor.engine.content
 
 import pianoanchor.core.model.KeySignature
+import pianoanchor.core.model.PedalSpan
 import pianoanchor.core.model.RightsStatus
 import pianoanchor.core.model.Track
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -251,7 +253,7 @@ class CurriculumTest {
     @Test
     fun `unit 4 comes after unit 3 and before More songs with four core skills`() {
         assertEquals(
-            listOf("unit-0", "unit-1", "unit-2", "unit-3", "unit-4", "unit-5", "unit-more-songs"),
+            listOf("unit-0", "unit-1", "unit-2", "unit-3", "unit-4", "unit-5", "unit-6", "unit-more-songs"),
             Curriculum.units.map { it.id },
         )
         assertEquals("Eighth notes and the dotted quarter", unit4.title)
@@ -317,7 +319,7 @@ class CurriculumTest {
     fun `unit 5 comes after unit 4 and before More songs with five core skills`() {
         val ids = Curriculum.units.map { it.id }
         assertEquals(ids.indexOf("unit-4") + 1, ids.indexOf("unit-5"))
-        assertEquals(ids.indexOf("unit-more-songs"), ids.indexOf("unit-5") + 1)
+        assertEquals(ids.indexOf("unit-6"), ids.indexOf("unit-5") + 1)
         assertEquals("G position and the key of G", unit5.title)
         assertEquals(
             listOf("rh-g-position", "lh-g-position", "key-of-g", "g-and-d7-chords", "melody-chords-in-g"),
@@ -378,10 +380,84 @@ class CurriculumTest {
         assertTrue(listOf(42, 48, 50).all { it in pitches("go-tell-aunt-rhody") })
     }
 
+    private val unit6 get() = Curriculum.units.first { it.id == "unit-6" }
+
+    @Test
+    fun `unit 6 comes after unit 5 and before More songs with four core skills`() {
+        val ids = Curriculum.units.map { it.id }
+        assertEquals(ids.indexOf("unit-5") + 1, ids.indexOf("unit-6"))
+        assertEquals(ids.indexOf("unit-more-songs"), ids.indexOf("unit-6") + 1)
+        assertEquals("Legato and the pedal", unit6.title)
+        assertEquals(listOf("legato-touch", "sustain-pedal", "pedal-changes", "pedal-song"), unit6.skills)
+        unit6.skills.forEach { assertEquals(Track.CORE, Curriculum.graph.byId(it)!!.track, it) }
+        assertEquals(
+            mapOf(
+                "legato-touch" to setOf("rh-c-position", "melody-chords-in-g"),
+                "sustain-pedal" to setOf("legato-touch", "c-chord"),
+                "pedal-changes" to setOf("sustain-pedal", "g-and-f-chords"),
+                "pedal-song" to setOf("pedal-changes", "three-four-time"),
+            ),
+            unit6.skills.associateWith { Curriculum.graph.byId(it)!!.prerequisites },
+        )
+    }
+
+    @Test
+    fun `unit 6 passages are the four of the spec and only Amazing Grace is a piece`() {
+        assertEquals(
+            listOf("joined-steps", "ringing-chords", "pedal-changes", "amazing-grace"),
+            unit6.passages.map { it.id.removePrefix("builtin:") },
+        )
+        assertEquals(listOf(66, 60, 60, 72), unit6.passages.map { it.tempoBpm })
+        assertEquals(listOf(false, false, false, true), unit6.passages.map { it.piece })
+        assertEquals(listOf(4, 4, 4, 3), unit6.passages.map { it.timeSignature.beats })
+        unit6.passages.dropLast(1).forEach { assertEquals(RightsStatus.ORIGINAL, it.rights.status, it.id) }
+        assertEquals(
+            listOf(
+                setOf("legato-touch"),
+                setOf("sustain-pedal"),
+                setOf("pedal-changes"),
+                setOf("pedal-song", "pedal-changes", "legato-touch"),
+            ),
+            unit6.passages.map { it.skills },
+        )
+    }
+
+    @Test
+    fun `Amazing Grace is a public domain piece of 15 bars in 3 4 with a pedal change each bar from bar 2`() {
+        val grace = unit6.passages.last()
+        assertEquals(RightsStatus.PUBLIC_DOMAIN, grace.rights.status)
+        assertTrue(grace.rights.origin.contains("New Britain"))
+        assertTrue(grace.rights.basis.isNotBlank())
+        val bar = grace.timeSignature.barTicks
+        assertEquals(2880, bar)
+        val end = grace.steps.maxOf { s -> s.onsetTicks + s.notes.maxOf { it.lengthTicks } }
+        assertEquals(15 * bar, end)
+        assertEquals(14, grace.pedal.size)
+        assertEquals((1..14).map { PedalSpan(it * bar, (it + 1) * bar) }, grace.pedal)
+        assertTrue(grace.steps.none { it.onsetTicks == 0 && it.notes.size > 1 })
+    }
+
+    @Test
+    fun `unit 6 pedal marks are where the spec puts them`() {
+        fun pedal(id: String) = Curriculum.passage("builtin:$id")!!.pedal
+        assertTrue(pedal("joined-steps").isEmpty())
+        val bar = 3840
+        assertEquals(listOf(PedalSpan(0, 2 * bar), PedalSpan(2 * bar, 3 * bar)), pedal("ringing-chords"))
+        assertEquals((0..3).map { PedalSpan(it * bar, (it + 1) * bar) }, pedal("pedal-changes"))
+    }
+
+    @Test
+    fun `pedal is music for the pedal skills and not for legato`() {
+        assertTrue(Curriculum.pedalIsMusic("sustain-pedal"))
+        assertTrue(Curriculum.pedalIsMusic("pedal-changes"))
+        assertTrue(Curriculum.pedalIsMusic("pedal-song"))
+        assertFalse(Curriculum.pedalIsMusic("legato-touch"))
+    }
+
     @Test
     fun `More songs is the last unit and teaches the songs track`() {
         val more = Curriculum.units.last()
-        assertEquals(7, Curriculum.units.size)
+        assertEquals(8, Curriculum.units.size)
         assertEquals("unit-more-songs", more.id)
         assertEquals("More songs", more.title)
         assertEquals(listOf("more-inversions", "more-a-minor", "more-four-chords"), more.skills)

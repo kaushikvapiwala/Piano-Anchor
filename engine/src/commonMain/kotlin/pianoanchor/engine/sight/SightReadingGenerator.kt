@@ -3,6 +3,7 @@ package pianoanchor.engine.sight
 import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.PedalSpan
 import pianoanchor.core.model.ScoreNote
 import pianoanchor.core.model.Step
 import pianoanchor.core.model.TICKS_PER_QUARTER
@@ -32,6 +33,7 @@ private const val DOTTED_QUARTER_EIGHTHS = 3
 private const val G_POSITION_LEVEL = 11
 private const val G_CHORDS_LEVEL = 12
 private const val D7_BAR = 2
+private const val PEDAL_LEVEL = 13
 
 private const val QUARTER = TICKS_PER_QUARTER
 private const val HALF = 2 * TICKS_PER_QUARTER
@@ -125,15 +127,17 @@ public object SightReadingGenerator {
     public const val ID_PREFIX: String = "$ID_NAME:"
 
     /**
-     * The exercise for [level] (1..12) and [seed]: id "sight:<level>:<seed>", SIGHT_BARS bars, rights ORIGINAL,
-     * skills empty, piece false. Same inputs give an equal [Passage]. Throws [IllegalArgumentException] for a level
-     * outside 1..12.
+     * The exercise for [level] (1..13) and [seed]: id "sight:<level>:<seed>", SIGHT_BARS bars, rights ORIGINAL,
+     * skills empty, piece false. Level 13 is, per seed, level 8's or level 12's exercise with one pedal span per bar;
+     * every other level has no pedal marks. Same inputs give an equal [Passage]. Throws [IllegalArgumentException] for
+     * a level outside 1..13.
      */
     public fun passage(
         level: Int,
         seed: Long,
     ): Passage {
         require(level in 1..SightLevels.all.size) { "sight level must be in 1..${SightLevels.all.size}, was $level" }
+        if (level == PEDAL_LEVEL) return pedalled(seed)
         val random = Random(seed)
         val signature = if (level == THREE_FOUR_LEVEL) THREE_FOUR else FOUR_FOUR
         val held = heldNotes(level, random)
@@ -161,6 +165,17 @@ public object SightReadingGenerator {
             tempoBpm = Tunables.SIGHT_TEMPO_BPM,
             rights = exerciseRights("sight-reading"),
             keySignature = if (level >= G_POSITION_LEVEL) KeySignature.G else KeySignature.C,
+        )
+    }
+
+    /** Level 13: the level 8 or level 12 exercise of [seed] (its first coin flip picks) with a pedal span per bar. */
+    private fun pedalled(seed: Long): Passage {
+        val base = passage(if (Random(seed).nextBoolean()) CHORD_LEVEL else G_CHORDS_LEVEL, seed)
+        val bar = base.timeSignature.barTicks
+        return base.copy(
+            id = idOf(PEDAL_LEVEL, seed),
+            title = "Sight-reading level $PEDAL_LEVEL",
+            pedal = List(Tunables.SIGHT_BARS) { PedalSpan(it * bar, (it + 1) * bar) },
         )
     }
 
