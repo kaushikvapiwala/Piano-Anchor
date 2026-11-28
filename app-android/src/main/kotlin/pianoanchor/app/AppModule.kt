@@ -36,6 +36,7 @@ import pianoanchor.feature.practice.CalibrationViewModel
 import pianoanchor.feature.practice.PassagePlayer
 import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsViewModel
+import pianoanchor.feature.progress.ProgressViewModel
 import pianoanchor.feature.settings.SettingsViewModel
 import pianoanchor.feature.songs.SongsViewModel
 import pianoanchor.feature.today.SessionFlowViewModel
@@ -158,6 +159,7 @@ val appModule =
             )
         }
         viewModel { SongsViewModel(get(), get(), get(), get()) }
+        viewModel { ProgressViewModel(get(), get(), get(), get(), get(), get()) }
         viewModel {
             TodayViewModel(
                 get(),

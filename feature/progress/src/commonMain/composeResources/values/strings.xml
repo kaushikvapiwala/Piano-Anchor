@@ -1,0 +1,60 @@
+<resources>
+    <string name="progress_title">Progress</string>
+    <string name="progress_week_title">This week · %1$s of %2$s days</string>
+    <string name="progress_week_goal">%1$s of %2$s days this week</string>
+    <string name="progress_week_streak">%1$s-week streak</string>
+    <string name="progress_week_paused">This week is paused</string>
+    <string name="progress_week_pauses_left">%1$s of %2$s pauses left</string>
+    <string name="progress_minutes_title">Minutes by day</string>
+    <string name="progress_dash">–</string>
+    <string name="progress_bar_minutes">%1$s, %2$s minutes</string>
+    <string name="progress_bar_none">%1$s, no practice</string>
+    <string name="progress_bar_minutes_today">%1$s (today), %2$s minutes</string>
+    <string name="progress_bar_none_today">%1$s (today), no practice yet</string>
+    <string-array name="progress_day_short">
+        <item>Mon</item>
+        <item>Tue</item>
+        <item>Wed</item>
+        <item>Thu</item>
+        <item>Fri</item>
+        <item>Sat</item>
+        <item>Sun</item>
+    </string-array>
+    <string-array name="progress_day_name">
+        <item>Monday</item>
+        <item>Tuesday</item>
+        <item>Wednesday</item>
+        <item>Thursday</item>
+        <item>Friday</item>
+        <item>Saturday</item>
+        <item>Sunday</item>
+    </string-array>
+    <string name="progress_learned_title">What you learned this week</string>
+    <string name="progress_learned_none">Nothing new yet this week. It comes with a few clean days.</string>
+    <string name="progress_learned_more">+%1$s more</string>
+    <string name="progress_compare_title">Day 1 vs today</string>
+    <string name="progress_take_day1">Day 1</string>
+    <string name="progress_take_today">Today</string>
+    <string name="progress_date">%1$s %2$s</string>
+    <string name="progress_play">Play</string>
+    <string name="progress_stop">Stop</string>
+    <string name="progress_play_description">Play %1$s, %2$s</string>
+    <string name="progress_stop_description">Stop %1$s, %2$s</string>
+    <string name="progress_lane_description">%1$s: %2$s notes, %3$s off the beat</string>
+    <string-array name="progress_months">
+        <item>Jan</item>
+        <item>Feb</item>
+        <item>Mar</item>
+        <item>Apr</item>
+        <item>May</item>
+        <item>Jun</item>
+        <item>Jul</item>
+        <item>Aug</item>
+        <item>Sep</item>
+        <item>Oct</item>
+        <item>Nov</item>
+        <item>Dec</item>
+    </string-array>
+    <string name="progress_error_storage">Couldn't load your progress.</string>
+    <string name="progress_action_retry">Retry</string>
+</resources>

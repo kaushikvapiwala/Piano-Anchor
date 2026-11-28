@@ -10,10 +10,14 @@ import kotlinx.datetime.toLocalDateTime
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.AttemptSummary
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.summary
 import pianoanchor.core.ports.AttemptRepositoryPort
 import kotlin.time.Instant
+
+private const val NANOS_PER_MINUTE = 60_000_000_000L
+private const val NANOS_PER_HALF_MINUTE = NANOS_PER_MINUTE / 2
 
 /** In-memory [AttemptRepositoryPort]: safe to call from any thread, forgets everything when the process ends. */
 class FakeAttemptRepository : AttemptRepositoryPort {
@@ -97,6 +101,34 @@ class FakeAttemptRepository : AttemptRepositoryPort {
             .map { it.startedAt.toLocalDateTime(zone).date }
             .filterTo(LinkedHashSet()) { it >= from }
     }
+
+    override suspend fun firstFullRun(passageId: String): Attempt? {
+        failIfFailing("firstFullRun")
+        return fullRuns(passageId).minWithOrNull(compareBy({ it.startedAt }, { it.id }))
+    }
+
+    override suspend fun latestFullRun(passageId: String): Attempt? {
+        failIfFailing("latestFullRun")
+        return fullRuns(passageId).maxWithOrNull(compareBy({ it.startedAt }, { it.id }))
+    }
+
+    override suspend fun minutesByDay(
+        from: LocalDate,
+        zone: TimeZone,
+    ): Map<LocalDate, Int> {
+        failIfFailing("minutesByDay")
+        return attempts.value.values
+            .groupBy { it.startedAt.toLocalDateTime(zone).date }
+            .filterKeys { it >= from }
+            .mapValues { (_, day) ->
+                ((day.sumOf { it.durationNanos } + NANOS_PER_HALF_MINUTE) / NANOS_PER_MINUTE).toInt()
+            }
+    }
+
+    private fun fullRuns(passageId: String) =
+        attempts.value.values.filter {
+            it.passageId == passageId && it.spot == null && it.events.any { event -> event is PassageComplete }
+        }
 
     override suspend fun summariesWithPassagePrefix(prefix: String): List<AttemptSummary> {
         failIfFailing("summariesWithPassagePrefix")

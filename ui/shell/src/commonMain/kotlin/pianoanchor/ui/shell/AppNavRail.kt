@@ -11,6 +11,8 @@ import org.jetbrains.compose.resources.stringResource
 import pianoanchor.ui.shell.resources.Res
 import pianoanchor.ui.shell.resources.nav_pianos
 import pianoanchor.ui.shell.resources.nav_pianos_glyph
+import pianoanchor.ui.shell.resources.nav_progress
+import pianoanchor.ui.shell.resources.nav_progress_glyph
 import pianoanchor.ui.shell.resources.nav_settings
 import pianoanchor.ui.shell.resources.nav_settings_glyph
 import pianoanchor.ui.shell.resources.nav_songs
@@ -19,7 +21,8 @@ import pianoanchor.ui.shell.resources.nav_today
 import pianoanchor.ui.shell.resources.nav_today_glyph
 
 /**
- * The navigation rail of the top-level screens: Today, Songs, Pianos and the settings gear, each with a text label.
+ * The navigation rail of the top-level screens: Today, Songs, Progress, Pianos and the settings gear, each with a text
+ * label.
  * [selected] is the screen showing; tapping it does nothing, the others call their callback.
  */
 @Composable
@@ -27,12 +30,19 @@ public fun AppNavRail(
     selected: RailDestination,
     onToday: () -> Unit,
     onSongs: () -> Unit,
+    onProgress: () -> Unit,
     onPianos: () -> Unit,
     onSettings: () -> Unit,
 ) {
     NavigationRail(containerColor = Color.Transparent) {
         RailItem(selected == RailDestination.TODAY, Res.string.nav_today_glyph, Res.string.nav_today, onToday)
         RailItem(selected == RailDestination.SONGS, Res.string.nav_songs_glyph, Res.string.nav_songs, onSongs)
+        RailItem(
+            selected == RailDestination.PROGRESS,
+            Res.string.nav_progress_glyph,
+            Res.string.nav_progress,
+            onProgress,
+        )
         RailItem(selected == RailDestination.PIANOS, Res.string.nav_pianos_glyph, Res.string.nav_pianos, onPianos)
         RailItem(
             selected == RailDestination.SETTINGS,

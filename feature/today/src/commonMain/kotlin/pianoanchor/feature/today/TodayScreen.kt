@@ -42,10 +42,10 @@ internal val CardShape = RoundedCornerShape(20.dp)
 private val SidePaneWidth = 280.dp
 
 /**
- * Today, landscape: a rail (Today, Songs, Pianos, Settings), the plan (greeting and the session hero) in a scrolling
- * column, and a side pane with the piano chip, the week card, the practice-day line and the update banner. An error
- * card tops the plan. Both panes scroll. Stateless but for the trim view's switches; nothing animates, so screenshots
- * stay still.
+ * Today, landscape: a rail (Today, Songs, Progress, Pianos, Settings), the plan (greeting and the session hero) in a
+ * scrolling column, and a side pane with the piano chip, the week card, the practice-day line and the update banner.
+ * An error card tops the plan. Both panes scroll. Stateless but for the trim view's switches; nothing animates, so
+ * screenshots stay still.
  */
 @Composable
 public fun TodayScreen(
@@ -59,6 +59,7 @@ public fun TodayScreen(
                 RailDestination.TODAY,
                 onToday = {},
                 onSongs = actions.onSongs,
+                onProgress = actions.onProgress,
                 onPianos = actions.onPianos,
                 onSettings = actions.onSettings,
             )
