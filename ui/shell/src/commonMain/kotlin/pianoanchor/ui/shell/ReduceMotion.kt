@@ -1,7 +1,7 @@
-package pianoanchor.feature.lesson
+package pianoanchor.ui.shell
 
 import androidx.compose.runtime.Composable
 
 /** Whether the system asks for less motion (Android: animations turned off); card animations then hold one frame. */
 @Composable
-internal expect fun rememberReduceMotion(): Boolean
+public expect fun rememberReduceMotion(): Boolean

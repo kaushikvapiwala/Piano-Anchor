@@ -1,4 +1,4 @@
-package pianoanchor.feature.lesson
+package pianoanchor.ui.shell
 
 import android.content.ContentResolver
 import android.database.ContentObserver
@@ -18,7 +18,7 @@ private fun animationsOff(resolver: ContentResolver) =
 
 /** Reads the system's animation scale and follows it while the composable is shown. */
 @Composable
-internal actual fun rememberReduceMotion(): Boolean {
+public actual fun rememberReduceMotion(): Boolean {
     val resolver = LocalContext.current.contentResolver
     var reduce by remember(resolver) { mutableStateOf(animationsOff(resolver)) }
     DisposableEffect(resolver) {

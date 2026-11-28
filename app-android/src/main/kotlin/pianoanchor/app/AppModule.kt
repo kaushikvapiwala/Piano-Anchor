@@ -38,6 +38,8 @@ import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsViewModel
 import pianoanchor.feature.settings.SettingsViewModel
 import pianoanchor.feature.songs.SongsViewModel
+import pianoanchor.feature.today.SessionFlowViewModel
+import pianoanchor.feature.today.SessionProgress
 import pianoanchor.feature.today.TodayViewModel
 import pianoanchor.platform.androidaudio.AndroidMetronomeAdapter
 import pianoanchor.platform.androidaudio.AndroidToneAdapter
@@ -155,6 +157,21 @@ val appModule =
         }
         viewModel { SongsViewModel(get(), get(), get(), get()) }
         viewModel {
-            TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), BuildConfig.VERSION_NAME)
+            TodayViewModel(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                BuildConfig.VERSION_NAME,
+                get(),
+            )
         }
+        // One progress holder for the app's life, so finished steps outlive the screens that report them.
+        single { SessionProgress() }
+        viewModel { SessionFlowViewModel(get(), get(), get(), get(), get(), get(), get()) }
     }

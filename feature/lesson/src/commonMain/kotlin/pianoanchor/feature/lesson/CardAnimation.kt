@@ -35,6 +35,7 @@ import pianoanchor.core.model.CardScene
 import pianoanchor.core.model.SceneAction
 import pianoanchor.ui.shell.PianoAnchorColors
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.rememberReduceMotion
 
 /** The stage is 16:9, the keyboard the bottom 40% of it. */
 private const val STAGE_RATIO = 16f / 9f

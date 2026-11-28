@@ -34,6 +34,7 @@ private const val LAST_PIANO = "last_piano"
 private const val LESSON_STEPS = "lesson_steps"
 private const val PEDAL_CONTROL_ON = "pedal_control_on"
 private const val NOTE_NAMES = "note_names"
+private const val PAUSED_WEEKS = "paused_weeks"
 
 /** A stored text that is "not set" (the rows of absent values hold it, so every update writes every row). */
 private const val UNSET = ""
@@ -44,6 +45,9 @@ private const val PIANO_SEPARATOR = "\n"
 /** Separates the `skill=STEP` entries of the `lesson_steps` row and a skill's id from its step. */
 private const val LESSON_ENTRY_SEPARATOR = "\n"
 private const val LESSON_STEP_SEPARATOR = "="
+
+/** Separates the dates of the `paused_weeks` row. */
+private const val PAUSED_WEEK_SEPARATOR = ","
 
 /** Separates a release's version from its page URL in the `latest_release` row; neither contains a space. */
 private const val RELEASE_SEPARATOR = " "
@@ -90,6 +94,7 @@ public class SqlSettingsRepositoryAdapter(
                         queries.put(LESSON_STEPS, updated.lessonSteps.stored())
                         queries.put(PEDAL_CONTROL_ON, updated.pedalControlOn.toString())
                         queries.put(NOTE_NAMES, updated.noteNames.name)
+                        queries.put(PAUSED_WEEKS, updated.pausedWeeks.sorted().joinToString(PAUSED_WEEK_SEPARATOR))
                     }
                 }
             }
@@ -126,6 +131,12 @@ private fun Map<String, String>.toSettings(): Settings {
         lessonSteps = this[LESSON_STEPS]?.toLessonSteps().orEmpty(),
         pedalControlOn = read(PEDAL_CONTROL_ON, defaults.pedalControlOn, String::toBooleanStrictOrNull),
         noteNames = read(NOTE_NAMES, defaults.noteNames) { name -> NoteNames.entries.firstOrNull { it.name == name } },
+        pausedWeeks =
+            this[PAUSED_WEEKS]
+                .orEmpty()
+                .split(
+                    PAUSED_WEEK_SEPARATOR,
+                ).mapNotNullTo(HashSet()) { it.toLocalDateOrNull() },
     )
 }
 

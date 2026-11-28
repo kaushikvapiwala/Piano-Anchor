@@ -67,17 +67,17 @@ class TodayViewModelTest : TodayViewModelFixture() {
             val session = assertNotNull(vm.state.value.session)
             val quizzes = assertIs<Card.Quizzes>(session.cards.first())
             assertEquals(3, quizzes.quizzes.size)
-            assertEquals(TodayTarget.Quizzes(piano.device, quizzes.quizzes), vm.target(quizzes))
+            assertEquals(TodayTarget.Quizzes(piano.device, quizzes.quizzes), targetOf(quizzes, piano.device))
             val cold = session.cards.filterIsInstance<Card.ColdOpen>().single()
             assertEquals(
                 TodayTarget.Practice(piano.device, cold.passage.id, cold.rung, RunMode.PERFORM),
-                vm.target(cold),
+                targetOf(cold, piano.device),
             )
             // The march was played least recently, and cleanly at 60%.
             assertEquals("builtin:middle-c-march", cold.passage.id)
             assertEquals(TempoRung.P60, cold.rung)
             val song = session.cards.filterIsInstance<Card.Song>().single()
-            assertEquals(TodayTarget.Practice(piano.device, song.passage.id, song.rung), vm.target(song))
+            assertEquals(TodayTarget.Practice(piano.device, song.passage.id, song.rung), targetOf(song, piano.device))
             assertEquals(
                 "Middle C",
                 vm.state.value.coldOpen
@@ -93,12 +93,8 @@ class TodayViewModelTest : TodayViewModelFixture() {
             val vm = viewModel()
 
             val ear = assertIs<Card.Ear>(assertNotNull(vm.state.value.session).cards.first { it is Card.Ear })
-            assertEquals(TodayTarget.Ear(piano.device, ear.skills), vm.target(ear))
+            assertEquals(TodayTarget.Ear(piano.device, ear.skills), targetOf(ear, piano.device))
             assertEquals(EarSkills.ECHO_NOTE, ear.skills.first())
-
-            piano.unplug()
-            runCurrent()
-            assertEquals(TodayTarget.Pianos, vm.target(ear))
         }
 
     @Test
@@ -111,8 +107,16 @@ class TodayViewModelTest : TodayViewModelFixture() {
             playedOn("2026-11-18", id = "second")
             val vm = viewModel()
 
-            assertEquals(2, vm.state.value.daysThisWeek)
-            assertEquals(4, vm.state.value.weeklyGoalDays)
+            assertEquals(
+                2,
+                vm.state.value.week
+                    ?.daysPlayed,
+            )
+            assertEquals(
+                4,
+                vm.state.value.week
+                    ?.goalDays,
+            )
         }
 
     private suspend fun earReviewOn(date: LocalDate) =
@@ -125,7 +129,11 @@ class TodayViewModelTest : TodayViewModelFixture() {
             earReviewOn(today)
             val vm = viewModel()
 
-            assertEquals(1, vm.state.value.daysThisWeek)
+            assertEquals(
+                1,
+                vm.state.value.week
+                    ?.daysPlayed,
+            )
             assertEquals(1, vm.state.value.practicedDays)
         }
 
@@ -136,7 +144,11 @@ class TodayViewModelTest : TodayViewModelFixture() {
                 .recordQuiz(EarSkills.ECHO_NOTE.id, Rating.GOOD, today, "q")
             val vm = viewModel()
 
-            assertEquals(1, vm.state.value.daysThisWeek)
+            assertEquals(
+                1,
+                vm.state.value.week
+                    ?.daysPlayed,
+            )
             assertEquals(1, vm.state.value.practicedDays)
         }
 
@@ -147,7 +159,11 @@ class TodayViewModelTest : TodayViewModelFixture() {
             earReviewOn(today)
             val vm = viewModel()
 
-            assertEquals(1, vm.state.value.daysThisWeek)
+            assertEquals(
+                1,
+                vm.state.value.week
+                    ?.daysPlayed,
+            )
             assertEquals(1, vm.state.value.practicedDays)
         }
 
@@ -157,7 +173,11 @@ class TodayViewModelTest : TodayViewModelFixture() {
             earReviewOn(LocalDate(2026, 11, 1))
             val vm = viewModel()
 
-            assertEquals(0, vm.state.value.daysThisWeek)
+            assertEquals(
+                0,
+                vm.state.value.week
+                    ?.daysPlayed,
+            )
             assertEquals(0, vm.state.value.practicedDays)
         }
 
@@ -188,8 +208,6 @@ class TodayViewModelTest : TodayViewModelFixture() {
             val vm = viewModel()
 
             assertNull(vm.state.value.piano)
-            val card = assertIs<Card.Lesson>(assertNotNull(vm.state.value.session).cards.first())
-            assertEquals(TodayTarget.Pianos, vm.target(card))
         }
 
     @Test
@@ -199,7 +217,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
 
             val card = assertIs<Card.Lesson>(assertNotNull(vm.state.value.session).cards.first())
             assertEquals(Skills.HAND_SHAPE, card.skill)
-            assertEquals(TodayTarget.Lesson(piano.device, Skills.HAND_SHAPE.id), vm.target(card))
+            assertEquals(TodayTarget.Lesson(piano.device, Skills.HAND_SHAPE.id), targetOf(card, piano.device))
         }
 
     @Test
@@ -260,6 +278,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
             TimeZone.UTC,
             updateCheck,
             INSTALLED,
+            SessionProgress(),
         )
     }
 
@@ -390,6 +409,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
+                    SessionProgress(),
                 )
             runCurrent()
             assertEquals(PianoChip(ble.device, Transport.BLE, null), vm.state.value.piano)
@@ -406,6 +426,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
+                    SessionProgress(),
                 )
             runCurrent()
             assertNull(
@@ -496,9 +517,14 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
+                    SessionProgress(),
                 ).also { runCurrent() }
 
-            assertEquals(1, vm.state.value.daysThisWeek)
+            assertEquals(
+                1,
+                vm.state.value.week
+                    ?.daysPlayed,
+            )
             assertEquals(1, vm.state.value.practicedDays)
         }
 
@@ -562,7 +588,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
             val card = assertNotNull(sightCard(vm))
             assertEquals(2, card.level)
             assertEquals(SightReadingGenerator.idOf(2, today.toEpochDays()), card.passage.id)
-            assertEquals(TodayTarget.SightReading(piano.device, card.passage.id), vm.target(card))
+            assertEquals(TodayTarget.SightReading(piano.device, card.passage.id), targetOf(card, piano.device))
         }
 
     @Test
@@ -601,6 +627,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
+                    SessionProgress(),
                 ).also { runCurrent() }
             assertEquals(
                 SightReadingGenerator.idOf(1, LocalDate(2026, 11, 17).toEpochDays()),
@@ -626,6 +653,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
+                    SessionProgress(),
                 ).also { runCurrent() }
 
             assertNull(sightCard(vm))

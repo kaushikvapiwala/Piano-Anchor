@@ -3,6 +3,7 @@ package pianoanchor.platform.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import pianoanchor.core.model.DailyBudget
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiDevice
@@ -41,7 +42,7 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             repository.update { it.copy(dailyBudget = DailyBudget.MIN_15) }
 
             assertEquals(Settings(DailyBudget.MIN_15, updateCheckOn = false), repository.settings.first())
-            assertEquals(13, driver.count("setting"))
+            assertEquals(14, driver.count("setting"))
         }
 
     @Test
@@ -146,6 +147,27 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             assertEquals(
                 NoteNames.AUTO,
                 SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().noteNames,
+            )
+        }
+
+    @Test
+    fun pausedWeeksRoundTripAndOldSettingsReadAsEmpty() =
+        runTest {
+            val driver = drivers.open()
+            val repository = SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined)
+            assertEquals(emptySet(), repository.settings.first().pausedWeeks)
+            val weeks = setOf(LocalDate(2026, 11, 16), LocalDate(2026, 10, 19))
+
+            repository.update { it.copy(pausedWeeks = weeks) }
+
+            assertEquals(
+                weeks,
+                SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().pausedWeeks,
+            )
+            driver.exec("UPDATE setting SET text_value = '2026-11-16,soon,' WHERE key = 'paused_weeks'")
+            assertEquals(
+                setOf(LocalDate(2026, 11, 16)),
+                SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().pausedWeeks,
             )
         }
 

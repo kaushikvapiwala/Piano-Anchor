@@ -1135,4 +1135,31 @@ public object Tunables {
      * Source: a starting value.
      */
     public const val LESSON_AUTO_OPEN_MS: Long = 1_500
+
+    /**
+     * How long the card between two session steps counts down before it opens the next step, in seconds.
+     *
+     * Why: long enough to breathe and reposition the hands, short enough to stay in flow.
+     *
+     * Source: owner decision 2026-11-25 (DecideNext).
+     */
+    public const val SESSION_NEXT_COUNTDOWN_S: Int = 10
+
+    /**
+     * The most pauses a learner can have unused at once: a paused week never breaks the weekly streak.
+     *
+     * Why: covers a trip or an illness without making the streak meaningless.
+     *
+     * Source: owner decision 2026-11-25 (DecidePause).
+     */
+    public const val WEEK_PAUSES_MAX: Int = 2
+
+    /**
+     * Weeks after a pause was used before it comes back.
+     *
+     * Why: about one pause per month.
+     *
+     * Source: owner decision 2026-11-25.
+     */
+    public const val WEEK_PAUSE_REFILL_WEEKS: Int = 4
 }
