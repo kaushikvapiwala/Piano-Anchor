@@ -85,6 +85,13 @@ class SessionRunnerTest {
     }
 
     @Test
+    fun `a one-minute song with chords has no play-along step`() {
+        val tiny = chordSong.copy(minutes = 1)
+
+        assertEquals(listOf(SessionStep.Practise(tiny, 1)), SessionRunner.steps(session(tiny)))
+    }
+
+    @Test
     fun `a song without chords has no play-along step`() {
         assertTrue(SessionRunner.steps(session(song)).none { it is SessionStep.PlayAlong })
     }

@@ -66,13 +66,17 @@ public object SessionRunner {
             .flatMap(::stepsOf)
             .sortedBy(::runOrder)
 
-    private fun stepsOf(card: Card): List<SessionStep> =
-        if (card is Card.Song && card.passage.chords.isNotEmpty()) {
-            val along = minOf(Tunables.PLAY_ALONG_MINUTES, card.minutes / 2)
+    /** A song with chords splits into Practise and a play-along, unless its share is too short to leave a minute. */
+    private fun stepsOf(card: Card): List<SessionStep> {
+        val along = if (card is Card.Song && card.passage.chords.isNotEmpty()) playAlongMinutes(card) else 0
+        return if (card is Card.Song && along > 0) {
             listOf(SessionStep.Practise(card, card.minutes - along), SessionStep.PlayAlong(card, along))
         } else {
             listOf(stepOf(card))
         }
+    }
+
+    private fun playAlongMinutes(song: Card.Song): Int = minOf(Tunables.PLAY_ALONG_MINUTES, song.minutes / 2)
 
     private fun stepOf(card: Card): SessionStep =
         when (card) {
