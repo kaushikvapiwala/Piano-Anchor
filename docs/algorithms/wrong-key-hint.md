@@ -18,3 +18,4 @@ turn it into one line of text with `wrongKeyHintText` in `ui/shell`.
   stopping to read would cost the beat. There is no red and no sound.
 - **Unit 0.** The first unit teaches the keyboard itself, so its passages hide the staff and always glow the next key,
   whatever the key-hint level.
+- **Note names.** The hint spells its note names (sharp-spelled, with the octave for the played key) from the shared key-name Compose resources, the same ones the key strips use, so a translated build names a key one way.

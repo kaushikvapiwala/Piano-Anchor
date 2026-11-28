@@ -136,4 +136,16 @@ class NoteNameRuleTest {
             NoteNameRule.label(-1, NoteNameStage.ALL_WHITE, emptySet(), emptySet(), false),
         )
     }
+
+    @Test
+    fun `key name of covers every pitch class and the ends of the range`() {
+        val sharps = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+        sharps.forEachIndexed { i, text ->
+            val name = NoteNameRule.keyNameOf(MIDDLE_C + i)
+            val accidental = if ('#' in text) KeyAccidental.SHARP else KeyAccidental.NATURAL
+            assertEquals(name(Letter.valueOf(text.take(1)), accidental), name)
+        }
+        assertEquals(natural(Letter.G), NoteNameRule.keyNameOf(127))
+        assertEquals(natural(Letter.C), NoteNameRule.keyNameOf(0))
+    }
 }
