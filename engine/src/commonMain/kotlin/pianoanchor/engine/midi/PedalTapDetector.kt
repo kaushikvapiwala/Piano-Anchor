@@ -4,7 +4,8 @@ import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.MidiEvent
 import pianoanchor.engine.Tunables
 
-private const val SUSTAIN_CONTROLLER = 64
+/** The MIDI controller number of the sustain pedal. */
+public const val SUSTAIN_CONTROLLER: Int = 64
 private const val NANOS_PER_MILLI = 1_000_000L
 
 /**

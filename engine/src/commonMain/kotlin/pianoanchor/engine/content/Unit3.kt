@@ -3,8 +3,10 @@ package pianoanchor.engine.content
 import pianoanchor.core.model.CurriculumUnit
 import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.PedalSpan
 import pianoanchor.core.model.Rights
 import pianoanchor.core.model.Step
+import pianoanchor.core.model.TimeSignature
 
 /**
  * Unit 3, "Chords and songs", the course's goal: left-hand triads in C position under a right-hand melody that stays
@@ -123,9 +125,10 @@ internal const val G1_H = "[$G_FIRST_INVERSION]h"
 internal const val AM_H = "[$A_MINOR_TRIAD]h"
 
 /**
- * A 4/4 passage with left-hand chords ([left], note text) and, when given, a right-hand melody ([right], note text of
- * the same length). Steps that start together merge, so a chord and the melody note it starts with are one step; each
- * note keeps its own length, so a chord can be held while the melody moves.
+ * A passage (4/4 unless [timeSignature] says otherwise) with left-hand chords ([left], note text) and, when given, a
+ * right-hand melody ([right], note text of the same length). Steps that start together merge, so a chord and the
+ * melody note it starts with are one step; each note keeps its own length, so a chord can be held while the melody
+ * moves.
  */
 internal fun chordPassage(
     id: String,
@@ -138,6 +141,8 @@ internal fun chordPassage(
     piece: Boolean = false,
     keySignature: KeySignature = KeySignature.C,
     chords: String = "",
+    timeSignature: TimeSignature = FOUR_FOUR,
+    pedal: List<PedalSpan> = emptyList(),
 ): Passage {
     val handChords =
         builtinPassage(
@@ -148,10 +153,12 @@ internal fun chordPassage(
             skills,
             rights,
             piece = piece,
+            timeSignature = timeSignature,
             keySignature = keySignature,
             chords = chords,
+            pedal = pedal,
         )
-    val melody = right?.let { NoteText.parse(it, FOUR_FOUR) }.orEmpty()
+    val melody = right?.let { NoteText.parse(it, timeSignature) }.orEmpty()
     val steps =
         (handChords.steps + melody)
             .groupBy { it.onsetTicks }

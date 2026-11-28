@@ -57,6 +57,8 @@ import pianoanchor.feature.practice.resources.practice_staff_bass
 import pianoanchor.feature.practice.resources.practice_staff_cursor
 import pianoanchor.feature.practice.resources.practice_staff_done
 import pianoanchor.feature.practice.resources.practice_staff_grand
+import pianoanchor.feature.practice.resources.practice_staff_pedal
+import pianoanchor.feature.practice.resources.practice_staff_pedal_each_bar
 import pianoanchor.feature.practice.resources.practice_staff_treble
 import pianoanchor.feature.practice.resources.practice_staff_waiting
 import pianoanchor.feature.practice.resources.practice_time_key
@@ -163,6 +165,8 @@ internal fun StaffView(
             val painter = StaffPainter(this, colors, measurer, notation, engraved, layout, cache.glyphs)
             painter.drawStaves(passage.keySignature.sharps, timeNumbers)
             painter.drawRests()
+            val pedalBase = if (engraved.pedalStaff == Staff.TREBLE) TREBLE_BOTTOM else BASS_BOTTOM
+            drawPedalMarks(layout, colors.staffLine, painter.y(pedalBase) + PEDAL_BELOW.toPx())
             steps.forEachIndexed { i, step ->
                 val x = layout.noteX[i].dp.toPx()
                 step.notes.forEach { note ->
@@ -374,7 +378,8 @@ internal fun staffNameResource(engraved: Engraved): StringResource {
 
 /**
  * TalkBack's text for the staff: "Treble staff, 4/4. Notes C4, D4, E4. Waiting for D4." (or "… Done."); in a [timed]
- * run the cursor is read instead: "… Cursor on D4."
+ * run the cursor is read instead: "… Cursor on D4." A passage with pedal marks adds "Pedal changes each bar." when
+ * every bar starts a span, else "With pedal."
  */
 @Composable
 private fun staffDescription(
@@ -395,11 +400,17 @@ private fun staffDescription(
         }
     val names = steps.map { it.notes.chordName() }.joinToString(stringResource(Res.string.practice_list_join))
     val waiting = steps.firstOrNull { it.status == StepStatus.WAITING }
-    return if (waiting == null) {
-        stringResource(Res.string.practice_staff_done, staffName, timeText, names)
-    } else {
-        val text = if (timed) Res.string.practice_staff_cursor else Res.string.practice_staff_waiting
-        stringResource(text, staffName, timeText, names, waiting.notes.chordName())
+    val text =
+        if (waiting == null) {
+            stringResource(Res.string.practice_staff_done, staffName, timeText, names)
+        } else {
+            val template = if (timed) Res.string.practice_staff_cursor else Res.string.practice_staff_waiting
+            stringResource(template, staffName, timeText, names, waiting.notes.chordName())
+        }
+    return when {
+        engraved.pedal.isEmpty() -> text
+        engraved.pedalEachBar -> "$text ${stringResource(Res.string.practice_staff_pedal_each_bar)}"
+        else -> "$text ${stringResource(Res.string.practice_staff_pedal)}"
     }
 }
 

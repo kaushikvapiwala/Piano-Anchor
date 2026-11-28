@@ -52,7 +52,13 @@ import pianoanchor.feature.lesson.resources.lesson_skip
 import pianoanchor.feature.lesson.resources.lesson_try_clean
 import pianoanchor.feature.lesson.resources.lesson_try_done
 import pianoanchor.feature.lesson.resources.lesson_try_early
+import pianoanchor.feature.lesson.resources.lesson_try_gap
 import pianoanchor.feature.lesson.resources.lesson_try_late
+import pianoanchor.feature.lesson.resources.lesson_try_overlap
+import pianoanchor.feature.lesson.resources.lesson_try_pedal_early
+import pianoanchor.feature.lesson.resources.lesson_try_pedal_hold_early
+import pianoanchor.feature.lesson.resources.lesson_try_pedal_late
+import pianoanchor.feature.lesson.resources.lesson_try_pedal_start
 import pianoanchor.feature.lesson.resources.lesson_try_progress
 import pianoanchor.feature.lesson.resources.lesson_try_wrong_any
 import pianoanchor.feature.lesson.resources.lesson_use_play
@@ -196,7 +202,7 @@ private fun TryPane(
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
-        (wrongKeyLine(progress) ?: timingLine(progress))?.let {
+        (wrongKeyLine(progress) ?: timingLine(progress, state.check))?.let {
             Text(
                 it,
                 style = MaterialTheme.typography.bodyMedium,
@@ -233,13 +239,43 @@ private fun wrongKeyLine(progress: TryProgress): String? {
     }
 }
 
-/** The line after a rhythm tap that came too early or too late, else null. */
+/**
+ * The line after an attempt that went wrong in time, else null: a rhythm tap too early or late, a legato gap or
+ * overlap, a pedal lifted or changed at the wrong moment (the words follow [check]).
+ */
 @Composable
-internal fun timingLine(progress: TryProgress): String? =
+internal fun timingLine(
+    progress: TryProgress,
+    check: TryCheck?,
+): String? =
     when (progress.timing) {
-        TryTiming.EARLY -> stringResource(Res.string.lesson_try_early)
-        TryTiming.LATE -> stringResource(Res.string.lesson_try_late)
-        null -> null
+        TryTiming.EARLY -> {
+            stringResource(
+                when (check) {
+                    is TryCheck.PedalChange -> Res.string.lesson_try_pedal_early
+                    is TryCheck.PedalHold -> Res.string.lesson_try_pedal_hold_early
+                    else -> Res.string.lesson_try_early
+                },
+            )
+        }
+
+        TryTiming.LATE -> {
+            stringResource(
+                if (check is TryCheck.PedalChange) Res.string.lesson_try_pedal_late else Res.string.lesson_try_late,
+            )
+        }
+
+        TryTiming.GAP -> {
+            stringResource(Res.string.lesson_try_gap)
+        }
+
+        TryTiming.OVERLAP -> {
+            stringResource(Res.string.lesson_try_overlap)
+        }
+
+        null -> {
+            null
+        }
     }
 
 @Composable

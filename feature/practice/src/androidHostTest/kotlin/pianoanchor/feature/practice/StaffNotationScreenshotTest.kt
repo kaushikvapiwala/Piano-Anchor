@@ -11,6 +11,9 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.PedalSpan
+import pianoanchor.core.model.Step
+import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.core.model.TimeSignature
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.NoteText
@@ -18,6 +21,7 @@ import pianoanchor.testing.TEST_RIGHTS
 import pianoanchor.ui.shell.PianoAnchorTheme
 
 private const val FONT_SCALE_LARGE = 2f
+private const val BAR_TICKS = 4 * TICKS_PER_QUARTER
 
 /**
  * Golden screenshots of the staff's notation (stems, flags, beams, dots, rests, key signature, accidentals), in light
@@ -44,6 +48,27 @@ class StaffNotationScreenshotTest {
             tempoBpm = 80,
             rights = TEST_RIGHTS,
             keySignature = KeySignature.G,
+        )
+
+    /** Four bars over left-hand triads with the pedal changed in every bar. */
+    private val pedalChanges =
+        Passage(
+            id = "test:pedal-changes",
+            title = "Pedal changes",
+            steps =
+                (
+                    NoteText.parse("C4q E4q G4q E4q | F4q A4q C5q A4q | G4q B4q D5q B4q | C5w", TimeSignature(4, 4)) +
+                        NoteText.parse(
+                            "[C3 E3 G3]w | [F2 A2 C3]w | [G2 B2 D3]w | [C3 E3 G3]w",
+                            TimeSignature(4, 4),
+                        )
+                ).groupBy { it.onsetTicks }
+                    .toSortedMap()
+                    .map { (onset, same) -> Step(onset, same.flatMapTo(LinkedHashSet()) { it.notes }) },
+            timeSignature = TimeSignature(4, 4),
+            tempoBpm = 80,
+            rights = TEST_RIGHTS,
+            pedal = (0 until 4).map { PedalSpan(it * BAR_TICKS, (it + 1) * BAR_TICKS) },
         )
 
     private fun capture(
@@ -85,4 +110,10 @@ class StaffNotationScreenshotTest {
 
     @Test
     fun gMajorAtFontScale2() = capture("g_major_font2", gMajor, FONT_SCALE_LARGE)
+
+    @Test
+    fun aPedalChangeInEveryBarDrawsOneLineWithNotches() = capture("pedal_changes", pedalChanges)
+
+    @Test
+    fun pedalChangesAtFontScale2() = capture("pedal_changes_font2", pedalChanges, FONT_SCALE_LARGE)
 }

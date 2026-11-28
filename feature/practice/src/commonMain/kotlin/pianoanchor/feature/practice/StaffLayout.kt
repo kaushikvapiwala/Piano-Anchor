@@ -74,8 +74,9 @@ private const val HOLLOW_MIN_TICKS = 2 * TICKS_PER_QUARTER
 /**
  * Where the staff draws a passage, in dp from its left edge: each step's [noteX], the inner [barLineX], the
  * [finalBarX] double bar, per step the pitches drawn [hollow] (their chord's value is at least a half note), the width
- * [keyWidth] the key signature reserves after the clef, each rest's [restX] and the [chords] and [beams] to draw, in
- * the order of the [Engraved] they were laid out from. Vertical places are staff positions (half spaces above E4).
+ * [keyWidth] the key signature reserves after the clef, each rest's [restX] and the [chords], [beams] and [pedal] lines
+ * to draw, in the order of the [Engraved] they were laid out from. Vertical places are staff positions (half spaces
+ * above E4).
  */
 internal data class StaffLayout(
     val noteX: List<Float>,
@@ -86,6 +87,14 @@ internal data class StaffLayout(
     val restX: List<Float> = emptyList(),
     val chords: List<ChordShape> = emptyList(),
     val beams: List<BeamShape> = emptyList(),
+    val pedal: List<PedalShape> = emptyList(),
+)
+
+/** One pedal line from [x1] to [x2] (dp) with a notch at each of [notchXs]. */
+internal data class PedalShape(
+    val x1: Float,
+    val x2: Float,
+    val notchXs: List<Float>,
 )
 
 /** A stem at [x] from staff position [fromPosition] (the notehead it grows from) to [tipPosition]; [up] or down. */
@@ -116,13 +125,19 @@ internal data class BeamShape(
     val up: Boolean,
 )
 
-/** The height of the staff box that fits [engraved]'s staves: taller when both staves are drawn. */
-internal fun staffHeightDp(engraved: Engraved): Float =
-    if (Staff.entries.all { staff -> engraved.chords.any { it.staff == staff } }) {
-        GRAND_STAFF_HEIGHT_DP
-    } else {
-        SINGLE_STAFF_HEIGHT_DP
-    }
+/**
+ * The height of the staff box that fits [engraved]'s staves: taller when both staves are drawn, and by
+ * [PEDAL_SPACE_DP] when it has pedal lines.
+ */
+internal fun staffHeightDp(engraved: Engraved): Float {
+    val staves =
+        if (Staff.entries.all { staff -> engraved.chords.any { it.staff == staff } }) {
+            GRAND_STAFF_HEIGHT_DP
+        } else {
+            SINGLE_STAFF_HEIGHT_DP
+        }
+    return if (engraved.pedal.isEmpty()) staves else staves + PEDAL_SPACE_DP
+}
 
 /** The staff positions the key signature's sharps sit on, for [staff]: none for C and for flat keys (not drawn yet). */
 internal fun keySignaturePositions(
@@ -191,6 +206,10 @@ internal fun staffLayout(
         restX = engraved.rests.map { x(it.onsetTicks) },
         chords = chords,
         beams = beams,
+        pedal =
+            engraved.pedal.map { line ->
+                PedalShape(x(line.fromTicks), x(line.toTicks), line.changeTicks.map(::x))
+            },
     )
 }
 

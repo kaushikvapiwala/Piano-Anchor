@@ -56,6 +56,8 @@
         <item>F sharp</item>
         <item>C sharp</item>
     </string-array>
+    <string name="practice_staff_pedal_each_bar">Pedal changes each bar.</string>
+    <string name="practice_staff_pedal">With pedal.</string>
     <string name="practice_staff_treble">Treble staff</string>
     <string name="practice_staff_bass">Bass staff</string>
     <string name="practice_staff_grand">Grand staff</string>

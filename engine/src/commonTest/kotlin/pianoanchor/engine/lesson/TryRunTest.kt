@@ -288,4 +288,356 @@ class TryRunTest {
     fun `progress has no expected key once finished`() {
         assertNull(TryRun(TryCheck.Sequence(listOf(60))).press(60).progress.expected)
     }
+
+    private fun TryRun.off(
+        note: Int,
+        at: Long,
+    ) = onNoteOff(note, at)
+
+    private fun TryRun.pedal(
+        value: Int,
+        at: Long,
+    ) = onPedal(value, at)
+
+    private fun TryRun.chord(
+        notes: Set<Int>,
+        at: Long,
+    ): TryRun = notes.foldIndexed(this) { i, run, note -> run.press(note, at = at + i * 10L) }
+
+    private fun TryRun.release(
+        notes: Set<Int>,
+        at: Long,
+    ): TryRun = notes.foldIndexed(this) { i, run, note -> run.off(note, at + i * 10L) }
+
+    private val legato = TryCheck.Legato(listOf(60, 62, 64))
+
+    @Test
+    fun `legato finishes when each key goes down just after the last one comes up`() {
+        val run =
+            TryRun(legato)
+                .press(60, at = 0)
+                .off(60, 500)
+                .press(62, at = 520)
+                .off(62, 1000)
+                .press(64, at = 1020)
+        assertEquals(TryProgress(3, 3, null, null, true, 0), run.progress)
+    }
+
+    @Test
+    fun `legato accepts a short overlap`() {
+        val run =
+            TryRun(legato)
+                .press(60, at = 0)
+                .press(62, at = 500)
+                .off(60, 550)
+                .off(62, 1000)
+                .press(64, at = 1010)
+        assertTrue(run.progress.finished)
+        assertEquals(0, run.progress.wrongCount)
+    }
+
+    @Test
+    fun `legato too long a gap is a GAP and starts again`() {
+        val gap = TryRun(legato).press(60, at = 0).off(60, 500).press(62, at = 700)
+        assertEquals(TryProgress(0, 3, 60, null, false, 1, TryTiming.GAP), gap.progress)
+        assertEquals(1, gap.press(60, at = 800).progress.done)
+    }
+
+    @Test
+    fun `legato a gap press of the first note counts as the start of a fresh attempt`() {
+        val again = TryCheck.Legato(listOf(60, 62, 60))
+        val run =
+            TryRun(again)
+                .press(60, at = 0)
+                .off(60, 500)
+                .press(62, at = 510)
+                .off(62, 1000)
+                .press(60, at = 1500)
+        assertEquals(TryProgress(1, 3, 62, null, false, 1, TryTiming.GAP), run.progress)
+        assertEquals(
+            2,
+            run
+                .off(60, 1900)
+                .press(62, at = 1910)
+                .progress.done,
+        )
+    }
+
+    @Test
+    fun `legato held into the next note too long is an OVERLAP at the note off`() {
+        val run = TryRun(legato).press(60, at = 0).press(62, at = 100).off(60, 400)
+        assertEquals(TryProgress(0, 3, 60, null, false, 1, TryTiming.OVERLAP), run.progress)
+        assertEquals(0, run.off(62, 500).progress.done)
+    }
+
+    @Test
+    fun `legato a key still down at the press after next is an OVERLAP`() {
+        val run =
+            TryRun(legato)
+                .press(60, at = 0)
+                .press(62, at = 100)
+                .off(62, 120)
+                .press(64, at = 130)
+        assertEquals(TryProgress(0, 3, 60, null, false, 1, TryTiming.OVERLAP), run.progress)
+    }
+
+    @Test
+    fun `legato a wrong key waits and a stray release changes nothing`() {
+        val wrong = TryRun(legato).press(60, at = 0).press(61, at = 10)
+        assertEquals(TryProgress(1, 3, 62, 61, false, 1), wrong.progress)
+        assertEquals(wrong.progress, wrong.off(99, 20).progress)
+        assertEquals(TryRun(legato).progress, TryRun(legato).off(60, 5).progress)
+    }
+
+    @Test
+    fun `legato a stray release while two keys are down changes nothing and the older key may come up late`() {
+        val both = TryRun(legato).press(60, at = 0).press(62, at = 100)
+        assertEquals(both.progress, both.off(99, 120).progress)
+        val inOrder = both.off(62, 120).off(60, 130)
+        assertEquals(TryProgress(2, 3, 64, null, false, 0), inOrder.progress)
+    }
+
+    private val d = setOf(48, 52, 55)
+
+    @Test
+    fun `pedal hold a release after the cluster window without the pedal fails the attempt`() {
+        val run = TryRun(TryCheck.PedalHold(d)).press(48, at = 0).press(52, at = 10).off(48, 500)
+        assertEquals(TryProgress(0, 3, null, null, false, 1, TryTiming.LATE, true), run.progress)
+    }
+
+    @Test
+    fun `pedal hold a key lifted before the pedal is simply not held`() {
+        val run = TryRun(TryCheck.PedalHold(d)).chord(d, 0).off(48, 20).pedal(127, 50)
+        assertEquals(1, run.progress.done)
+        val ringing = run.release(d - 48, 100)
+        assertEquals(2, ringing.progress.done)
+        assertEquals(2, ringing.off(48, 200).progress.done)
+    }
+
+    @Test
+    fun `pedal hold finishes when the sound rings on for a second after the keys come up`() {
+        val hold = TryCheck.PedalHold(d)
+        val down = TryRun(hold).pedal(127, 0).chord(d, 100)
+        assertEquals(TryProgress(1, 3, null, null, false, 0), down.progress)
+        val up = down.release(d, 500)
+        assertEquals(2, up.progress.done)
+        val done = up.pedal(0, 1_800)
+        assertEquals(TryProgress(3, 3, null, null, true, 0), done.progress)
+        assertSame(done, done.pedal(127, 2_000))
+        assertSame(done, done.off(48, 2_100))
+    }
+
+    @Test
+    fun `pedal hold lifted too soon fails with EARLY`() {
+        val run =
+            TryRun(TryCheck.PedalHold(d))
+                .pedal(127, 0)
+                .chord(d, 100)
+                .release(d, 500)
+                .pedal(0, 1_000)
+        assertEquals(TryProgress(0, 3, null, null, false, 1, TryTiming.EARLY), run.progress)
+        val keysHeld = TryRun(TryCheck.PedalHold(d)).pedal(127, 0).chord(d, 100).pedal(0, 2_000)
+        assertEquals(1, keysHeld.progress.wrongCount)
+    }
+
+    @Test
+    fun `pedal hold chord long before the pedal does not meet part one`() {
+        val run = TryRun(TryCheck.PedalHold(d)).chord(d, 0).pedal(127, 500)
+        assertEquals(TryProgress(0, 3, null, null, false, 1, TryTiming.LATE, true), run.progress)
+        assertEquals(0, run.release(d, 600).progress.done)
+    }
+
+    @Test
+    fun `pedal hold pedal just after the first note still counts`() {
+        val run = TryRun(TryCheck.PedalHold(d)).chord(d, 0).pedal(127, 50)
+        assertEquals(1, run.progress.done)
+        val tapped = TryRun(TryCheck.PedalHold(d)).chord(d, 0).release(d, 30).pedal(127, 60)
+        assertEquals(2, tapped.progress.done)
+    }
+
+    @Test
+    fun `pedal hold counts a half-pressed wobble as one press`() {
+        val run =
+            TryRun(TryCheck.PedalHold(d))
+                .pedal(70, 0)
+                .pedal(50, 10)
+                .pedal(70, 20)
+                .chord(d, 100)
+                .release(d, 500)
+        assertEquals(2, run.progress.done)
+        assertEquals(2, run.pedal(40, 600).progress.done)
+        assertEquals(1, run.pedal(10, 700).progress.wrongCount)
+    }
+
+    @Test
+    fun `pedal hold a note outside the chord fails the attempt and a late note starts again`() {
+        val wrong = TryRun(TryCheck.PedalHold(d)).pedal(127, 0).press(48, at = 10).press(60, at = 20)
+        assertEquals(TryProgress(0, 3, null, 60, false, 1), wrong.progress)
+        val late = TryRun(TryCheck.PedalHold(d)).pedal(127, 0).press(48, at = 10).press(52, at = 500)
+        assertEquals(TryProgress(0, 3, null, null, false, 1, TryTiming.LATE, true), late.progress)
+        assertEquals(
+            1,
+            late
+                .press(55, at = 510)
+                .press(48, at = 520)
+                .progress.done,
+        )
+        assertEquals(
+            0,
+            TryRun(TryCheck.PedalHold(d))
+                .pedal(127, 0)
+                .pedal(0, 50)
+                .progress.wrongCount,
+        )
+    }
+
+    @Test
+    fun `pedal hold pressing a chord key again while it rings goes back to part two`() {
+        val run =
+            TryRun(TryCheck.PedalHold(d))
+                .pedal(127, 0)
+                .chord(d, 100)
+                .release(d, 500)
+                .press(48, at = 600)
+        assertEquals(1, run.progress.done)
+        assertEquals(2, run.off(48, 700).progress.done)
+        val held = TryRun(TryCheck.PedalHold(d)).pedal(127, 0).chord(d, 100).off(48, 200)
+        assertEquals(1, held.progress.done)
+    }
+
+    private val c = setOf(48, 52, 55)
+    private val f = setOf(53, 57, 60)
+    private val g = setOf(55, 59, 62)
+    private val change = TryCheck.PedalChange(listOf(c, f, g, c))
+
+    private fun TryRun.next(
+        notes: Set<Int>,
+        at: Long,
+        changeAfter: Long = 200,
+    ): TryRun = chord(notes, at).pedal(0, at + changeAfter).pedal(127, at + changeAfter + 50)
+
+    @Test
+    fun `pedal change finishes when the pedal is changed after each chord`() {
+        val first = TryRun(change).pedal(127, 0).chord(c, 100)
+        assertEquals(TryProgress(1, 4, null, null, false, 0), first.progress)
+        val run = first.next(f, 1_000).next(g, 2_000).next(c, 3_000)
+        assertEquals(TryProgress(4, 4, null, null, true, 0), run.progress)
+        assertSame(run, run.pedal(0, 4_000))
+    }
+
+    @Test
+    fun `pedal change lifted before the new chord is EARLY`() {
+        val run = TryRun(change).pedal(127, 0).chord(c, 100).pedal(0, 900)
+        assertEquals(TryProgress(0, 4, null, null, false, 1, TryTiming.EARLY), run.progress)
+    }
+
+    @Test
+    fun `pedal change with no change is LATE once the next chord or the window closes`() {
+        val base = TryRun(change).pedal(127, 0).chord(c, 100).chord(f, 1_000)
+        assertEquals(TryProgress(1, 4, null, null, false, 0), base.progress)
+        val nextChord = base.press(59, at = 2_000)
+        assertEquals(TryProgress(0, 4, null, null, false, 1, TryTiming.LATE), nextChord.progress)
+        val slow = base.pedal(0, 1_100).pedal(127, 1_800)
+        assertEquals(TryProgress(0, 4, null, null, false, 1, TryTiming.LATE), slow.progress)
+        val sameNote = base.press(53, at = 1_700)
+        assertEquals(1, sameNote.progress.wrongCount)
+        assertEquals(TryProgress(1, 4, null, null, false, 0), base.press(53, at = 1_100).progress)
+    }
+
+    @Test
+    fun `pedal change wrong note, late chord note and pedal before the chord`() {
+        val wrong = TryRun(change).pedal(127, 0).press(40, at = 10)
+        assertEquals(TryProgress(0, 4, null, 40, false, 1), wrong.progress)
+        val late = TryRun(change).pedal(127, 0).press(48, at = 0).press(52, at = 500)
+        assertEquals(TryProgress(0, 4, null, null, false, 1, TryTiming.LATE, true), late.progress)
+        assertEquals(
+            1,
+            late
+                .press(55, at = 510)
+                .press(48, at = 520)
+                .progress.wrongCount,
+        )
+        val other =
+            TryRun(change)
+                .pedal(127, 0)
+                .chord(c, 0)
+                .chord(f, 1_000)
+                .press(53, at = 1_700)
+        assertEquals(TryProgress(0, 4, null, null, false, 1, TryTiming.LATE), other.progress)
+        val quiet = TryRun(change).pedal(127, 0).pedal(0, 50).pedal(127, 60)
+        assertEquals(TryProgress(0, 4, null, null, false, 0), quiet.progress)
+    }
+
+    @Test
+    fun `pedal change first chord may meet the pedal inside its cluster`() {
+        val inside =
+            TryRun(change)
+                .press(48, at = 0)
+                .pedal(127, 30)
+                .press(52, at = 40)
+                .press(55, at = 50)
+        assertEquals(1, inside.progress.done)
+        val after = TryRun(change).chord(c, 0).pedal(127, 60)
+        assertEquals(1, after.progress.done)
+        val tooLate = TryRun(change).chord(c, 0).pedal(127, 500)
+        assertEquals(TryProgress(0, 4, null, null, false, 1, TryTiming.LATE, true), tooLate.progress)
+    }
+
+    @Test
+    fun `the pedal is ignored by checks that do not read it`() {
+        val plain = TryRun(TryCheck.Sequence(listOf(64, 67))).press(64, at = 0).press(67, at = 100)
+        val noisy =
+            TryRun(TryCheck.Sequence(listOf(64, 67)))
+                .pedal(127, 0)
+                .press(64, at = 10)
+                .pedal(0, 50)
+                .press(67, at = 100)
+        assertEquals(plain.progress, noisy.progress)
+    }
+
+    @Test
+    fun `legato the last note pressed while the one before is held finishes when it comes up in time`() {
+        val held =
+            TryRun(legato)
+                .press(60, at = 0)
+                .press(62, at = 500)
+                .off(60, 510)
+                .press(64, at = 1_000)
+        assertEquals(
+            TryProgress(3, 3, null, null, false, 0),
+            held
+                .off(62, 1_050)
+                .also {
+                    assertTrue(it.progress.finished)
+                }.progress
+                .copy(finished = false),
+        )
+        val late =
+            TryRun(
+                legato,
+            ).press(60, at = 0).press(62, at = 500).off(60, 510).press(64, at = 1_000).off(62, 3_000)
+        assertEquals(TryProgress(0, 3, 60, null, false, 1, TryTiming.OVERLAP), late.progress)
+        val waiting =
+            TryRun(legato)
+                .press(60, at = 0)
+                .press(62, at = 500)
+                .off(60, 510)
+                .press(64, at = 1_000)
+        assertEquals(false, waiting.progress.finished)
+        assertEquals(1, waiting.press(65, at = 1_010).progress.wrongCount)
+    }
+
+    @Test
+    fun `a run seeded with the pedal down sees the first lift as a crossing`() {
+        val run = TryRun(TryCheck.PedalHold(d), pedalDown = true).chord(d, 0)
+        assertEquals(1, run.progress.done)
+        val lifted =
+            TryRun(
+                TryCheck.PedalChange(listOf(d, setOf(53, 57, 60))),
+                pedalDown = true,
+            ).chord(d, 0).pedal(0, 100)
+        assertEquals(TryTiming.EARLY, lifted.progress.timing)
+        assertEquals(1, lifted.progress.wrongCount)
+        assertSame(TryRun(TryCheck.PedalHold(d), pedalDown = true).let { it }.progress.done, 0)
+    }
 }

@@ -21,3 +21,7 @@ shows four text fields at once, which is a lot to read before playing.
 ## Consequences
 Screens that lead away close their piano reader first (a `releasePiano` or `close`). The timings and the tap length are
 starting values to tune on a real piano (ROADMAP, owner device checks).
+
+## Amended 2026-11-28
+`pedalIsMusic` is now wired: `LessonViewModel` reads `Curriculum.pedalIsMusic(skillId)` (true for a pedal hold or pedal
+change Try, or a piece passage with pedal marks), and Results ignore pedal taps for a passage with pedal marks.

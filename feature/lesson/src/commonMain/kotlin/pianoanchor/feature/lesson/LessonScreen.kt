@@ -88,6 +88,7 @@ public fun LessonScreen(
                 Box(Modifier.weight(RIGHT_PANE_WEIGHT).fillMaxHeight()) { StepPane(state, actions) }
             }
             LessonKeyStrip(state, Modifier.padding(top = 6.dp), reduceMotion)
+            if (showsPedalCue(state)) PedalCueLine(state.pedalCue)
         }
     }
 }

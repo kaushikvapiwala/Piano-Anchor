@@ -48,3 +48,12 @@ not drawn yet.
 Spacing is by ticks with the usual minimum gap; rests occupy tick positions like notes. Stems, flags and dots take their
 notehead's colour; a beam takes the colour of its first unplayed note, or "done" once all are played; rests, key
 signature and clefs use the staff line colour.
+
+## Pedal marks
+
+`Passage.pedal` lists spans of the sustain pedal. `Engraved.pedal` turns them into lines: spans that meet join into one
+line with a notch at each joint (a pedal change); a gap starts a new line. Lines are not split: the app has no
+systems of bars yet, so a line runs the whole width. The lines go under the bass staff, or under the treble
+staff when the passage has no bass notes (`Engraved.pedalStaff`). Drawn in the staff line colour and stroke: a short
+upward tick at the start, a horizontal line, an inverted-V notch at each change and an upward tick at the end.
+TalkBack adds "Pedal changes each bar." when every bar starts a span (`Engraved.pedalEachBar`), else "With pedal."

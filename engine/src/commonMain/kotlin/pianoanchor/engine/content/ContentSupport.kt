@@ -5,6 +5,7 @@ import pianoanchor.core.model.ChordMark
 import pianoanchor.core.model.ChordQuality
 import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.PedalSpan
 import pianoanchor.core.model.Rights
 import pianoanchor.core.model.RightsStatus
 import pianoanchor.core.model.TICKS_PER_QUARTER
@@ -45,7 +46,7 @@ internal fun publicDomainRights(
         checkedOn = CHECKED_ON,
     )
 
-/** A built-in passage whose notes are note text (see `NoteText`) in [timeSignature]. */
+/** A built-in passage whose notes are note text (see `NoteText`) in [timeSignature], with [pedal] marks. */
 internal fun builtinPassage(
     id: String,
     title: String,
@@ -57,6 +58,7 @@ internal fun builtinPassage(
     piece: Boolean = false,
     keySignature: KeySignature = KeySignature.C,
     chords: String = "",
+    pedal: List<PedalSpan> = emptyList(),
 ): Passage =
     Passage(
         id = "builtin:$id",
@@ -69,6 +71,7 @@ internal fun builtinPassage(
         piece = piece,
         keySignature = keySignature,
         chords = chordLine(chords, timeSignature),
+        pedal = pedal,
     )
 
 /** Pitch classes of the chord letters a chord line may use. */

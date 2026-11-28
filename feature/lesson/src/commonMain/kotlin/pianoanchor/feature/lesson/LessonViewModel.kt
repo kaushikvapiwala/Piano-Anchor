@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pianoanchor.core.model.ControlChange
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiDevice
 import pianoanchor.core.model.MidiDeviceUnavailableException
@@ -44,10 +45,12 @@ import pianoanchor.engine.lesson.HandDemo
 import pianoanchor.engine.lesson.LessonDemo
 import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.engine.lesson.NoteLabelsUseCase
+import pianoanchor.engine.lesson.PedalCue
 import pianoanchor.engine.lesson.TryRun
 import pianoanchor.engine.lesson.tryRepsNeeded
 import pianoanchor.engine.matcher.beatNanos
 import pianoanchor.engine.midi.PedalTapDetector
+import pianoanchor.engine.midi.SUSTAIN_CONTROLLER
 import pianoanchor.engine.midi.canPlayOn
 import pianoanchor.engine.midi.playTones
 import pianoanchor.engine.session.passageHistories
@@ -74,9 +77,11 @@ private class KeyChange(
  * key sets the count back to 0); each finished check shows its tick for `LESSON_TRY_DONE_PAUSE_MS` before the next
  * starts, and the passed Try moves on to Use. A concept whose Try is a passage has no Try step: it is part of Use.
  * Recap names the next unpassed concept, reading the passes from [attempts] and the placed skills from [learner];
- * [time] stamps the piano's notes.
+ * [time] stamps the piano's notes. The sustain pedal (CC 64) is fed to the Try's run too, for the pedal checks.
+ * [tryCheck] is the concept's Try check, which tests may replace.
  *
- * Hands-free: with `Settings.pedalControlOn` (and unless [pedalIsMusic], the concept uses the pedal as music) a pedal
+ * Hands-free: with `Settings.pedalControlOn` (and unless [pedalIsMusic], which defaults to
+ * `Curriculum.pedalIsMusic`: the concept uses the pedal as music) a pedal
  * tap on the piano ([PedalTapDetector]) does what the step's main button does, outside Try. Why moves on by itself
  * after `LESSON_WHY_AUTO_MS`, See when the demo ends (a demo with nothing to hear: after `LESSON_WHY_AUTO_MS`), Use
  * asks for Practice after `LESSON_AUTO_OPEN_MS` (not when the lesson was just resumed there); Recap waits. Where the
@@ -99,14 +104,25 @@ public class LessonViewModel(
     private val noteLabels: NoteLabelsUseCase,
     private val time: ClockPort,
     private val startAt: LessonStep? = null,
-    private val pedalIsMusic: Boolean = false,
+    tryCheck: TryCheck? = Curriculum.tryCheck(skillId),
+    private val pedalIsMusic: Boolean = Curriculum.pedalIsMusic(skillId, tryCheck),
     private val usePassage: Passage? = usePassageOf(skillId),
 ) : ViewModel() {
     private val skill = requireNotNull(Curriculum.graph.byId(skillId)) { "unknown skill $skillId" }
     private val card = requireNotNull(Curriculum.card(skillId)) { "skill $skillId has no concept card" }
     private val mutableState =
         MutableStateFlow(
-            LessonState(skill, card, LessonStep.WHY, null, false, emptySet(), null, LessonConnection.CONNECTED),
+            LessonState(
+                skill,
+                card,
+                LessonStep.WHY,
+                null,
+                false,
+                emptySet(),
+                null,
+                LessonConnection.CONNECTED,
+                check = tryCheck,
+            ),
         )
     public val state: StateFlow<LessonState> = mutableState.asStateFlow()
 
@@ -132,6 +148,9 @@ public class LessonViewModel(
     /** False during a Try's count-in: notes are not counted. */
     private var accepting = false
     private var speakerOnly = false
+
+    /** Whether the sustain pedal is down (with hysteresis), from every CC 64 the piano sent. */
+    private var pedalHeld = false
     private var closed = false
 
     /** Letters the strip's keys as the learner's setting and progress say, once they are read. */
@@ -212,6 +231,7 @@ public class LessonViewModel(
                 countIn = null,
                 seeHand = null,
                 seeElapsedMs = 0,
+                pedalCue = null,
             )
         }
         if (persist) viewModelScope.launch { save(step) }
@@ -291,31 +311,55 @@ public class LessonViewModel(
         try {
             coroutineScope {
                 launch { lightKeys(demo.tones) }
+                launch { showPedal(demo.pedal) }
                 demo.clickBpm?.let { bpm ->
                     val beat = beatNanos(bpm)
                     metronome.start(time.nowNanos() + demo.leadMs * NANOS_PER_MILLI, beat, BEATS_PER_BAR)
                 }
-                sound(demo.tones)
+                sound(demo.tones, demo.pedal)
             }
         } finally {
             withContext(NonCancellable) {
                 if (demo.clickBpm != null) metronome.stop()
-                mutableState.update { it.copy(playing = false, litKeys = emptySet(), seeElapsedMs = 0) }
+                mutableState.update {
+                    it.copy(
+                        playing = false,
+                        litKeys = emptySet(),
+                        seeElapsedMs = 0,
+                        pedalCue = null,
+                    )
+                }
             }
         }
     }
 
-    /** Plays on the piano when it is listed, else (or once a send fails) on the speaker, as the ear trainer does. */
-    private suspend fun sound(tones: List<Tone>) {
+    /**
+     * Plays on the piano when it is listed (with its pedal cues), else (or once a send fails) on the speaker, as the
+     * ear trainer does: the speaker plays the notes alone.
+     */
+    private suspend fun sound(
+        tones: List<Tone>,
+        pedalCues: List<PedalCue>,
+    ) {
         if (!speakerOnly && output.canPlayOn(device)) {
             try {
-                output.playTones(device, tones)
+                output.playTones(device, tones, pedalCues)
                 return
             } catch (_: MidiDeviceUnavailableException) {
                 speakerOnly = true
             }
         }
         tone.play(tones)
+    }
+
+    /** Shows the demo's pedal going down and up under the strip, as [cues] come. */
+    private suspend fun showPedal(cues: List<PedalCue>) {
+        var at = 0L
+        for (cue in cues) {
+            delay(cue.atMs - at)
+            at = cue.atMs
+            mutableState.update { it.copy(pedalCue = cue.down) }
+        }
     }
 
     /** Lights each key on the strip while its tone sounds. */
@@ -360,7 +404,7 @@ public class LessonViewModel(
      */
     private suspend fun beginRep(check: TryCheck) {
         accepting = false
-        run = TryRun(check)
+        run = TryRun(check, pedalHeld)
         mutableState.update { it.copy(tryProgress = run?.progress) }
         val bpm = clickOf(check)
         if (bpm == null) {
@@ -424,6 +468,7 @@ public class LessonViewModel(
                 when (event) {
                     is NoteOn -> onNoteOn(event)
                     is NoteOff -> onNoteOff(event)
+                    is ControlChange -> onControlChange(event)
                     else -> Unit
                 }
             }
@@ -445,6 +490,15 @@ public class LessonViewModel(
         val note = event.note.number
         mutableState.update { it.copy(litKeys = it.litKeys - note) }
         advance { it.onNoteOff(note, event.timestampNanos / NANOS_PER_MILLI) }
+    }
+
+    /** The sustain pedal (controller 64) reaches the Try's run; other controllers and steps are ignored. */
+    private fun onControlChange(event: ControlChange) {
+        if (event.controller != SUSTAIN_CONTROLLER) return
+        // Kept in every step, so a rep that starts with the pedal held knows it is down.
+        pedalHeld = if (pedalHeld) event.value >= Tunables.PEDAL_UP_VALUE else event.value >= Tunables.PEDAL_DOWN_VALUE
+        if (mutableState.value.step != LessonStep.TRY) return
+        advance { it.onPedal(event.value, event.timestampNanos / NANOS_PER_MILLI) }
     }
 
     /**

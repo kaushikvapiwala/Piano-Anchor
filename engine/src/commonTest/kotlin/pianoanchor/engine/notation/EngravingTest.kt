@@ -3,6 +3,7 @@ package pianoanchor.engine.notation
 import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.PedalSpan
 import pianoanchor.core.model.ScoreNote
 import pianoanchor.core.model.Step
 import pianoanchor.core.model.TICKS_PER_QUARTER
@@ -16,6 +17,7 @@ import pianoanchor.engine.sight.SightLevels
 import pianoanchor.engine.sight.SightReadingGenerator
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -321,5 +323,38 @@ class EngravingTest {
             assertTrue(inexact.isEmpty(), "${passage.id} has lengths without a note value: $inexact")
             assertTrue(Engraving.engrave(passage).chords.isNotEmpty(), passage.id)
         }
+    }
+
+    private val bar = 4 * Q
+
+    private fun pedalled(
+        text: String,
+        spans: List<PedalSpan>,
+    ) = Engraving.engrave(passage(NoteText.parse(text, FOUR_FOUR)).copy(pedal = spans))
+
+    @Test
+    fun aPassageWithoutPedalMarksHasNoPedalLines() {
+        val engraved = engrave("C4w")
+        assertTrue(engraved.pedal.isEmpty())
+        assertFalse(engraved.pedalEachBar)
+    }
+
+    @Test
+    fun twoAdjacentBarSpansAreOneLineWithOneNotch() {
+        val engraved = pedalled("C3w | D3w", listOf(PedalSpan(0, bar), PedalSpan(bar, 2 * bar)))
+        assertEquals(listOf(EngravedPedalLine(0, 2 * bar, listOf(bar))), engraved.pedal)
+        assertTrue(engraved.pedalEachBar)
+        assertEquals(Staff.BASS, engraved.pedalStaff)
+    }
+
+    @Test
+    fun spansWithAGapAreSeparateLinesAndNotEachBar() {
+        val engraved = pedalled("C4w | D4w | E4w", listOf(PedalSpan(0, bar), PedalSpan(2 * bar, 3 * bar)))
+        assertEquals(
+            listOf(EngravedPedalLine(0, bar, emptyList()), EngravedPedalLine(2 * bar, 3 * bar, emptyList())),
+            engraved.pedal,
+        )
+        assertFalse(engraved.pedalEachBar)
+        assertEquals(Staff.TREBLE, engraved.pedalStaff)
     }
 }

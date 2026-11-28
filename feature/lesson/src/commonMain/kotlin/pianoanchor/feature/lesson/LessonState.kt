@@ -39,7 +39,9 @@ public data class RecapText(
  * Try with a click, null otherwise. [pedalControl] is true while a pedal tap may continue the lesson (the setting is on
  * and the concept does not use the pedal as music). A Try passes after [repsNeeded] clean checks in a row: [cleanReps]
  * is how many it has so far (a wrong key resets it to 0). In See, [seeHand] is the hand that plays the demo (null: no
- * hand) and [seeElapsedMs] the time into the demo, which decides which fingers are down (0 when not playing).
+ * hand) and [seeElapsedMs] the time into the demo, which decides which fingers are down (0 when not playing). A pedal
+ * demo sets [pedalCue]: true while the demo has the pedal down, false while it is up, null when there is no pedal cue.
+ * [check] is the concept's Try check (every course concept has one).
  */
 public data class LessonState(
     val skill: Skill,
@@ -57,6 +59,8 @@ public data class LessonState(
     val noteLabels: NoteLabels = NoteLabels(),
     val seeHand: HandTimeline? = null,
     val seeElapsedMs: Long = 0,
+    val pedalCue: Boolean? = null,
+    val check: TryCheck? = Curriculum.tryCheck(skill.id),
 ) {
     /** True when the step shows "Tap the pedal to continue": a tap acts here and the piano is connected. */
     val pedalHint: Boolean
@@ -66,9 +70,6 @@ public data class LessonState(
 
     /** The concept card's looping animation, or null while its unit has none. */
     val scene: CardScene? get() = Curriculum.scene(skill.id)
-
-    /** The concept's Try check; every course concept has one. */
-    val check: TryCheck? get() = Curriculum.tryCheck(skill.id)
 
     /** The concept's first passage, played in the Use step. */
     val usePassage: Passage? get() = usePassageOf(skill.id)
@@ -84,7 +85,8 @@ public data class LessonState(
         get() {
             val progress = tryProgress?.takeIf { step == LessonStep.TRY && !it.finished } ?: return emptySet()
             val expected = progress.expected ?: return emptySet()
-            val lit = (check as? TryCheck.PlayKey)?.lit == true || check is TryCheck.Sequence
+            val lit =
+                (check as? TryCheck.PlayKey)?.lit == true || check is TryCheck.Sequence || check is TryCheck.Legato
             return if (lit || progress.lastWrong != null) setOf(expected) else emptySet()
         }
 }

@@ -91,6 +91,7 @@ internal fun keyRange(
             is TryCheck.StressBeatOne -> listOf(check.note)
             is TryCheck.Rhythm -> listOf(check.note)
             is TryCheck.Chord -> check.notes.toList()
+            is TryCheck.Legato, is TryCheck.PedalHold, is TryCheck.PedalChange -> pedalCheckNotes(check)
             is TryCheck.Passage -> emptyList()
         } + extra
     var low = notes.min() / NOTES_PER_OCTAVE * NOTES_PER_OCTAVE
@@ -98,6 +99,14 @@ internal fun keyRange(
     if (high - low + 1 < MIN_SPAN) low -= NOTES_PER_OCTAVE
     return low.coerceAtLeast(LOWEST_KEY)..high.coerceAtMost(HIGHEST_KEY)
 }
+
+/** The notes of a legato or pedal check. */
+private fun pedalCheckNotes(check: TryCheck): List<Int> =
+    when (check) {
+        is TryCheck.Legato -> check.notes
+        is TryCheck.PedalChange -> check.chords.flatten()
+        else -> (check as TryCheck.PedalHold).chord.toList()
+    }
 
 /** The pitches of the Use passage when the Try is that passage; the Use step lights nothing else. */
 private fun passageNotes(state: LessonState): List<Int> =

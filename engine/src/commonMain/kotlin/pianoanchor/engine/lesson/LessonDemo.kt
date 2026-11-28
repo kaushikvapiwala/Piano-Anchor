@@ -10,16 +10,26 @@ import pianoanchor.engine.content.Curriculum
 private const val NOTES_PER_OCTAVE = 12
 private const val BEATS_PER_BAR = 4
 private const val MS_PER_MINUTE = 60_000L
+private const val PEDAL_DEMO_BPM = 60L
+private const val PEDAL_BEAT_MS = MS_PER_MINUTE / PEDAL_DEMO_BPM
+private const val PEDAL_CHANGE_BEATS = 2
+
+/** The sustain pedal going [down] (else up) [atMs] after the demo begins. */
+public data class PedalCue(
+    val atMs: Long,
+    val down: Boolean,
+)
 
 /**
  * What the lesson's See step plays: [tones] (empty when the check has nothing to hear, so the screen only shows the
  * card), and, for a check with a click, its [clickBpm] and [leadMs]: the click starts at [leadMs] after the demo
- * begins, the first tone sounding on it.
+ * begins, the first tone sounding on it. [pedal] are the pedal moves of a pedal demo, in time order.
  */
 public data class Demo(
     val tones: List<Tone>,
     val clickBpm: Int? = null,
     val leadMs: Long = 0,
+    val pedal: List<PedalCue> = emptyList(),
 )
 
 /** The demos of the Try checks (`docs/algorithms/try-checks.md`, "See"). Pure. */
@@ -85,7 +95,46 @@ public object LessonDemo {
             is TryCheck.Passage -> {
                 Demo(passageTones(check.passageId))
             }
+
+            is TryCheck.Legato, is TryCheck.PedalHold, is TryCheck.PedalChange -> {
+                pedalDemo(check)
+            }
         }
+
+    /** The demos of the legato and pedal checks, all at 60 BPM and without a click. */
+    private fun pedalDemo(check: TryCheck): Demo =
+        when (check) {
+            is TryCheck.Legato -> {
+                Demo(check.notes.mapIndexed { i, n -> Tone(note(n), i * PEDAL_BEAT_MS, PEDAL_BEAT_MS) })
+            }
+
+            is TryCheck.PedalChange -> {
+                pedalChange(check)
+            }
+
+            else -> {
+                val hold = check as TryCheck.PedalHold
+                Demo(
+                    hold.chord.sorted().map { Tone(note(it), 0, PEDAL_BEAT_MS) },
+                    pedal = listOf(PedalCue(0, true), PedalCue(PEDAL_BEAT_MS + Tunables.TRY_PEDAL_RING_MS, false)),
+                )
+            }
+        }
+
+    /** Each chord for two beats; after every chord but the first the pedal comes up, then down again. */
+    private fun pedalChange(check: TryCheck.PedalChange): Demo {
+        val length = PEDAL_CHANGE_BEATS * PEDAL_BEAT_MS
+        val cluster = Tunables.CHORD_CLUSTER_MS.toLong()
+        val tones =
+            check.chords.withIndex().flatMap { (i, chord) ->
+                chord.sorted().map { Tone(note(it), i * length, length) }
+            }
+        val changes =
+            (1 until check.chords.size).flatMap {
+                listOf(PedalCue(it * length + cluster, false), PedalCue(it * length + 2 * cluster, true))
+            }
+        return Demo(tones, pedal = listOf(PedalCue(0, true)) + changes)
+    }
 
     private fun note(number: Int) = MidiNote(number)
 

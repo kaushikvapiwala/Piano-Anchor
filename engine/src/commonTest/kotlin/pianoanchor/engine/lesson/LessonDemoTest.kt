@@ -90,4 +90,36 @@ class LessonDemoTest {
 
     @Test
     fun anUnknownPassageHasNothingToHear() = assertEquals(emptyList(), LessonDemo.of(TryCheck.Passage("nope")).tones)
+
+    @Test
+    fun legatoPlaysEachNoteForAFullBeatIntoTheNext() {
+        val demo = LessonDemo.of(TryCheck.Legato(listOf(60, 62, 64)))
+        assertEquals(listOf(60, 62, 64), notes(demo))
+        assertEquals(listOf(0L, 1000L, 2000L), demo.tones.map { it.startMs })
+        assertEquals(listOf(1000L, 1000L, 1000L), demo.tones.map { it.lengthMs })
+        assertNull(demo.clickBpm)
+        assertTrue(demo.pedal.isEmpty())
+    }
+
+    @Test
+    fun pedalHoldPlaysTheChordForABeatAndLiftsThePedalAfterTheRing() {
+        val demo = LessonDemo.of(TryCheck.PedalHold(setOf(55, 48, 52)))
+        assertEquals(listOf(48, 52, 55), notes(demo))
+        assertTrue(demo.tones.all { it.startMs == 0L && it.lengthMs == 1000L })
+        assertEquals(listOf(PedalCue(0, true), PedalCue(1000 + Tunables.TRY_PEDAL_RING_MS, false)), demo.pedal)
+        assertNull(demo.clickBpm)
+    }
+
+    @Test
+    fun pedalChangePlaysEachChordForTwoBeatsWithAnUpDownCueAfterEachNewOne() {
+        val demo = LessonDemo.of(TryCheck.PedalChange(listOf(setOf(48, 52), setOf(53, 57))))
+        assertEquals(listOf(48, 52, 53, 57), notes(demo))
+        assertEquals(listOf(0L, 0L, 2000L, 2000L), demo.tones.map { it.startMs })
+        assertTrue(demo.tones.all { it.lengthMs == 2000L })
+        val cluster = Tunables.CHORD_CLUSTER_MS.toLong()
+        assertEquals(
+            listOf(PedalCue(0, true), PedalCue(2000 + cluster, false), PedalCue(2000 + 2 * cluster, true)),
+            demo.pedal,
+        )
+    }
 }
