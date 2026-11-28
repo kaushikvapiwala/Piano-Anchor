@@ -34,7 +34,9 @@ public val WEEKLY_GOAL_DAYS_RANGE: IntRange = 1..MAX_WEEKLY_GOAL_DAYS
  * Pianos, reconnected when Today opens; null when none or forgotten. [lessonSteps] is the step each unfinished lesson
  * was left at, by skill id (a finished lesson has no entry). [pedalControlOn] lets a tap of the sustain pedal act as
  * "continue" outside a run. [noteNames] is whether the key strips write letter names on the keys. [pausedWeeks] are the
- * Mondays of the weeks the learner paused: a paused week never breaks the weekly streak.
+ * Mondays of the weeks the learner paused: a paused week never breaks the weekly streak. The one-tap session keeps its
+ * progress here so a restart resumes it: [sessionFinished] are the `SessionStep` keys finished on the learner day
+ * [sessionDay] and [sessionCompleted] says the recap of that day was reached.
  */
 public data class Settings(
     val dailyBudget: DailyBudget = DailyBudget.MIN_20,
@@ -53,6 +55,9 @@ public data class Settings(
     val pedalControlOn: Boolean = true,
     val noteNames: NoteNames = NoteNames.AUTO,
     val pausedWeeks: Set<LocalDate> = emptySet(),
+    val sessionDay: LocalDate? = null,
+    val sessionFinished: Set<String> = emptySet(),
+    val sessionCompleted: Boolean = false,
 ) {
     init {
         require(weeklyGoalDays in WEEKLY_GOAL_DAYS_RANGE) {

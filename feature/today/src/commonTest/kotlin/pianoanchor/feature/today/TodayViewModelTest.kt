@@ -278,7 +278,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
             TimeZone.UTC,
             updateCheck,
             INSTALLED,
-            SessionProgress(),
+            SessionProgress(settings),
         )
     }
 
@@ -409,7 +409,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
-                    SessionProgress(),
+                    SessionProgress(settings),
                 )
             runCurrent()
             assertEquals(PianoChip(ble.device, Transport.BLE, null), vm.state.value.piano)
@@ -426,7 +426,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
-                    SessionProgress(),
+                    SessionProgress(settings),
                 )
             runCurrent()
             assertNull(
@@ -517,7 +517,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
-                    SessionProgress(),
+                    SessionProgress(settings),
                 ).also { runCurrent() }
 
             assertEquals(
@@ -627,7 +627,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
-                    SessionProgress(),
+                    SessionProgress(settings),
                 ).also { runCurrent() }
             assertEquals(
                 SightReadingGenerator.idOf(1, LocalDate(2026, 11, 17).toEpochDays()),
@@ -653,7 +653,7 @@ class TodayViewModelTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
-                    SessionProgress(),
+                    SessionProgress(settings),
                 ).also { runCurrent() }
 
             assertNull(sightCard(vm))

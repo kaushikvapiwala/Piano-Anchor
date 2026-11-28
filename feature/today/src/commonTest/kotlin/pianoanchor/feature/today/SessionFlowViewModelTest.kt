@@ -38,7 +38,7 @@ class SessionFlowViewModelTest : TodayViewModelFixture() {
     private val ear = Card.Ear(emptyList(), 2)
     private val session = Session(listOf(lesson, song, ear), 0, 5, 6, 2, emptyList())
 
-    private fun TestScope.flow(): SessionFlowViewModel =
+    private fun TestScope.flow(stored: SessionProgress = progress): SessionFlowViewModel =
         SessionFlowViewModel(
             LearnerModel(Curriculum.graph, learnerRepository),
             settings,
@@ -46,7 +46,7 @@ class SessionFlowViewModelTest : TodayViewModelFixture() {
             piano,
             clock,
             TimeZone.UTC,
-            progress,
+            stored,
         ).also { runCurrent() }
 
     private fun TestScope.opened(vm: SessionFlowViewModel): MutableList<TodayTarget> {
@@ -462,6 +462,42 @@ class SessionFlowViewModelTest : TodayViewModelFixture() {
             runCurrent()
 
             assertNull(assertNotNull(vm.state.value.recap).tip)
+        }
+
+    @Test
+    fun `a restart resumes after the steps stored as finished`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            started(vm)
+            vm.stepFinished()
+            runCurrent()
+            vm.exit()
+            runCurrent()
+
+            val restarted = flow(SessionProgress(settings))
+            val targets = opened(restarted)
+            started(restarted)
+
+            assertEquals(listOf(SessionStep.Practise(song, 6), SessionStep.Ear(ear, 2)), restarted.state.value.steps)
+            assertIs<TodayTarget.Practice>(targets.single())
+            restarted.exit()
+            runCurrent()
+        }
+
+    @Test
+    fun `a restart after the recap runs the whole session again`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            started(vm, skipped = setOf(1, 2))
+            vm.stepFinished()
+            runCurrent()
+
+            val restarted = flow(SessionProgress(settings))
+            started(restarted)
+
+            assertEquals(3, restarted.state.value.steps.size)
+            restarted.exit()
+            runCurrent()
         }
 
     @Test

@@ -35,6 +35,9 @@ private const val LESSON_STEPS = "lesson_steps"
 private const val PEDAL_CONTROL_ON = "pedal_control_on"
 private const val NOTE_NAMES = "note_names"
 private const val PAUSED_WEEKS = "paused_weeks"
+private const val SESSION_DAY = "session_day"
+private const val SESSION_FINISHED = "session_finished"
+private const val SESSION_COMPLETED = "session_completed"
 
 /** A stored text that is "not set" (the rows of absent values hold it, so every update writes every row). */
 private const val UNSET = ""
@@ -48,6 +51,9 @@ private const val LESSON_STEP_SEPARATOR = "="
 
 /** Separates the dates of the `paused_weeks` row. */
 private const val PAUSED_WEEK_SEPARATOR = ","
+
+/** Separates the step keys of the `session_finished` row; a key (`kind:passage-id`) has no line break. */
+private const val SESSION_KEY_SEPARATOR = "\n"
 
 /** Separates a release's version from its page URL in the `latest_release` row; neither contains a space. */
 private const val RELEASE_SEPARATOR = " "
@@ -95,6 +101,12 @@ public class SqlSettingsRepositoryAdapter(
                         queries.put(PEDAL_CONTROL_ON, updated.pedalControlOn.toString())
                         queries.put(NOTE_NAMES, updated.noteNames.name)
                         queries.put(PAUSED_WEEKS, updated.pausedWeeks.sorted().joinToString(PAUSED_WEEK_SEPARATOR))
+                        queries.put(SESSION_DAY, updated.sessionDay.stored())
+                        queries.put(
+                            SESSION_FINISHED,
+                            updated.sessionFinished.sorted().joinToString(SESSION_KEY_SEPARATOR),
+                        )
+                        queries.put(SESSION_COMPLETED, updated.sessionCompleted.toString())
                     }
                 }
             }
@@ -137,6 +149,14 @@ private fun Map<String, String>.toSettings(): Settings {
                 .split(
                     PAUSED_WEEK_SEPARATOR,
                 ).mapNotNullTo(HashSet()) { it.toLocalDateOrNull() },
+        sessionDay = this[SESSION_DAY]?.toLocalDateOrNull(),
+        sessionFinished =
+            this[SESSION_FINISHED]
+                .orEmpty()
+                .split(
+                    SESSION_KEY_SEPARATOR,
+                ).filterTo(HashSet()) { it.isNotBlank() },
+        sessionCompleted = read(SESSION_COMPLETED, defaults.sessionCompleted, String::toBooleanStrictOrNull),
     )
 }
 

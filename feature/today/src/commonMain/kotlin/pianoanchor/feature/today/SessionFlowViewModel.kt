@@ -90,15 +90,17 @@ public class SessionFlowViewModel(
         session: Session,
         skipped: Set<Int>,
     ) {
-        // A day already completed starts the whole session again; one left midway resumes after its finished steps.
-        val finished = if (progress.completedOn(day)) emptySet() else progress.finishedOn(day)
-        val steps = SessionRunner.steps(session, skipped).filter { it.key() !in finished }
         startedAt = clock.now()
         stepsDone = 0
         finishedPassages = emptyList()
         awaitingStep = false
-        mutableState.value = SessionFlowState(steps, 0)
+        mutableState.value = SessionFlowState(emptyList(), 0)
         viewModelScope.launch {
+            // A day already completed starts the whole session again; one left midway resumes after its finished
+            // steps, also after a restart of the app.
+            val finished = if (progress.completedOn(day)) emptySet() else progress.finishedOn(day)
+            val steps = SessionRunner.steps(session, skipped).filter { it.key() !in finished }
+            mutableState.value = SessionFlowState(steps, 0)
             learnedBefore = learnedNow()
             if (steps.isEmpty()) showRecap() else open(0)
         }
@@ -111,10 +113,10 @@ public class SessionFlowViewModel(
         if (!awaitingStep || step == null) return
         awaitingStep = false
         stepsDone++
-        progress.markFinished(day, step)
         (step.card as? Card.PassageCard)?.let { finishedPassages = finishedPassages + it }
         val next = flow.steps.getOrNull(flow.current + 1)
         viewModelScope.launch {
+            progress.markFinished(day, step)
             if (next == null) showRecap() else showBetween(next, Tunables.SESSION_NEXT_COUNTDOWN_S, paused = false)
         }
     }

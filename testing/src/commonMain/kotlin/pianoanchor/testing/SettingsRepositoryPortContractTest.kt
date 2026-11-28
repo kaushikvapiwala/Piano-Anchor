@@ -87,6 +87,28 @@ abstract class SettingsRepositoryPortContractTest {
         }
 
     @Test
+    fun theSessionProgressRoundTrips() =
+        runTest {
+            val repository = createSubject()
+            val progress =
+                Settings(
+                    sessionDay = LocalDate(2026, 11, 28),
+                    sessionFinished = setOf("cold:twinkle", "lesson:middle-c"),
+                    sessionCompleted = true,
+                )
+            repository.update {
+                it.copy(
+                    sessionDay = progress.sessionDay,
+                    sessionFinished = progress.sessionFinished,
+                    sessionCompleted = true,
+                )
+            }
+            assertEquals(progress, repository.settings.first())
+            repository.update { it.copy(sessionDay = null, sessionFinished = emptySet(), sessionCompleted = false) }
+            assertEquals(Settings(), repository.settings.first())
+        }
+
+    @Test
     fun updatesApplyAtomicallyInOrder() =
         runTest {
             val repository = createSubject()

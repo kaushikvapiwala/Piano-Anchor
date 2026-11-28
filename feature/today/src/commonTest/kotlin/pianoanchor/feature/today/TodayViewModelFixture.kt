@@ -49,7 +49,7 @@ abstract class TodayViewModelFixture {
     protected val piano = FakePiano(device = MidiDevice("usb:Roland/FP-30X", "FP-30X", MidiTransport.USB))
     protected val clock = FakeWallClock(now)
     protected val updateCheck = FakeUpdateCheck()
-    protected val progress = SessionProgress()
+    protected val progress = SessionProgress(settings)
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(dispatcher)

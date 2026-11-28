@@ -136,7 +136,7 @@ class TodayPedalTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
-                    SessionProgress(),
+                    SessionProgress(settings),
                 )
             runCurrent()
             assertEquals(0, open)

@@ -177,6 +177,6 @@ val appModule =
             )
         }
         // One progress holder for the app's life, so finished steps outlive the screens that report them.
-        single { SessionProgress() }
+        single { SessionProgress(get()) }
         viewModel { SessionFlowViewModel(get(), get(), get(), get(), get(), get(), get()) }
     }
