@@ -21,6 +21,7 @@ class KeySignatureTest {
     @Test
     fun gAltersF() {
         assertEquals(listOf(3), KeySignature.G.alteredLetters)
+        assertEquals(listOf(6), KeySignature.F.alteredLetters)
     }
 
     @Test

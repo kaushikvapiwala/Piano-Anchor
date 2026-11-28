@@ -18,30 +18,40 @@ Glyphs are Bravura (SMuFL), see `docs/ui/living-studio.md`.
 
 Per staff, from the end of its last sounding note (or the bar start) to its next onset, or to the passage end (the
 last note's end rounded up to a bar). Gaps are cut at bar lines. A whole empty bar is a whole rest, whatever the metre.
-Any other gap is filled left to right with the longest of half, quarter and eighth that starts on a multiple of its own
-length inside the bar and still fits, so a quarter then a half fills three beats (never a dotted half rest).
+In simple metres any other gap is filled left to right with the longest of half, quarter and eighth that starts on a
+multiple of its own length inside the bar and still fits, so a quarter then a half fills three beats (never a dotted
+half rest). In compound metres (below) a rest never crosses a beat: a dotted quarter where the gap starts on a beat and
+fits, otherwise a quarter or eighth that starts on a multiple of its own length within the beat. The dotted rest is the
+quarter rest glyph with an augmentation dot right of it in the space above the middle line.
 
 ## Stems, flags and beams
 
 - No stem on whole notes. Otherwise the stem points up when the notehead farthest from the staff's middle line is
   below it, and down when it is on or above it (a chord's farthest note decides; B4 on the treble middle line points
   down). It is 3.5 staff spaces long from the outer notehead.
-- Consecutive eighths on one staff with no rest between them and inside one beat (a quarter's span from the bar start)
-  form a beam group: one horizontal beam at the stem ends, every stem pointing the way its farthest note says and
+- Compound metre: `beatUnit == 8` with 6, 9 or 12 beats (6/8, 9/8, 12/8; 3/8 stays simple). Its beat is a dotted
+  quarter, three eighths.
+- Consecutive eighths on one staff with no rest between them and inside one beat (a quarter's span from the bar start,
+  a dotted quarter's in compound metres, so 6/8 beams in threes) form a beam group: one horizontal beam at the stem ends, every stem pointing the way its farthest note says and
   ending at the same height. A lone eighth gets a flag.
 
 ## Dots and accidentals
 
 A dotted value draws one augmentation dot right of each notehead, in the space above when the head sits on a line.
-Accidentals use sharps-only spelling. A raised note on a letter the key raises needs nothing; a natural on such a
-letter gets a natural sign; a sharp on any other letter gets a sharp. An accidental holds until the end of the bar for
+A black key is spelled by the key's direction: a sharp in C and sharp keys, the flat of the letter above in flat keys
+(61 is D-flat and sits on D's line or space, so stems and ledger lines follow the flat's place). A note matching what the
+key does to its letter needs no sign (B-flat in F, F-sharp in G); the natural of such a letter gets a natural sign; a
+black key on any other letter gets a sharp or a flat (E-flat in F). An accidental holds until the end of the bar for
 that letter and octave on that staff; the next bar starts from the key again.
 
 ## Key signature
 
-Drawn after the clef on each staff, before the time signature, in the standard sharp positions (treble F5 C5 G5 D5 A4 E5
-B4; bass two octaves lower). The staff reserves 14 dp per sharp; C reserves none. Flat keys exist in the model and are
-not drawn yet.
+Drawn after the clef on each staff, before the time signature, in the standard positions: sharps at treble F5 C5 G5 D5
+A4 E5 B4, flats at treble B4 E5 A4 D5 G4 C5 F4; the bass staff two octaves lower. The staff reserves 14 dp per sharp or
+flat; C reserves none.
+
+Known limitation: a flat key spells every black key as a flat, so a leading-tone sharp (C-sharp in D minor) is not
+spelled yet.
 
 ## Spacing and colour
 

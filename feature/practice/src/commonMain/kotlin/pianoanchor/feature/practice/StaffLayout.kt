@@ -9,6 +9,7 @@ import pianoanchor.engine.notation.Engraving
 import pianoanchor.engine.notation.NoteValue
 import pianoanchor.engine.notation.Staff
 import pianoanchor.engine.notation.StemDirection
+import kotlin.math.abs
 
 /** Width of the treble clef at the staff's left edge, in dp. */
 internal const val CLEF_AREA_DP = 64f
@@ -16,7 +17,7 @@ internal const val CLEF_AREA_DP = 64f
 /** Width of the time signature after the clef, in dp. */
 internal const val TIME_SIGNATURE_AREA_DP = 32f
 
-/** Width one sharp of a key signature takes after the clef, in dp (a sharp glyph is a little under one staff space). */
+/** Width one sharp or flat of a key signature takes after the clef, in dp. */
 internal const val KEY_SHARP_WIDTH_DP = 14f
 
 /**
@@ -39,6 +40,12 @@ internal const val BEAM_THICKNESS_DP = STAFF_SPACE_DP / 2
 
 /** Distance from a notehead's centre to the centre of its augmentation dot, in dp. */
 private const val DOT_OFFSET_DP = 17f
+
+/** Distance from a rest's centre to its augmentation dot's centre, in dp. */
+internal const val REST_DOT_OFFSET_DP = 12f
+
+/** Treble key-signature flats as staff positions: B4 E5 A4 D5 G4 C5 F4. */
+private val TREBLE_FLAT_POSITIONS = listOf(4, 7, 3, 6, 2, 5, 1)
 
 /** Treble key-signature sharps as staff positions (half spaces above E4): F5 C5 G5 D5 A4 E5 B4, the standard zigzag. */
 private val TREBLE_SHARP_POSITIONS = listOf(8, 5, 9, 6, 3, 7, 4)
@@ -139,13 +146,17 @@ internal fun staffHeightDp(engraved: Engraved): Float {
     return if (engraved.pedal.isEmpty()) staves else staves + PEDAL_SPACE_DP
 }
 
-/** The staff positions the key signature's sharps sit on, for [staff]: none for C and for flat keys (not drawn yet). */
+/**
+ * The staff positions the key signature's signs sit on, for [staff]: [sharps] sharps, or flats when it is negative;
+ * none for C.
+ */
 internal fun keySignaturePositions(
     sharps: Int,
     staff: Staff,
 ): List<Int> {
     val shift = if (staff == Staff.BASS) BASS_SHARP_SHIFT else 0
-    return TREBLE_SHARP_POSITIONS.take(sharps.coerceAtLeast(0)).map { it - shift }
+    val order = if (sharps < 0) TREBLE_FLAT_POSITIONS else TREBLE_SHARP_POSITIONS
+    return order.take(abs(sharps)).map { it - shift }
 }
 
 /**
@@ -167,7 +178,7 @@ internal fun staffLayout(
     val barTicks = passage.timeSignature.barTicks
     val noteEnd = steps.maxOf { step -> step.onsetTicks + step.notes.maxOf { it.lengthTicks } }
     val endTicks = maxOf(noteEnd, engraved.rests.maxOfOrNull { it.endTicks(barTicks) } ?: 0)
-    val keyWidth = passage.keySignature.sharps.coerceAtLeast(0) * KEY_SHARP_WIDTH_DP
+    val keyWidth = abs(passage.keySignature.sharps) * KEY_SHARP_WIDTH_DP
     val origin = CLEF_AREA_DP + keyWidth + TIME_SIGNATURE_AREA_DP + LEAD_DP
     val events = (steps.map { it.onsetTicks } + engraved.rests.map { it.onsetTicks }).distinct().sorted()
     val ticks = (listOf(0) + events + endTicks).distinct()
@@ -226,7 +237,7 @@ private fun chordShapes(
     engraved: Engraved,
     noteX: List<Float>,
 ): Pair<List<ChordShape>, List<BeamShape>> {
-    val positions = engraved.chords.map { chord -> chord.notes.map { it.pitch.staffPosition } }
+    val positions = engraved.chords.map { chord -> chord.notes.map { it.pitch.staffPosition(engraved.key) } }
     val tips =
         engraved.chords.mapIndexed { i, chord ->
             when (chord.stem) {

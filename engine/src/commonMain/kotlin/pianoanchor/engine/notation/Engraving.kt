@@ -42,7 +42,7 @@ public enum class NoteValue(
 }
 
 /** An accidental sign drawn before a notehead. */
-public enum class Accidental { SHARP, NATURAL }
+public enum class Accidental { SHARP, FLAT, NATURAL }
 
 /** Which way a stem points; [NONE] for a note without one (a whole note). */
 public enum class StemDirection { UP, DOWN, NONE }
@@ -101,9 +101,16 @@ public data class Engraved(
 
 /** Turns a passage's steps into the symbols a staff draws. Pure music-theory rules; no drawing. */
 public object Engraving {
+    /** The diatonic step of [pitch] as [key] spells it (octave × 7 + letter): a flat key writes black keys as flats. */
+    public fun spelledStep(
+        pitch: MidiNote,
+        key: KeySignature,
+    ): Int = diatonic(pitch, key)
+
     /** Engraves [passage]; see `docs/algorithms/engraving.md` for every rule. */
     public fun engrave(passage: Passage): Engraved {
         val barTicks = passage.timeSignature.barTicks
+        val beatTicks = beatTicks(passage.timeSignature)
         val lastNoteEnd = passage.steps.fold(0) { end, step -> maxOf(end, step.onsetTicks + step.notes.longest()) }
         val endTicks = (lastNoteEnd + barTicks - 1) / barTicks * barTicks
         val starts = passage.pedal.map { it.startTicks }.toSet()
@@ -113,8 +120,8 @@ public object Engraving {
         for (staff in Staff.entries) {
             val written = chordsOn(staff, passage)
             if (written.isEmpty()) continue
-            chords += finish(staff, written, passage.keySignature, barTicks, groups)
-            rests += restsOn(staff, written, barTicks, endTicks)
+            chords += finish(staff, written, passage.keySignature, barTicks, beatTicks, groups)
+            rests += restsOn(staff, written, barTicks, passage.timeSignature, endTicks)
         }
         return Engraved(
             chords = chords.sortedWith(compareBy({ it.stepIndex }, { it.staff })),
@@ -143,7 +150,7 @@ private fun pedalLines(spans: List<PedalSpan>): List<EngravedPedalLine> {
 }
 
 /** A chord before its stem, beam and accidentals are known: [lengthTicks] is the longest note's real length. */
-private class Written(
+internal class Written(
     val stepIndex: Int,
     val onsetTicks: Int,
     val pitches: List<MidiNote>,
@@ -190,13 +197,14 @@ private fun finish(
     written: List<Written>,
     key: KeySignature,
     barTicks: Int,
+    beatTicks: Int,
     groups: BeamNumbers,
 ): List<EngravedChord> {
     val beamOf = HashMap<Int, Int>()
     val stemOf = HashMap<Int, StemDirection>()
-    beamRuns(written, barTicks).forEach { run ->
+    beamRuns(written, barTicks, beatTicks).forEach { run ->
         val number = groups.take()
-        val direction = stemFor(staff, run.flatMap { written[it].pitches })
+        val direction = stemFor(staff, run.flatMap { written[it].pitches }, key)
         run.forEach { index ->
             beamOf[index] = number
             stemOf[index] = direction
@@ -207,7 +215,7 @@ private fun finish(
         val lone = index !in beamOf
         val stem =
             stemOf[index]
-                ?: if (chord.value == NoteValue.WHOLE) StemDirection.NONE else stemFor(staff, chord.pitches)
+                ?: if (chord.value == NoteValue.WHOLE) StemDirection.NONE else stemFor(staff, chord.pitches, key)
         EngravedChord(
             stepIndex = chord.stepIndex,
             staff = staff,
@@ -225,6 +233,7 @@ private fun finish(
 private fun beamRuns(
     written: List<Written>,
     barTicks: Int,
+    beatTicks: Int,
 ): List<List<Int>> {
     val runs = ArrayList<List<Int>>()
     var run = ArrayList<Int>()
@@ -239,7 +248,7 @@ private fun beamRuns(
             chord.value == NoteValue.EIGHTH &&
                 previous != null &&
                 previous.onsetTicks + previous.value.ticks == chord.onsetTicks &&
-                beatOf(previous.onsetTicks, barTicks) == beatOf(chord.onsetTicks, barTicks)
+                beatIn(previous.onsetTicks, barTicks, beatTicks) == beatIn(chord.onsetTicks, barTicks, beatTicks)
         if (!continues) close()
         if (chord.value == NoteValue.EIGHTH) run += index
     }
@@ -247,19 +256,21 @@ private fun beamRuns(
     return runs
 }
 
-/** The beat (a quarter's span from the bar start) a tick falls in, as (bar, beat in the bar). */
-private fun beatOf(
+/** The beat a tick falls in, as (bar, beat within the bar), so a beat never spans a bar line. */
+private fun beatIn(
     tick: Int,
     barTicks: Int,
-): Pair<Int, Int> = tick / barTicks to tick % barTicks / TICKS_PER_QUARTER
+    beatTicks: Int,
+): Pair<Int, Int> = tick / barTicks to tick % barTicks / beatTicks
 
 /** Up when the note farthest from the middle line is below it, down when it is on or above it. */
 private fun stemFor(
     staff: Staff,
     pitches: List<MidiNote>,
+    key: KeySignature,
 ): StemDirection {
     val middle = if (staff == Staff.TREBLE) TREBLE_MIDDLE else BASS_MIDDLE
-    val farthest = pitches.map { diatonic(it) - middle }.maxWith(compareBy({ abs(it) }, { it }))
+    val farthest = pitches.map { diatonic(it, key) - middle }.maxWith(compareBy({ abs(it) }, { it }))
     return if (farthest < 0) StemDirection.UP else StemDirection.DOWN
 }
 
@@ -280,76 +291,49 @@ private class AccidentalState(
             bar = onset / barTicks
             state.clear()
         }
-        val slot = diatonic(pitch)
+        val slot = diatonic(pitch, key)
         val letter = slot % LETTERS
-        val written = if (pitch.number % SEMITONES in BLACK_PITCH_CLASSES) 1 else 0
-        val current = state[slot] ?: if (letter in key.alteredLetters) key.sharps.coerceIn(-1, 1) else 0
+        val direction = key.sharps.coerceIn(-1, 1)
+        val black = pitch.number % SEMITONES in BLACK_PITCH_CLASSES
+        val written =
+            if (!black) {
+                0
+            } else if (direction < 0) {
+                -1
+            } else {
+                1
+            }
+        val current = state[slot] ?: if (letter in key.alteredLetters) direction else 0
         state[slot] = written
         return when {
             written == current -> null
-            written == 1 -> Accidental.SHARP
+            written > 0 -> Accidental.SHARP
+            written < 0 -> Accidental.FLAT
             else -> Accidental.NATURAL
         }
     }
 }
-
-/** Rests of [staff] between its chords (and to the passage end), cut at bar lines and aligned within the bar. */
-private fun restsOn(
-    staff: Staff,
-    written: List<Written>,
-    barTicks: Int,
-    endTicks: Int,
-): List<EngravedRest> {
-    val rests = ArrayList<EngravedRest>()
-    var cursor = 0
-    written.forEach { chord ->
-        if (chord.onsetTicks > cursor) fillGap(staff, cursor, chord.onsetTicks, barTicks, rests)
-        cursor = maxOf(cursor, chord.onsetTicks + chord.lengthTicks)
-    }
-    if (endTicks > cursor) fillGap(staff, cursor, endTicks, barTicks, rests)
-    return rests
-}
-
-private fun fillGap(
-    staff: Staff,
-    from: Int,
-    to: Int,
-    barTicks: Int,
-    into: MutableList<EngravedRest>,
-) {
-    for (bar in (from / barTicks..(to - 1) / barTicks).toList()) {
-        val barStart = bar * barTicks
-        val start = maxOf(from, barStart)
-        val end = minOf(to, barStart + barTicks)
-        if (start == barStart && end == barStart + barTicks) {
-            into += EngravedRest(staff, start, NoteValue.WHOLE)
-            continue
-        }
-        var position = start
-        while (position < end) {
-            val value =
-                REST_VALUES.firstOrNull { (position - barStart) % it.ticks == 0 && position + it.ticks <= end }
-                    ?: break
-            into += EngravedRest(staff, position, value)
-            position += value.ticks
-        }
-    }
-}
-
-/** The rest values a gap is filled with, longest first. */
-private val REST_VALUES = listOf(NoteValue.HALF, NoteValue.QUARTER, NoteValue.EIGHTH)
 
 private const val MIDDLE_C = 60
 private const val SEMITONES = 12
 private const val LETTERS = 7
 private val BLACK_PITCH_CLASSES = setOf(1, 3, 6, 8, 10)
 
-/** Letter index (C = 0 … B = 6) of each pitch class; a sharp shares its natural's letter. */
+/** Letter index (C = 0 … B = 6) of each pitch class; a sharp shares its natural's letter (a flat takes the next). */
 private val LETTER_OF_PITCH_CLASS = listOf(0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6)
 
-/** Diatonic slot of a note: octave × 7 + letter, so neighbours on the staff differ by one. */
-private fun diatonic(note: MidiNote): Int =
-    note.number / SEMITONES * LETTERS + LETTER_OF_PITCH_CLASS[note.number % SEMITONES]
+/**
+ * Diatonic slot of a note: octave × 7 + letter, so neighbours on the staff differ by one. In a flat key a black key is
+ * the flat of the letter above.
+ */
+private fun diatonic(
+    note: MidiNote,
+    key: KeySignature = KeySignature.C,
+): Int {
+    val pitchClass = note.number % SEMITONES
+    val letter = LETTER_OF_PITCH_CLASS[pitchClass] + if (key.sharps < 0 && pitchClass in BLACK_PITCH_CLASSES) 1 else 0
+    return note.number / SEMITONES * LETTERS + letter
+}
 
 /** B4, the treble staff's middle line. */
 private val TREBLE_MIDDLE = diatonic(MidiNote(71))
