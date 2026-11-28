@@ -1,6 +1,6 @@
 # Try checks
 
-Each of the 36 course concepts ends its Try step with one small task the piano can check: play the glowing key, find
+Each of the 41 course concepts ends its Try step with one small task the piano can check: play the glowing key, find
 every C, hold a note for two clicks. `TryRun` in the engine's lesson package turns live note events into progress for
 the lesson screen and, later, review quizzes. It is pure and immutable: every event returns the next run. The check
 data (`TryCheck`) is in `core/model`; the table of checks is `TryChecks.kt` in the engine's content package, read
@@ -8,7 +8,7 @@ through `Curriculum.tryCheck(skillId)`.
 
 ## Progress
 `TryProgress` carries `done` of `total` parts, the `expected` key (the next one to play, or null where no single key is
-next: any key, chords), the `lastWrong` key for the gentle hint, `finished`, `wrongCount` and `timing` (why the last attempt reset in time: `EARLY` or `LATE` for a rhythm or a pedal, `GAP` or `OVERLAP` for a legato, else null, for the
+next: any key, chords), the `lastWrong` key for the gentle hint, `finished`, `wrongCount` and `timing` (why the last attempt reset in time: `EARLY` or `LATE` for a rhythm, an even sequence or a pedal, `GAP` or `OVERLAP` for a legato, else null, for the
 hint). Once finished, further
 events change nothing. A note-off is ignored except by a hold. Timing is not judged, except where it is the concept
 itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
@@ -37,10 +37,18 @@ itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
   tempo off the click from slipping through. A press outside either window adds to `wrongCount`, sets `timing` to
   `EARLY` or `LATE` (the sign of the gap error if the gap failed, else of the drift error), and itself becomes press 1
   of a fresh attempt (`done` = 1), so a learner who tapped late can carry on from that tap. The judging is one helper
-  taking the expected onsets, so a later even-sequence check can reuse it. `total` is `lengths.size` and the run finishes when `done` reaches it; the last note's length is not
+  taking the expected onsets (`pressTimed`), which the even-sequence check also uses. `total` is `lengths.size` and the run finishes when `done` reaches it; the last note's length is not
   judged and note-offs are ignored. Presses before the count-in ends count nothing (the lesson screen starts the
   run after it, as for Repeat and Hold). The See step also says the count, such as "1 & 2 &" (`rhythmCount`: a number
   for a tap on a beat, "&" for a tap halfway, brackets for a beat held through).
+- **EvenSequence:** `EvenSequence(notes, bpm)`, at least two notes and a tempo above 0: Sequence for the notes, Rhythm for
+  the timing with every length one quarter. Note k is `expected`; a wrong key is `lastWrong`, adds to `wrongCount` and
+  the count stays. A right note is judged by the same timing helper as Rhythm (gap and drift each within
+  `TRY_RHYTHM_TOLERANCE x 30000 / bpm` ms). A miss adds to `wrongCount`, sets `timing` to `EARLY` or `LATE` and restarts
+  the attempt; the press counts as note 1 only when it is `notes[0]`, else `done` is 0 and `notes[0]` is expected. Note 1
+  starts at any moment after the count-in. `total` is `notes.size`. The lesson hints are "Steady: wait for the click."
+  (early) and "Keep going with the click." (late). The app cannot see fingers, so an
+  even scale stands in for a smooth thumb-under.
 - **Chord:** all notes within `CHORD_CLUSTER_MS` of the cluster's first. A note later than that, or outside the chord,
   fails the cluster (`wrongCount` + 1, `done` back to 0); a late chord note starts a new cluster. A repeat inside the
   cluster is ignored.
@@ -100,7 +108,11 @@ itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
 | legato-touch | C D E F G F E D C joined (`Legato`) |
 | sustain-pedal | the C chord (C3 E3 G3) with the pedal, hands lifted, left to ring (`PedalHold`) |
 | pedal-changes | C, F, G, C chords (C3 E3 G3; A2 C3 F3; B2 D3 G3) with a pedal change after each (`PedalChange`) |
-| the nine piece concepts | their first passage (rhythm-song: Jingle Bells; melody-chords-in-g: Go Tell Aunt Rhody; pedal-song: Amazing Grace) |
+| thumb-under | C D E F G A G F E D C evenly at 60 BPM (`EvenSequence`; C D E, thumb under to F, up to A and back) |
+| c-major-scale | C4 to C5 and back, 15 notes evenly at 60 BPM (`EvenSequence`) |
+| g-major-scale | G4 to G5 with F#5 and back, 15 notes evenly at 60 BPM (`EvenSequence`) |
+| lh-c-scale | C3 to C4 and back, 15 notes evenly at 60 BPM (`EvenSequence`) |
+| the ten piece concepts | their first passage (rhythm-song: Jingle Bells; melody-chords-in-g: Go Tell Aunt Rhody; pedal-song: Amazing Grace; scale-song: Joy to the World) |
 
 The thresholds are `TRY_*` tunables in `Tunables.kt`, with the reasons beside each.
 
@@ -114,6 +126,7 @@ phone speaker, lighting the keys as they sound:
 | FindAll | every target, low to high |
 | Sequence | the notes in order |
 | Repeat, Hold, StressBeatOne | on the click, one beat after it starts; StressBeatOne accents beat 1 by velocity |
+| EvenSequence | the notes in order on the click, one beat after it starts, each sounding a full beat (legato); the lesson shows no hand (a position-based hand would draw the wrong fingering), the card's How gives the fingering |
 | Rhythm | the pattern on the click, one beat after it starts, each note sounding half its written length |
 | SoftThenLoud | the note at velocity `LESSON_DEMO_SOFT_VELOCITY`, then at `LESSON_DEMO_LOUD_VELOCITY` |
 | Chord | the notes together |
@@ -136,7 +149,7 @@ shows "Your turn". A See step that moves on by itself and shows a hand waits for
 `HAND_FADE_MS` + `HAND_YOUR_TURN_MS`, the same with reduce motion; a pedal tap skips the rest of the wait, "Play again" or
 leaving cancels it); one without a hand moves on at once. The step then drops the hand.
 
-A Try with a click (Repeat, Hold, StressBeatOne, Rhythm) starts the metronome with a one-bar count-in ("3, 2, 1") before notes
+A Try with a click (Repeat, Hold, StressBeatOne, Rhythm, EvenSequence) starts the metronome with a one-bar count-in ("3, 2, 1") before notes
 count. A Try passes after `tryRepsNeeded` clean checks in a row: `LESSON_TRY_REPS`, or `LESSON_TRY_REPS_LONG` when the
 check has `LESSON_TRY_LONG_NOTES` or more notes, or 1 for a check the app can't verify (`AnyKey`, `Passage`). A wrong
 key (or a hold released early) sets the count to 0 and the check goes on; a check finished with a wrong key doesn't

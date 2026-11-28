@@ -19,6 +19,10 @@ private val G_POSITION_RUN = listOf(67, 69, 71, 72, 74, 72, 71, 69, 67)
 private val LEFT_HAND_G_RUN = listOf(50, 48, 47, 45, 43)
 private val D7_SHORTCUT = setOf(42, 48, 50)
 private val C_POSITION_RUN = listOf(60, 62, 64, 65, 67, 65, 64, 62, 60)
+private val THUMB_UNDER_RUN = listOf(60, 62, 64, 65, 67, 69, 67, 65, 64, 62, 60)
+private val C_SCALE = listOf(60, 62, 64, 65, 67, 69, 71, 72, 71, 69, 67, 65, 64, 62, 60)
+private val G_SCALE = listOf(67, 69, 71, 72, 74, 76, 78, 79, 78, 76, 74, 72, 71, 69, 67)
+private val LEFT_C_SCALE = listOf(48, 50, 52, 53, 55, 57, 59, 60, 59, 57, 55, 53, 52, 50, 48)
 private val C_CHORD_KEYS = setOf(48, 52, 55)
 private val F_CHORD_KEYS = setOf(45, 48, 53)
 private val G_CHORD_KEYS = setOf(47, 50, 55)
@@ -28,7 +32,7 @@ private const val DOTTED_QUARTER = QUARTER + EIGHTH
 private const val HALF = 2 * QUARTER
 
 /**
- * The Try check of each of the 36 course skills (`docs/algorithms/try-checks.md`), keyed by skill id. Keyboard-wide
+ * The Try check of each of the 41 course skills (`docs/algorithms/try-checks.md`), keyed by skill id. Keyboard-wide
  * checks assume 88 keys (A0 to C8). Piece concepts check their first passage, the same one the Use step plays.
  */
 internal object TryChecks {
@@ -77,6 +81,11 @@ internal object TryChecks {
             Skills.PEDAL_CHANGES.id to
                 TryCheck.PedalChange(listOf(C_CHORD_KEYS, F_CHORD_KEYS, G_CHORD_KEYS, C_CHORD_KEYS)),
             Skills.PEDAL_SONG.id to passage(Skills.PEDAL_SONG),
+            Skills.THUMB_UNDER.id to TryCheck.EvenSequence(THUMB_UNDER_RUN, BEATS_PER_MINUTE),
+            Skills.C_MAJOR_SCALE.id to TryCheck.EvenSequence(C_SCALE, BEATS_PER_MINUTE),
+            Skills.G_MAJOR_SCALE.id to TryCheck.EvenSequence(G_SCALE, BEATS_PER_MINUTE),
+            Skills.LH_C_SCALE.id to TryCheck.EvenSequence(LEFT_C_SCALE, BEATS_PER_MINUTE),
+            Skills.SCALE_SONG.id to passage(Skills.SCALE_SONG),
         )
 
     private fun passage(skill: Skill): TryCheck =

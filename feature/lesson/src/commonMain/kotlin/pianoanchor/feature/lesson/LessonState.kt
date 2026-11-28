@@ -86,7 +86,8 @@ public data class LessonState(
             val progress = tryProgress?.takeIf { step == LessonStep.TRY && !it.finished } ?: return emptySet()
             val expected = progress.expected ?: return emptySet()
             val lit =
-                (check as? TryCheck.PlayKey)?.lit == true || check is TryCheck.Sequence || check is TryCheck.Legato
+                (check as? TryCheck.PlayKey)?.lit == true || check is TryCheck.Sequence || check is TryCheck.Legato ||
+                    check is TryCheck.EvenSequence
             return if (lit || progress.lastWrong != null) setOf(expected) else emptySet()
         }
 }

@@ -158,6 +158,8 @@ public class TryRun private constructor(
 
             is TryCheck.Rhythm -> check.lengths.size
 
+            is TryCheck.EvenSequence -> check.notes.size
+
             is TryCheck.Chord -> check.notes.size
 
             is TryCheck.Passage -> throw IllegalArgumentException(
@@ -185,6 +187,8 @@ public class TryRun private constructor(
 
             is TryCheck.Rhythm -> check.note
 
+            is TryCheck.EvenSequence -> check.notes[state.done]
+
             // No single next key: any key, or a chord (a passage is rejected by total() first).
             else -> null
         }
@@ -195,6 +199,23 @@ public class TryRun private constructor(
         expected: Int,
         right: () -> TryState,
     ): TryState = if (note == expected) right() else state.wrong(note)
+
+    /** A press against a Rhythm or an even sequence: the right note, judged in time by the shared helper. */
+    private fun pressTimedNote(
+        check: TryCheck,
+        note: Int,
+        atMs: Long,
+    ): TryState =
+        when (check) {
+            is TryCheck.EvenSequence -> {
+                single(note, check.notes[state.done]) { state.pressEven(check, note, atMs) }
+            }
+
+            else -> {
+                val rhythm = check as TryCheck.Rhythm
+                single(note, rhythm.note) { state.pressRhythm(rhythm.lengths, rhythm.bpm, atMs) }
+            }
+        }
 
     private fun press(
         note: Int,
@@ -248,8 +269,8 @@ public class TryRun private constructor(
                 single(note, check.note) { state.pressStress(total(), velocity) }
             }
 
-            is TryCheck.Rhythm -> {
-                single(note, check.note) { state.pressRhythm(check, atMs) }
+            is TryCheck.Rhythm, is TryCheck.EvenSequence -> {
+                pressTimedNote(check, note, atMs)
             }
 
             is TryCheck.Chord -> {
@@ -318,17 +339,31 @@ private fun TryState.pressStress(
 }
 
 /**
- * A press of the rhythm's note at [atMs]: the first starts the pattern; a later one is judged by [pressTimed] against
- * the written onsets.
+ * A press of a rhythm's note at [atMs], the pattern being [lengths] (ticks) at [bpm]: the first starts the pattern; a
+ * later one is judged by [pressTimed] against the written onsets. Rhythm and even sequences both use it.
  */
 private fun TryState.pressRhythm(
-    rhythm: TryCheck.Rhythm,
+    lengths: List<Int>,
+    bpm: Int,
     atMs: Long,
 ): TryState {
-    val msPerTick = MS_PER_MINUTE / (rhythm.bpm * TICKS_PER_QUARTER)
-    val offsets = rhythm.lengths.dropLast(1).runningFold(0.0) { sum, length -> sum + length * msPerTick }
-    val tolerance = Tunables.TRY_RHYTHM_TOLERANCE * MS_PER_EIGHTH_AT_ONE_BPM / rhythm.bpm
+    val msPerTick = MS_PER_MINUTE / (bpm * TICKS_PER_QUARTER)
+    val offsets = lengths.dropLast(1).runningFold(0.0) { sum, length -> sum + length * msPerTick }
+    val tolerance = Tunables.TRY_RHYTHM_TOLERANCE * MS_PER_EIGHTH_AT_ONE_BPM / bpm
     return pressTimed(offsets, tolerance, atMs)
+}
+
+/**
+ * The right note [note] of an even sequence at [atMs]: timed like a rhythm of quarters. A timing miss restarts the
+ * attempt, and the press counts as note 1 only if it is the sequence's first note.
+ */
+private fun TryState.pressEven(
+    even: TryCheck.EvenSequence,
+    note: Int,
+    atMs: Long,
+): TryState {
+    val next = pressRhythm(List(even.notes.size) { TICKS_PER_QUARTER }, even.bpm, atMs)
+    return if (next.wrongCount > wrongCount && note != even.notes.first()) next.copy(done = 0) else next
 }
 
 /**

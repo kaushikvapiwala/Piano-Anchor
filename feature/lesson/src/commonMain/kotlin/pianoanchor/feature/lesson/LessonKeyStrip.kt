@@ -85,24 +85,66 @@ internal fun keyRange(
 ): IntRange {
     val notes =
         when (check) {
-            null, TryCheck.AnyKey -> listOf(MIDDLE_C)
-            is TryCheck.PlayKey -> listOf(check.note)
-            is TryCheck.FindAll -> listOf(check.range.first, check.range.last)
-            is TryCheck.Sequence -> check.notes
-            is TryCheck.Repeat -> listOf(check.note)
-            is TryCheck.Hold -> listOf(check.note)
-            is TryCheck.SoftThenLoud -> listOf(check.note)
-            is TryCheck.StressBeatOne -> listOf(check.note)
-            is TryCheck.Rhythm -> listOf(check.note)
-            is TryCheck.Chord -> check.notes.toList()
-            is TryCheck.Legato, is TryCheck.PedalHold, is TryCheck.PedalChange -> pedalCheckNotes(check)
-            is TryCheck.Passage -> emptyList()
+            null, TryCheck.AnyKey -> {
+                listOf(MIDDLE_C)
+            }
+
+            is TryCheck.PlayKey -> {
+                listOf(check.note)
+            }
+
+            is TryCheck.FindAll -> {
+                listOf(check.range.first, check.range.last)
+            }
+
+            is TryCheck.Sequence, is TryCheck.EvenSequence -> {
+                orderedNotes(check)
+            }
+
+            is TryCheck.Repeat -> {
+                listOf(check.note)
+            }
+
+            is TryCheck.Hold -> {
+                listOf(check.note)
+            }
+
+            is TryCheck.SoftThenLoud -> {
+                listOf(check.note)
+            }
+
+            is TryCheck.StressBeatOne -> {
+                listOf(check.note)
+            }
+
+            is TryCheck.Rhythm -> {
+                listOf(check.note)
+            }
+
+            is TryCheck.Chord -> {
+                check.notes.toList()
+            }
+
+            is TryCheck.Legato, is TryCheck.PedalHold, is TryCheck.PedalChange -> {
+                pedalCheckNotes(check)
+            }
+
+            is TryCheck.Passage -> {
+                emptyList()
+            }
         } + extra
     var low = notes.min() / NOTES_PER_OCTAVE * NOTES_PER_OCTAVE
     val high = notes.max() / NOTES_PER_OCTAVE * NOTES_PER_OCTAVE + NOTES_PER_OCTAVE - 1
     if (high - low + 1 < MIN_SPAN) low -= NOTES_PER_OCTAVE
     return low.coerceAtLeast(LOWEST_KEY)..high.coerceAtMost(HIGHEST_KEY)
 }
+
+/** The notes of a sequence, plain or even (kept apart from [pedalCheckNotes] to keep [keyRange] simple). */
+private fun orderedNotes(check: TryCheck): List<Int> =
+    when (check) {
+        is TryCheck.EvenSequence -> check.notes
+        else -> (check as TryCheck.Sequence).notes
+    }
 
 /** The notes of a legato or pedal check. */
 private fun pedalCheckNotes(check: TryCheck): List<Int> =

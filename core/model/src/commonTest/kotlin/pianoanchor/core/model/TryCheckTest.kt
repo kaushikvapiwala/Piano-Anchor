@@ -27,6 +27,13 @@ class TryCheckTest {
     }
 
     @Test
+    fun `an even sequence keeps its parts and needs two notes and a tempo`() {
+        TryCheck.EvenSequence(listOf(60, 62), 60).let { assertEquals(listOf(60, 62) to 60, it.notes to it.bpm) }
+        assertFailsWith<IllegalArgumentException> { TryCheck.EvenSequence(listOf(60), 60) }
+        assertFailsWith<IllegalArgumentException> { TryCheck.EvenSequence(listOf(60, 62), 0) }
+    }
+
+    @Test
     fun `a rhythm needs two lengths and every length above zero`() {
         assertFailsWith<IllegalArgumentException> { TryCheck.Rhythm(60, listOf(480), 60) }
         assertFailsWith<IllegalArgumentException> { TryCheck.Rhythm(60, listOf(480, 0), 60) }

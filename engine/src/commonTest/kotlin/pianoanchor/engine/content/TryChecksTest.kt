@@ -16,7 +16,7 @@ class TryChecksTest {
 
     @Test
     fun `every course skill has a check`() {
-        assertEquals(36, courseIds.size)
+        assertEquals(41, courseIds.size)
         courseIds.forEach { assertNotNull(Curriculum.tryCheck(it), it) }
         assertEquals(courseIds.toSet(), TryChecks.all.keys)
     }
@@ -24,7 +24,7 @@ class TryChecksTest {
     @Test
     fun `every passage check names a passage of its skill`() {
         val passageChecks = courseIds.filter { Curriculum.tryCheck(it) is TryCheck.Passage }
-        assertEquals(9, passageChecks.size)
+        assertEquals(10, passageChecks.size)
         passageChecks.forEach { id ->
             val check = Curriculum.tryCheck(id) as TryCheck.Passage
             val passage = Curriculum.passage(check.passageId)
@@ -78,6 +78,27 @@ class TryChecksTest {
             Curriculum.tryCheck("pedal-changes"),
         )
         assertEquals(TryCheck.Passage("builtin:amazing-grace"), Curriculum.tryCheck("pedal-song"))
+    }
+
+    @Test
+    fun `the unit 7 checks are the five rows of the spec`() {
+        assertEquals(
+            TryCheck.EvenSequence(listOf(60, 62, 64, 65, 67, 69, 67, 65, 64, 62, 60), 60),
+            Curriculum.tryCheck("thumb-under"),
+        )
+        assertEquals(
+            TryCheck.EvenSequence(listOf(60, 62, 64, 65, 67, 69, 71, 72, 71, 69, 67, 65, 64, 62, 60), 60),
+            Curriculum.tryCheck("c-major-scale"),
+        )
+        assertEquals(
+            TryCheck.EvenSequence(listOf(67, 69, 71, 72, 74, 76, 78, 79, 78, 76, 74, 72, 71, 69, 67), 60),
+            Curriculum.tryCheck("g-major-scale"),
+        )
+        assertEquals(
+            TryCheck.EvenSequence(listOf(48, 50, 52, 53, 55, 57, 59, 60, 59, 57, 55, 53, 52, 50, 48), 60),
+            Curriculum.tryCheck("lh-c-scale"),
+        )
+        assertEquals(TryCheck.Passage("builtin:joy-to-the-world"), Curriculum.tryCheck("scale-song"))
     }
 
     @Test

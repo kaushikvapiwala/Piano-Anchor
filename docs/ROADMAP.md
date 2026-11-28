@@ -40,10 +40,7 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
-    major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
-    placement piece; closes course 2.
-2. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
+1. **Staff spelling: leading tones and the card staff** (needs-owner: #316; found reviewing #307): flat keys spell every black key as a
     flat, so a leading-tone sharp (C♯ in D minor) reads as D♭; and the lesson cards' staff still spells sharps in every
     key. Spell by the key's scale degrees and make the card staff use the engine's spelled step.
 
@@ -51,6 +48,8 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
 pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md` (`scripts/capture_session.sh` records a session).
 
+- **Scales (#300):** Unit 7's even-scale Trys pass with steady notes on the click and fail when rushed or dragged; the
+  thumb-under Try needs C up to A; Joy to the World plays with its left-hand chords.
 - **Pedal and legato (#294, #295):** Unit 6's lessons on a real piano: the legato Try passes with joined keys, the
   sustain-pedal and pedal-change Trys read the pedal (CC 64), a pedal tap doesn't skip those lessons, the See demo's
   pedal cue sounds on the piano, and Amazing Grace's staff shows the pedal line with a notch each bar.
@@ -111,7 +110,7 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2, M3.3 settings, M3.4 Today, M3.5 onboarding, M3.6 update check and M3.7 release pipeline done; v0.1.0 and the dogfood are the owner's) | Dogfood (`docs/RELEASING.md`): the owner uses the released APK; Today's practice-day line shows 14 practice days within 16, and no open `dogfood` issue is labelled `blocker` |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (✅ done: tracks in the daily plan #151, ear #152, songs and chords #153, the contribute-a-piano kit #154) | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting (✅ done: M5.1 hint fading, M5.2 perform mode, M5.3 spot loops and M5.4 unaided pass and strictness) | Unaided pass required before "learned" |
-| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245), M6.2 (daily sight-reading card, #246) and M6.3 (played placement test, #247) done; staff notation done (#272); M6.4 (Unit 4, eighth notes and the dotted quarter, #273) done; M6.5 (Unit 5, G position and the key of G, #274) done; M6.6 (Unit 6, legato and the pedal, #295) done | Placement reproducible |
+| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245), M6.2 (daily sight-reading card, #246) and M6.3 (played placement test, #247) done; staff notation done (#272); M6.4 (Unit 4, eighth notes and the dotted quarter, #273) done; M6.5 (Unit 5, G position and the key of G, #274) done; M6.6 (Unit 6, legato and the pedal, #295) and M6.7 (Unit 7, scales with thumb-under, #300) done: course 2 complete | Placement reproducible |
 | M7 | Heatmaps, recordings, calibration report | Predicted vs observed retention plotted |
 | M8 | Optional Google Drive sync | Round-trip sync between two devices |
 | M9 | Kids (ages 6–8+): research pass, age-appropriate content | — |

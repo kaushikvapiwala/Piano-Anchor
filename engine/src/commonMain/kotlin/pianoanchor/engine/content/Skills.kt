@@ -136,6 +136,25 @@ public object Skills {
     public val PEDAL_SONG: Skill =
         Skill("pedal-song", "A song with pedal", setOf(PEDAL_CHANGES.id, THREE_FOUR_TIME.id))
 
+    /** Passing the thumb under the hand so a line can climb past finger 5. */
+    public val THUMB_UNDER: Skill =
+        Skill("thumb-under", "Thumb under", setOf(RH_C_POSITION.id, PEDAL_SONG.id))
+
+    /** Playing the C major scale, one octave up and down, with the right hand. */
+    public val C_MAJOR_SCALE: Skill = Skill("c-major-scale", "The C major scale", setOf(THUMB_UNDER.id))
+
+    /** Playing the G major scale, one octave up and down, with the right hand. */
+    public val G_MAJOR_SCALE: Skill =
+        Skill("g-major-scale", "The G major scale", setOf(C_MAJOR_SCALE.id, KEY_OF_G.id))
+
+    /** Playing the C major scale, one octave up and down, with the left hand. */
+    public val LH_C_SCALE: Skill =
+        Skill("lh-c-scale", "Left-hand C scale", setOf(C_MAJOR_SCALE.id, LH_C_POSITION.id))
+
+    /** Playing the opening of Joy to the World, which runs down the C major scale. */
+    public val SCALE_SONG: Skill =
+        Skill("scale-song", "A song with a scale", setOf(C_MAJOR_SCALE.id, DOTTED_QUARTER.id))
+
     /** Playing F and G in first inversion, so the left hand stays close to C. */
     public val MORE_INVERSIONS: Skill =
         Skill(

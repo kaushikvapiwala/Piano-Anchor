@@ -132,4 +132,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Legato | Notes joined: each key goes down as the one before comes up, with no gap and no blur. The Try check `Legato` judges a gap (`GAP`) and a long overlap (`OVERLAP`). |
 | Sustain pedal | The pedal that keeps the sound ringing after the keys come up (MIDI controller 64). Down at value 64 or more, up again below 32. A quick tap means "continue" in a lesson unless the concept uses the pedal as music. |
 | Pedal change | Lifting the pedal and pressing it again just after a new chord, so the old chord stops and the new one rings. The Try check `PedalChange` judges it (`EARLY`, `LATE`). |
+| Scale | Notes in a fixed pattern of steps, played in order up and down. The C major scale is the eight white keys from C to C. The Try check `EvenSequence` judges a scale by evenness on the click. |
+| Thumb-under | Passing the thumb under the hand to the next key after finger 3 (or 4) plays, so a line can climb past finger 5. The app cannot see fingers; an even scale stands in for a smooth thumb-under. |
+| Finger crossing | Going the other way: a finger (usually 3) passes over the thumb to the next key, as when a scale comes down. |
 | Pedal mark | A span of the sustain pedal in a passage (`PedalSpan`, `Passage.pedal`), drawn as a line under the staff with a notch at each change. Marks are drawn, never judged. |

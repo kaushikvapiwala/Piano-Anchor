@@ -111,7 +111,7 @@ class SongsViewModelTest {
             assertEquals(PieceStatus.NEW, vm.piece("four-chord-walk").status)
             assertEquals(PieceStatus.NEW, vm.piece("jingle-bells").status)
             assertEquals(PieceStatus.NEW, vm.piece("go-tell-aunt-rhody").status)
-            assertEquals(13, checkNotNull(vm.state.value.pieces).size)
+            assertEquals(14, checkNotNull(vm.state.value.pieces).size)
             assertFalse(vm.state.value.storageFailed)
         }
 

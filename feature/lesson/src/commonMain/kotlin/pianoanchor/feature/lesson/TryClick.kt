@@ -16,6 +16,7 @@ internal fun clickOf(check: TryCheck): Int? =
         is TryCheck.Hold -> check.bpm
         is TryCheck.StressBeatOne -> check.bpm
         is TryCheck.Rhythm -> check.bpm
+        is TryCheck.EvenSequence -> check.bpm
         else -> null
     }
 

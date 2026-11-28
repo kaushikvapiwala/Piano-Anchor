@@ -19,6 +19,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.NoteLabelsUseCase
+import pianoanchor.engine.lesson.TryTiming
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeLearnerRepository
 import pianoanchor.testing.FakeMetronome
@@ -213,5 +214,51 @@ class LessonViewModelTryRepsTest {
             runCurrent()
             assertEquals(LessonStep.USE, vm.state.value.step)
             vm.close()
+        }
+
+    private fun TestScope.pressNoteAfter(
+        note: Int,
+        ms: Long,
+    ) {
+        piano.clock.advanceNanos(ms * 1_000_000)
+        press(note)
+    }
+
+    @Test
+    fun anEvenScaleCountsInThenJudgesEachNoteAgainstTheClick() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.C_MAJOR_SCALE)
+            toTry(vm)
+            assertNotNull(metronome.running.value)
+            // During the count-in nothing counts.
+            press(60)
+            assertEquals(
+                0,
+                vm.state.value.tryProgress
+                    ?.done,
+            )
+            advanceTimeBy(5_000)
+            runCurrent()
+            assertNull(vm.state.value.countIn)
+            press(60)
+            pressNoteAfter(62, 1_000)
+            assertEquals(
+                2,
+                vm.state.value.tryProgress
+                    ?.done,
+            )
+            pressNoteAfter(64, 400)
+            assertEquals(
+                TryTiming.EARLY,
+                vm.state.value.tryProgress
+                    ?.timing,
+            )
+            assertEquals(
+                0,
+                vm.state.value.tryProgress
+                    ?.done,
+            )
+            vm.close()
+            assertNull(metronome.running.value)
         }
 }

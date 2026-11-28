@@ -35,6 +35,7 @@ class StaffNotationScreenshotTest {
     private val odeWithChords = Curriculum.passage("builtin:ode-to-joy-held-bass")!!
     private val auntRhody = Curriculum.passage("builtin:go-tell-aunt-rhody")!!
     private val amazingGrace = Curriculum.passage("builtin:amazing-grace")!!
+    private val joyToTheWorld = Curriculum.passage("builtin:joy-to-the-world")!!
     private val turnTaking = Curriculum.passages.first { it.title == "Turn-taking" }
     private val gMajor =
         Passage(
@@ -140,6 +141,9 @@ class StaffNotationScreenshotTest {
 
     @Test
     fun amazingGraceShowsThreeFourWithAPedalLineAndNotches() = capture("amazing_grace", amazingGrace)
+
+    @Test
+    fun joyToTheWorldShowsTheScaleRunningDownOverChords() = capture("joy_to_the_world", joyToTheWorld)
 
     @Test
     fun odeWithChordsAtFontScale2() = capture("ode_with_chords_font2", odeWithChords, FONT_SCALE_LARGE)

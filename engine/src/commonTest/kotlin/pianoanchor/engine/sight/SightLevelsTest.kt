@@ -23,11 +23,11 @@ class SightLevelsTest {
     }
 
     @Test
-    fun everySkillOpensAll13() {
-        assertEquals(13, SightLevels.all.size)
-        assertEquals((1..13).toList(), SightLevels.all.map { it.number })
-        assertEquals(13, SightLevels.open(SightLevels.all.map { it.skill }.toSet()))
-        assertEquals(Skills.PEDAL_CHANGES.id, SightLevels.all.last().skill)
+    fun everySkillOpensAll14() {
+        assertEquals(14, SightLevels.all.size)
+        assertEquals((1..14).toList(), SightLevels.all.map { it.number })
+        assertEquals(14, SightLevels.open(SightLevels.all.map { it.skill }.toSet()))
+        assertEquals(Skills.C_MAJOR_SCALE.id, SightLevels.all.last().skill)
     }
 
     @Test
@@ -72,5 +72,16 @@ class SightLevelsTest {
         assertEquals(8, SightLevels.open(upToChords + Skills.DOTTED_QUARTER.id))
         assertEquals(9, SightLevels.open(upToChords + Skills.EIGHTH_NOTES.id))
         assertEquals(10, SightLevels.open(upToChords + Skills.EIGHTH_NOTES.id + Skills.DOTTED_QUARTER.id))
+    }
+
+    @Test
+    fun cMajorScaleWithoutPedalChangesStopsAtLevel12() {
+        val upTo12 =
+            SightLevels.all
+                .take(12)
+                .map { it.skill }
+                .toSet()
+        assertEquals(12, SightLevels.open(upTo12 + Skills.C_MAJOR_SCALE.id))
+        assertEquals(14, SightLevels.open(upTo12 + Skills.C_MAJOR_SCALE.id + Skills.PEDAL_CHANGES.id))
     }
 }

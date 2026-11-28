@@ -72,6 +72,18 @@ class LessonViewModelHandTest {
         ).also { runCurrent() }
 
     @Test
+    fun seeOfAnEvenScaleShowsNoHandButStillPlays() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.THUMB_UNDER)
+            vm.goTo(LessonStep.SEE)
+            runCurrent()
+
+            assertNull(vm.state.value.seeHand)
+            assertTrue(vm.state.value.playing)
+            vm.close()
+        }
+
+    @Test
     fun seeOfAMelodicCheckExposesTheHandAndTheElapsedTime() =
         runTest(dispatcher) {
             val vm = viewModel(Skills.RH_C_POSITION)

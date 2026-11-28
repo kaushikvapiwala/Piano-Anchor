@@ -4,6 +4,7 @@ import pianoanchor.core.model.CARD_SCENE_CAPTION_MAX_CHARS
 import pianoanchor.core.model.CARD_SCENE_DESCRIPTION_MAX_CHARS
 import pianoanchor.core.model.CARD_SCENE_LOOP_MS
 import pianoanchor.core.model.SceneAction
+import pianoanchor.core.model.SceneHand
 import pianoanchor.engine.Tunables
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -102,6 +103,33 @@ class CardScenesTest {
         assertEquals(listOf("C", "Change after the chord"), captions("pedal-changes"))
         assertEquals(listOf(55, 60, 64, 60, 64, 62), lights("pedal-song").map { it.note })
         assertEquals(listOf("Amazing Grace"), captions("pedal-song"))
+    }
+
+    @Test
+    fun `the Unit 7 scenes light the keys and caption of the spec`() {
+        fun captions(id: String) =
+            checkNotNull(Curriculum.scene(id)).cues.mapNotNull { (it.action as? SceneAction.Caption)?.text }
+        listOf("thumb-under", "c-major-scale", "g-major-scale", "lh-c-scale", "scale-song").forEach { id ->
+            val scene = checkNotNull(Curriculum.scene(id), { id })
+            assertTrue(scene.description.isNotBlank(), id)
+        }
+        assertEquals(listOf(60, 62, 64, 65), lights("thumb-under").map { it.note })
+        assertEquals(listOf(1, 2, 3, 1), lights("thumb-under").map { it.finger })
+        assertEquals(listOf("Thumb under"), captions("thumb-under"))
+        assertEquals(listOf(60, 62, 64, 65, 67, 69, 71, 72), lights("c-major-scale").map { it.note })
+        assertEquals(listOf("C major scale"), captions("c-major-scale"))
+        assertEquals(listOf(67, 69, 71, 72, 74, 76, 78, 79), lights("g-major-scale").map { it.note })
+        assertEquals(
+            listOf(false, false, false, false, false, false, true, false),
+            lights("g-major-scale").map { it.strong },
+        )
+        assertEquals(listOf("F\u266F in G"), captions("g-major-scale"))
+        assertEquals(listOf(48, 50, 52, 53, 55, 57, 59, 60), lights("lh-c-scale").map { it.note })
+        assertEquals(listOf("Left hand"), captions("lh-c-scale"))
+        assertEquals(listOf(72, 71, 69, 67, 65, 64, 62, 60), lights("scale-song").map { it.note })
+        assertEquals(listOf("Joy to the World"), captions("scale-song"))
+        assertEquals(SceneHand.LEFT, checkNotNull(Curriculum.scene("lh-c-scale")).stage.hand)
+        assertEquals(60..69, checkNotNull(Curriculum.scene("thumb-under")).stage.keys)
     }
 
     private fun lights(id: String) =
