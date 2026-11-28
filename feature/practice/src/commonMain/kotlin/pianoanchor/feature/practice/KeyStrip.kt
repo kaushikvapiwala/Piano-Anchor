@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.RunMode
+import pianoanchor.engine.lesson.KeyName
 import pianoanchor.engine.lesson.NoteNameRule
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.feature.practice.resources.Res
@@ -56,6 +57,7 @@ import pianoanchor.ui.shell.KeyLetters
 import pianoanchor.ui.shell.PianoAnchorColors
 import pianoanchor.ui.shell.keyLetterColor
 import pianoanchor.ui.shell.keyLettersHeight
+import pianoanchor.ui.shell.keyNameText
 import pianoanchor.ui.shell.pianoAnchorColors
 import kotlin.math.abs
 
@@ -255,8 +257,8 @@ private fun BoxScope.KeyContent(
     width: Dp,
     black: Boolean,
 ) {
-    val letter = state.keyLetter(note, target)
-    val flat = NoteNameRule.flatLabel(note.number).takeIf { black }
+    val letter = state.keyLetter(note, target)?.let { keyNameText(it) }
+    val flat = if (letter != null && black) NoteNameRule.flatLabel(note.number)?.let { keyNameText(it) } else null
     if (banded) {
         // A lettered band is as tall as its letters and their padding, so the letters sit wholly on the band.
         val bandHeight =
@@ -295,7 +297,7 @@ private fun BoxScope.KeyContent(
 private fun PracticeState.keyLetter(
     note: MidiNote,
     target: Boolean,
-): String? {
+): KeyName? {
     if (mode == RunMode.PERFORM) return null
     val hinted = hint?.let { setOf(it.played, it.expected) }.orEmpty()
     return noteLabels.label(note.number, if (target) setOf(note.number) else emptySet(), hinted)

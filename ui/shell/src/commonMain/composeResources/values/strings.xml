@@ -26,4 +26,13 @@
     <string name="hint_same_key">Same letter, other octave: try %1$s.</string>
     <string name="pedal_hint">Tap the pedal to continue</string>
     <string name="pedal_hint_description">%1$s. %2$s</string>
+    <string name="note_letter_c">C</string>
+    <string name="note_letter_d">D</string>
+    <string name="note_letter_e">E</string>
+    <string name="note_letter_f">F</string>
+    <string name="note_letter_g">G</string>
+    <string name="note_letter_a">A</string>
+    <string name="note_letter_b">B</string>
+    <string name="note_sharp">%1$s♯</string>
+    <string name="note_flat">%1$s♭</string>
 </resources>

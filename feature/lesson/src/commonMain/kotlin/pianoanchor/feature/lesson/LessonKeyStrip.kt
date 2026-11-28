@@ -37,6 +37,7 @@ import pianoanchor.feature.lesson.resources.Res
 import pianoanchor.feature.lesson.resources.lesson_see_your_turn
 import pianoanchor.ui.shell.KeyLetters
 import pianoanchor.ui.shell.keyLetterColor
+import pianoanchor.ui.shell.keyNameText
 import pianoanchor.ui.shell.pianoAnchorColors
 import pianoanchor.ui.shell.rememberReduceMotion
 
@@ -195,7 +196,7 @@ internal fun KeyStrip(
                     litKeys,
                     glowKeys,
                     wrong,
-                    labels.label(note.number, glowKeys, hinted),
+                    labels.label(note.number, glowKeys, hinted)?.let { keyNameText(it) },
                     WHITE_KEY_WIDTH,
                     WHITE_KEY_HEIGHT,
                     WHITE_PITCH * i,
@@ -210,7 +211,7 @@ internal fun KeyStrip(
                     litKeys,
                     glowKeys,
                     wrong,
-                    labels.label(note.number, glowKeys, hinted),
+                    labels.label(note.number, glowKeys, hinted)?.let { keyNameText(it) },
                     BLACK_KEY_WIDTH,
                     BLACK_KEY_HEIGHT,
                     x,
@@ -268,7 +269,7 @@ private fun Key(
         if (letter != null) {
             KeyLetters(
                 letter,
-                NoteNameRule.flatLabel(note.number).takeIf { black },
+                flatText(note, black),
                 keyLetterColor(
                     fill,
                     if (black) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -279,3 +280,10 @@ private fun Key(
         }
     }
 }
+
+/** The flat name of black key [note] as text (shown under its sharp name), or null on a white key. */
+@Composable
+private fun flatText(
+    note: MidiNote,
+    black: Boolean,
+): String? = NoteNameRule.flatLabel(note.number).takeIf { black }?.let { keyNameText(it) }

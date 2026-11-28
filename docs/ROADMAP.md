@@ -40,28 +40,28 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
-    come from engine strings; return a pitch class and accidental from the note-name rule and map it to
-    Compose string resources in the UI, so the names can be translated.
-2. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
+1. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
     Unit 0 wide strip and at font scale 2.0; a "not loaded yet" state so a beginner's strip doesn't open blank and
     letter itself a moment later; Practice takes the note-labels use case from Koin like Lesson and Quiz.
-3. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
+2. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
     keys as flats in flat keys (today a flat key reads "in F major" with no flats drawn); beam 6/8 eighths in threes
     and use dotted-quarter rests on its beats.
-4. **Rhythm Try: drift from the first tap** (spec #296): judge each tap also against where it should fall counting
+3. **Rhythm Try: drift from the first tap** (spec #296): judge each tap also against where it should fall counting
     from the first tap, so a steady tempo off the click can't pass.
-5. **Session steps: Results and stored progress** (spec #297): Practise and Sight-read steps of the one-tap session
+4. **Session steps: Results and stored progress** (spec #297): Practise and Sight-read steps of the one-tap session
     end on Results with "Continue"; the day's finished steps are stored so a restart resumes; the streak read is
     bounded.
-6. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
+5. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
     48..52 chromatically (C, C♯, D, D♯, E) instead of the white keys C D E F G; use an explicit key list like the
     left-hand G scene and re-record its screenshots.
-7. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
+6. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
     fade and a short "Your turn" moment.
-8. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
+7. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
     major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
     placement piece; closes course 2.
+8. **Wrong-key hint names from Compose resources** (found reviewing #304): the hint text beside the strips still
+    names notes with English letters from `MidiNote.spoken()`, so a translated build would name the same key two ways;
+    spell the hint's notes with the key-name string resources the strips use.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
