@@ -50,6 +50,9 @@ Drawn after the clef on each staff, before the time signature, in the standard p
 A4 E5 B4, flats at treble B4 E5 A4 D5 G4 C5 F4; the bass staff two octaves lower. The staff reserves 14 dp per sharp or
 flat; C reserves none.
 
+Known limitation: a flat key spells every black key as a flat, so a leading-tone sharp (C-sharp in D minor) is not
+spelled yet.
+
 ## Spacing and colour
 
 Spacing is by ticks with the usual minimum gap; rests occupy tick positions like notes. Stems, flags and dots take their

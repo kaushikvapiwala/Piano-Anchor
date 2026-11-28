@@ -6,7 +6,6 @@ import pianoanchor.core.model.Passage
 import pianoanchor.core.model.PedalSpan
 import pianoanchor.core.model.ScoreNote
 import pianoanchor.core.model.TICKS_PER_QUARTER
-import pianoanchor.core.model.TimeSignature
 import kotlin.math.abs
 
 /** The two staves of a grand staff. */
@@ -102,6 +101,12 @@ public data class Engraved(
 
 /** Turns a passage's steps into the symbols a staff draws. Pure music-theory rules; no drawing. */
 public object Engraving {
+    /** The diatonic step of [pitch] as [key] spells it (octave × 7 + letter): a flat key writes black keys as flats. */
+    public fun spelledStep(
+        pitch: MidiNote,
+        key: KeySignature,
+    ): Int = diatonic(pitch, key)
+
     /** Engraves [passage]; see `docs/algorithms/engraving.md` for every rule. */
     public fun engrave(passage: Passage): Engraved {
         val barTicks = passage.timeSignature.barTicks
@@ -116,7 +121,7 @@ public object Engraving {
             val written = chordsOn(staff, passage)
             if (written.isEmpty()) continue
             chords += finish(staff, written, passage.keySignature, barTicks, beatTicks, groups)
-            rests += restsOn(staff, written, barTicks, beatTicks, endTicks)
+            rests += restsOn(staff, written, barTicks, passage.timeSignature, endTicks)
         }
         return Engraved(
             chords = chords.sortedWith(compareBy({ it.stepIndex }, { it.staff })),
@@ -197,7 +202,7 @@ private fun finish(
 ): List<EngravedChord> {
     val beamOf = HashMap<Int, Int>()
     val stemOf = HashMap<Int, StemDirection>()
-    beamRuns(written, beatTicks).forEach { run ->
+    beamRuns(written, barTicks, beatTicks).forEach { run ->
         val number = groups.take()
         val direction = stemFor(staff, run.flatMap { written[it].pitches }, key)
         run.forEach { index ->
@@ -227,6 +232,7 @@ private fun finish(
 /** Index runs (two or more) of consecutive eighths with no rest between them, all inside one beat. */
 private fun beamRuns(
     written: List<Written>,
+    barTicks: Int,
     beatTicks: Int,
 ): List<List<Int>> {
     val runs = ArrayList<List<Int>>()
@@ -242,13 +248,20 @@ private fun beamRuns(
             chord.value == NoteValue.EIGHTH &&
                 previous != null &&
                 previous.onsetTicks + previous.value.ticks == chord.onsetTicks &&
-                previous.onsetTicks / beatTicks == chord.onsetTicks / beatTicks
+                beatIn(previous.onsetTicks, barTicks, beatTicks) == beatIn(chord.onsetTicks, barTicks, beatTicks)
         if (!continues) close()
         if (chord.value == NoteValue.EIGHTH) run += index
     }
     close()
     return runs
 }
+
+/** The beat a tick falls in, as (bar, beat within the bar), so a beat never spans a bar line. */
+private fun beatIn(
+    tick: Int,
+    barTicks: Int,
+    beatTicks: Int,
+): Pair<Int, Int> = tick / barTicks to tick % barTicks / beatTicks
 
 /** Up when the note farthest from the middle line is below it, down when it is on or above it. */
 private fun stemFor(

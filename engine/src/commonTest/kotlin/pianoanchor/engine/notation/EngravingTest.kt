@@ -465,7 +465,7 @@ class EngravingTest {
 
     @Test
     fun sixEightRestsNeverCrossABeat() {
-        // After an eighth, a quarter may not start mid-beat (it would cross it): two eighths, then a dotted quarter.
+        // After an eighth a quarter cannot start mid-beat (not a multiple of its length): two eighths, then a dotted.
         assertEquals(
             listOf(
                 EngravedRest(Staff.TREBLE, Q / 2, NoteValue.EIGHTH),
@@ -478,6 +478,22 @@ class EngravingTest {
             listOf(EngravedRest(Staff.TREBLE, 0, NoteValue.QUARTER)),
             engrave("rq C4e C4e C4q", sixEight).rests,
         )
+    }
+
+    @Test
+    fun threeEightBeamsNeverSpanTheBarLine() {
+        val chords = engrave("C4e D4e E4e | F4e G4e A4e", TimeSignature(3, 8)).chords
+
+        assertEquals(chords[0].beamGroup, chords[1].beamGroup)
+        assertNull(chords[2].beamGroup)
+        assertEquals(chords[3].beamGroup, chords[4].beamGroup)
+        assertNotEquals(chords[0].beamGroup, chords[3].beamGroup)
+    }
+
+    @Test
+    fun theSpelledStepFollowsTheKey() {
+        assertEquals(Engraving.spelledStep(MidiNote(62), f), Engraving.spelledStep(MidiNote(61), f))
+        assertEquals(Engraving.spelledStep(MidiNote(60), f), Engraving.spelledStep(MidiNote(61), KeySignature.C))
     }
 
     @Test

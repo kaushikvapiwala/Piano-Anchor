@@ -6,7 +6,8 @@ import pianoanchor.core.model.TimeSignature
 private val COMPOUND_BEATS = setOf(6, 9, 12)
 private const val EIGHTH_BEAT_UNIT = 8
 
-private fun isCompound(time: TimeSignature): Boolean = time.beatUnit == EIGHTH_BEAT_UNIT && time.beats in COMPOUND_BEATS
+internal fun isCompound(time: TimeSignature): Boolean =
+    time.beatUnit == EIGHTH_BEAT_UNIT && time.beats in COMPOUND_BEATS
 
 /** The length of a beat for beaming and rests: a dotted quarter in compound metres, else a quarter. */
 internal fun beatTicks(time: TimeSignature): Int =
@@ -17,16 +18,16 @@ internal fun restsOn(
     staff: Staff,
     written: List<Written>,
     barTicks: Int,
-    beatTicks: Int,
+    time: TimeSignature,
     endTicks: Int,
 ): List<EngravedRest> {
     val rests = ArrayList<EngravedRest>()
     var cursor = 0
     written.forEach { chord ->
-        if (chord.onsetTicks > cursor) fillGap(staff, cursor, chord.onsetTicks, barTicks, beatTicks, rests)
+        if (chord.onsetTicks > cursor) fillGap(staff, cursor, chord.onsetTicks, barTicks, time, rests)
         cursor = maxOf(cursor, chord.onsetTicks + chord.lengthTicks)
     }
-    if (endTicks > cursor) fillGap(staff, cursor, endTicks, barTicks, beatTicks, rests)
+    if (endTicks > cursor) fillGap(staff, cursor, endTicks, barTicks, time, rests)
     return rests
 }
 
@@ -35,7 +36,7 @@ private fun fillGap(
     from: Int,
     to: Int,
     barTicks: Int,
-    beatTicks: Int,
+    time: TimeSignature,
     into: MutableList<EngravedRest>,
 ) {
     for (bar in (from / barTicks..(to - 1) / barTicks).toList()) {
@@ -49,7 +50,7 @@ private fun fillGap(
         var position = start
         while (position < end) {
             val value =
-                REST_VALUES.firstOrNull { fits(it, position - barStart, end - barStart, beatTicks) } ?: break
+                REST_VALUES.firstOrNull { fits(it, position - barStart, end - barStart, time) } ?: break
             into += EngravedRest(staff, position, value)
             position += value.ticks
         }
@@ -64,16 +65,17 @@ private val REST_VALUES = listOf(NoteValue.HALF, NoteValue.DOTTED_QUARTER, NoteV
 
 /**
  * Whether a rest of [value] may start [offset] ticks into its bar and end by [end]: aligned to its own length, and
- * (in compound metres only) inside one beat of [beatTicks]. A simple-metre beat (a quarter) is not a limit: a half rest
+ * (in compound metres only) inside one beat of [time]. A simple-metre beat (a quarter) is not a limit: a half rest
  * spans two of them.
  */
 private fun fits(
     value: NoteValue,
     offset: Int,
     end: Int,
-    beatTicks: Int,
+    time: TimeSignature,
 ): Boolean {
-    val compound = beatTicks != NoteValue.QUARTER.ticks
+    val compound = isCompound(time)
+    val beatTicks = beatTicks(time)
     return when {
         offset + value.ticks > end -> false
         compound -> offset % beatTicks % value.ticks == 0 && offset % beatTicks + value.ticks <= beatTicks

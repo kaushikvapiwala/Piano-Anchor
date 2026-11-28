@@ -268,6 +268,7 @@ private class StaffPainter(
         timeNumbers: Pair<TextLayoutResult, TextLayoutResult>,
     ) = with(scope) {
         val line = colors.staffLine
+        val keyGlyph = if (sharps < 0) FLAT else SHARP
         staves.forEach { staff ->
             val base = staff.bottom()
             repeat(STAFF_LINES) { n ->
