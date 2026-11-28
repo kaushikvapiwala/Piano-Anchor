@@ -258,6 +258,49 @@ class TryRunTest {
     }
 
     @Test
+    fun `rhythm taps a fifth fast fail on drift as early`() {
+        val run = TryRun(eighths).tapAt(0, 400, 800)
+        assertEquals(TryProgress(1, 8, 60, null, false, 1, TryTiming.EARLY), run.progress)
+    }
+
+    @Test
+    fun `rhythm taps a fifth slow fail on drift as late`() {
+        val run = TryRun(eighths).tapAt(0, 600, 1200)
+        assertEquals(TryProgress(1, 8, 60, null, false, 1, TryTiming.LATE), run.progress)
+    }
+
+    @Test
+    fun `rhythm steady tempo a third slow passes press two and fails press three on drift`() {
+        assertEquals(2, TryRun(eighths).tapAt(0, 667).progress.done)
+        val run = TryRun(eighths).tapAt(0, 667, 1334)
+        assertEquals(TryProgress(1, 8, 60, null, false, 1, TryTiming.LATE), run.progress)
+    }
+
+    @Test
+    fun `rhythm jitter that cancels still finishes`() {
+        val done = TryRun(eighths).tapAt(0, 520, 1000, 1520, 2000, 2520, 3000, 3520)
+        assertEquals(TryProgress(8, 8, null, null, true, 0, null), done.progress)
+    }
+
+    @Test
+    fun `rhythm timing comes from the gap when the gap fails and from the drift when only drift fails`() {
+        // Gap fine (+170) but drift +340 outside: LATE from drift.
+        val drift = TryRun(eighths).tapAt(0, 670, 1340)
+        assertEquals(TryTiming.LATE, drift.progress.timing)
+        // Gap early (-200) and drift -30 (inside): the gap decides, EARLY.
+        val gap = TryRun(eighths).tapAt(0, 670, 970)
+        assertEquals(TryTiming.EARLY, gap.progress.timing)
+        // Gap late (+200), drift +30: the gap decides, LATE.
+        assertEquals(TryTiming.LATE, TryRun(eighths).tapAt(0, 330, 1030).progress.timing)
+    }
+
+    @Test
+    fun `rhythm restarts the drift from the failing tap`() {
+        val run = TryRun(eighths).tapAt(0, 400, 800, 1300)
+        assertEquals(TryProgress(2, 8, 60, null, false, 1, null), run.progress)
+    }
+
+    @Test
     fun `rhythm treats another key as wrong and keeps the count`() {
         val run = TryRun(eighths).tapAt(0, 500).press(62, at = 700)
         assertEquals(TryProgress(2, 8, 60, 62, false, 1, null), run.progress)

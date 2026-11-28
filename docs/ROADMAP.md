@@ -40,23 +40,21 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Rhythm Try: drift from the first tap** (spec #296): judge each tap also against where it should fall counting
-    from the first tap, so a steady tempo off the click can't pass.
-2. **Session steps: Results and stored progress** (spec #297): Practise and Sight-read steps of the one-tap session
+1. **Session steps: Results and stored progress** (spec #297): Practise and Sight-read steps of the one-tap session
     end on Results with "Continue"; the day's finished steps are stored so a restart resumes; the streak read is
     bounded.
-3. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
+2. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
     48..52 chromatically (C, C♯, D, D♯, E) instead of the white keys C D E F G; use an explicit key list like the
     left-hand G scene and re-record its screenshots.
-4. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
+3. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
     fade and a short "Your turn" moment.
-5. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
+4. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
     major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
     placement piece; closes course 2.
-6. **Wrong-key hint names from Compose resources** (spec #309; found reviewing #304): the hint text beside the strips still
+5. **Wrong-key hint names from Compose resources** (spec #309; found reviewing #304): the hint text beside the strips still
     names notes with English letters from `MidiNote.spoken()`, so a translated build would name the same key two ways;
     spell the hint's notes with the key-name string resources the strips use.
-7. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
+6. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
     flat, so a leading-tone sharp (C♯ in D minor) reads as D♭; and the lesson cards' staff still spells sharps in every
     key. Spell by the key's scale degrees and make the card staff use the engine's spelled step.
 

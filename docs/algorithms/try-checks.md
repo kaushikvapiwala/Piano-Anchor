@@ -30,11 +30,14 @@ itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
   by `TRY_STRESS_MIN_DELTA`; otherwise the count resets and `wrongCount` grows. Other keys are wrong and count no press.
 - **Rhythm:** `Rhythm(note, lengths, bpm)` is a pattern of at least two lengths in ticks (`TICKS_PER_QUARTER` = a
   quarter), played on one note with the click. Only presses of `note` count; another key is wrong (`lastWrong`,
-  `wrongCount` + 1, the count stays). Press 1 starts the pattern at any moment. Press k (k of 2 or more) must come
-  `lengths[k-2] x 60000 / (bpm x 960)` ms after press k-1, give or take `TRY_RHYTHM_TOLERANCE x 30000 / bpm` ms (a
-  fraction of an eighth note, each side). A press outside that window adds to `wrongCount`, sets `timing` to `EARLY` or
-  `LATE`, and itself becomes press 1 of a fresh attempt (`done` = 1), so a learner who tapped late can carry on from
-  that tap. `total` is `lengths.size` and the run finishes when `done` reaches it; the last note's length is not
+  `wrongCount` + 1, the count stays). Press 1 starts the pattern at any moment. Press k (k of 2 or more) is judged twice: its gap must be
+  `lengths[k-2] x 60000 / (bpm x 960)` ms after press k-1, and its drift must be zero against where it should fall
+  counting from the first press (the sum of `lengths[0..k-2]` in the same ms), each give or take
+  `TRY_RHYTHM_TOLERANCE x 30000 / bpm` ms (a fraction of an eighth note, each side). The drift check stops a steady
+  tempo off the click from slipping through. A press outside either window adds to `wrongCount`, sets `timing` to
+  `EARLY` or `LATE` (the sign of the gap error if the gap failed, else of the drift error), and itself becomes press 1
+  of a fresh attempt (`done` = 1), so a learner who tapped late can carry on from that tap. The judging is one helper
+  taking the expected onsets, so a later even-sequence check can reuse it. `total` is `lengths.size` and the run finishes when `done` reaches it; the last note's length is not
   judged and note-offs are ignored. Presses before the count-in ends count nothing (the lesson screen starts the
   run after it, as for Repeat and Hold). The See step also says the count, such as "1 & 2 &" (`rhythmCount`: a number
   for a tap on a beat, "&" for a tap halfway, brackets for a beat held through).

@@ -46,6 +46,7 @@ internal data class TryState(
     val pedalDown: Boolean = false,
     val velocities: List<Int> = emptyList(),
     val startMs: Long = 0,
+    val firstMs: Long = 0,
     val holding: Boolean = false,
     val wrongCount: Int = 0,
     val lastWrong: Int? = null,
@@ -317,22 +318,57 @@ private fun TryState.pressStress(
 }
 
 /**
- * A press of the rhythm's note at [atMs]: the first starts the pattern; a later one must come the written length after
- * the one before, within the tolerance, else the attempt restarts with this press as its first.
+ * A press of the rhythm's note at [atMs]: the first starts the pattern; a later one is judged by [pressTimed] against
+ * the written onsets.
  */
 private fun TryState.pressRhythm(
     rhythm: TryCheck.Rhythm,
     atMs: Long,
 ): TryState {
-    val wanted = rhythm.lengths[maxOf(done - 1, 0)] * MS_PER_MINUTE / (rhythm.bpm * TICKS_PER_QUARTER)
-    val error = if (done == 0) 0.0 else atMs - startMs - wanted
+    val msPerTick = MS_PER_MINUTE / (rhythm.bpm * TICKS_PER_QUARTER)
+    val offsets = rhythm.lengths.dropLast(1).runningFold(0.0) { sum, length -> sum + length * msPerTick }
     val tolerance = Tunables.TRY_RHYTHM_TOLERANCE * MS_PER_EIGHTH_AT_ONE_BPM / rhythm.bpm
-    return if (abs(error) > tolerance) {
+    return pressTimed(offsets, tolerance, atMs)
+}
+
+/**
+ * A timed tap at [atMs], where press k should fall `expectedOffsetsMs[k-1]` ms after press 1 (the list starts at 0 and
+ * has one entry per press). Press k >= 2 is judged twice, each within [toleranceMs]: its gap from the press before and
+ * its drift from where it should fall counting from the first press, so a steady tempo off the pattern cannot slip
+ * through. A miss counts a wrong attempt, sets `timing` (the gap's sign if the gap failed, else the drift's; negative
+ * is early) and restarts with this press as press 1. Press 1 starts the attempt; the last press finishes.
+ */
+internal fun TryState.pressTimed(
+    expectedOffsetsMs: List<Double>,
+    toleranceMs: Double,
+    atMs: Long,
+): TryState {
+    val index = done
+    val gapError = if (index == 0) 0.0 else atMs - startMs - (expectedOffsetsMs[index] - expectedOffsetsMs[index - 1])
+    val driftError = if (index == 0) 0.0 else atMs - firstMs - expectedOffsetsMs[index]
+    val gapFailed = abs(gapError) > toleranceMs
+    return if (gapFailed || abs(driftError) > toleranceMs) {
+        val error = if (gapFailed) gapError else driftError
         val timing = if (error < 0) TryTiming.EARLY else TryTiming.LATE
-        copy(done = 1, startMs = atMs, lastWrong = null, wrongCount = wrongCount + 1, timing = timing)
+        copy(
+            done = 1,
+            startMs = atMs,
+            firstMs = atMs,
+            lastWrong = null,
+            wrongCount = wrongCount + 1,
+            timing = timing,
+        )
     } else {
-        val next = done + 1
-        copy(done = next, startMs = atMs, lastWrong = null, timing = null, finished = next == rhythm.lengths.size)
+        val next = index + 1
+        val first = if (index == 0) atMs else firstMs
+        copy(
+            done = next,
+            startMs = atMs,
+            firstMs = first,
+            lastWrong = null,
+            timing = null,
+            finished = next == expectedOffsetsMs.size,
+        )
     }
 }
 
