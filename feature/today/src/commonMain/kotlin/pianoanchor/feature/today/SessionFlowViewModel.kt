@@ -19,20 +19,14 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import pianoanchor.core.model.Attempt
-import pianoanchor.core.model.Band
 import pianoanchor.core.model.MidiDeviceUnavailableException
-import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.StorageUnavailableException
-import pianoanchor.core.model.StrictnessProfile
 import pianoanchor.core.ports.AttemptRepositoryPort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.Tunables
-import pianoanchor.engine.analysis.PerformanceAnalyser
-import pianoanchor.engine.analysis.TempoReference
-import pianoanchor.engine.calibration.LatencyCalibration
 import pianoanchor.engine.content.Curriculum
-import pianoanchor.engine.guidance.SpotFinder
+import pianoanchor.engine.guidance.WeakSpot
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.midi.PedalTapDetector
@@ -96,7 +90,8 @@ public class SessionFlowViewModel(
         session: Session,
         skipped: Set<Int>,
     ) {
-        val finished = progress.finishedOn(day)
+        // A day already completed starts the whole session again; one left midway resumes after its finished steps.
+        val finished = if (progress.completedOn(day)) emptySet() else progress.finishedOn(day)
         val steps = SessionRunner.steps(session, skipped).filter { it.key() !in finished }
         startedAt = clock.now()
         stepsDone = 0
@@ -144,13 +139,13 @@ public class SessionFlowViewModel(
         val between = flow.between ?: return
         val steps = flow.steps.filterIndexed { index, _ -> index != flow.current + 1 }
         val next = steps.getOrNull(flow.current + 1)
-        mutableState.value = flow.copy(steps = steps)
-        viewModelScope.launch {
-            if (next == null) {
-                showRecap()
-            } else {
-                mutableState.update { it.copy(between = between.copy(next = next)) }
-            }
+        if (next == null) {
+            // Stop the countdown now: a tick before the recap shows must not open a step past the list.
+            countdown?.cancel()
+            mutableState.value = flow.copy(steps = steps, between = null)
+            viewModelScope.launch { showRecap() }
+        } else {
+            mutableState.value = flow.copy(steps = steps, between = between.copy(next = next))
         }
     }
 
@@ -269,11 +264,9 @@ public class SessionFlowViewModel(
                     .profile()
             finishedPassages
                 .mapNotNull { card -> latestRun(card)?.let { card to it } }
-                .filter { (_, run) -> run.band != Band.CLEAN && run.mode == RunMode.PRACTICE }
                 .sortedBy { (_, run) -> run.accuracy }
                 .firstNotNullOfOrNull { (card, run) ->
-                    val findings = analyse(card, run, strictness)
-                    SpotFinder.worst(card.passage, run, findings)?.let { RecapTip(card.passage.title, it) }
+                    WeakSpot.of(card.passage, run, strictness)?.let { RecapTip(card.passage.title, it) }
                 }
         } catch (_: StorageUnavailableException) {
             null
@@ -285,16 +278,4 @@ public class SessionFlowViewModel(
             .first()
             .firstOrNull()
             ?.takeIf { it.startedAt >= startedAt }
-
-    private fun analyse(
-        card: Card.PassageCard,
-        run: Attempt,
-        strictness: StrictnessProfile,
-    ) = if (run.tempoBpm == null && run.playedNotes.isEmpty()) {
-        emptyList()
-    } else {
-        val tempo = run.tempoBpm?.let { TempoReference.Target(it, startNanos = 0) } ?: TempoReference.Untimed
-        val notes = LatencyCalibration.corrected(run.playedNotes, run.latencyOffsetNanos)
-        PerformanceAnalyser.analyse(card.passage, notes, tempo, strictness).findings
-    }
 }

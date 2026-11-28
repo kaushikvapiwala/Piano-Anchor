@@ -464,4 +464,43 @@ class SessionFlowViewModelTest : TodayViewModelFixture() {
             assertNull(vm.state.value.recap)
             assertTrue(piano.inputDevices.first().isNotEmpty())
         }
+
+    @Test
+    fun `starting again after a completed session runs the whole session`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            started(vm, skipped = setOf(1, 2))
+            vm.stepFinished()
+            runCurrent()
+            assertTrue(progress.completedOn(today))
+
+            val again = flow()
+            val targets = opened(again)
+            started(again)
+
+            assertEquals(3, again.state.value.steps.size)
+            assertNull(again.state.value.recap)
+            assertIs<TodayTarget.Lesson>(targets.single())
+            again.exit()
+            runCurrent()
+        }
+
+    @Test
+    fun `skipping the last step with a second left goes to the recap without a stray tick`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            val targets = opened(vm)
+            started(vm, skipped = setOf(2))
+            vm.stepFinished()
+            runCurrent()
+            advanceTimeBy(Tunables.SESSION_NEXT_COUNTDOWN_S * 1_000L - 500)
+
+            vm.skipStep()
+            advanceTimeBy(5_000)
+            runCurrent()
+
+            assertNotNull(vm.state.value.recap)
+            assertNull(vm.state.value.between)
+            assertEquals(1, targets.size)
+        }
 }
