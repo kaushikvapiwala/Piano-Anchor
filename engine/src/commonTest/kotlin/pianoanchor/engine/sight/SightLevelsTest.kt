@@ -23,10 +23,24 @@ class SightLevelsTest {
     }
 
     @Test
-    fun everySkillOpensAll10() {
-        assertEquals(10, SightLevels.all.size)
-        assertEquals((1..10).toList(), SightLevels.all.map { it.number })
-        assertEquals(10, SightLevels.open(SightLevels.all.map { it.skill }.toSet()))
+    fun everySkillOpensAll12() {
+        assertEquals(12, SightLevels.all.size)
+        assertEquals((1..12).toList(), SightLevels.all.map { it.number })
+        assertEquals(12, SightLevels.open(SightLevels.all.map { it.skill }.toSet()))
+    }
+
+    @Test
+    fun gPositionOpensLevel11OnlyAfterLevel10() {
+        val upToTen =
+            SightLevels.all
+                .take(10)
+                .map { it.skill }
+                .toSet()
+        assertEquals(11, SightLevels.open(upToTen + Skills.RH_G_POSITION.id))
+        assertEquals(12, SightLevels.open(upToTen + Skills.RH_G_POSITION.id + Skills.G_AND_D7_CHORDS.id))
+        assertEquals(11, SightLevels.open(upToTen + Skills.RH_G_POSITION.id + Skills.KEY_OF_G.id))
+        val withoutDotted = upToTen - Skills.DOTTED_QUARTER.id + Skills.RH_G_POSITION.id
+        assertEquals(9, SightLevels.open(withoutDotted))
     }
 
     @Test

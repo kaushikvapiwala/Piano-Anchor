@@ -52,6 +52,34 @@ class TryRunTest {
     }
 
     @Test
+    fun `find all of F sharp finishes after the seven F sharps and calls an F wrong`() {
+        val check = TryCheck.FindAll(6, 21..108)
+        val run = TryRun(check)
+        assertEquals(7, run.progress.total)
+        val wrong = run.press(65)
+        assertEquals(1, wrong.progress.wrongCount)
+        assertEquals(66, wrong.progress.expected)
+        val done = listOf(30, 42, 54, 66, 78, 90, 102).fold(run) { r, note -> r.press(note) }
+        assertTrue(done.progress.finished)
+        assertEquals(7, done.progress.done)
+    }
+
+    @Test
+    fun `the D7 shortcut chord finishes in a cluster and G B D fails it`() {
+        val d7 = TryRun(TryCheck.Chord(setOf(42, 48, 50)))
+        assertTrue(
+            d7
+                .press(42, at = 0)
+                .press(48, at = 30)
+                .press(50, at = 60)
+                .progress.finished,
+        )
+        val g = d7.press(43, at = 0).press(47, at = 30).press(50, at = 60)
+        assertFalse(g.progress.finished)
+        assertTrue(g.progress.wrongCount > 0)
+    }
+
+    @Test
     fun `find all breaks a tie towards the lower key and ignores its letter outside the range`() {
         val run = TryRun(TryCheck.FindAll(0, 48..72)).press(60)
         // 54 is 6 from 48 and 6 from 60 (found), 72 is 18 away: the lower key wins a tie of 48 and 60.

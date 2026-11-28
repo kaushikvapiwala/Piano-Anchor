@@ -18,7 +18,7 @@ through `passageHistories` (beside `PassageHistory`), the loader Songs shares.
   rung is the highest rung with a CLEAN timed run at that rung's tempo, else WAIT. A due skill the curriculum doesn't
   know, or with no passage, is skipped for the next one. Nothing due means no card.
 - **Lesson.** The first course concept in map order that isn't passed (`CourseProgress.next`): a course skill (core
-  track, the 27 skills of Units 0 to 4) is passed when any passage that exercises it has a clean wait-mode run with no
+  track, the 32 skills of Units 0 to 5) is passed when any passage that exercises it has a clean wait-mode run with no
   hint shown in the passage history (`PassageHistory.cleanUnaidedWait`). The plan's new skills play no part, so a concept with a later concept
   passed is still suggested first. The card carries the concept and its first passage (the lesson's Use step), at
   WAIT; "why now" lists the concept's prerequisites. It opens the five-step lesson, not Practice. With every concept

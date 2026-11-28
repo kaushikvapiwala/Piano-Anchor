@@ -73,6 +73,49 @@ class CardScenesTest {
         }
 
     @Test
+    fun `every Unit 5 skill has a scene with a description and a caption`() =
+        listOf("rh-g-position", "lh-g-position", "key-of-g", "g-and-d7-chords", "melody-chords-in-g").forEach { id ->
+            val scene = checkNotNull(Curriculum.scene(id), { id })
+            assertTrue(scene.description.isNotBlank(), id)
+            assertTrue(scene.cues.any { it.action is SceneAction.Caption }, id)
+        }
+
+    private fun lights(id: String) =
+        checkNotNull(Curriculum.scene(id)).cues.mapNotNull {
+            it.action as? SceneAction.LightKey
+        }
+
+    @Test
+    fun `the G position scenes light G A B C D with fingers`() {
+        assertEquals(listOf(67, 69, 71, 72, 74), lights("rh-g-position").map { it.note })
+        assertEquals(listOf(1, 2, 3, 4, 5), lights("rh-g-position").map { it.finger })
+        assertEquals(listOf(43, 45, 47, 48, 50), lights("lh-g-position").map { it.note })
+        assertEquals(listOf(5, 4, 3, 2, 1), lights("lh-g-position").map { it.finger })
+    }
+
+    @Test
+    fun `key of G lights F then F sharp strong then the key's notes`() {
+        val lights = lights("key-of-g")
+        assertEquals(listOf(65, 66), lights.take(2).map { it.note })
+        assertTrue(lights[1].strong)
+        assertEquals(listOf(66, 67, 69, 71, 72, 74), lights.drop(2).map { it.note })
+    }
+
+    @Test
+    fun `G and D7 light the G chord then the shortcut`() {
+        val scene = checkNotNull(Curriculum.scene("g-and-d7-chords"))
+        val captions = scene.cues.filter { it.action is SceneAction.Caption }
+        assertEquals(listOf("G", "D7"), captions.map { (it.action as SceneAction.Caption).text })
+        assertEquals(listOf(43, 47, 50, 42, 48, 50), lights("g-and-d7-chords").map { it.note })
+    }
+
+    @Test
+    fun `melody chords in G lights B B A G G with fingers`() {
+        assertEquals(listOf(71, 71, 69, 67, 67), lights("melody-chords-in-g").map { it.note })
+        assertEquals(listOf(3, 3, 2, 1, 1), lights("melody-chords-in-g").map { it.finger })
+    }
+
+    @Test
     fun `eighth notes light the key twice per pulse`() {
         val cues = checkNotNull(Curriculum.scene("eighth-notes")).cues
         assertEquals(4, cues.count { it.action is SceneAction.Pulse })

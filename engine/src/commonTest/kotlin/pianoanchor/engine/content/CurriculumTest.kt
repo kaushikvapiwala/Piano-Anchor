@@ -1,5 +1,6 @@
 package pianoanchor.engine.content
 
+import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.RightsStatus
 import pianoanchor.core.model.Track
 import kotlin.test.Test
@@ -250,7 +251,7 @@ class CurriculumTest {
     @Test
     fun `unit 4 comes after unit 3 and before More songs with four core skills`() {
         assertEquals(
-            listOf("unit-0", "unit-1", "unit-2", "unit-3", "unit-4", "unit-more-songs"),
+            listOf("unit-0", "unit-1", "unit-2", "unit-3", "unit-4", "unit-5", "unit-more-songs"),
             Curriculum.units.map { it.id },
         )
         assertEquals("Eighth notes and the dotted quarter", unit4.title)
@@ -310,10 +311,77 @@ class CurriculumTest {
         assertEquals(16 * jingle.timeSignature.barTicks, end)
     }
 
+    private val unit5 get() = Curriculum.units.first { it.id == "unit-5" }
+
+    @Test
+    fun `unit 5 comes after unit 4 and before More songs with five core skills`() {
+        val ids = Curriculum.units.map { it.id }
+        assertEquals(ids.indexOf("unit-4") + 1, ids.indexOf("unit-5"))
+        assertEquals(ids.indexOf("unit-more-songs"), ids.indexOf("unit-5") + 1)
+        assertEquals("G position and the key of G", unit5.title)
+        assertEquals(
+            listOf("rh-g-position", "lh-g-position", "key-of-g", "g-and-d7-chords", "melody-chords-in-g"),
+            unit5.skills,
+        )
+        unit5.skills.forEach { assertEquals(Track.CORE, Curriculum.graph.byId(it)!!.track, it) }
+    }
+
+    @Test
+    fun `unit 5 skills have the prerequisites of the spec`() {
+        assertEquals(
+            mapOf(
+                "rh-g-position" to setOf("rh-c-position", "rhythm-song"),
+                "lh-g-position" to setOf("lh-c-position", "rh-g-position"),
+                "key-of-g" to setOf("sharps-and-flats", "rh-g-position"),
+                "g-and-d7-chords" to setOf("lh-g-position", "key-of-g"),
+                "melody-chords-in-g" to setOf("g-and-d7-chords"),
+            ),
+            unit5.skills.associateWith { Curriculum.graph.byId(it)!!.prerequisites },
+        )
+    }
+
+    @Test
+    fun `unit 5 passages are the five of the spec, all in the key of G`() {
+        assertEquals(
+            listOf("g-position-walk", "left-hand-in-g", "f-sharp-in-g", "g-and-d7", "go-tell-aunt-rhody"),
+            unit5.passages.map { it.id.removePrefix("builtin:") },
+        )
+        assertEquals(listOf(72, 72, 72, 66, 88), unit5.passages.map { it.tempoBpm })
+        assertEquals(listOf(false, false, false, false, true), unit5.passages.map { it.piece })
+        unit5.passages.forEach { assertEquals(KeySignature.G, it.keySignature, it.id) }
+        unit5.passages.forEach { assertEquals(4, it.timeSignature.beats, it.id) }
+        unit5.passages.dropLast(1).forEach { assertEquals(RightsStatus.ORIGINAL, it.rights.status, it.id) }
+    }
+
+    @Test
+    fun `go tell aunt rhody is a public domain piece with an origin and a basis`() {
+        val rhody = unit5.passages.last()
+        assertEquals(RightsStatus.PUBLIC_DOMAIN, rhody.rights.status)
+        assertTrue(rhody.rights.origin.contains("Rousseau"))
+        assertTrue(rhody.rights.basis.isNotBlank())
+        assertEquals(setOf("melody-chords-in-g", "g-and-d7-chords", "rh-g-position"), rhody.skills)
+        val end = rhody.steps.maxOf { s -> s.onsetTicks + s.notes.maxOf { it.lengthTicks } }
+        assertEquals(8 * rhody.timeSignature.barTicks, end)
+    }
+
+    @Test
+    fun `unit 5 passages stay in their hand position and use the D7 shortcut`() {
+        fun pitches(id: String) =
+            Curriculum
+                .passage("builtin:$id")!!
+                .steps
+                .flatMap { s -> s.notes.map { it.pitch.number } }
+        assertEquals(setOf(67, 69, 71, 72, 74), pitches("g-position-walk").toSet())
+        assertEquals(setOf(43, 45, 47, 48, 50), pitches("left-hand-in-g").toSet())
+        assertEquals(setOf(66, 67, 69, 71), pitches("f-sharp-in-g").toSet())
+        assertTrue(listOf(42, 48, 50).all { it in pitches("g-and-d7") })
+        assertTrue(listOf(42, 48, 50).all { it in pitches("go-tell-aunt-rhody") })
+    }
+
     @Test
     fun `More songs is the last unit and teaches the songs track`() {
         val more = Curriculum.units.last()
-        assertEquals(6, Curriculum.units.size)
+        assertEquals(7, Curriculum.units.size)
         assertEquals("unit-more-songs", more.id)
         assertEquals("More songs", more.title)
         assertEquals(listOf("more-inversions", "more-a-minor", "more-four-chords"), more.skills)

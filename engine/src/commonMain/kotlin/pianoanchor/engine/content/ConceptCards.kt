@@ -3,7 +3,7 @@ package pianoanchor.engine.content
 import pianoanchor.core.model.ConceptCard
 
 /**
- * The concept cards of the 27 course skills, in map order (`docs/course/beginner-course.md`). Each field is one plain
+ * The concept cards of the 32 course skills, in map order (`docs/course/beginner-course.md`). Each field is one plain
  * sentence for a total beginner and uses no term the course hasn't introduced by that concept. Text lives here, like
  * passage titles, and is translated with all content later. More songs and ear skills have no card.
  */
@@ -217,6 +217,41 @@ internal object ConceptCards {
                 what = "The Jingle Bells chorus with left-hand chords.",
                 why = "It puts eighths and the dotted quarter together in music you know.",
                 how = "Play the tune with the right hand while the left hand holds C, F and G chords.",
+                whenMet = "Now, to finish the unit.",
+            ),
+            ConceptCard(
+                Skills.RH_G_POSITION.id,
+                what = "Right-hand G position puts the thumb on the G above middle C, one finger per key up to D.",
+                why = "A new home lets you play tunes that sit higher without moving your hand.",
+                how = "Fingers 1 to 5 on G A B C D.",
+                whenMet = "Now; many songs in G sit here.",
+            ),
+            ConceptCard(
+                Skills.LH_G_POSITION.id,
+                what = "Left-hand G position puts the little finger on the low G, one finger per key up to D.",
+                why = "The left hand moves to G with the right, so both hands can play in G.",
+                how = "Fingers 5 to 1 on G A B C D, low on the bass staff.",
+                whenMet = "Now, for chords and bass notes in G.",
+            ),
+            ConceptCard(
+                Skills.KEY_OF_G.id,
+                what = "A key is the set of notes a song uses; the key of G uses F\u266F instead of F.",
+                why = "A scale starting on G needs F\u266F to keep the same pattern of steps as C.",
+                how = "The sharp on the F line at the start of each staff means play every F as F\u266F.",
+                whenMet = "Now; songs in G show one sharp.",
+            ),
+            ConceptCard(
+                Skills.G_AND_D7_CHORDS.id,
+                what = "The two main chords in G are G (G B D) and D7, played as F\u266F C D by the left hand.",
+                why = "D7 pulls back home to G, and this short form moves only two fingers.",
+                how = "From G B D, the little finger slides down to F\u266F and finger 2 takes C.",
+                whenMet = "Now; most songs in G use these two chords.",
+            ),
+            ConceptCard(
+                Skills.MELODY_CHORDS_IN_G.id,
+                what = "Go Tell Aunt Rhody with G and D7 chords.",
+                why = "It puts the new key, both hand positions and the chords together.",
+                how = "Right hand in G position, left hand changes chord on beat 1.",
                 whenMet = "Now, to finish the unit.",
             ),
         )

@@ -1,6 +1,6 @@
 # Try checks
 
-Each of the 27 course concepts ends its Try step with one small task the piano can check: play the glowing key, find
+Each of the 32 course concepts ends its Try step with one small task the piano can check: play the glowing key, find
 every C, hold a note for two clicks. `TryRun` in the engine's lesson package turns live note events into progress for
 the lesson screen and, later, review quizzes. It is pure and immutable: every event returns the next run. The check
 data (`TryCheck`) is in `core/model`; the table of checks is `TryChecks.kt` in the engine's content package, read
@@ -67,7 +67,11 @@ itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
 | eighth-notes | C4 in eight eighths at 60 BPM (eight taps 500 ms apart) |
 | eighth-pairs | C4 in quarter, quarter, eighth, eighth, quarter at 60 BPM: 1 2 3 & 4 |
 | dotted-quarter | C4 in dotted quarter, eighth, half at 60 BPM: 1 (2) & 3 |
-| the seven piece concepts | their first passage (rhythm-song: Jingle Bells) |
+| rh-g-position | G A B C D C B A G (G4 up to D5 and back) |
+| lh-g-position | D3 C3 B2 A2 G2 (thumb to little finger) |
+| key-of-g | find every F sharp (7 keys) |
+| g-and-d7-chords | F#2 C3 D3 together |
+| the eight piece concepts | their first passage (rhythm-song: Jingle Bells; melody-chords-in-g: Go Tell Aunt Rhody) |
 
 The thresholds are `TRY_*` tunables in `Tunables.kt`, with the reasons beside each.
 
