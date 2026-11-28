@@ -253,7 +253,7 @@ class CurriculumTest {
     @Test
     fun `unit 4 comes after unit 3 and before More songs with four core skills`() {
         assertEquals(
-            listOf("unit-0", "unit-1", "unit-2", "unit-3", "unit-4", "unit-5", "unit-6", "unit-more-songs"),
+            listOf("unit-0", "unit-1", "unit-2", "unit-3", "unit-4", "unit-5", "unit-6", "unit-7", "unit-more-songs"),
             Curriculum.units.map { it.id },
         )
         assertEquals("Eighth notes and the dotted quarter", unit4.title)
@@ -383,10 +383,10 @@ class CurriculumTest {
     private val unit6 get() = Curriculum.units.first { it.id == "unit-6" }
 
     @Test
-    fun `unit 6 comes after unit 5 and before More songs with four core skills`() {
+    fun `unit 6 comes after unit 5 and before unit 7 with four core skills`() {
         val ids = Curriculum.units.map { it.id }
         assertEquals(ids.indexOf("unit-5") + 1, ids.indexOf("unit-6"))
-        assertEquals(ids.indexOf("unit-more-songs"), ids.indexOf("unit-6") + 1)
+        assertEquals(ids.indexOf("unit-7"), ids.indexOf("unit-6") + 1)
         assertEquals("Legato and the pedal", unit6.title)
         assertEquals(listOf("legato-touch", "sustain-pedal", "pedal-changes", "pedal-song"), unit6.skills)
         unit6.skills.forEach { assertEquals(Track.CORE, Curriculum.graph.byId(it)!!.track, it) }
@@ -457,7 +457,7 @@ class CurriculumTest {
     @Test
     fun `More songs is the last unit and teaches the songs track`() {
         val more = Curriculum.units.last()
-        assertEquals(8, Curriculum.units.size)
+        assertEquals(9, Curriculum.units.size)
         assertEquals("unit-more-songs", more.id)
         assertEquals("More songs", more.title)
         assertEquals(listOf("more-inversions", "more-a-minor", "more-four-chords"), more.skills)

@@ -67,6 +67,20 @@ public sealed interface TryCheck {
         }
     }
 
+    /**
+     * Play [notes] in order, one per click at [bpm], evenly: like Sequence for the notes and like Rhythm for the timing
+     * (every length one quarter).
+     */
+    public data class EvenSequence(
+        val notes: List<Int>,
+        val bpm: Int,
+    ) : TryCheck {
+        init {
+            require(notes.size >= 2) { "an even sequence needs at least two notes: $notes" }
+            require(bpm > 0) { "an even sequence needs a tempo above 0: $bpm" }
+        }
+    }
+
     /** Play [notes] together. */
     public data class Chord(
         val notes: Set<Int>,

@@ -52,6 +52,8 @@ import pianoanchor.feature.lesson.resources.lesson_skip
 import pianoanchor.feature.lesson.resources.lesson_try_clean
 import pianoanchor.feature.lesson.resources.lesson_try_done
 import pianoanchor.feature.lesson.resources.lesson_try_early
+import pianoanchor.feature.lesson.resources.lesson_try_even_early
+import pianoanchor.feature.lesson.resources.lesson_try_even_late
 import pianoanchor.feature.lesson.resources.lesson_try_gap
 import pianoanchor.feature.lesson.resources.lesson_try_late
 import pianoanchor.feature.lesson.resources.lesson_try_overlap
@@ -254,6 +256,7 @@ internal fun timingLine(
                 when (check) {
                     is TryCheck.PedalChange -> Res.string.lesson_try_pedal_early
                     is TryCheck.PedalHold -> Res.string.lesson_try_pedal_hold_early
+                    is TryCheck.EvenSequence -> Res.string.lesson_try_even_early
                     else -> Res.string.lesson_try_early
                 },
             )
@@ -261,7 +264,11 @@ internal fun timingLine(
 
         TryTiming.LATE -> {
             stringResource(
-                if (check is TryCheck.PedalChange) Res.string.lesson_try_pedal_late else Res.string.lesson_try_late,
+                when (check) {
+                    is TryCheck.PedalChange -> Res.string.lesson_try_pedal_late
+                    is TryCheck.EvenSequence -> Res.string.lesson_try_even_late
+                    else -> Res.string.lesson_try_late
+                },
             )
         }
 

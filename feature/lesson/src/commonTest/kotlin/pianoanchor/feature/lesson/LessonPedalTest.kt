@@ -279,7 +279,7 @@ class LessonPedalTest {
     fun aPedalTapOnTheLastRecapIsDone() =
         runTest(dispatcher) {
             attempts.failing = true
-            val vm = viewModel(Skills.PEDAL_SONG, startAt = LessonStep.RECAP)
+            val vm = viewModel(Skills.SCALE_SONG, startAt = LessonStep.RECAP)
             val exits = collectExits(vm)
 
             tapPedal()

@@ -49,6 +49,22 @@ class LessonDemoTest {
     }
 
     @Test
+    fun evenSequencePlaysEachNoteAFullBeatOnTheClick() {
+        val demo = LessonDemo.of(TryCheck.EvenSequence(listOf(60, 62, 64), bpm = 60))
+        assertEquals(60, demo.clickBpm)
+        assertEquals(1000L, demo.leadMs)
+        assertEquals(listOf(1000L, 2000L, 3000L), demo.tones.map { it.startMs })
+        assertEquals(listOf(1000L, 1000L, 1000L), demo.tones.map { it.lengthMs })
+        assertEquals(listOf(60, 62, 64), demo.tones.map { it.note.number })
+    }
+
+    @Test
+    fun aFifteenNoteScaleHasNoHand() {
+        val scale = listOf(60, 62, 64, 65, 67, 69, 71, 72, 71, 69, 67, 65, 64, 62, 60)
+        assertNull(HandDemo.of(LessonDemo.of(TryCheck.EvenSequence(scale, 60))))
+    }
+
+    @Test
     fun holdSoundsForItsClicks() {
         val demo = LessonDemo.of(TryCheck.Hold(60, clicks = 2, bpm = 60))
         assertEquals(2000L, demo.tones.single().lengthMs)

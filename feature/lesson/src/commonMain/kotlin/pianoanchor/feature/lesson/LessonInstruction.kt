@@ -8,6 +8,7 @@ import pianoanchor.engine.lesson.rhythmCount
 import pianoanchor.feature.lesson.resources.Res
 import pianoanchor.feature.lesson.resources.lesson_try_any_key
 import pianoanchor.feature.lesson.resources.lesson_try_chord
+import pianoanchor.feature.lesson.resources.lesson_try_even
 import pianoanchor.feature.lesson.resources.lesson_try_find_all
 import pianoanchor.feature.lesson.resources.lesson_try_hold
 import pianoanchor.feature.lesson.resources.lesson_try_legato
@@ -46,8 +47,8 @@ internal fun instruction(check: TryCheck?): String =
             stringResource(Res.string.lesson_try_find_all, pitchClassName(check.pitchClass))
         }
 
-        is TryCheck.Sequence -> {
-            stringResource(Res.string.lesson_try_sequence, check.notes.joinToString(" ") { MidiNote(it).name })
+        is TryCheck.Sequence, is TryCheck.EvenSequence -> {
+            sequenceInstruction(check)
         }
 
         is TryCheck.Repeat -> {
@@ -81,6 +82,20 @@ internal fun instruction(check: TryCheck?): String =
 
 /** "C" for pitch class 0 ... "B" for 11: a note name without its octave. */
 private fun pitchClassName(pitchClass: Int): String = MidiNote(MIDDLE_C + pitchClass).name.trimEnd { it.isDigit() }
+
+/** The instruction of the checks that play notes in order: any time, or evenly on the click. */
+@Composable
+private fun sequenceInstruction(check: TryCheck): String =
+    when (check) {
+        is TryCheck.EvenSequence -> {
+            stringResource(Res.string.lesson_try_even, check.notes.joinToString(" ") { MidiNote(it).name })
+        }
+
+        else -> {
+            val sequence = check as TryCheck.Sequence
+            stringResource(Res.string.lesson_try_sequence, sequence.notes.joinToString(" ") { MidiNote(it).name })
+        }
+    }
 
 /** The instruction of the legato and pedal checks. */
 @Composable

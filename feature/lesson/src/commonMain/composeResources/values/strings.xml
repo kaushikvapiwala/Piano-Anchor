@@ -32,6 +32,7 @@
     <string name="lesson_try_soft_loud">Play %1$s softly, then loudly.</string>
     <string name="lesson_try_stress">Play %1$s on every click, louder on beat 1.</string>
     <string name="lesson_try_rhythm">Play %1$s to this count, with the click: %2$s.</string>
+    <string name="lesson_try_even">Play these notes evenly, one to each click: %1$s.</string>
     <string name="lesson_try_chord">Play %1$s together.</string>
     <string name="lesson_try_legato">Play %1$s joined: press each key as you lift the last one.</string>
     <string name="lesson_try_pedal_hold">Press the pedal, play %1$s, lift your hands and let it ring, then lift the pedal.</string>
@@ -40,6 +41,8 @@
     <string name="lesson_try_clean">Clean %1$s of %2$s</string>
     <string name="lesson_try_early">That one came early. Keep the taps even with the click.</string>
     <string name="lesson_try_late">That one came late. Keep the taps even with the click.</string>
+    <string name="lesson_try_even_early">Steady: wait for the click.</string>
+    <string name="lesson_try_even_late">Keep going with the click; let the thumb slide under early.</string>
     <string name="lesson_try_gap">Press the next key as you lift the last one.</string>
     <string name="lesson_try_overlap">Lift the last key as the next one goes down.</string>
     <string name="lesson_try_pedal_early">Change the pedal just after the new chord, not before.</string>

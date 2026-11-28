@@ -265,7 +265,7 @@ class SightReadingGeneratorTest {
     }
 
     @Test
-    fun levels1To12KeepTheirOutputForAFixedSeed() {
+    fun levels1To13KeepTheirOutputForAFixedSeed() {
         val golden =
             mapOf(
                 1 to -1403727910,
@@ -280,6 +280,7 @@ class SightReadingGeneratorTest {
                 10 to -976897058,
                 11 to 966084911,
                 12 to -91969490,
+                13 to -285839106,
             )
         golden.forEach { (level, hash) ->
             val text =
@@ -428,6 +429,78 @@ class SightReadingGeneratorTest {
     }
 
     @Test
+    fun level14StaysInTheOctaveStartsAndEndsOnC() {
+        for (seed in 0L until SEEDS) {
+            val passage = SightReadingGenerator.passage(14, seed)
+            val notes =
+                passage.steps.map { step ->
+                    step.notes
+                        .single()
+                        .pitch.number
+                }
+            assertTrue(notes.all { it in 60..72 }, "seed $seed")
+            assertTrue(notes.first() in listOf(60, 72), "seed $seed starts on ${notes.first()}")
+            assertTrue(notes.last() in listOf(60, 72), "seed $seed ends on ${notes.last()}")
+            assertTrue(notes.all { WHITE_PITCH_CLASSES.contains(it % 12) || it % 12 in listOf(9, 11) })
+            assertEquals(KeySignature.C, passage.keySignature)
+            assertTrue(passage.pedal.isEmpty())
+            assertEquals("sight:14:$seed", passage.id)
+        }
+    }
+
+    @Test
+    fun level14MovesByStepsAndThirds() {
+        val keys = listOf(60, 62, 64, 65, 67, 69, 71, 72)
+        for (seed in 0L until SEEDS) {
+            SightReadingGenerator
+                .passage(14, seed)
+                .steps
+                .map {
+                    keys.indexOf(
+                        it.notes
+                            .single()
+                            .pitch.number,
+                    )
+                }.zipWithNext()
+                .forEach { (a, b) -> assertTrue(kotlin.math.abs(a - b) <= 2, "seed $seed: $a to $b") }
+        }
+    }
+
+    @Test
+    fun level14ReachesPastG4InMostExercises() {
+        val reaching =
+            (0L until SEEDS).count { seed ->
+                SightReadingGenerator.passage(14, seed).steps.any {
+                    it.notes
+                        .single()
+                        .pitch.number > 67
+                }
+            }
+        assertTrue(reaching >= SEEDS * 9 / 10, "only $reaching of $SEEDS climb past G4")
+    }
+
+    @Test
+    fun level14FillsFourBarsWithQuartersHalvesAndWholesAndRests() {
+        for (seed in 0L until SEEDS) {
+            val passage = SightReadingGenerator.passage(14, seed)
+            val bar = passage.timeSignature.barTicks
+            val allowed = listOf(TICKS_PER_QUARTER, 2 * TICKS_PER_QUARTER, 4 * TICKS_PER_QUARTER)
+            assertTrue(passage.steps.all { step -> step.notes.single().lengthTicks in allowed }, "seed $seed")
+            bars(passage).forEach { (n, steps) ->
+                assertEquals(n * bar, steps.first().onsetTicks, "seed $seed bar $n starts on beat 1")
+                val played = steps.sumOf { it.notes.single().lengthTicks }
+                assertTrue(played == bar || played == bar - TICKS_PER_QUARTER, "seed $seed bar $n plays $played")
+            }
+        }
+    }
+
+    @Test
+    fun level14IsRebuiltFromItsId() {
+        assertEquals(SightReadingGenerator.passage(14, 9), SightReadingGenerator.fromId("sight:14:9"))
+        assertEquals(14 to 9L, SightReadingGenerator.parse("sight:14:9"))
+    }
+
+    @Test
     fun idRoundTrips() {
         assertEquals(3 to 42L, SightReadingGenerator.parse(SightReadingGenerator.idOf(3, 42)))
         assertEquals(2 to -5L, SightReadingGenerator.parse(SightReadingGenerator.idOf(2, -5)))
@@ -436,7 +509,7 @@ class SightReadingGeneratorTest {
 
     @Test
     fun parseRejectsOtherIds() {
-        listOf("ode-to-joy", "sight:x:1", "sight:14:1", "sight:0:1", "sight:1:y", "sight:1", "song:1:1", "sight:1:2:3")
+        listOf("ode-to-joy", "sight:x:1", "sight:15:1", "sight:0:1", "sight:1:y", "sight:1", "song:1:1", "sight:1:2:3")
             .forEach { assertNull(SightReadingGenerator.parse(it), it) }
     }
 
@@ -449,6 +522,6 @@ class SightReadingGeneratorTest {
     @Test
     fun levelOutsideRangeThrows() {
         assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(0, 1) }
-        assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(14, 1) }
+        assertFailsWith<IllegalArgumentException> { SightReadingGenerator.passage(15, 1) }
     }
 }

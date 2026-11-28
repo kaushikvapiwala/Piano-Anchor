@@ -40,6 +40,12 @@ private const val G_POSITION_LEVEL = 11
 private const val G_CHORDS_LEVEL = 12
 private const val D7_BAR = 2
 private const val PEDAL_LEVEL = 13
+private const val SCALE_LEVEL = 14
+
+/** The eight white keys C4 to C5 that level 14 walks along, and the first index above G4 (the A). */
+private val C_SCALE_KEYS = listOf(60, 62, 64, 65, 67, 69, 71, 72)
+private val SCALE_INDICES = C_SCALE_KEYS.indices
+private const val FIRST_ABOVE_G = 5
 
 private const val QUARTER = TICKS_PER_QUARTER
 private const val HALF = 2 * TICKS_PER_QUARTER
@@ -125,6 +131,82 @@ private class Slot(
     val first: Boolean,
 )
 
+private fun cells(level: Int) =
+    when (level) {
+        1, 2 -> CELLS_LEVEL_1
+        THREE_FOUR_LEVEL -> CELLS_THREE_FOUR
+        EIGHTH_LEVEL -> CELLS_LEVEL_9
+        DOTTED_QUARTER_LEVEL, G_POSITION_LEVEL, G_CHORDS_LEVEL -> CELLS_LEVEL_10
+        else -> CELLS_LEVEL_3
+    }
+
+/** Fills each bar from a rhythm cell; the last bar takes one with no rest whose last note is its longest. */
+private fun slots(
+    level: Int,
+    barTicks: Int,
+    random: Random,
+): List<Slot> =
+    (0 until Tunables.SIGHT_BARS).flatMap { bar ->
+        val all = cells(level)
+        val pool =
+            if (bar == Tunables.SIGHT_BARS - 1) {
+                all.filter { cell -> cell.none { it < 0 } && cell.last() == cell.max() }
+            } else {
+                all
+            }
+        var onset = bar * barTicks
+        pool
+            .random(random)
+            .map { length ->
+                Slot(onset, length, bar, onset == bar * barTicks).also { onset += abs(length) }
+            }.filter { it.length > 0 }
+    }
+
+/**
+ * Level 14: the right hand walks the white keys C4 to C5 by steps and skips of a third, in quarters and halves, from
+ * C4 or C5 to C4 or C5, and climbs past G4 at least once.
+ */
+private fun scaleRun(seed: Long): Passage {
+    val random = Random(seed)
+    val slots = slots(SCALE_LEVEL, FOUR_FOUR.barTicks, random)
+    val indices = scaleWalk(slots.size, random)
+    return Passage(
+        id = SightReadingGenerator.idOf(SCALE_LEVEL, seed),
+        title = "Sight-reading level $SCALE_LEVEL",
+        steps =
+            slots.zip(indices).map { (slot, index) ->
+                Step(slot.onset, setOf(ScoreNote(MidiNote(C_SCALE_KEYS[index]), slot.length)))
+            },
+        timeSignature = FOUR_FOUR,
+        tempoBpm = Tunables.SIGHT_TEMPO_BPM,
+        rights = exerciseRights("sight-reading"),
+    )
+}
+
+/**
+ * Key indices (0..7) for [count] notes: the first and last on a C (0 or 7), each next within [MAX_SKIP] of the one
+ * before, at least one above the G. Backtracks out of dead ends.
+ */
+private fun scaleWalk(
+    count: Int,
+    random: Random,
+): List<Int> {
+    val edges = listOf(0, SCALE_INDICES.last)
+
+    fun extend(path: List<Int>): List<Int> =
+        if (path.size == count) {
+            path.takeIf { p -> p.last() in edges && p.any { it >= FIRST_ABOVE_G } }.orEmpty()
+        } else {
+            SCALE_INDICES
+                .filter { if (path.isEmpty()) it in edges else abs(it - path.last()) <= MAX_SKIP }
+                .shuffled(random)
+                .asSequence()
+                .map { extend(path + it) }
+                .firstOrNull { it.isNotEmpty() } ?: emptyList()
+        }
+    return extend(emptyList())
+}
+
 private const val ID_NAME = "sight"
 
 /** Draws sight-reading exercises (`docs/algorithms/sight-reading.md`). Pure over a seeded [Random]. */
@@ -133,17 +215,28 @@ public object SightReadingGenerator {
     public const val ID_PREFIX: String = "$ID_NAME:"
 
     /**
-     * The exercise for [level] (1..13) and [seed]: id "sight:<level>:<seed>", SIGHT_BARS bars, rights ORIGINAL,
+     * The exercise for [level] (1..14) and [seed]: id "sight:<level>:<seed>", SIGHT_BARS bars, rights ORIGINAL,
      * skills empty, piece false. Level 13 is, per seed, level 8's or level 12's exercise with one pedal span per bar;
-     * every other level has no pedal marks. Same inputs give an equal [Passage]. Throws [IllegalArgumentException] for
-     * a level outside 1..13.
+     * level 14 is right hand only over the whole octave C4 to C5 in C; every other level has no pedal marks. Same
+     * inputs give an equal [Passage]. Throws [IllegalArgumentException] for a level outside 1..14.
      */
     public fun passage(
         level: Int,
         seed: Long,
     ): Passage {
         require(level in 1..SightLevels.all.size) { "sight level must be in 1..${SightLevels.all.size}, was $level" }
-        if (level == PEDAL_LEVEL) return pedalled(seed)
+        return when (level) {
+            PEDAL_LEVEL -> pedalled(seed)
+            SCALE_LEVEL -> scaleRun(seed)
+            else -> drawn(level, seed)
+        }
+    }
+
+    /** Levels 1 to 12: a walk along a hand position (or two) with the chords and rhythm cells of the level. */
+    private fun drawn(
+        level: Int,
+        seed: Long,
+    ): Passage {
         val random = Random(seed)
         val signature = if (level == THREE_FOUR_LEVEL) THREE_FOUR else FOUR_FOUR
         val held = heldNotes(level, random)
@@ -252,37 +345,6 @@ public object SightReadingGenerator {
 
     /** The first and last bar are on the tonic. */
     private fun isEdge(bar: Int) = bar == FIRST_CHORD_BAR || bar == Tunables.SIGHT_BARS - 1
-
-    private fun cells(level: Int) =
-        when (level) {
-            1, 2 -> CELLS_LEVEL_1
-            THREE_FOUR_LEVEL -> CELLS_THREE_FOUR
-            EIGHTH_LEVEL -> CELLS_LEVEL_9
-            DOTTED_QUARTER_LEVEL, G_POSITION_LEVEL, G_CHORDS_LEVEL -> CELLS_LEVEL_10
-            else -> CELLS_LEVEL_3
-        }
-
-    /** Fills each bar from a rhythm cell; the last bar takes one with no rest whose last note is its longest. */
-    private fun slots(
-        level: Int,
-        barTicks: Int,
-        random: Random,
-    ): List<Slot> =
-        (0 until Tunables.SIGHT_BARS).flatMap { bar ->
-            val all = cells(level)
-            val pool =
-                if (bar == Tunables.SIGHT_BARS - 1) {
-                    all.filter { cell -> cell.none { it < 0 } && cell.last() == cell.max() }
-                } else {
-                    all
-                }
-            var onset = bar * barTicks
-            pool
-                .random(random)
-                .map { length ->
-                    Slot(onset, length, bar, onset == bar * barTicks).also { onset += abs(length) }
-                }.filter { it.length > 0 }
-        }
 
     /**
      * The key index (0..4) of every slot: a random walk from the tonic by the allowed jumps (it may stay put) that

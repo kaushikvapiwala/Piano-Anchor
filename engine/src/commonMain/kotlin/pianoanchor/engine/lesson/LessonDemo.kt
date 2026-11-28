@@ -69,6 +69,10 @@ public object LessonDemo {
                 clicked(check.bpm) { beat -> rhythm(check, beat) }
             }
 
+            is TryCheck.EvenSequence -> {
+                clicked(check.bpm) { beat -> check.notes.mapIndexed { i, n -> Tone(note(n), i * beat, beat) } }
+            }
+
             is TryCheck.Hold -> {
                 clicked(check.bpm) { beat -> listOf(Tone(note(check.note), 0, check.clicks * beat)) }
             }

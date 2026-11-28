@@ -25,11 +25,17 @@ material, and levels open in order: if level 3 is closed, level 4 stays closed e
 | 11 | right-hand G position | level 10's cells in right-hand G position (G4 to D5), key of G, from and back to G4 |
 | 12 | G and D7 chords | the level 11 tune over one held left-hand chord per bar: G (G2 B2 D3), then G or D7, then D7, then G |
 | 13 | pedal changes | per seed, level 8's exercise (C, F and G chords, key of C) or level 12's (G and D7, key of G), with one pedal span per bar drawn on the staff |
+| 14 | the C major scale | right hand moving by step (and skips of a third) across the whole octave C4 to C5, quarters and halves, key of C, first and last note C4 or C5 |
 
 Level 13 draws no new notes: its seed's first coin flip picks level 8 or level 12 and the exercise is that level's for the
 same seed, so the pedal line is the only new thing to read. The spans fill each bar and touch, so the pedal changes at
 every bar line. Notes are judged as before and the pedal never (marks are drawn, not graded). Levels 1 to 12 carry no
 pedal marks and their exercises are unchanged for a seed.
+
+Level 14 walks the eight white keys C4 to C5 (indices 0 to 7) by steps and skips of a third, using level 3's rhythm
+cells. The first and last note are C4 or C5, and the walk must climb past G4 at least once (backtracking rejects a walk
+that stays low), so the exercise uses the octave rather than the old five-key position. It draws from its own seeded
+random, so levels 1 to 13 give the same exercise for a seed as before.
 
 Levels 9 and 10 stay in the right hand, C4 to G4, 4/4, with no left hand. Level 9 needs melody and chords as well as
 eighth notes, because the levels open in order. Their new rhythm cells (ticks; a quarter is 960):

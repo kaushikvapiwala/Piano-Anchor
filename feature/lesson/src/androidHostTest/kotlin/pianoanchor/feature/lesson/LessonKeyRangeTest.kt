@@ -26,6 +26,12 @@ class LessonKeyRangeTest {
     }
 
     @Test
+    fun aScaleTryShowsEveryKeyOfTheScale() {
+        val keys = range(Skills.G_MAJOR_SCALE)
+        assertEquals(true, 67 in keys && 79 in keys)
+    }
+
+    @Test
     fun aKeyBelowMiddleCStillShowsTwoOctaves() = assertEquals(36..59, range(Skills.LH_C_POSITION))
 
     @Test

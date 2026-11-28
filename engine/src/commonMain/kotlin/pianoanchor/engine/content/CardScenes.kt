@@ -161,6 +161,25 @@ private val F_INVERSION_NOTES = listOf(A_BELOW_LOW_C, LOW_C, F_ABOVE_LOW_C)
 /** The start of Amazing Grace in the scene's key range: G C E C E D. */
 private val GRACE_START = listOf(55, 60, 64, 60, 64, 62)
 
+private const val SCALE_AT_MS = 250
+private const val SCALE_NOTE_MS = 430
+private const val SCALE_LIGHT_MS = SCALE_NOTE_MS - 30
+private const val THUMB_NOTE_MS = 800
+private const val SCALE_NOTE_GAP_MS = 40
+private val C_SCALE_NOTES = listOf(60, 62, 64, 65, 67, 69, 71, 72)
+private val G_SCALE_NOTES = listOf(67, 69, 71, 72, 74, 76, 78, 79)
+private val LEFT_SCALE_NOTES = listOf(48, 50, 52, 53, 55, 57, 59, 60)
+private const val F_SHARP_5 = 78
+
+/** Lights [notes] one after another from [SCALE_AT_MS], each [SCALE_NOTE_MS] apart; [strongIndex] is strong. */
+private fun scaleLights(
+    notes: List<Int>,
+    strongIndex: Int = -1,
+): List<SceneCue> =
+    notes.mapIndexed { i, note ->
+        cue(SCALE_AT_MS + i * SCALE_NOTE_MS, SCALE_LIGHT_MS, LightKey(note, strong = i == strongIndex))
+    }
+
 /** The start of Go Tell Aunt Rhody as (key, finger): B B A G G. */
 private val RHODY_START = listOf(71 to 3, 71 to 3, 69 to 2, 67 to 1, 67 to 1)
 
@@ -189,7 +208,7 @@ private fun beats(vararg keyLengths: Pair<Int, Int>): List<SceneCue> =
 
 /**
  * The looping animations of the concept cards, one per skill, written in the shared scene vocabulary so every card
- * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 6 now;
+ * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 7 now;
  * later units add theirs.
  */
 internal object CardScenes {
@@ -648,6 +667,45 @@ internal object CardScenes {
             "The right hand lights G, C, E, C, E and D, the start of Amazing Grace.",
         )
 
+    private val thumbUnder =
+        CardScene(
+            SceneStage(60..69, hand = SceneHand.RIGHT),
+            listOf(60 to 1, 62 to 2, 64 to 3, 65 to 1).mapIndexed { i, (note, finger) ->
+                cue(SCALE_AT_MS + i * THUMB_NOTE_MS, THUMB_NOTE_MS - SCALE_NOTE_GAP_MS, LightKey(note, finger))
+            } + cue(SCALE_AT_MS, CAPTION_END_MS - SCALE_AT_MS, Caption("Thumb under")),
+            "C, D and E light with fingers 1, 2 and 3, then F lights with finger 1: the thumb passes under.",
+        )
+
+    private val cMajorScale =
+        CardScene(
+            SceneStage(60..72, hand = null),
+            scaleLights(C_SCALE_NOTES) + cue(SCALE_AT_MS, CAPTION_END_MS - SCALE_AT_MS, Caption("C major scale")),
+            "The eight white keys from C to C light one after another.",
+        )
+
+    private val gMajorScale =
+        CardScene(
+            SceneStage(67..79, hand = null),
+            scaleLights(G_SCALE_NOTES, strongIndex = G_SCALE_NOTES.indexOf(F_SHARP_5)) +
+                cue(SCALE_AT_MS, CAPTION_END_MS - SCALE_AT_MS, Caption("F\u266F in G")),
+            "G, A, B, C, D, E, F sharp and G light one after another, the F sharp strongly.",
+        )
+
+    private val lhCScale =
+        CardScene(
+            SceneStage(LOW_C..MIDDLE_C, hand = SceneHand.LEFT),
+            scaleLights(LEFT_SCALE_NOTES) + cue(SCALE_AT_MS, CAPTION_END_MS - SCALE_AT_MS, Caption("Left hand")),
+            "The left hand's C major scale lights from C below middle C up to middle C.",
+        )
+
+    private val scaleSong =
+        CardScene(
+            SceneStage(60..72, hand = SceneHand.RIGHT),
+            scaleLights(C_SCALE_NOTES.reversed()) +
+                cue(SCALE_AT_MS, CAPTION_END_MS - SCALE_AT_MS, Caption("Joy to the World")),
+            "The right hand lights C down to C, the scale that Joy to the World begins with.",
+        )
+
     /** Every card scene by the id of its skill. */
     val all: Map<String, CardScene> =
         mapOf(
@@ -687,5 +745,10 @@ internal object CardScenes {
             Skills.SUSTAIN_PEDAL.id to sustainPedal,
             Skills.PEDAL_CHANGES.id to pedalChanges,
             Skills.PEDAL_SONG.id to pedalSong,
+            Skills.THUMB_UNDER.id to thumbUnder,
+            Skills.C_MAJOR_SCALE.id to cMajorScale,
+            Skills.G_MAJOR_SCALE.id to gMajorScale,
+            Skills.LH_C_SCALE.id to lhCScale,
+            Skills.SCALE_SONG.id to scaleSong,
         )
 }

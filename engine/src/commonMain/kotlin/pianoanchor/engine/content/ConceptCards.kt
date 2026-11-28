@@ -282,5 +282,42 @@ internal object ConceptCards {
                 how = "Change the pedal just after each left-hand chord; the right hand moves on long notes.",
                 whenMet = "Now, to finish the unit.",
             ),
+            ConceptCard(
+                Skills.THUMB_UNDER.id,
+                what = "After finger 3 plays, the thumb passes under the hand to the next key.",
+                why = "Five fingers reach more than five keys, so tunes can climb past the hand position.",
+                how = "Play C D E with 1 2 3, tuck the thumb under to F while finger 3 holds E; keep the wrist level.",
+                whenMet = "Now, whenever a line runs past finger 5.",
+            ),
+            ConceptCard(
+                Skills.C_MAJOR_SCALE.id,
+                what = "The eight white keys from C to C, up and down.",
+                why = "Most music is built from scales, so playing them smoothly makes tunes easy.",
+                how = "Up 1 2 3, thumb under, 1 2 3 4 5; down 5 4 3 2 1, then finger 3 crosses over the thumb to E.",
+                whenMet = "Now, slowly and evenly with the click.",
+            ),
+            ConceptCard(
+                Skills.G_MAJOR_SCALE.id,
+                what = "G to G with one sharp, F\u266F.",
+                why = "It has the same steps as C, starting on G, which is why the key of G needs F\u266F.",
+                how = "The same fingering as C: 1 2 3, thumb under, 1 2 3 4 5; finger 4 plays F\u266F.",
+                whenMet = "Now, for songs in G.",
+            ),
+            ConceptCard(
+                Skills.LH_C_SCALE.id,
+                what = "The C major scale an octave below middle C with the left hand.",
+                why = "Both hands need to run along the keys; the left hand crosses the other way.",
+                how =
+                    "Up 5 4 3 2 1, finger 3 crosses over the thumb to A, 2 1; down 1 2 3, thumb under to F, 1 2 3 4 5.",
+                whenMet = "Now, slowly and evenly with the click.",
+            ),
+            ConceptCard(
+                Skills.SCALE_SONG.id,
+                what = "The opening of Joy to the World, which runs down the C major scale.",
+                why = "It puts the scale and the finger crossing into music you know.",
+                how =
+                    "Start on C with finger 5 and cross 3 over the thumb after F; the left hand holds one chord a bar.",
+                whenMet = "Now, to finish the unit and course 2.",
+            ),
         )
 }

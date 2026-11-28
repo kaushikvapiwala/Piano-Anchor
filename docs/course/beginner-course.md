@@ -140,8 +140,8 @@ along the bottom and lights keys. Only the right side changes between steps. A d
 Left for the next course (Course 2, below): the G position, the pedal and scales.
 
 ## Course 2
-Course 2 builds on the finished first course (Units 0 to 3) and continues the numbering: Units 4 to 7 are planned
-(eighth notes, G position, pedal, scales; ADR 0026). Units 4 and 5 exist so far. Its concepts are on the CORE track
+Course 2 builds on the finished first course (Units 0 to 3) and continues the numbering: Units 4 to 7
+(eighth notes, G position, pedal, scales; ADR 0026) are all built, which completes course 2. Its concepts are on the CORE track
 like the first 23 and continue the map order. Prerequisites only steer "Next"; every lesson stays open.
 
 ### Unit 4: Eighth notes and the dotted quarter (right-hand C position, Unit 3's left-hand chords)
@@ -201,8 +201,30 @@ bar) and Amazing Grace (3/4, 72 BPM, public domain: the hymn tune "New Britain",
 half rest and the pickup quarter (pickup bars are not supported), so that bar has no left hand and no pedal; the pedal
 changes once in each of the 14 bars after it. Where the right hand's G3 would repeat the C chord's G, the chord is
 played in second inversion (G2 C3 E3). The sight-reading staircase gains level 13 (`docs/algorithms/sight-reading.md`)
-and the placement test a seventh piece, Amazing Grace (`docs/algorithms/learner-model.md`). Scales and thumb-under wait
-for Unit 7.
+and the placement test a seventh piece, Amazing Grace (`docs/algorithms/learner-model.md`). Scales and thumb-under are
+Unit 7.
+
+### Unit 7: Scales with thumb-under (the thumb passes under the hand; closes course 2)
+| # | Concept | Why here | Try |
+|---|---|---|---|
+| 37 | Thumb under | Five fingers reach more than five keys, so tunes can climb past the hand position. | C D E F G F E D C evenly on the click: C D E, thumb under to F, G and back. |
+| 38 | The C major scale | Most music is built from scales, so playing them smoothly makes tunes easy. | C4 to C5 and back, 15 notes evenly at 60 BPM. |
+| 39 | The G major scale | The same steps as C starting on G, which is why the key of G needs F♯. | G4 to G5 and back, evenly at 60 BPM. |
+| 40 | Left-hand C scale | Both hands need to run along the keys; the left hand crosses the other way. | C3 to C4 and back, evenly at 60 BPM. |
+| 41 | A song with a scale | Puts the scale and the finger crossing into music the learner knows. | Joy to the World, played in Use (no separate Try). |
+
+Prerequisites: thumb-under needs the right-hand C position and the pedal song; the C scale needs thumb-under; the G
+scale needs the C scale and the key of G; the left-hand scale needs the C scale and the left-hand C position; the song
+needs the C scale and the dotted quarter. Every scale Try is one octave up and down at 60 BPM in quarters; a wrong key
+keeps the count but a timing slip restarts the scale (`EvenSequence`, `docs/algorithms/try-checks.md`). Evenness stands
+in for a smooth thumb-under, since the app can't see fingers; the card's How text gives the fingering.
+
+Passages: Thumb under walk, C major scale, G major scale (key of G) and Left-hand C scale (all 4/4, 66 BPM, original
+exercises) and Joy to the World (4/4, 80 BPM, public domain: the tune "Antioch", arranged by Lowell Mason, 1839, words
+by Isaac Watts, 1719; the first two lines only, and this simplified melody and the left-hand chords are our own
+arrangement). The sight-reading staircase gains level 14 (`docs/algorithms/sight-reading.md`) and the placement test an
+eighth piece, Joy to the World (`docs/algorithms/learner-model.md`). Out of scope: scales hands together, two-octave
+scales, minor scales and scales in other keys.
 
 ## Existing content
 The new map came first, then each existing passage was kept under the concept it exercises. Done in issue 181. Ids
