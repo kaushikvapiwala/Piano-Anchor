@@ -20,6 +20,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeCalibrationRepository
@@ -79,6 +80,12 @@ class PracticeViewModelUnaidedTest {
             LearnerModel(Curriculum.graph, learnerRepository),
             TimeZone.UTC,
             FakeSettingsRepository(),
+            NoteLabelsUseCase(
+                FakeSettingsRepository(),
+                attempts,
+                LearnerModel(Curriculum.graph, learnerRepository),
+                TimeZone.UTC,
+            ),
             spot = spot,
             pieceId = passage.id,
             unaided = unaided,

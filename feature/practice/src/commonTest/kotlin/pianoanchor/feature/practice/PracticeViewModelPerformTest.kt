@@ -18,6 +18,7 @@ import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeCalibrationRepository
@@ -80,6 +81,12 @@ class PracticeViewModelPerformTest {
             LearnerModel(Curriculum.graph, FakeLearnerRepository()),
             TimeZone.UTC,
             FakeSettingsRepository(),
+            NoteLabelsUseCase(
+                FakeSettingsRepository(),
+                attempts,
+                LearnerModel(Curriculum.graph, FakeLearnerRepository()),
+                TimeZone.UTC,
+            ),
             initialRung,
             initialMode,
         ) {

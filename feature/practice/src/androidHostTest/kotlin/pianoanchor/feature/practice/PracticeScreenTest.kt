@@ -633,6 +633,12 @@ class PracticeKeyLettersTest {
     ) = NoteLabels(stage, sharps, hints = true)
 
     @Test
+    fun noLettersAreComposedUntilTheLabelsLoad() =
+        runComposeUiTest {
+            assertEquals(emptyList(), lettersOf(start.copy(noteLabels = null)))
+        }
+
+    @Test
     fun everyWhiteKeyIsLetteredAtFirstAndBlackKeysWaitForSharps() =
         runComposeUiTest {
             val whites = lettersOf(start.copy(noteLabels = labels(NoteNameStage.ALL_WHITE)))

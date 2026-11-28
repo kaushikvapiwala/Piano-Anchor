@@ -20,6 +20,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.guidance.slice
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.playalong.Backing
 import pianoanchor.testing.FakeAttemptRepository
@@ -96,6 +97,7 @@ class PracticeViewModelBackingTest {
             learner,
             TimeZone.UTC,
             FakeSettingsRepository(),
+            NoteLabelsUseCase(FakeSettingsRepository(), attempts, learner, TimeZone.UTC),
             initialRung = rung,
             spot = spot,
             pieceId = passage.id,

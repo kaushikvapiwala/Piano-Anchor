@@ -13,6 +13,7 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.testing.FakeAttemptRepository
 import pianoanchor.testing.FakeCalibrationRepository
 import pianoanchor.testing.FakeClock
@@ -63,6 +64,12 @@ class PracticeViewModelLinkTest {
             LearnerModel(Curriculum.graph, FakeLearnerRepository()),
             TimeZone.UTC,
             FakeSettingsRepository(),
+            NoteLabelsUseCase(
+                FakeSettingsRepository(),
+                attempts,
+                LearnerModel(Curriculum.graph, FakeLearnerRepository()),
+                TimeZone.UTC,
+            ),
         ) {
             "attempt-${++ids}"
         }.also { runCurrent() }

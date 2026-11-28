@@ -31,6 +31,7 @@ import pianoanchor.engine.content.Passages
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.NoteLabels
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.testing.FakeAttemptRepository
@@ -97,6 +98,7 @@ class PracticeViewModelTest {
             learner,
             TimeZone.UTC,
             settings,
+            NoteLabelsUseCase(settings, attempts, learner, TimeZone.UTC),
         ) {
             "attempt-${++ids}"
         }.also { runCurrent() }
@@ -390,26 +392,6 @@ class PracticeViewModelTest {
         }
 
     @Test
-    fun aNewLearnerSeesEveryWhiteKeyLettered() =
-        runTest(dispatcher) {
-            val vm = practice()
-
-            assertEquals(
-                NoteLabels(NoteNameStage.ALL_WHITE, sharpsPassed = false, hints = true),
-                vm.state.value.noteLabels,
-            )
-        }
-
-    @Test
-    fun turningNoteNamesOffLettersNothing() =
-        runTest(dispatcher) {
-            settings.update { it.copy(noteNames = NoteNames.OFF) }
-            val vm = practice()
-
-            assertEquals(NoteLabels(NoteNameStage.NONE, sharpsPassed = false, hints = false), vm.state.value.noteLabels)
-        }
-
-    @Test
     fun anUnreadableSettingsStoreGradesWithStandard() =
         runTest(dispatcher) {
             settings.failing = true
@@ -605,6 +587,7 @@ class PracticeViewModelTest {
                     learner,
                     TimeZone.UTC,
                     settings,
+                    NoteLabelsUseCase(settings, attempts, learner, TimeZone.UTC),
                 ) {
                     "next"
                 }

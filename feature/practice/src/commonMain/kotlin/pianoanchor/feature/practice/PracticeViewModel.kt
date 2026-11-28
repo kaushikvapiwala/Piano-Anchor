@@ -88,7 +88,7 @@ import kotlin.time.Instant
  * attempt's start time (at the first note); [learner] records each saved attempt as a cold check on the learner day
  * ([zone]); [newId] the attempt's id; [settings] keeps whether the metronome clicks: it seeds
  * [PracticeState.clickOn] and [toggleClick] writes it back (a store that fails leaves the choice in force for this
- * screen only).
+ * screen only); [noteLabels] gives the strip's letters ([PracticeState.noteLabels] stays null until it has read them).
  *
  * A timed run subtracts the piano's link delay from played times (`docs/algorithms/latency-calibration.md`): the
  * offset a tap calibration stored in [calibration], else the one [measureLinkLatencyNanos] finds over [output] before
@@ -142,6 +142,7 @@ public class PracticeViewModel(
     private val learner: LearnerModel,
     private val zone: TimeZone,
     private val settings: SettingsRepositoryPort,
+    private val noteLabels: NoteLabelsUseCase,
     initialRung: TempoRung = TempoRung.WAIT,
     initialMode: RunMode = RunMode.PRACTICE,
     private val spot: BarRange? = null,
@@ -226,9 +227,10 @@ public class PracticeViewModel(
 
     init {
         require(spot == null || pieceId != passage.id) { "a spot loop needs the id of its piece" }
+        // First, so the letters are usually read before the first content frame.
+        viewModelScope.launch { loadNoteLabels() }
         viewModelScope.launch { refreshDoneRungs() }
         viewModelScope.launch { seedClickOn() }
-        viewModelScope.launch { loadNoteLabels() }
         val first = if (playsAlong && initialRung == TempoRung.WAIT) TempoRung.P60 else initialRung
         start(if (spot == null) first else first.below(), initialMode)
     }
@@ -463,7 +465,7 @@ public class PracticeViewModel(
 
     /** Letters the keys as the learner's setting and progress say; the strip shows none until this has read them. */
     private suspend fun loadNoteLabels() {
-        val labels = NoteLabelsUseCase(settings, attempts, learner, zone).load()
+        val labels = noteLabels.load()
         mutableState.update { it.copy(noteLabels = labels) }
     }
 

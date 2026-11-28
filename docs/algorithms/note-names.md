@@ -36,6 +36,16 @@ perform take shows no hint, so no letters.
 A quiz asks for a key by name ("Play the E"), so its strip never shows stage letters: it keeps only the wrong-key
 hint letters.
 
+## First frame
+
+The lesson and practice ViewModels hold the labels as `null` until `NoteLabelsUseCase.load()` has returned, and each
+starts that load first when it opens, so it usually finishes before the first content frame. While the labels are
+`null` the strip draws its keys, glow and hand but composes no letter layer (and no placeholder: a default view would
+be wrong for a learner past the beginner stage, and the letters would vanish a moment later). When the labels arrive
+the letters fade in over `CARD_SCENE_FADE_MS` (at once with reduce motion); a strip that already has its labels when
+it first composes shows them at once. So `null` only ever means "not loaded yet": a storage failure still gives the
+beginner view.
+
 ## Storage failure
 
 If the setting, attempts or reviews can't be read, the screen falls back to the beginner view (every white key
