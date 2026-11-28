@@ -117,6 +117,7 @@ public class ProgressViewModel(
                 it.copy(
                     week = null,
                     minutesByDay = emptyList(),
+                    learnedThisWeek = emptyList(),
                     compare = null,
                     storageFailed = true,
                 )

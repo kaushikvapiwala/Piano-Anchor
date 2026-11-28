@@ -78,4 +78,9 @@ class TakeLaneTest {
     fun aTakeWithoutNotesHasNoDots() {
         assertEquals(emptyList(), TakeLane.dots(passage, take(60)))
     }
+
+    @Test
+    fun anUntimedTakeWithoutNotesHasNoDots() {
+        assertEquals(emptyList(), TakeLane.dots(passage, take(null)))
+    }
 }

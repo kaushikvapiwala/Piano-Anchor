@@ -5,10 +5,9 @@ import pianoanchor.core.model.PLAYED_NOTE_ORDER
 import pianoanchor.core.model.Passage
 import pianoanchor.core.model.Strictness
 import pianoanchor.core.model.StrictnessProfile
-import pianoanchor.engine.analysis.PerformanceAnalyser
-import pianoanchor.engine.analysis.TempoReference
 import pianoanchor.engine.analysis.timingToleranceNanos
 import pianoanchor.engine.calibration.LatencyCalibration
+import pianoanchor.engine.guidance.WeakSpot
 import pianoanchor.engine.profile
 import kotlin.math.abs
 
@@ -36,14 +35,13 @@ public object TakeLane {
     ): List<LaneDot> {
         val notes = LatencyCalibration.corrected(attempt.playedNotes, attempt.latencyOffsetNanos)
         val sorted = notes.sortedWith(PLAYED_NOTE_ORDER)
-        val origin = sorted.firstOrNull()?.downNanos ?: return emptyList()
-        val bpm = attempt.tempoBpm
-        val tolerance = bpm?.let { timingToleranceNanos(NANOS_PER_MINUTE / it, strictness) }
-        val tempo = bpm?.let { TempoReference.Target(it, startNanos = 0) } ?: TempoReference.Untimed
+        val origin = sorted.firstOrNull()?.downNanos
+        // The same analysis the Results timing tile and the recap tip use; null only for an untimed take with no notes.
+        val analysis = WeakSpot.analyse(passage, attempt, strictness)
+        if (analysis == null || origin == null) return emptyList()
+        val tolerance = attempt.tempoBpm?.let { timingToleranceNanos(NANOS_PER_MINUTE / it, strictness) }
         val deviations =
-            PerformanceAnalyser
-                .analyse(passage, notes, tempo, strictness)
-                .matches
+            analysis.matches
                 .mapNotNull { match -> match.played?.let { it to match.onsetDeviationNanos } }
                 .toMap()
         return sorted.map { note ->
