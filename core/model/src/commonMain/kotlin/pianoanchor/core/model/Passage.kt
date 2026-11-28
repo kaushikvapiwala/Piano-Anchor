@@ -87,6 +87,9 @@ public data class KeySignature(
 
         /** G major / E minor: one sharp (F). */
         public val G: KeySignature = KeySignature(1)
+
+        /** F major / D minor: one flat (B). */
+        public val F: KeySignature = KeySignature(-1)
     }
 }
 

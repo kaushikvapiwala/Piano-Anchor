@@ -90,6 +90,7 @@ private val CLEF_LEFT = 6.dp
 private const val G_CLEF = "\uE050"
 private const val F_CLEF = "\uE062"
 private const val SHARP = "\uE262"
+private const val FLAT = "\uE260"
 private const val NATURAL = "\uE261"
 private const val FLAG_EIGHTH_UP = "\uE240"
 private const val FLAG_EIGHTH_DOWN = "\uE241"
@@ -177,7 +178,7 @@ internal fun StaffView(
                     val hollow = note in layout.hollow[i] || mark is LiveMark.TimingOff
                     painter.drawNote(note, x, color, hollow, staff, accidental)
                     tags[ref]?.let {
-                        val head = Offset(x, painter.y(note.staffPosition))
+                        val head = Offset(x, painter.y(note.staffPosition(engraved.key)))
                         centered(measurer.measure(it, tagStyle), head - Offset(0f, TAG_GAP.toPx()))
                     }
                 }
@@ -275,7 +276,17 @@ private class StaffPainter(
             val (clef, clefLine) = if (staff == Staff.TREBLE) G_CLEF to G_LINE else F_CLEF to F_LINE
             music(clef, line, Offset(CLEF_LEFT.toPx(), y(clefLine)))
             keySignaturePositions(sharps, staff).forEachIndexed { i, position ->
-                music(SHARP, line, Offset(px(CLEF_AREA_DP + i * KEY_SHARP_WIDTH_DP), y(position)))
+                music(
+                    if (sharps <
+                        0
+                    ) {
+                        FLAT
+                    } else {
+                        SHARP
+                    },
+                    line,
+                    Offset(px(CLEF_AREA_DP + i * KEY_SHARP_WIDTH_DP), y(position)),
+                )
             }
             val timeX = px(CLEF_AREA_DP + layout.keyWidth + TIME_SIGNATURE_AREA_DP / 2)
             centered(timeNumbers.first, Offset(timeX, y(base + TIME_TOP_ABOVE_BOTTOM)))
@@ -292,10 +303,14 @@ private class StaffPainter(
                 when (rest.value) {
                     NoteValue.WHOLE -> REST_WHOLE to base + WHOLE_REST_ABOVE_BOTTOM
                     NoteValue.HALF -> REST_HALF to base + MIDDLE_ABOVE_BOTTOM
-                    NoteValue.QUARTER -> REST_QUARTER to base + MIDDLE_ABOVE_BOTTOM
+                    NoteValue.QUARTER, NoteValue.DOTTED_QUARTER -> REST_QUARTER to base + MIDDLE_ABOVE_BOTTOM
                     else -> REST_EIGHTH to base + MIDDLE_ABOVE_BOTTOM
                 }
             musicCentered(text, colors.staffLine, px(layout.restX[i]), y(position))
+            if (rest.value.dotted) {
+                val dotAt = px(layout.restX[i] + REST_DOT_OFFSET_DP)
+                musicCentered(AUGMENTATION_DOT, colors.staffLine, dotAt, y(base + MIDDLE_ABOVE_BOTTOM + 1))
+            }
         }
     }
 
@@ -308,13 +323,15 @@ private class StaffPainter(
         staff: Staff,
         accidental: Accidental?,
     ) = with(scope) {
-        ledgerLines(note.staffPosition, x, ::y, colors.staffLine, staff)
-        notehead(Offset(x, y(note.staffPosition)), color, hollow)
+        val position = note.staffPosition(engraved.key)
+        ledgerLines(position, x, ::y, colors.staffLine, staff)
+        notehead(Offset(x, y(position)), color, hollow)
         when (accidental) {
             Accidental.SHARP -> SHARP
+            Accidental.FLAT -> FLAT
             Accidental.NATURAL -> NATURAL
             null -> null
-        }?.let { musicCentered(it, color, x - ACCIDENTAL_GAP.toPx(), y(note.staffPosition)) }
+        }?.let { musicCentered(it, color, x - ACCIDENTAL_GAP.toPx(), y(position)) }
     }
 
     /** The cursor left of the waiting step at [x], spanning every drawn staff. */

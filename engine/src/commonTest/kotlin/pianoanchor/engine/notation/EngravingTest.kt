@@ -256,7 +256,7 @@ class EngravingTest {
     fun aFlatKeyLowersItsLettersSoANaturalNeedsASign() {
         val engraved = engrave("B3q B3q A3q A#3q", key = KeySignature(-1))
 
-        assertEquals(listOf(Accidental.NATURAL, null, null, Accidental.SHARP), accidentals(engraved))
+        assertEquals(listOf(Accidental.NATURAL, null, null, Accidental.FLAT), accidentals(engraved))
     }
 
     @Test
@@ -356,5 +356,138 @@ class EngravingTest {
         )
         assertFalse(engraved.pedalEachBar)
         assertEquals(Staff.TREBLE, engraved.pedalStaff)
+    }
+
+    private val sixEight = TimeSignature(6, 8)
+    private val f = KeySignature.F
+
+    @Test
+    fun flatKeySpellsBlackKeysAsFlatsOfTheLetterAbove() {
+        val engraved = engrave("A4q Bb4q B4q Eb4q", key = f)
+        val d =
+            engrave("C#4q rq rh", key = f)
+                .chords
+                .single()
+                .notes
+                .single()
+
+        assertEquals(listOf(null, null, Accidental.NATURAL, Accidental.FLAT), accidentals(engraved))
+        assertEquals(Accidental.FLAT, d.accidental)
+        assertEquals(KeySignature(-1), f)
+    }
+
+    @Test
+    fun flatKeyStemsFollowTheFlatSpelling() {
+        // B-flat4 sits on the middle line (stem down); sharp spelling (A#4) sits below it (stem up).
+        assertEquals(StemDirection.DOWN, engrave("Bb4q rq rh", key = f).chords.single().stem)
+        assertEquals(StemDirection.UP, engrave("A#4q rq rh").chords.single().stem)
+    }
+
+    @Test
+    fun sharpKeysAndCStaySharp() {
+        assertEquals(
+            Accidental.SHARP,
+            engrave("C#4q rq rh")
+                .chords
+                .single()
+                .notes
+                .single()
+                .accidental,
+        )
+        assertNull(
+            engrave("F#4q rq rh", key = KeySignature.G)
+                .chords
+                .single()
+                .notes
+                .single()
+                .accidental,
+        )
+    }
+
+    @Test
+    fun aFlatSignHoldsWithinTheBarAndResetsInTheNext() {
+        val chords = engrave("Eb4q Eb4q E4q Eb4q | Eb4w", key = f).chords
+
+        assertEquals(
+            listOf(Accidental.FLAT, null, Accidental.NATURAL, Accidental.FLAT, Accidental.FLAT),
+            chords.map { it.notes.single().accidental },
+        )
+    }
+
+    @Test
+    fun sixEightBeamsEighthsInThrees() {
+        val chords = engrave("C4e D4e E4e F4e G4e A4e | C4q. C4q.", sixEight).chords
+
+        assertEquals(
+            1,
+            chords
+                .take(3)
+                .map { it.beamGroup }
+                .distinct()
+                .size,
+        )
+        assertEquals(
+            1,
+            chords
+                .subList(3, 6)
+                .map { it.beamGroup }
+                .distinct()
+                .size,
+        )
+        assertNotEquals(chords[0].beamGroup, chords[3].beamGroup)
+        assertNotEquals(null, chords[0].beamGroup)
+        assertTrue(chords.none { it.flag })
+    }
+
+    @Test
+    fun sixEightEighthQuarterEighthFormNoBeams() {
+        val chords = engrave("C4e D4q E4e rq", sixEight).chords
+
+        assertTrue(chords.take(3).all { it.beamGroup == null })
+        assertTrue(chords[0].flag && chords[2].flag)
+    }
+
+    @Test
+    fun sixEightRestsFollowTheDottedQuarterBeat() {
+        assertEquals(
+            listOf(EngravedRest(Staff.TREBLE, 0, NoteValue.DOTTED_QUARTER)),
+            engrave("rq. C4e C4e C4e", sixEight).rests,
+        )
+        assertEquals(
+            listOf(EngravedRest(Staff.TREBLE, 3 * Q / 2, NoteValue.DOTTED_QUARTER)),
+            engrave("C4q. rq.", sixEight).rests,
+        )
+        assertEquals(
+            listOf(EngravedRest(Staff.TREBLE, 0, NoteValue.WHOLE)),
+            engrave("rq. rq. | C4q. C4q.", sixEight).rests,
+        )
+    }
+
+    @Test
+    fun sixEightRestsNeverCrossABeat() {
+        // After an eighth, a quarter may not start mid-beat (it would cross it): two eighths, then a dotted quarter.
+        assertEquals(
+            listOf(
+                EngravedRest(Staff.TREBLE, Q / 2, NoteValue.EIGHTH),
+                EngravedRest(Staff.TREBLE, Q, NoteValue.EIGHTH),
+                EngravedRest(Staff.TREBLE, 3 * Q / 2, NoteValue.DOTTED_QUARTER),
+            ),
+            engrave("C4e re re rq.", sixEight).rests,
+        )
+        assertEquals(
+            listOf(EngravedRest(Staff.TREBLE, 0, NoteValue.QUARTER)),
+            engrave("rq C4e C4e C4q", sixEight).rests,
+        )
+    }
+
+    @Test
+    fun nineEightAndTwelveEightAreCompoundButThreeEightIsNot() {
+        val nine = engrave("C4e C4e C4e C4e C4e C4e C4e C4e C4e", TimeSignature(9, 8)).chords
+        assertEquals(3, nine.map { it.beamGroup }.distinct().size)
+        val twelve = engrave("rq. rq. rq. C4q.", TimeSignature(12, 8)).rests
+        assertEquals(3, twelve.size)
+        val threeEight = engrave("C4e C4e C4e", TimeSignature(3, 8)).chords
+        assertEquals(threeEight[0].beamGroup, threeEight[1].beamGroup)
+        assertNull(threeEight[2].beamGroup)
     }
 }

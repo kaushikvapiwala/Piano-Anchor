@@ -51,6 +51,35 @@ class StaffNotationScreenshotTest {
             keySignature = KeySignature.G,
         )
 
+    /** F major with a B-flat (no sign), a B natural and an E-flat, over a left-hand line with the same signs. */
+    private val fMajor =
+        Passage(
+            id = "test:f-major",
+            title = "F major",
+            steps =
+                (
+                    NoteText.parse("F4q A4q Bb4q B4q | Bb4q A4q Eb4q F4q", TimeSignature(4, 4)) +
+                        NoteText.parse("F3h Bb2h | Bb2q B2q Eb3h", TimeSignature(4, 4))
+                ).groupBy { it.onsetTicks }
+                    .toSortedMap()
+                    .map { (onset, same) -> Step(onset, same.flatMapTo(LinkedHashSet()) { it.notes }) },
+            timeSignature = TimeSignature(4, 4),
+            tempoBpm = 80,
+            rights = TEST_RIGHTS,
+            keySignature = KeySignature.F,
+        )
+
+    /** Two bars of 6/8: two beamed threes, then a dotted-quarter rest and a beamed three. */
+    private val sixEight =
+        Passage(
+            id = "test:six-eight",
+            title = "Six eight",
+            steps = NoteText.parse("C4e D4e E4e G4e F4e E4e | rq. G4e F4e E4e", TimeSignature(6, 8)),
+            timeSignature = TimeSignature(6, 8),
+            tempoBpm = 80,
+            rights = TEST_RIGHTS,
+        )
+
     /** Four bars over left-hand triads with the pedal changed in every bar. */
     private val pedalChanges =
         Passage(
@@ -99,6 +128,12 @@ class StaffNotationScreenshotTest {
 
     @Test
     fun aKeySignatureAndANaturalSign() = capture("g_major", gMajor)
+
+    @Test
+    fun aFlatKeySignatureAndFlatNotesOnBothStaves() = capture("f_major", fMajor)
+
+    @Test
+    fun sixEightBeamsInThreesAndRestsADottedQuarter() = capture("six_eight", sixEight)
 
     @Test
     fun goTellAuntRhodyShowsTheKeySignatureOnBothStaves() = capture("aunt_rhody", auntRhody)

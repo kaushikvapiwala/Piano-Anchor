@@ -209,9 +209,29 @@ class StaffLayoutTest {
     }
 
     @Test
-    fun `flat keys reserve nothing yet`() {
-        assertNear(0f, staffLayout(noteText("C4w", KeySignature(-2)), WIDE).keyWidth)
-        assertEquals(emptyList(), keySignaturePositions(-2, Staff.TREBLE))
+    fun `a flat key reserves 14 dp per flat on each staff`() {
+        val f = staffLayout(noteText("C4w", KeySignature.F), WIDE)
+        val two = staffLayout(noteText("C4w", KeySignature(-2)), WIDE)
+
+        assertNear(KEY_SHARP_WIDTH_DP, f.keyWidth)
+        assertNear(2 * KEY_SHARP_WIDTH_DP, two.keyWidth)
+        assertNear(KEY_SHARP_WIDTH_DP, f.noteX[0] - staffLayout(noteText("C4w"), WIDE).noteX[0])
+    }
+
+    @Test
+    fun `key signature flats sit in the standard positions`() {
+        assertEquals(listOf(4, 7, 3, 6, 2, 5, 1), keySignaturePositions(-7, Staff.TREBLE))
+        assertEquals(listOf(-10, -7), keySignaturePositions(-2, Staff.BASS))
+        assertEquals(listOf(4), keySignaturePositions(-1, Staff.TREBLE))
+    }
+
+    @Test
+    fun `a flat note sits on the letter above its key`() {
+        val d = MidiNote(61)
+        assertEquals(-1, d.staffPosition(KeySignature.F))
+        assertEquals(-2, d.staffPosition(KeySignature.G))
+        assertEquals(-2, d.staffPosition(KeySignature.C))
+        assertEquals(0, MidiNote(64).staffPosition(KeySignature.F))
     }
 
     @Test

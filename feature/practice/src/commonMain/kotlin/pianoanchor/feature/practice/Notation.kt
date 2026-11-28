@@ -1,5 +1,6 @@
 package pianoanchor.feature.practice
 
+import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.MidiNote
 
 private const val SEMITONES_PER_OCTAVE = 12
@@ -33,6 +34,9 @@ internal val MidiNote.isBlack: Boolean get() = number % SEMITONES_PER_OCTAVE in 
  * natural does.
  */
 internal val MidiNote.staffPosition: Int get() = diatonicIndex(this) - BOTTOM_LINE
+
+/** Where this note sits in [key]: a black key in a flat key is the flat of the letter above, one step higher. */
+internal fun MidiNote.staffPosition(key: KeySignature): Int = staffPosition + if (key.sharps < 0 && isBlack) 1 else 0
 
 private fun diatonicIndex(note: MidiNote): Int =
     note.number / SEMITONES_PER_OCTAVE * LETTERS_PER_OCTAVE + LETTER_OF_PITCH_CLASS[note.number % SEMITONES_PER_OCTAVE]
