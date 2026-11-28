@@ -40,39 +40,44 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **One-tap session with recap and weekly pause** (spec #268; redesign, design mock R1/R4): Today becomes one Start
-    button that runs the day's plan as a chain of steps with a 10 s card between them, a session recap, and a weekly
-    days goal with "Pause this week".
-2. **Hand demo in the lesson See step** (spec #269; redesign, mock R2): drawn fingers (no palm) press the key strip in
+1. **Hand demo in the lesson See step** (spec #269; redesign, mock R2): drawn fingers (no palm) press the key strip in
     time with the See demo, then a "Your turn" cue.
-3. **Play along with chords and click** (spec #270) [#268]: a soft chord backing and the click under today's song,
+2. **Play along with chords and click** (spec #270) [#268]: a soft chord backing and the click under today's song,
     after a one-bar count-in; pieces get a chord line.
-4. **Progress tab** (spec #271) [#268]: the weekly recap and "Day 1 vs today", the learner's first full run of a
+3. **Progress tab** (spec #271) [#268]: the weekly recap and "Day 1 vs today", the learner's first full run of a
     piece next to the latest one.
-5. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
+4. **Course 2, Unit 5: G position and the key of G (M6.5)** (spec #274) [#272, #273]: five concepts, the left-hand
     D7 shortcut, Go Tell Aunt Rhody, sight-reading levels 11–12 and Unit 5's placement piece.
-6. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
+5. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
     thumb-under. Built like Units 4–5; each unit adds sight-reading levels and a placement piece. The pedal unit sets
     the lesson's pedalIsMusic flag for its concepts (ADR 0027).
-7. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
+6. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
     learner skipped its Try or Use, so its "next" can differ from Today's Next card; name the next unpassed concept.
-8. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
+7. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
     come from engine strings; return a pitch class and accidental from the note-name rule and map it to
     Compose string resources in the UI, so the names can be translated.
-9. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
+8. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
     Unit 0 wide strip and at font scale 2.0; a "not loaded yet" state so a beginner's strip doesn't open blank and
     letter itself a moment later; Practice takes the note-labels use case from Koin like Lesson and Quiz.
-10. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
+9. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
     keys as flats in flat keys (today a flat key reads "in F major" with no flats drawn); beam 6/8 eighths in threes
     and use dotted-quarter rests on its beats.
-11. **Rhythm Try: drift against the click** (follow-up of #273; needs an owner decision, the grill chose interval
+10. **Rhythm Try: drift against the click** (follow-up of #273; needs an owner decision, the grill chose interval
     judging): the Rhythm check judges each tap only against the one before, so a steady tempo about a third off
     still passes; decide whether to also measure taps from the first tap's onset so the error can't build up.
+11. **Session steps: Results and lasting progress** (follow-up of #268; needs an owner decision): a Practise or
+    Sight-read step of the one-tap session returns to the flow without Results (no timing tile or spot loop until
+    the recap's tip), and finished steps live in memory only, so an app restart starts the day's session over;
+    decide whether Results shows inside the session and whether progress is stored. Also cap Today's streak read,
+    which loads every practice day since 2000 on each refresh.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
 pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md` (`scripts/capture_session.sh` records a session).
 
+- **One-tap session (#268):** Start on Today runs the day's steps in a row with the 10 s card between them (Pause,
+  Skip step, a pedal tap goes now), back mid-step asks "Leave today's session?", the recap names minutes, steps and
+  a tip, and "Pause this week" keeps the streak.
 - **Note names on keys (#266):** a new learner sees C to B on every white key; after the "C D E, then F G A B"
   concept passes only the key to play keeps its letter, and after its quiz none; Settings → "Note names on keys" →
   Off clears them; letters stay readable in light and dark.
