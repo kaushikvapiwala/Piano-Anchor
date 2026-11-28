@@ -12,10 +12,10 @@ private const val D = 62
 
 private fun name(
     letter: Letter,
-    accidental: Accidental,
+    accidental: KeyAccidental,
 ) = KeyName(letter, accidental)
 
-private fun natural(letter: Letter) = KeyName(letter, Accidental.NATURAL)
+private fun natural(letter: Letter) = KeyName(letter, KeyAccidental.NATURAL)
 
 class NoteNameRuleTest {
     private val keyNames = Skills.WHITE_KEY_NAMES.id
@@ -59,10 +59,10 @@ class NoteNameRuleTest {
     fun `black keys wait for sharps and flats`() {
         assertNull(NoteNameRule.label(C_SHARP, NoteNameStage.ALL_WHITE, emptySet(), emptySet(), false))
         assertEquals(
-            name(Letter.C, Accidental.SHARP),
+            name(Letter.C, KeyAccidental.SHARP),
             NoteNameRule.label(C_SHARP, NoteNameStage.ALL_WHITE, emptySet(), emptySet(), true),
         )
-        assertEquals(name(Letter.D, Accidental.FLAT), NoteNameRule.flatLabel(C_SHARP))
+        assertEquals(name(Letter.D, KeyAccidental.FLAT), NoteNameRule.flatLabel(C_SHARP))
         assertNull(NoteNameRule.flatLabel(D))
     }
 
@@ -96,18 +96,18 @@ class NoteNameRuleTest {
     fun `all twelve pitch classes map to their names`() {
         val expected =
             listOf(
-                Letter.C to Accidental.NATURAL,
-                Letter.C to Accidental.SHARP,
-                Letter.D to Accidental.NATURAL,
-                Letter.D to Accidental.SHARP,
-                Letter.E to Accidental.NATURAL,
-                Letter.F to Accidental.NATURAL,
-                Letter.F to Accidental.SHARP,
-                Letter.G to Accidental.NATURAL,
-                Letter.G to Accidental.SHARP,
-                Letter.A to Accidental.NATURAL,
-                Letter.A to Accidental.SHARP,
-                Letter.B to Accidental.NATURAL,
+                Letter.C to KeyAccidental.NATURAL,
+                Letter.C to KeyAccidental.SHARP,
+                Letter.D to KeyAccidental.NATURAL,
+                Letter.D to KeyAccidental.SHARP,
+                Letter.E to KeyAccidental.NATURAL,
+                Letter.F to KeyAccidental.NATURAL,
+                Letter.F to KeyAccidental.SHARP,
+                Letter.G to KeyAccidental.NATURAL,
+                Letter.G to KeyAccidental.SHARP,
+                Letter.A to KeyAccidental.NATURAL,
+                Letter.A to KeyAccidental.SHARP,
+                Letter.B to KeyAccidental.NATURAL,
             )
         expected.forEachIndexed { i, (letter, accidental) ->
             val label = NoteNameRule.label(MIDDLE_C + i, NoteNameStage.ALL_WHITE, emptySet(), emptySet(), true)
@@ -125,7 +125,15 @@ class NoteNameRuleTest {
                 68 to Letter.A,
                 70 to Letter.B,
             )
-        flats.forEach { (note, letter) -> assertEquals(name(letter, Accidental.FLAT), NoteNameRule.flatLabel(note)) }
+        flats.forEach { (note, letter) -> assertEquals(name(letter, KeyAccidental.FLAT), NoteNameRule.flatLabel(note)) }
         assertNull(NoteNameRule.flatLabel(MIDDLE_C))
+    }
+
+    @Test
+    fun `a negative note wraps to its pitch class`() {
+        assertEquals(
+            natural(Letter.B),
+            NoteNameRule.label(-1, NoteNameStage.ALL_WHITE, emptySet(), emptySet(), false),
+        )
     }
 }

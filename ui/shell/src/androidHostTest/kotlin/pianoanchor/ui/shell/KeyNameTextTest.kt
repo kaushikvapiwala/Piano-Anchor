@@ -6,7 +6,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import pianoanchor.engine.lesson.Accidental
+import pianoanchor.engine.lesson.KeyAccidental
 import pianoanchor.engine.lesson.KeyName
 import pianoanchor.engine.lesson.Letter
 import kotlin.test.assertEquals
@@ -23,17 +23,17 @@ class KeyNameTextTest {
     }
 
     @Test
-    fun naturalIsTheLetter() = assertEquals("C", text(KeyName(Letter.C, Accidental.NATURAL)))
+    fun naturalIsTheLetter() = assertEquals("C", text(KeyName(Letter.C, KeyAccidental.NATURAL)))
 
     @Test
-    fun sharpPutsTheSignAfterTheLetter() = assertEquals("C♯", text(KeyName(Letter.C, Accidental.SHARP)))
+    fun sharpPutsTheSignAfterTheLetter() = assertEquals("C♯", text(KeyName(Letter.C, KeyAccidental.SHARP)))
 
     @Test
-    fun flatPutsTheSignAfterTheLetter() = assertEquals("D♭", text(KeyName(Letter.D, Accidental.FLAT)))
+    fun flatPutsTheSignAfterTheLetter() = assertEquals("D♭", text(KeyName(Letter.D, KeyAccidental.FLAT)))
 
     @Test
     fun everyLetterHasItsText() =
-        assertEquals("CDEFGAB", Letter.entries.joinToString("") { text(KeyName(it, Accidental.NATURAL)) })
+        assertEquals("CDEFGAB", Letter.entries.joinToString("") { text(KeyName(it, KeyAccidental.NATURAL)) })
 }
 
 private const val NAME_SDK = 36

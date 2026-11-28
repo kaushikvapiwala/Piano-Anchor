@@ -3,7 +3,7 @@ package pianoanchor.ui.shell
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import pianoanchor.engine.lesson.Accidental
+import pianoanchor.engine.lesson.KeyAccidental
 import pianoanchor.engine.lesson.KeyName
 import pianoanchor.engine.lesson.Letter
 import pianoanchor.ui.shell.resources.Res
@@ -33,8 +33,8 @@ private fun Letter.resource(): StringResource =
 fun keyNameText(name: KeyName): String {
     val letter = stringResource(name.letter.resource())
     return when (name.accidental) {
-        Accidental.NATURAL -> letter
-        Accidental.SHARP -> stringResource(Res.string.note_sharp, letter)
-        Accidental.FLAT -> stringResource(Res.string.note_flat, letter)
+        KeyAccidental.NATURAL -> letter
+        KeyAccidental.SHARP -> stringResource(Res.string.note_sharp, letter)
+        KeyAccidental.FLAT -> stringResource(Res.string.note_flat, letter)
     }
 }

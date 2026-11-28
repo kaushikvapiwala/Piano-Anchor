@@ -258,7 +258,7 @@ private fun BoxScope.KeyContent(
     black: Boolean,
 ) {
     val letter = state.keyLetter(note, target)?.let { keyNameText(it) }
-    val flat = NoteNameRule.flatLabel(note.number).takeIf { black }?.let { keyNameText(it) }
+    val flat = if (letter != null && black) NoteNameRule.flatLabel(note.number)?.let { keyNameText(it) } else null
     if (banded) {
         // A lettered band is as tall as its letters and their padding, so the letters sit wholly on the band.
         val bandHeight =

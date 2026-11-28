@@ -45,12 +45,12 @@ private val FLAT_LETTERS =
 public enum class Letter { C, D, E, F, G, A, B }
 
 /** Whether a [KeyName] is a plain letter, sharpened or flattened. */
-public enum class Accidental { NATURAL, SHARP, FLAT }
+public enum class KeyAccidental { NATURAL, SHARP, FLAT }
 
 /** A key's name as data: [letter] plus [accidental]; the UI turns it into text. */
 public data class KeyName(
     val letter: Letter,
-    val accidental: Accidental,
+    val accidental: KeyAccidental,
 )
 
 /**
@@ -94,15 +94,22 @@ public object NoteNameRule {
                     NoteNameStage.TARGET_ONLY -> note in target
                     NoteNameStage.NONE -> false
                 }
-        val pitchClass = note % SEMITONES
+        val pitchClass = note.mod(SEMITONES)
         val black = pitchClass in BLACK_PITCH_CLASSES
-        val accidental = if (black) Accidental.SHARP else Accidental.NATURAL
+        val accidental = if (black) KeyAccidental.SHARP else KeyAccidental.NATURAL
         return KeyName(SHARP_LETTERS[pitchClass], accidental).takeIf { shown && (!black || sharpsPassed) }
     }
 
-    /** The flat name ("D♭") of black key [note], shown under its sharp name on a wide enough key; else null. */
+    /**
+     * The flat name of black key [note] (a [KeyName] with [KeyAccidental.FLAT]), shown under its sharp name on a wide
+     * enough key; null for a white key.
+     */
     public fun flatLabel(note: Int): KeyName? =
-        (note % SEMITONES).takeIf { it in BLACK_PITCH_CLASSES }?.let { KeyName(FLAT_LETTERS[it], Accidental.FLAT) }
+        (
+            note.mod(
+                SEMITONES,
+            )
+        ).takeIf { it in BLACK_PITCH_CLASSES }?.let { KeyName(FLAT_LETTERS[it], KeyAccidental.FLAT) }
 }
 
 /**
