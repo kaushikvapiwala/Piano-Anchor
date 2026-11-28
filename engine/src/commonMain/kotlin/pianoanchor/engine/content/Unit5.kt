@@ -91,6 +91,7 @@ internal val UNIT_5: CurriculumUnit =
                                     "our own arrangement.",
                         ),
                     piece = true,
+                    chords = "G | G | D7 | G | G | G | D7 | G",
                     keySignature = KeySignature.G,
                 ),
             ),

@@ -51,6 +51,7 @@ internal val MORE_SONGS_UNIT: CurriculumUnit =
                                     "arrangement, not taken from any printed edition.",
                         ),
                     piece = true,
+                    chords = "C F | C | C F | C | C F | C | C G | F G | C",
                 ),
                 chordPassage(
                     id = "four-chord-walk",
@@ -63,6 +64,7 @@ internal val MORE_SONGS_UNIT: CurriculumUnit =
                     skills = setOf(Skills.MORE_FOUR_CHORDS.id),
                     rights = originalPieceRights("A walk through the chords C, G, Am and F under a melody"),
                     piece = true,
+                    chords = "C | G | Am | F | C | G | Am | F | C",
                 ),
             ),
     )

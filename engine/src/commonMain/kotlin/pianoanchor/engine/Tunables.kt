@@ -1198,4 +1198,32 @@ public object Tunables {
      * Source: course content lengths.
      */
     public const val TAKE_REPLAY_MAX_MS: Long = 120_000
+
+    /**
+     * The lowest root of a play-along chord, as a MIDI note: a chord's root sounds in the octave from here (C3 to B3).
+     *
+     * Why: roots from C3 to B3 keep the chords below a right-hand melody around C4 to G5, so the backing never covers
+     * the notes the learner plays.
+     *
+     * Source: voicing convention for accompaniment.
+     */
+    public const val BACKING_LOWEST_ROOT: Int = 48
+
+    /**
+     * The velocity of the play-along chords.
+     *
+     * Why: soft enough that the learner's own playing leads.
+     *
+     * Source: design board R3 (Piano Coach Mockup, Play along).
+     */
+    public const val BACKING_VELOCITY: Int = 50
+
+    /**
+     * The minutes of the session's play-along step, taken from the song's share.
+     *
+     * Why: about two or three passes of a short piece.
+     *
+     * Source: design board R1 (Piano Coach Mockup, session minutes).
+     */
+    public const val PLAY_ALONG_MINUTES: Int = 4
 }

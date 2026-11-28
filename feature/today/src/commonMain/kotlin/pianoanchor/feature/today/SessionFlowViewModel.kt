@@ -182,7 +182,10 @@ public class SessionFlowViewModel(
         mutableState.update { it.copy(current = index, between = null, pedalHint = false) }
         val device = input.inputDevices.first().firstOrNull()
         awaitingStep = device != null
-        openings.send(device?.let { targetOf(mutableState.value.steps[index].card, it) } ?: TodayTarget.Pianos)
+        val step = mutableState.value.steps[index]
+        openings.send(
+            device?.let { targetOf(step.card, it, backing = step is SessionStep.PlayAlong) } ?: TodayTarget.Pianos,
+        )
     }
 
     private suspend fun showBetween(

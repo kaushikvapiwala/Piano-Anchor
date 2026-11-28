@@ -65,12 +65,16 @@ public data class TodayState(
 
 /** Where a tapped card leads. */
 public sealed interface TodayTarget {
-    /** Practice [passageId] on [device] at [rung], in [mode] (a cold open performs). */
+    /**
+     * Practice [passageId] on [device] at [rung], in [mode] (a cold open performs). With [backing] it is the session's
+     * play-along: chords and click.
+     */
     public data class Practice(
         val device: MidiDevice,
         val passageId: String,
         val rung: TempoRung,
         val mode: RunMode = RunMode.PRACTICE,
+        val backing: Boolean = false,
     ) : TodayTarget
 
     /** The five-step lesson of the course concept [skillId] on [device]. */
@@ -105,11 +109,12 @@ public sealed interface TodayTarget {
 internal fun targetOf(
     card: Card,
     device: MidiDevice,
+    backing: Boolean = false,
 ): TodayTarget =
     when (card) {
         is Card.Lesson -> TodayTarget.Lesson(device, card.skill.id)
         is Card.SightReading -> TodayTarget.SightReading(device, card.passage.id)
-        is Card.PassageCard -> TodayTarget.Practice(device, card.passage.id, card.rung, card.mode)
+        is Card.PassageCard -> TodayTarget.Practice(device, card.passage.id, card.rung, card.mode, backing)
         is Card.Ear -> TodayTarget.Ear(device, card.skills)
         is Card.Quizzes -> TodayTarget.Quizzes(device, card.quizzes)
     }

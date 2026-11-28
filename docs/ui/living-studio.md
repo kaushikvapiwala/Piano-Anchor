@@ -136,6 +136,11 @@ Landscape (like every screen; see the lock above). Reference layout 915×412 dp;
   for that step only; TalkBack reads "Show hint".
 - **Click switch**: a 44 dp note glyph left of "End run", struck through while off; TalkBack reads "Click on" or
   "Click off". On by default and kept until the app closes.
+- **Chords + click chip** (passages with a chord line only): a filter chip on its own line under the top bar, right-aligned, selected while
+  the chords play with the click. Off by default in normal practice and on in the session's play-along step; tapping
+  it turns the chords off (click only, as before) or on from the next count-in. The chords are quieter than the piano
+  and start on the first beat after the count-in bar; a restart plays them again from the top. TalkBack reads the
+  label and its selected state.
 - **Status line** (36 dp, between staff and keys, timed rungs only): "Get ready…" while the run arms itself (link delay measured, then
   `TEMPO_AUTO_START_DELAY_MS`; keys pressed then are not judged); then one pulse dot per beat of the bar (the accent beat larger, the current beat filled), and during the count-in the
   word "Count-in". The last three beats of the count-in show a large numeral, 96 sp in the primary colour, centred over
@@ -427,6 +432,9 @@ ear, quizzes, sight-reading) opens by itself, and when it finishes the flow take
   (`SESSION_NEXT_COUNTDOWN_S`), then the next step opens. Tapping the card, or a pedal tap with the pedal control on,
   opens it at once. With reduced motion (animations off) the ring does not animate; the number still counts. TalkBack
   announces the next step once (a polite live region on the title) and does not read the seconds.
+- **Play along**: a song with a chord line has a step after Practise, "Play along: <title>", at the song's current timed
+  rung (the slowest timed rung before any clean timed run) with the chord chip on. Its minutes come out of the song's
+  share, so the hero's total is unchanged. Choose steps switches Practise and Play along of one song together.
 - **Recap** after the last step: three columns, "Time played" (minutes), "Steps done" and "What you learned" (skills
   that became learned during the run, at most three), then a tip naming the passage and bars of the weakest spot of
   the run's practice, or "No weak spot stood out", and **Done** (back to Today).

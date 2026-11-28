@@ -95,7 +95,9 @@ public data class KeySignature(
  * their onsets strictly increase. [tempoBpm] is the written tempo in quarter notes per minute
  * ([MIN_TEMPO_BPM]..[MAX_TEMPO_BPM]). [rights] says why it may ship. [skills] are the ids of the [Skill]s a run
  * exercises (may be empty: such a passage is never scheduled). A [piece] is a tune or song, listed on the Songs
- * screen; an exercise is not. [keySignature] is the key the staff draws (C by default).
+ * screen; an exercise is not. [keySignature] is the key the staff draws (C by default). [chords] is the chord line
+ * the play-along backing sounds (`docs/algorithms/play-along.md`): empty when the passage has none, else sorted by
+ * strictly increasing onset.
  */
 public data class Passage(
     val id: String,
@@ -107,6 +109,7 @@ public data class Passage(
     val skills: Set<String> = emptySet(),
     val piece: Boolean = false,
     val keySignature: KeySignature = KeySignature.C,
+    val chords: List<ChordMark> = emptyList(),
 ) {
     init {
         require(id.isNotBlank()) { "passage id must not be blank" }
@@ -114,6 +117,11 @@ public data class Passage(
         steps.zipWithNext().forEach { (a, b) ->
             require(b.onsetTicks > a.onsetTicks) {
                 "passage \"$id\": step onsets must strictly increase, got ${a.onsetTicks} then ${b.onsetTicks}"
+            }
+        }
+        chords.zipWithNext().forEach { (a, b) ->
+            require(b.onsetTicks > a.onsetTicks) {
+                "passage \"$id\": chord onsets must strictly increase, got ${a.onsetTicks} then ${b.onsetTicks}"
             }
         }
         require(tempoBpm in MIN_TEMPO_BPM..MAX_TEMPO_BPM) {

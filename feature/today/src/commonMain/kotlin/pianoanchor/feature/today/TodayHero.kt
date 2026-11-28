@@ -70,7 +70,11 @@ internal fun SessionHero(
         TrimView(
             steps,
             off,
-            onToggle = { step, on -> off = if (on) off - step else off + step },
+            // A song's Practise and Play along steps share one card, which the session skips: switch them together.
+            onToggle = { step, on ->
+                val together = steps.filter { it.card == step.card }.toSet()
+                off = if (on) off - together else off + together
+            },
             onStart = { onStartSession(off.mapTo(HashSet()) { state.cardIndex(it) }) },
             onBack = { trimming = false },
         )
