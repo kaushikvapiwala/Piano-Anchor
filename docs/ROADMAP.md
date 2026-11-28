@@ -64,8 +64,9 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
     left-hand G scene and re-record its screenshots.
 9. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
     fade and a short "Your turn" moment.
-10. **Course 2: Unit 7 (M6.7)** (needs a grill session): scales with thumb-under. Built like Units 4–6, with
-    sight-reading levels and a placement piece.
+10. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
+    major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
+    placement piece; closes course 2.
 
 ## Owner device checks
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
