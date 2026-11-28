@@ -23,10 +23,23 @@ class SightLevelsTest {
     }
 
     @Test
-    fun everySkillOpensAll12() {
-        assertEquals(12, SightLevels.all.size)
-        assertEquals((1..12).toList(), SightLevels.all.map { it.number })
-        assertEquals(12, SightLevels.open(SightLevels.all.map { it.skill }.toSet()))
+    fun everySkillOpensAll13() {
+        assertEquals(13, SightLevels.all.size)
+        assertEquals((1..13).toList(), SightLevels.all.map { it.number })
+        assertEquals(13, SightLevels.open(SightLevels.all.map { it.skill }.toSet()))
+        assertEquals(Skills.PEDAL_CHANGES.id, SightLevels.all.last().skill)
+    }
+
+    @Test
+    fun pedalChangesWithoutGAndD7StopsAtLevel11() {
+        val upToTen =
+            SightLevels.all
+                .take(10)
+                .map { it.skill }
+                .toSet()
+        val learned = upToTen + Skills.RH_G_POSITION.id + Skills.PEDAL_CHANGES.id
+        assertEquals(11, SightLevels.open(learned))
+        assertEquals(13, SightLevels.open(learned + Skills.G_AND_D7_CHORDS.id))
     }
 
     @Test

@@ -1,6 +1,6 @@
 # Try checks
 
-Each of the 32 course concepts ends its Try step with one small task the piano can check: play the glowing key, find
+Each of the 36 course concepts ends its Try step with one small task the piano can check: play the glowing key, find
 every C, hold a note for two clicks. `TryRun` in the engine's lesson package turns live note events into progress for
 the lesson screen and, later, review quizzes. It is pure and immutable: every event returns the next run. The check
 data (`TryCheck`) is in `core/model`; the table of checks is `TryChecks.kt` in the engine's content package, read
@@ -94,7 +94,10 @@ itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
 | lh-g-position | D3 C3 B2 A2 G2 (thumb to little finger) |
 | key-of-g | find every F sharp (7 keys) |
 | g-and-d7-chords | F#2 C3 D3 together |
-| the eight piece concepts | their first passage (rhythm-song: Jingle Bells; melody-chords-in-g: Go Tell Aunt Rhody) |
+| legato-touch | C D E F G F E D C joined (`Legato`) |
+| sustain-pedal | the C chord (C3 E3 G3) with the pedal, hands lifted, left to ring (`PedalHold`) |
+| pedal-changes | C, F, G, C chords (C3 E3 G3; A2 C3 F3; B2 D3 G3) with a pedal change after each (`PedalChange`) |
+| the nine piece concepts | their first passage (rhythm-song: Jingle Bells; melody-chords-in-g: Go Tell Aunt Rhody; pedal-song: Amazing Grace) |
 
 The thresholds are `TRY_*` tunables in `Tunables.kt`, with the reasons beside each.
 

@@ -12,15 +12,16 @@ public object Curriculum {
     /**
      * The units in teaching order: 0 "Meet the piano", 1 "Five-finger tunes", 2 "Left hand, then both hands",
      * 3 "Chords and songs", 4 "Eighth notes and the dotted quarter", 5 "G position and the key of G",
-     * then the optional "More songs".
+     * 6 "Legato and the pedal", then the optional "More songs".
      */
-    public val units: List<CurriculumUnit> = listOf(UNIT_0, UNIT_1, UNIT_2, UNIT_3, UNIT_4, UNIT_5, MORE_SONGS_UNIT)
+    public val units: List<CurriculumUnit> =
+        listOf(UNIT_0, UNIT_1, UNIT_2, UNIT_3, UNIT_4, UNIT_5, UNIT_6, MORE_SONGS_UNIT)
 
     /** Every passage of every unit, in teaching order. */
     public val passages: List<Passage> = units.flatMap { it.passages }
 
     /**
-     * Every skill, with its prerequisites: the 32 course skills in map order, the "More songs" skills, then the ear
+     * Every skill, with its prerequisites: the 36 course skills in map order, the "More songs" skills, then the ear
      * skills (no passage, no unit).
      */
     public val graph: SkillGraph =
@@ -58,6 +59,10 @@ public object Curriculum {
                 Skills.KEY_OF_G,
                 Skills.G_AND_D7_CHORDS,
                 Skills.MELODY_CHORDS_IN_G,
+                Skills.LEGATO_TOUCH,
+                Skills.SUSTAIN_PEDAL,
+                Skills.PEDAL_CHANGES,
+                Skills.PEDAL_SONG,
                 Skills.MORE_INVERSIONS,
                 Skills.MORE_A_MINOR,
                 Skills.MORE_FOUR_CHORDS,
@@ -85,7 +90,10 @@ public object Curriculum {
         check: TryCheck?,
     ): Boolean = pedalIsMusic(skillId, check, passages)
 
-    /** [pedalIsMusic] for a concept with [check] and its [passages] (any list: a piece with pedal marks counts). */
+    /**
+     * [pedalIsMusic] for a concept with [check] and its [passages] (any list): the concept's Use passage, the first
+     * with the skill, counts when it is a piece with pedal marks.
+     */
     internal fun pedalIsMusic(
         skillId: String,
         check: TryCheck?,
@@ -93,5 +101,5 @@ public object Curriculum {
     ): Boolean =
         check is TryCheck.PedalHold ||
             check is TryCheck.PedalChange ||
-            passages.any { skillId in it.skills && it.piece && it.pedal.isNotEmpty() }
+            passages.firstOrNull { skillId in it.skills }?.let { it.piece && it.pedal.isNotEmpty() } == true
 }

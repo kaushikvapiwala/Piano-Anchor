@@ -145,6 +145,19 @@ private val LEFT_G_POSITION_NOTES = listOf(43, 45, 47, 48, 50)
 /** The notes of the key of G the scene lights after the F sharp, from F sharp up to D. */
 private val G_KEY_NOTES = listOf(F_SHARP_4) + G_POSITION_NOTES
 
+private const val LEGATO_AT_MS = 300
+private const val LEGATO_NOTE_MS = 900
+private const val LEGATO_OVERLAP_MS = 100
+private const val PEDAL_AT_MS = 300
+private const val PEDAL_STRONG_MS = 1400
+private const val PEDAL_SOFT_MS = 1800
+private const val A_BELOW_LOW_C = 45
+private const val GRACE_NOTE_MS = 600
+private val F_INVERSION_NOTES = listOf(A_BELOW_LOW_C, LOW_C, F_ABOVE_LOW_C)
+
+/** The start of Amazing Grace in the scene's key range: G C E C E D. */
+private val GRACE_START = listOf(55, 60, 64, 60, 64, 62)
+
 /** The start of Go Tell Aunt Rhody as (key, finger): B B A G G. */
 private val RHODY_START = listOf(71 to 3, 71 to 3, 69 to 2, 67 to 1, 67 to 1)
 
@@ -173,7 +186,7 @@ private fun beats(vararg keyLengths: Pair<Int, Int>): List<SceneCue> =
 
 /**
  * The looping animations of the concept cards, one per skill, written in the shared scene vocabulary so every card
- * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 5 now;
+ * animates in the same style (`docs/ui/living-studio.md`, "Card animations"). Units 0 to 6 now;
  * later units add theirs.
  */
 internal object CardScenes {
@@ -592,6 +605,46 @@ internal object CardScenes {
             "The right hand lights B, B, A, G and G with its finger numbers, the start of Go Tell Aunt Rhody.",
         )
 
+    private val legatoTouch =
+        CardScene(
+            SceneStage(60..67, hand = SceneHand.RIGHT),
+            listOf(
+                cue(LEGATO_AT_MS, LEGATO_NOTE_MS + LEGATO_OVERLAP_MS, LightKey(60, finger = 1)),
+                cue(LEGATO_AT_MS + LEGATO_NOTE_MS, LEGATO_NOTE_MS + LEGATO_OVERLAP_MS, LightKey(62, finger = 2)),
+                cue(LEGATO_AT_MS + 2 * LEGATO_NOTE_MS, LEGATO_NOTE_MS, LightKey(64, finger = 3)),
+                cue(LEGATO_AT_MS, CAPTION_END_MS - LEGATO_AT_MS, Caption("Joined")),
+            ),
+            "C, D and E light one after another, each fading as the next lights, under fingers 1 to 3.",
+        )
+
+    private val sustainPedal =
+        CardScene(
+            SceneStage(LOW_C..G_ABOVE_LOW_C, hand = SceneHand.LEFT),
+            LOW_C_CHORD_NOTES.map { cue(PEDAL_AT_MS, PEDAL_STRONG_MS, LightKey(it, strong = true)) } +
+                LOW_C_CHORD_NOTES.map { cue(PEDAL_AT_MS + PEDAL_STRONG_MS, PEDAL_SOFT_MS, LightKey(it)) } +
+                cue(PEDAL_AT_MS, CAPTION_END_MS - PEDAL_AT_MS, Caption("Pedal holds the sound")),
+            "The C chord lights strongly, then glows softly: it keeps sounding while the pedal is down.",
+        )
+
+    private val pedalChanges =
+        CardScene(
+            SceneStage(A_BELOW_LOW_C..G_ABOVE_LOW_C),
+            listOf(
+                chord(SYMBOL_AT_MS, "C", LOW_C_CHORD_NOTES),
+                chord(SYMBOL_AT_MS + SYMBOL_MS, "Change after the chord", F_INVERSION_NOTES),
+            ).flatten(),
+            "The C chord lights, then the F chord lights after it: the pedal changes just after each chord.",
+        )
+
+    private val pedalSong =
+        CardScene(
+            SceneStage(G_ABOVE_LOW_C..G_ABOVE_MIDDLE_C, hand = SceneHand.RIGHT),
+            GRACE_START.mapIndexed { i, note ->
+                cue(RHODY_START_MS + i * GRACE_NOTE_MS, GRACE_NOTE_MS - RHODY_GAP_MS, LightKey(note))
+            } + cue(RHODY_START_MS, CAPTION_END_MS - RHODY_START_MS, Caption("Amazing Grace")),
+            "The right hand lights G, C, E, C, E and D, the start of Amazing Grace.",
+        )
+
     /** Every card scene by the id of its skill. */
     val all: Map<String, CardScene> =
         mapOf(
@@ -627,5 +680,9 @@ internal object CardScenes {
             Skills.KEY_OF_G.id to keyOfG,
             Skills.G_AND_D7_CHORDS.id to gAndD7Chords,
             Skills.MELODY_CHORDS_IN_G.id to melodyChordsInG,
+            Skills.LEGATO_TOUCH.id to legatoTouch,
+            Skills.SUSTAIN_PEDAL.id to sustainPedal,
+            Skills.PEDAL_CHANGES.id to pedalChanges,
+            Skills.PEDAL_SONG.id to pedalSong,
         )
 }

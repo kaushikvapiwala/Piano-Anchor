@@ -40,28 +40,26 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Course 2: Unit 6, legato and the pedal (M6.6)** (spec #295) [#294]: four concepts, Amazing Grace in 3/4 with a
-    pedal change each bar, sight-reading level 13 and a seventh placement piece.
-2. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
+1. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
     come from engine strings; return a pitch class and accidental from the note-name rule and map it to
     Compose string resources in the UI, so the names can be translated.
-3. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
+2. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
     Unit 0 wide strip and at font scale 2.0; a "not loaded yet" state so a beginner's strip doesn't open blank and
     letter itself a moment later; Practice takes the note-labels use case from Koin like Lesson and Quiz.
-4. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
+3. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
     keys as flats in flat keys (today a flat key reads "in F major" with no flats drawn); beam 6/8 eighths in threes
     and use dotted-quarter rests on its beats.
-5. **Rhythm Try: drift from the first tap** (spec #296): judge each tap also against where it should fall counting
+4. **Rhythm Try: drift from the first tap** (spec #296): judge each tap also against where it should fall counting
     from the first tap, so a steady tempo off the click can't pass.
-6. **Session steps: Results and stored progress** (spec #297): Practise and Sight-read steps of the one-tap session
+5. **Session steps: Results and stored progress** (spec #297): Practise and Sight-read steps of the one-tap session
     end on Results with "Continue"; the day's finished steps are stored so a restart resumes; the streak read is
     bounded.
-7. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
+6. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
     48..52 chromatically (C, C♯, D, D♯, E) instead of the white keys C D E F G; use an explicit key list like the
     left-hand G scene and re-record its screenshots.
-8. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
+7. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
     fade and a short "Your turn" moment.
-9. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
+8. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
     major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
     placement piece; closes course 2.
 
@@ -69,9 +67,9 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 Manual checks on a real Android phone and piano, done by the owner when both are at hand. Unattended runs never
 pick these; nothing in "Next up" waits for them. Installing a build and capturing logs: `docs/debugging.md` (`scripts/capture_session.sh` records a session).
 
-- **Pedal and legato Try checks (#294):** a pedal on a real piano reaches the lesson's Try (CC 64 down and up past the
-  hysteresis), a legato C D E with joined keys passes, and the See demo's pedal cue sounds on the piano. No course
-  concept uses them until Unit 6 (#295).
+- **Pedal and legato (#294, #295):** Unit 6's lessons on a real piano: the legato Try passes with joined keys, the
+  sustain-pedal and pedal-change Trys read the pedal (CC 64), a pedal tap doesn't skip those lessons, the See demo's
+  pedal cue sounds on the piano, and Amazing Grace's staff shows the pedal line with a notch each bar.
 - **Progress tab (#271):** the rail's Progress tab shows this week's days, streak and minutes by day; after a piece
   has full runs on two days, "Day 1 vs today" plays each take through the speaker, one at a time, and leaving the tab
   stops it.
@@ -126,7 +124,7 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
 | M3 | First playable coach (units 0–2), daily plan, first APK release (specced: #76–#82; 🔄 M3.1 content format, M3.2 units 0–2, M3.3 settings, M3.4 Today, M3.5 onboarding, M3.6 update check and M3.7 release pipeline done; v0.1.0 and the dogfood are the owner's) | Dogfood (`docs/RELEASING.md`): the owner uses the released APK; Today's practice-day line shows 14 practice days within 16, and no open `dogfood` issue is labelled `blocker` |
 | M4 | Songs & chords and ear-training tracks; contribute-a-piano kit (✅ done: tracks in the daily plan #151, ear #152, songs and chords #153, the contribute-a-piano kit #154) | All tracks share the daily plan |
 | M5 | Guidance fading, practice/perform modes, strictness setting (✅ done: M5.1 hint fading, M5.2 perform mode, M5.3 spot loops and M5.4 unaided pass and strictness) | Unaided pass required before "learned" |
-| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245), M6.2 (daily sight-reading card, #246) and M6.3 (played placement test, #247) done; staff notation done (#272); M6.4 (Unit 4, eighth notes and the dotted quarter, #273) done; M6.5 (Unit 5, G position and the key of G, #274) done | Placement reproducible |
+| M6 | Sight-reading staircase, played placement test, course 2 (Units 4–7: eighth notes, G position, pedal, scales); units 0–3 are the first course (ADR 0026). M6.1 (generator and staircase, #245), M6.2 (daily sight-reading card, #246) and M6.3 (played placement test, #247) done; staff notation done (#272); M6.4 (Unit 4, eighth notes and the dotted quarter, #273) done; M6.5 (Unit 5, G position and the key of G, #274) done; M6.6 (Unit 6, legato and the pedal, #295) done | Placement reproducible |
 | M7 | Heatmaps, recordings, calibration report | Predicted vs observed retention plotted |
 | M8 | Optional Google Drive sync | Round-trip sync between two devices |
 | M9 | Kids (ages 6–8+): research pass, age-appropriate content | — |

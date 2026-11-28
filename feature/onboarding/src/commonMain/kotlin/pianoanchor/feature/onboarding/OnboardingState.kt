@@ -31,7 +31,7 @@ public enum class EchoPhase {
 }
 
 /**
- * The piece of the placement test being played (or just played): [number] of [total] (1-based, "Piece 1 of 6"), the
+ * The piece of the placement test being played (or just played): [number] of [total] (1-based, "Piece 1 of 7"), the
  * [passageId] to host, and its [title].
  */
 public data class PlacementPiece(

@@ -80,6 +80,30 @@ class CardScenesTest {
             assertTrue(scene.cues.any { it.action is SceneAction.Caption }, id)
         }
 
+    @Test
+    fun `every Unit 6 skill has a scene with a description and a caption`() =
+        listOf("legato-touch", "sustain-pedal", "pedal-changes", "pedal-song").forEach { id ->
+            val scene = checkNotNull(Curriculum.scene(id), { id })
+            assertTrue(scene.description.isNotBlank(), id)
+            assertTrue(scene.cues.any { it.action is SceneAction.Caption }, id)
+        }
+
+    @Test
+    fun `the Unit 6 scenes light the keys and caption of the spec`() {
+        fun captions(id: String) =
+            checkNotNull(Curriculum.scene(id)).cues.mapNotNull { (it.action as? SceneAction.Caption)?.text }
+        assertEquals(listOf(60, 62, 64), lights("legato-touch").map { it.note })
+        assertEquals(listOf(1, 2, 3), lights("legato-touch").map { it.finger })
+        assertEquals(listOf("Joined"), captions("legato-touch"))
+        assertEquals(listOf(48, 52, 55, 48, 52, 55), lights("sustain-pedal").map { it.note })
+        assertEquals(listOf(true, true, true, false, false, false), lights("sustain-pedal").map { it.strong })
+        assertEquals(listOf("Pedal holds the sound"), captions("sustain-pedal"))
+        assertEquals(listOf(48, 52, 55, 45, 48, 53), lights("pedal-changes").map { it.note })
+        assertEquals(listOf("C", "Change after the chord"), captions("pedal-changes"))
+        assertEquals(listOf(55, 60, 64, 60, 64, 62), lights("pedal-song").map { it.note })
+        assertEquals(listOf("Amazing Grace"), captions("pedal-song"))
+    }
+
     private fun lights(id: String) =
         checkNotNull(Curriculum.scene(id)).cues.mapNotNull {
             it.action as? SceneAction.LightKey
