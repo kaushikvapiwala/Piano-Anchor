@@ -65,6 +65,7 @@ internal val UNIT_4: CurriculumUnit =
                                     "expired. Only the chorus is used; the left-hand chords are our own arrangement.",
                         ),
                     piece = true,
+                    chords = "C | C | C | C | F | C | G | G | C | C | C | C | F | C | G | C",
                 ),
             ),
     )

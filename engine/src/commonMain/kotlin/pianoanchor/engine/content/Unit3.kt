@@ -75,6 +75,7 @@ internal val UNIT_3: CurriculumUnit =
                                     "arrangement.",
                         ),
                     piece = true,
+                    chords = "C | G | C | C | C | G | C G | C",
                 ),
                 chordPassage(
                     id = "ode-to-joy-with-chords",
@@ -87,6 +88,7 @@ internal val UNIT_3: CurriculumUnit =
                     skills = setOf(Skills.MELODY_AND_CHORDS.id, Skills.G_AND_F_CHORDS.id),
                     rights = odeToJoyRights(),
                     piece = true,
+                    chords = "C | G | C | C G | C | G | C | G C | C",
                 ),
                 chordPassage(
                     id = "sharp-phrase",
@@ -135,14 +137,26 @@ internal fun chordPassage(
     right: String? = null,
     piece: Boolean = false,
     keySignature: KeySignature = KeySignature.C,
+    chords: String = "",
 ): Passage {
-    val chords = builtinPassage(id, title, left, tempoBpm, skills, rights, piece = piece, keySignature = keySignature)
+    val handChords =
+        builtinPassage(
+            id,
+            title,
+            left,
+            tempoBpm,
+            skills,
+            rights,
+            piece = piece,
+            keySignature = keySignature,
+            chords = chords,
+        )
     val melody = right?.let { NoteText.parse(it, FOUR_FOUR) }.orEmpty()
     val steps =
-        (chords.steps + melody)
+        (handChords.steps + melody)
             .groupBy { it.onsetTicks }
             .entries
             .sortedBy { it.key }
             .map { (onset, same) -> Step(onset, same.flatMapTo(LinkedHashSet()) { it.notes }) }
-    return chords.copy(steps = steps)
+    return handChords.copy(steps = steps)
 }

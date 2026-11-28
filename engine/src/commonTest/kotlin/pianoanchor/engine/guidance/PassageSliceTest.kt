@@ -1,6 +1,8 @@
 package pianoanchor.engine.guidance
 
 import pianoanchor.core.model.BarRange
+import pianoanchor.core.model.ChordMark
+import pianoanchor.core.model.ChordQuality
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.TICKS_PER_QUARTER
 import pianoanchor.core.model.TimeSignature
@@ -34,6 +36,12 @@ class PassageSliceTest {
         assertEquals(passage.rights, slice.rights)
         assertEquals(passage.skills, slice.skills)
         assertEquals("test:p#bars2-3", slice.id)
+    }
+
+    @Test
+    fun `slice drops the chord line`() {
+        val chorded = passage.copy(chords = listOf(ChordMark(0, 0, ChordQuality.MAJOR)))
+        assertEquals(emptyList(), chorded.slice(BarRange(2, 3)).chords)
     }
 
     @Test

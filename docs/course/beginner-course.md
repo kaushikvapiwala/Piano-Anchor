@@ -206,6 +206,11 @@ and notes are unchanged; only the skills they list changed. Pieces stay pieces.
 | G and F chords, chord symbols | Three chords, Change on the beat |
 | Melody plus chords | Hold and sing, Lightly Row with chords, Ode to Joy with chords |
 
+Every piece of Unit 1 and of the "More songs" unit has a chord line for the play-along backing
+(`docs/algorithms/play-along.md`), as do Lightly Row with chords, Ode to Joy with chords, Jingle Bells and Go Tell Aunt
+Rhody. The chord lines are our own harmony, like the notes: the tunes' rights records cover the melody, and the chords
+are written for Piano Anchor.
+
 The optional "More songs" unit after Unit 3 keeps Close moves, Minor colour, When the Saints Go Marching In and
 Four-chord walk (skills: first inversions, A minor, the four-chord progression).
 

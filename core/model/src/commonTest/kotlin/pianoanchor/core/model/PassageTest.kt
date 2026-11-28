@@ -138,4 +138,27 @@ class PassageTest {
     fun passageRejectsNoSteps() {
         assertFailsWith<IllegalArgumentException> { passage(steps = emptyList()) }
     }
+
+    @Test
+    fun passageHasNoChordsByDefault() {
+        assertTrue(passage().chords.isEmpty())
+    }
+
+    @Test
+    fun passageKeepsItsChordLine() {
+        val chords = listOf(ChordMark(0, 0, ChordQuality.MAJOR), ChordMark(1920, 7, ChordQuality.DOMINANT_7))
+        assertEquals(chords, passage().copy(chords = chords).chords)
+    }
+
+    @Test
+    fun passageRejectsUnsortedChords() {
+        val chords = listOf(ChordMark(1920, 0, ChordQuality.MAJOR), ChordMark(0, 7, ChordQuality.MAJOR))
+        assertFailsWith<IllegalArgumentException> { passage().copy(chords = chords) }
+    }
+
+    @Test
+    fun passageRejectsTwoChordsAtTheSameOnset() {
+        val chords = listOf(ChordMark(0, 0, ChordQuality.MAJOR), ChordMark(0, 7, ChordQuality.MAJOR))
+        assertFailsWith<IllegalArgumentException> { passage().copy(chords = chords) }
+    }
 }

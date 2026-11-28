@@ -85,6 +85,51 @@ class SessionFlowViewModelTest : TodayViewModelFixture() {
         }
 
     @Test
+    fun `a song with chords runs its play-along after practise, with the backing on`() =
+        runTest(dispatcher) {
+            val chordSong = Card.Song(checkNotNull(Curriculum.passage("builtin:hot-cross-buns")), TempoRung.WAIT, 8)
+            val vm = flow()
+            val targets = opened(vm)
+
+            vm.start(Session(listOf(chordSong), 0, 0, 8, 0, emptyList()), emptySet())
+            runCurrent()
+            assertEquals(
+                listOf(SessionStep.Practise(chordSong, 4), SessionStep.PlayAlong(chordSong, 4)),
+                vm.state.value.steps,
+            )
+            vm.stepFinished()
+            runCurrent()
+            assertEquals(SessionStep.PlayAlong(chordSong, 4), assertNotNull(vm.state.value.between).next)
+            vm.goNow()
+            runCurrent()
+
+            assertEquals(listOf(false, true), targets.map { assertIs<TodayTarget.Practice>(it).backing })
+            vm.exit()
+            runCurrent()
+        }
+
+    @Test
+    fun `finishing practise leaves the play-along to do on a restart`() =
+        runTest(dispatcher) {
+            val chordSong = Card.Song(checkNotNull(Curriculum.passage("builtin:hot-cross-buns")), TempoRung.WAIT, 8)
+            val chordSession = Session(listOf(chordSong), 0, 0, 8, 0, emptyList())
+            val vm = flow()
+            vm.start(chordSession, emptySet())
+            runCurrent()
+            vm.stepFinished()
+            runCurrent()
+            vm.exit()
+            runCurrent()
+
+            vm.start(chordSession, emptySet())
+            runCurrent()
+
+            assertEquals(listOf<SessionStep>(SessionStep.PlayAlong(chordSong, 4)), vm.state.value.steps)
+            vm.exit()
+            runCurrent()
+        }
+
+    @Test
     fun `with no piano the first step opens Pianos`() =
         runTest(dispatcher) {
             piano.unplug()
