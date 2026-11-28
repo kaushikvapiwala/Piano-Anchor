@@ -6,6 +6,9 @@ import pianoanchor.core.model.TryCheck
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
+import pianoanchor.engine.lesson.HandDemo
+import pianoanchor.engine.lesson.HandTimeline
+import pianoanchor.engine.lesson.LessonDemo
 import pianoanchor.engine.lesson.Quiz
 import pianoanchor.engine.lesson.QuizPrompt
 import pianoanchor.engine.lesson.TryProgress
@@ -21,16 +24,21 @@ internal fun lessonState(
     litKeys: Set<Int> = emptySet(),
     recap: RecapText? = null,
     countIn: Int? = null,
+    seeHand: HandTimeline? = null,
+    seeElapsedMs: Long = 0,
+    playing: Boolean = false,
 ) = LessonState(
     skill = skill,
     card = checkNotNull(Curriculum.card(skill.id)),
     step = step,
     tryProgress = progress,
-    playing = false,
+    playing = playing,
     litKeys = litKeys,
     recap = recap,
     connection = LessonConnection.CONNECTED,
     countIn = countIn,
+    seeHand = seeHand,
+    seeElapsedMs = seeElapsedMs,
 )
 
 /** The Try of right-hand C position after the notes [played] (C D E F G A... of its sequence). */
@@ -80,3 +88,7 @@ internal val skipQuiz =
 /** A note on the staff to find. */
 internal val staffQuiz =
     Quiz(Skills.TREBLE_CLEF.id, TryCheck.PlayKey(67, lit = false), QuizPrompt.PlayKey(67, onStaff = true))
+
+/** The hand that plays the See demo of right-hand C position (C D E F G, fingers 1 to 5). */
+internal fun cPositionHand(): HandTimeline =
+    checkNotNull(HandDemo.of(LessonDemo.of(checkNotNull(Curriculum.tryCheck(Skills.RH_C_POSITION.id)))))

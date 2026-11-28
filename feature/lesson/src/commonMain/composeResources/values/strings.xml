@@ -19,6 +19,8 @@
     <string name="lesson_play_again">Play again</string>
     <string name="lesson_see_listen">Watch and listen: the keys light as they sound.</string>
     <string name="lesson_see_count">Count it: %1$s</string>
+    <string name="lesson_see_fingers">Fingers %1$s play %2$s</string>
+    <string name="lesson_see_your_turn">Your turn</string>
     <string name="lesson_see_watch_hand">Watch the hand</string>
     <string name="lesson_try_any_key">Press any key with finger 3.</string>
     <string name="lesson_try_play_lit">Play the glowing key, %1$s.</string>

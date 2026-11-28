@@ -1,6 +1,9 @@
 package pianoanchor.feature.lesson
 
 import android.provider.Settings
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Before
 import org.junit.Test
@@ -10,6 +13,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import pianoanchor.core.model.LessonStep
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.lesson.TryRun
@@ -38,11 +42,14 @@ class LessonScreenScreenshotTest {
         name: String,
         state: LessonState,
         moreOpen: Boolean = false,
+        reduceMotion: Boolean = true,
     ) {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             captureRoboImage("screenshots/LessonScreen_${name}_$theme.png") {
-                PianoAnchorTheme(darkTheme = dark) { LessonScreen(state, LessonActions(), startMoreOpen = moreOpen) }
+                PianoAnchorTheme(darkTheme = dark) {
+                    LessonScreen(state, LessonActions(), startMoreOpen = moreOpen, reduceMotion = reduceMotion)
+                }
             }
         }
     }
@@ -58,6 +65,51 @@ class LessonScreenScreenshotTest {
 
     @Test
     fun seeWhileTheDemoSounds() = capture("see", lessonState(LessonStep.SEE, litKeys = setOf(62)).copy(playing = true))
+
+    @Test
+    fun seeWithTheHandMidDemoFingerThreeDown() =
+        capture(
+            "see_hand",
+            lessonState(
+                LessonStep.SEE,
+                litKeys = setOf(64),
+                seeHand = cPositionHand(),
+                seeElapsedMs = 2 * Tunables.PLAYBACK_NOTE_GAP_MS,
+                playing = true,
+            ),
+            reduceMotion = false,
+        )
+
+    @Test
+    fun seeWithTheHandAndReducedMotion() =
+        capture(
+            "see_hand_reduced_motion",
+            lessonState(
+                LessonStep.SEE,
+                litKeys = setOf(64),
+                seeHand = cPositionHand(),
+                seeElapsedMs = 2 * Tunables.PLAYBACK_NOTE_GAP_MS,
+                playing = true,
+            ),
+            reduceMotion = true,
+        )
+
+    @Test
+    fun seeAfterTheDemoSaysYourTurn() {
+        for (dark in listOf(false, true)) {
+            val theme = if (dark) "dark" else "light"
+            captureRoboImage("screenshots/LessonKeyStrip_your_turn_$theme.png") {
+                PianoAnchorTheme(darkTheme = dark) {
+                    LessonKeyStrip(
+                        lessonState(LessonStep.SEE, seeHand = cPositionHand()),
+                        Modifier.padding(8.dp),
+                        reduceMotion = true,
+                        fade = HandFade(0f, cue = true),
+                    )
+                }
+            }
+        }
+    }
 
     @Test
     fun tryJustOpened() = capture("try_start", lessonState(LessonStep.TRY, progress = sequenceProgress()))
