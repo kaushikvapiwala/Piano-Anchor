@@ -43,8 +43,9 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.learner.learnerDay
 import pianoanchor.engine.midi.PedalTapDetector
-import pianoanchor.engine.session.Card
 import pianoanchor.engine.session.SessionComposer
+import pianoanchor.engine.session.SessionRunner
+import pianoanchor.engine.session.WeekPause
 import pianoanchor.engine.session.passageHistories
 import pianoanchor.engine.sight.SightLevels
 import pianoanchor.engine.sight.SightReadingGenerator
@@ -57,6 +58,7 @@ private const val MORNING_FROM_HOUR = 5
 private const val AFTERNOON_FROM_HOUR = 12
 private const val EVENING_FROM_HOUR = 18
 private const val NANOS_PER_MILLI = 1_000_000.0
+private val FAR_PAST = LocalDate(2000, 1, 1)
 
 /**
  * Today: composes the day's session from [learner]'s plan and the budget in [settings], with each passage's history
@@ -67,7 +69,8 @@ private const val NANOS_PER_MILLI = 1_000_000.0
  * until [refresh].
  *
  * With `Settings.pedalControlOn` and a piano connected, Today reads the piano's events (one reader, closed by
- * [releasePiano]) and a tap of the sustain pedal asks for the first card on [pedalStarts], as tapping its button does.
+ * [releasePiano]) and a tap of the sustain pedal asks to start the session on [pedalStarts], as the Start button does.
+ * [progress] says which steps of the session are finished today.
  *
  * Once per learner day, when Today opens with the update check on in [settings], it asks [updateCheck] for the latest
  * release (the day is recorded first, so it is at most one request a day, whatever the answer). [TodayState.update]
@@ -85,14 +88,15 @@ public class TodayViewModel(
     private val zone: TimeZone,
     private val updateCheck: UpdateCheckPort,
     private val installedVersion: String,
+    private val progress: SessionProgress,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(TodayState())
     public val state: StateFlow<TodayState> = mutableState.asStateFlow()
 
-    private val pedalRequests = Channel<Card>(Channel.BUFFERED)
+    private val pedalRequests = Channel<Unit>(Channel.BUFFERED)
 
-    /** The first card, each time a pedal tap asks to start it; the host starts it as the card's button does. */
-    public val pedalStarts: Flow<Card> = pedalRequests.receiveAsFlow()
+    /** Each time a pedal tap asks to start the session; the host starts it as the Start button does. */
+    public val pedalStarts: Flow<Unit> = pedalRequests.receiveAsFlow()
     private var pedalReader: Job? = null
     private var released = false
     private var pedalAsked = false
@@ -152,19 +156,24 @@ public class TodayViewModel(
     }
 
     /**
-     * Where tapping [card] leads: the lesson of a Lesson card's concept, the sight-reading exercise of a
-     * Sight-reading card, Practice on another passage card's passage
-     * and rung, the ear screen with an Ear card's skills, the quizzes of a Quizzes card,
-     * or Pianos when no piano is connected.
+     * Pauses the current week after the learner confirmed: stores its Monday in `Settings.pausedWeeks` and counts
+     * again. Does nothing when the week can't be paused (no pause left, or already paused).
      */
-    public fun target(card: Card): TodayTarget {
-        val piano = mutableState.value.piano ?: return TodayTarget.Pianos
-        return when (card) {
-            is Card.Lesson -> TodayTarget.Lesson(piano.device, card.skill.id)
-            is Card.SightReading -> TodayTarget.SightReading(piano.device, card.passage.id)
-            is Card.PassageCard -> TodayTarget.Practice(piano.device, card.passage.id, card.rung, card.mode)
-            is Card.Ear -> TodayTarget.Ear(piano.device, card.skills)
-            is Card.Quizzes -> TodayTarget.Quizzes(piano.device, card.quizzes)
+    public fun pauseWeek() {
+        val week = mutableState.value.week?.takeIf { it.canPause } ?: return
+        viewModelScope.launch {
+            try {
+                settings.update { stored ->
+                    if (week.weekStart in stored.pausedWeeks) {
+                        stored
+                    } else {
+                        stored.copy(pausedWeeks = WeekPause.pause(week.weekStart, week, stored.pausedWeeks))
+                    }
+                }
+                refresh()
+            } catch (_: StorageUnavailableException) {
+                // The week stays unpaused; the card still offers the pause.
+            }
         }
     }
 
@@ -189,16 +198,10 @@ public class TodayViewModel(
                     val detector = PedalTapDetector()
                     try {
                         input.events(device).collect { event ->
-                            val first =
-                                mutableState.value
-                                    .takeIf { !released && !pedalAsked }
-                                    ?.session
-                                    ?.cards
-                            if (detector.onEvent(event)) {
-                                first?.firstOrNull()?.let {
-                                    pedalAsked = true
-                                    pedalRequests.trySend(it)
-                                }
+                            val canStart = mutableState.value.pedalHint && !released && !pedalAsked
+                            if (detector.onEvent(event) && canStart) {
+                                pedalAsked = true
+                                pedalRequests.trySend(Unit)
                             }
                         }
                     } catch (_: MidiDeviceUnavailableException) {
@@ -218,10 +221,9 @@ public class TodayViewModel(
             val stored = settings.settings.first()
             val history =
                 attempts.passageHistories(Curriculum.passages)
-            val weekStart = today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY)
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
-            val from = minOf(weekStart, windowStart)
-            val days = attempts.practiceDays(from, zone) + learner.reviewDays(from)
+            // The streak counts weeks back to the first one that missed its goal: read the whole history.
+            val days = attempts.practiceDays(FAR_PAST, zone) + learner.reviewDays(FAR_PAST)
             val sightAttempts = attempts.summariesWithPassagePrefix(SightReadingGenerator.ID_PREFIX)
             val learned = learner.learnedSkills()
             val session =
@@ -237,18 +239,21 @@ public class TodayViewModel(
                     sightDoneToday = sightAttempts.any { learnerDay(it.startedAt, zone) == learnerDay(now, zone) },
                     placed = learner.placedSkills(),
                 )
+            val day = learnerDay(now, zone)
+            val finished = progress.finishedOn(day)
             mutableState.update {
                 it.copy(
                     session = session,
+                    steps = SessionRunner.steps(session).filter { step -> step.key() !in finished },
+                    doneToday = progress.completedOn(day),
                     greeting = greetingAt(local.hour),
-                    daysThisWeek = days.count { day -> day in weekStart..today },
-                    weeklyGoalDays = stored.weeklyGoalDays,
+                    week = WeekPause.status(today, days, stored.weeklyGoalDays, stored.pausedWeeks),
                     practicedDays = days.count { day -> day in windowStart..today },
                     storageFailed = false,
                 )
             }
         } catch (_: StorageUnavailableException) {
-            mutableState.update { it.copy(session = null, storageFailed = true) }
+            mutableState.update { it.copy(session = null, steps = emptyList(), storageFailed = true) }
         }
     }
 

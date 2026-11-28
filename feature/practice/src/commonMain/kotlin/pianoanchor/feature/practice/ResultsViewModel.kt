@@ -49,7 +49,7 @@ import pianoanchor.engine.grading.TimingSummary
 import pianoanchor.engine.grading.Tip
 import pianoanchor.engine.grading.noteNumber
 import pianoanchor.engine.grading.noteValue
-import pianoanchor.engine.guidance.SpotFinder
+import pianoanchor.engine.guidance.WeakSpot
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.matcher.TempoRung
@@ -165,8 +165,8 @@ public class ResultsViewModel(
             // A loop's notes and steps are the slice's, not the piece's: no analysis against the whole piece.
             passage?.takeIf { attempt.spot == null }?.let {
                 withContext(analysisDispatcher) {
-                    val analysis = analyse(it, attempt, strictness)
-                    ResultsSummary.of(it, attempt, analysis) to spotOf(it, attempt, analysis?.findings.orEmpty())
+                    val analysis = WeakSpot.analyse(it, attempt, strictness)
+                    ResultsSummary.of(it, attempt, analysis) to WeakSpot.find(it, attempt, analysis?.findings.orEmpty())
                 }
             }
         val summary = analysed?.first
@@ -286,30 +286,6 @@ public class ResultsViewModel(
         } catch (_: StorageUnavailableException) {
             Strictness.STANDARD.profile()
         }
-
-    /** The bars to offer as a spot loop: none for a perform take or a CLEAN run (`docs/algorithms/guidance.md`). */
-    private fun spotOf(
-        passage: Passage,
-        attempt: Attempt,
-        findings: List<Finding>,
-    ): BarRange? {
-        val offered =
-            attempt.mode == RunMode.PRACTICE && attempt.band != Band.CLEAN &&
-                SightReadingGenerator.parse(attempt.passageId) == null
-        return if (offered) SpotFinder.worst(passage, attempt, findings) else null
-    }
-
-    /** The analysis of a timed run, or of a wait-mode run with played notes; null for older wait-mode runs. */
-    private fun analyse(
-        passage: Passage,
-        attempt: Attempt,
-        strictness: StrictnessProfile,
-    ): PerformanceAnalysis? {
-        if (attempt.tempoBpm == null && attempt.playedNotes.isEmpty()) return null
-        val tempo = attempt.tempoBpm?.let { TempoReference.Target(it, startNanos = 0) } ?: TempoReference.Untimed
-        val notes = LatencyCalibration.corrected(attempt.playedNotes, attempt.latencyOffsetNanos)
-        return PerformanceAnalyser.analyse(passage, notes, tempo, strictness)
-    }
 
     private fun timingTile(
         passage: Passage,

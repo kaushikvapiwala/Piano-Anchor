@@ -386,6 +386,139 @@ The piano connected last through onboarding or Pianos is remembered. Its row on 
 The start screen, landscape, in three panes read left to right: a navigation rail (Today selected, Songs, Pianos,
 Settings gear; shared by Today and Songs as `AppNavRail`; every item has a text label), the plan (a scrolling column
 that takes the rest of the width) and a side pane about 280 dp wide (it scrolls too). The plan holds the storage
+error card (always first), the greeting and the session hero; the side pane holds the piano chip, the week card,
+"Practised 9 of the last 16 days" and the update banner. The old per-card layout is gone (ADR 0028).
+
+- **Greeting**: by time of day ("Good morning" from 05:00, afternoon from 12:00, evening from 18:00) and the line
+  "Middle C is calling." naming the cold-open skill ("Ready when you are." with none).
+- **Piano chip**: name, USB or BLE and the latency offset when calibrated, e.g. "FP-30X · BLE · 18 ms"; "No piano"
+  opens Pianos; "Connecting…" while the app reconnects the remembered piano in the background when Today opens, with
+  no scan and no dialog; if that fails the chip reads "No piano", with no error card and no retry until Today opens
+  again.
+- TalkBack reads the plan first, then the side pane.
+- **Session hero**: one card, "Today · about 25 minutes", a segmented bar (one segment per step, as wide as its
+  minutes; the caption "5 steps, about 25 minutes" is what TalkBack reads), the **Start session** button and a text
+  button **Choose steps**. Start runs every step still to do today; with no piano connected it opens Pianos. With the
+  pedal control on and a piano connected the button carries "Tap the pedal to continue" and a pedal tap starts.
+- **Trim view** (Choose steps): the same card lists the steps, each with a switch (48 dp target, described as
+  "Learn: Middle C, 9 minutes"), its title and minutes, a button "Start 4 steps · 21 min" (disabled at 0 steps) and
+  "Back to the whole session". Switched-off steps are left out of that run only.
+- **Done for today**: once the recap was reached the hero says "Done for today" with "Practise more", which starts
+  the session again.
+- **Week card**: "This week · 3 of 4 days" with a dot per goal day, "3-week streak", and while the week can be paused
+  "Busy week? **Pause this week**" with "Paused weeks never break your streak." Pausing asks to confirm. A paused week
+  reads "This week is paused" with no button. Dots at the bottom show the pauses left (two at most, one comes back
+  four weeks after it was used).
+- **All caught up**: "All caught up. Play a song or come back tomorrow." above the hero, if nothing but a song or
+  sight-reading is due.
+- **Storage error**: an `errorContainer` card with Retry. The list reloads when the screen is opened again after a run.
+
+## Session flow
+
+After Start session the app runs the steps one after another (ADR 0028): each step's own screen (lesson, practice,
+ear, quizzes, sight-reading) opens by itself, and when it finishes the flow takes over.
+
+- **Between steps**: a full plum-tint card, landscape: a countdown ring with the seconds in its middle, "NEXT · STEP 2
+  OF 4", the next step's title, **Pause** (it turns into **Resume**) and **Skip step**. The ring counts 10 seconds
+  (`SESSION_NEXT_COUNTDOWN_S`), then the next step opens. Tapping the card, or a pedal tap with the pedal control on,
+  opens it at once. With reduced motion (animations off) the ring does not animate; the number still counts. TalkBack
+  announces the next step once (a polite live region on the title) and does not read the seconds.
+- **Recap** after the last step: three columns, "Time played" (minutes), "Steps done" and "What you learned" (skills
+  that became learned during the run, at most three), then a tip naming the passage and bars of the weakest spot of
+  the run's practice, or "No weak spot stood out", and **Done** (back to Today).
+- **Leaving**: system back or the back arrow on a step asks "Leave today's session?" (Keep going / Leave). Leaving
+  keeps the finished steps done; Start again resumes at the first unfinished one. The practice step ends when the run
+  is saved, with no Results screen in between.
+
+## Lesson screen
+
+Landscape (915×412 dp), no rail. Left pane (about 40%): a back button and the concept's title, the concept's animation (see "Card animations") and
+the one-line What, with a "More" text button (44 dp, "Less" once open) that opens Why, How and When in place, then the
+dot row. The four fields stay required in the content; only the card's view is short. Right pane (about 60%): the content of
+the current step; only this pane changes between steps. A key strip runs along the bottom.
+
+- **Dots**: five tappable buttons (44 dp or more) with the step name under each; filled up to the current step, the
+  current name in bold. Any dot jumps to its step. TalkBack reads "Step 3 of 5, Try, current". When the Try is a
+  passage the Try dot reads "In Use" (TalkBack "Step 3 of 5, Try, in Use") and jumps to Use.
+- **Why**: the card's animation (when the concept has one; the left pane shows it in the other steps), the card's Why line and "Next". **See**: "Watch and listen: the keys light as they sound." with "Play again"
+  (off while sounding) and "Skip"; a concept with nothing to hear says "Watch the hand" with "Next". **Try**: the
+  per-check instruction, the progress ("3 of 8", "✓ Well done" when passed), "That was D♯4. Waiting for D4." after a
+  wrong key (a polite live region) and a big count-in numeral for checks with a click; "Skip" is always there; a
+  dropped piano is explained in place. **Use**: the first passage's title, "Play it" (opens Practice in wait mode, which
+  ends in Results with "Finish lesson") and "Next". **Recap**: "You’ve learned <concept>. Next: <next concept>." with
+  "Next lesson" and "Done", or "You've finished the course!" with "Done".
+- **Hands-free** (ADR 0027): with "Pedal to continue" on and the piano connected, a tap of the sustain pedal does
+  what the step's main button does (Why and See: go on, Use: "Play it", Recap: "Next lesson", or "Done" at the end of
+  the course); a Try ignores it. A concept that uses the pedal as music is meant to ignore it too: the lesson has the flag for that, but nothing sets it yet; it is wired when course 2's pedal unit adds pedal concepts. A small line beside the button
+  says "Tap the pedal to continue" (TalkBack reads it as part of the button). Why moves on by itself after 4.6 s (one
+  animation loop and its rest), See when the demo ends (a concept with nothing to hear: after 4.6 s), Use opens
+  Practice after 1.5 s unless the lesson was just reopened there; Recap always waits. Playing the demo again by hand
+  does not move on. Any tap or pedal tap moves on early; dots and back still work.
+- **Key strip**: whole octaves around the Try's notes (at least two; the whole keyboard for "every C"). Sounding or
+  held keys are blue, the key of a wrong press grey, and the expected key glows in the accent (always for a lit key or
+  a sequence, after a wrong key for the rest). Letters on the keys follow the same rules as the practice strip's
+  (the glowing keys are the ones to play; a wrong key's hint letters show only while the check is live); keys are
+  24 dp wide, so the letter is capped at 40% of that.
+- The step is saved as it changes and the lesson reopens there; a finished lesson reopens at Why.
+
+## Quiz screen
+
+Landscape like the lesson, no rail. Left pane (about 30%): a back button and a small "Quiz 2 of 3" header; a quiz that
+shows a note on the staff draws a mini treble staff with it below (TalkBack reads "A note on the staff: G4"). Right
+pane: the prompt ("Play every F", "A skip up from E4", "Hold C4 for 2 clicks"), the progress ("1 of 3", "✓ Well done"),
+the gentle wrong-key hint in a polite live region ("That was F4. G is in the three black keys, just left of the middle
+one."; a chord says "Try again"), a count-in numeral for quizzes with a click and "Skip", always visible. The key
+strip runs along the bottom: held keys lit, the wrong key grey, the expected key glowing after a wrong key. There is no
+See step and no card. After the last quiz the right pane reads "3 quizzes: 2 clean" with "Done" back to Today; a pedal
+tap there is "Done" too, with the "Tap the pedal to continue" line beside the button (not during a quiz). The
+piano is handed over as practice does: leaving closes it first.
+- **Note names**: the quiz strip never letters keys by stage (a prompt like "Play the E" must not be answerable by reading letters); only a wrong key's hint letters the pressed and the right key while the check is live, and none with the setting Off.
+
+
+## Card animations
+
+Each concept card has a short looping animation, shown on the lesson's Why step and in the card pane (`CardAnimation` in
+`feature/lesson`). A concept's animation is a scene: data in the engine's content (`CardScenes`), written in one shared
+vocabulary (`SceneAction`: light a key, show a finger, pose the hand, draw a staff note, highlight keys, pulse the beat,
+caption). One renderer draws every scene, so the animations stay consistent by construction. A concept that needs a
+new kind of action extends the vocabulary in its own spec and this section; it never draws ad hoc.
+
+- **Time**: every loop lasts exactly 4000 ms, followed by a 600 ms rest with everything faded, then repeats. Every cue
+  fades in and out over 150 ms with `FastOutSlowInEasing`; there is no other motion curve (the loop clock itself is
+  linear). Cues start inside the loop and end by its end.
+- **Reduce motion** (system animations off): the frame at the middle of the loop (2000 ms), not animated. TalkBack
+  reads the scene's description and nothing else of the stage.
+- **Stage**: 16:9. The keyboard is always the bottom 40% (white keys evenly across the width, black keys 60% as wide
+  and tall), the staff above it, the hand over the keys, the caption at the top and the beat dot in the top right.
+  The keyboard never mirrors in right-to-left layouts (pianos don't); captions follow the locale.
+- **Colours**, all from theme tokens so light and dark match: a lit key is the accent (60% opacity); a strong key is
+  the accent at full opacity with a 2 dp ring; a highlight is an outline in outline-variant; a finger number is an
+  accent chip with on-accent text; the staff uses the practice staff's colour; the hand is an outline in
+  on-surface-variant.
+- **Strokes**: one weight, 2 dp, for the hand, outlines, key borders and the staff.
+- **Hand**: a flat outline of a rounded palm and five finger arcs, the same in every scene, with the thumb over the
+  pose's key (mirrored for the left hand). A curved pose changes the finger arcs only.
+- **Captions**: at most 24 characters, one at a time, so they fit the narrow pane at font scale 2.0. They are content
+  text and not translated yet.
+- **Goldens**: every scene at its midpoint frame, light and dark (`CardScene_*` in `feature/lesson/screenshots/`).
+
+## Pianos screen
+
+Landscape: a header across the top (back arrow when it was opened from another screen, and the title; the settings gear
+lives on Today), then two panes. The left pane (about 45%) holds the error card, the devices list, the Scan button,
+the scanned pianos, the connection status, the practice, calibrate and record buttons and the contribution kit; the
+right pane (the rest) is the note log. Each pane scrolls on its own. When a Bluetooth scan ends with no piano found
+and none listed, a line under "No piano found" says pianos turn Bluetooth off when idle and need switching off and on
+again; it goes when a scan starts or a piano is listed.
+
+The piano connected last through onboarding or Pianos is remembered. Its row on Pianos (when it is listed) has a
+"Forget" text button (TalkBack: "Forget FP-30X"): it disconnects the piano and stops Today reconnecting it.
+
+## Today screen
+
+The start screen, landscape, in three panes read left to right: a navigation rail (Today selected, Songs, Pianos,
+Settings gear; shared by Today and Songs as `AppNavRail`; every item has a text label), the plan (a scrolling column
+that takes the rest of the width) and a side pane about 280 dp wide (it scrolls too). The plan holds the storage
 error card (always first), the greeting, the cards and the session bar; the side pane holds the piano chip, the
 weekly goal dots, "Practised 9 of the last 16 days" and the update banner.
 

@@ -17,6 +17,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -43,7 +45,6 @@ import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.Skill
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.matcher.TempoRung
-import pianoanchor.engine.session.Card
 import pianoanchor.feature.ear.EarActions
 import pianoanchor.feature.ear.EarScreen
 import pianoanchor.feature.ear.EarViewModel
@@ -74,6 +75,10 @@ import pianoanchor.feature.songs.SongsActions
 import pianoanchor.feature.songs.SongsScreen
 import pianoanchor.feature.songs.SongsTarget
 import pianoanchor.feature.songs.SongsViewModel
+import pianoanchor.feature.today.LeaveSessionDialog
+import pianoanchor.feature.today.SessionFlowActions
+import pianoanchor.feature.today.SessionFlowScreen
+import pianoanchor.feature.today.SessionFlowViewModel
 import pianoanchor.feature.today.TodayActions
 import pianoanchor.feature.today.TodayScreen
 import pianoanchor.feature.today.TodayTarget
@@ -111,6 +116,14 @@ private sealed interface Destination {
         val from: Destination,
     ) : Destination
 
+    /**
+     * The one-tap session between its steps: the card that counts down to the next step, then the recap. [stepDone] is
+     * true when a step just finished and handed control back.
+     */
+    data class Session(
+        val stepDone: Boolean,
+    ) : Destination
+
     /** The Songs screen, opened from the rail; back returns to Today. */
     data object Songs : Destination
 
@@ -130,7 +143,8 @@ private sealed interface Destination {
      * back returns to the screen that opened it ([from]): Today, Songs or the monitor. With [spot], it loops those
      * bars of the passage one rung below [rung] (a spot loop); "Play it" then plays the whole passage at [rung].
      * [fromLesson] is the concept whose lesson opened it: Results then offers "Finish lesson". A [placement] run is a
-     * piece of the onboarding's placement test, hosted in the onboarding (no Results).
+     * piece of the onboarding's placement test, hosted in the onboarding (no Results). A [flowStep] is a step of the
+     * one-tap session: finishing it returns to the session without Results.
      */
     data class Practice(
         val device: MidiDevice,
@@ -141,6 +155,7 @@ private sealed interface Destination {
         val spot: BarRange? = null,
         val fromLesson: String? = null,
         val placement: Boolean = false,
+        val flowStep: Boolean = false,
     ) : Destination
 
     /**
@@ -186,47 +201,98 @@ private sealed interface Destination {
 private fun AppNavigation() {
     var destination by remember { mutableStateOf<Destination?>(null) }
     OnboardedEffect { onboarded -> destination = if (onboarded) Destination.Today else Destination.Onboarding }
-    val back = { destination = Destination.Today }
-    when (val current = destination ?: return) {
+    // The session flow's ViewModel outlives the step screens it opens, so it lives as long as the navigation.
+    val flow: SessionFlowViewModel = koinViewModel(viewModelStoreOwner = remember { RouteViewModelStoreOwner() })
+    var flowActive by remember { mutableStateOf(false) }
+    var leaving by remember { mutableStateOf(false) }
+    var pendingLeave by remember { mutableStateOf<(() -> Unit)?>(null) }
+    // Where a step returns to: the session while it runs, Today once the learner chose to leave it.
+    val home = { if (flowActive && !leaving) Destination.Session(stepDone = true) else Destination.Today }
+    val back = { destination = home() }
+    val askLeave: (() -> Unit) -> Unit = { proceed -> if (flowActive) pendingLeave = proceed else proceed() }
+    LaunchedEffect(destination) {
+        if (destination == Destination.Today && flowActive) {
+            flow.exit()
+            flowActive = false
+            leaving = false
+        }
+    }
+    pendingLeave?.let { proceed ->
+        LeaveSessionDialog(
+            onKeepGoing = { pendingLeave = null },
+            onLeave = {
+                leaving = true
+                pendingLeave = null
+                proceed()
+            },
+        )
+    }
+    val current = destination ?: return
+    CompositionLocalProvider(LocalLeaveGuard provides askLeave) {
+        Navigation(current, flow, home, back, go = { destination = it }) {
+            flowActive = true
+            leaving = false
+        }
+    }
+}
+
+/** Asks "Leave today's session?" before running the action when the session flow is on; else runs it at once. */
+private val LocalLeaveGuard = staticCompositionLocalOf<(() -> Unit) -> Unit> { { it() } }
+
+@Composable
+private fun Navigation(
+    current: Destination,
+    flow: SessionFlowViewModel,
+    home: () -> Destination,
+    back: () -> Unit,
+    go: (Destination) -> Unit,
+    onFlowStarted: () -> Unit,
+) {
+    when (current) {
         Destination.Onboarding, Destination.OnboardingPianos -> {
-            OnboardingNavigation(current, go = { destination = it }, onFinished = back)
+            OnboardingNavigation(current, go = { go(it) }, onFinished = back)
         }
 
         Destination.Today -> {
             TodayRoute(
-                toPractice = { destination = it },
-                toEar = { destination = it },
-                toLesson = { destination = it },
-                toQuiz = { destination = it },
-                toSongs = { destination = Destination.Songs },
-                toPianos = { destination = Destination.Monitor(from = current) },
-                toSettings = { destination = Destination.Settings(from = current) },
+                flow = flow,
+                toSession = {
+                    onFlowStarted()
+                    go(Destination.Session(stepDone = false))
+                },
+                toSongs = { go(Destination.Songs) },
+                toPianos = { go(Destination.Monitor(from = current)) },
+                toSettings = { go(Destination.Settings(from = current)) },
             )
         }
 
         Destination.Songs -> {
             SongsRoute(
-                onPractice = { destination = it },
+                onPractice = { go(it) },
                 onToday = back,
-                onPianos = { destination = Destination.Monitor(from = current) },
-                onSettings = { destination = Destination.Settings(from = current) },
+                onPianos = { go(Destination.Monitor(from = current)) },
+                onSettings = { go(Destination.Settings(from = current)) },
             )
         }
 
         is Destination.Monitor -> {
             MonitorRoute(
-                onBack = { destination = current.from },
-                onPractice = { destination = Destination.Practice(it, from = current) },
-                onCalibrate = { destination = Destination.Calibrate(it, returnTo = current) },
+                onBack = { go(current.from) },
+                onPractice = { go(Destination.Practice(it, from = current)) },
+                onCalibrate = { go(Destination.Calibrate(it, returnTo = current)) },
             )
         }
 
         is Destination.Settings -> {
-            SettingsRoute(onBack = { destination = current.from })
+            SettingsRoute(onBack = { go(current.from) })
+        }
+
+        is Destination.Session -> {
+            SessionRoute(current, flow, go = { go(it) })
         }
 
         is Destination.Practice -> {
-            PracticeDestination(current, go = { destination = it })
+            PracticeDestination(current, home, go = { go(it) })
         }
 
         is Destination.Ear -> {
@@ -238,15 +304,15 @@ private fun AppNavigation() {
         }
 
         is Destination.Lesson -> {
-            key(current) { LessonRoute(current, go = { destination = it }) }
+            key(current) { LessonRoute(current, home, go = { go(it) }) }
         }
 
         is Destination.Calibrate -> {
-            CalibrationRoute(current.device, onLeave = { destination = current.returnTo })
+            CalibrationRoute(current.device, onLeave = { go(current.returnTo) })
         }
 
         is Destination.Results -> {
-            ResultsRoute(current, go = { destination = it })
+            ResultsRoute(current, go = { go(it) })
         }
     }
 }
@@ -255,13 +321,16 @@ private fun AppNavigation() {
 @Composable
 private fun PracticeDestination(
     current: Destination.Practice,
+    home: () -> Destination,
     go: (Destination) -> Unit,
 ) {
     key(current) {
         PracticeRoute(
             current,
             onBack = { go(current.from) },
-            onFinished = { id, rung, _ -> go(Destination.Results(id, rung, current)) },
+            onFinished = { id, rung, _ ->
+                go(if (current.flowStep) home() else Destination.Results(id, rung, current))
+            },
             onPlayWhole = { rung -> go(current.copy(rung = rung, spot = null)) },
         )
     }
@@ -324,7 +393,8 @@ private fun PracticeRoute(
     val scope = rememberCoroutineScope()
     // Leave only once the run has closed the piano, so the monitor can reopen it (one reader per input).
     val leave = { then: () -> Unit -> scope.launch { viewModel.close() }.invokeOnCompletion { then() } }
-    BackHandler { leave(onBack) }
+    val askLeave = LocalLeaveGuard.current
+    BackHandler { askLeave { leave(onBack) } }
     // The onboarding's "Stop here": leave like back does, closing the piano first.
     LaunchedEffect(stopRequested) { if (stopRequested) leave(onBack) }
     LaunchedEffect(state.finishedAttemptId) {
@@ -336,7 +406,7 @@ private fun PracticeRoute(
     }
     PracticeScreen(
         state,
-        onBack = { leave(onBack) },
+        onBack = { askLeave { leave(onBack) } },
         onSelectRung = viewModel::selectRung,
         onToggleClick = viewModel::toggleClick,
         onRetrySave = viewModel::retrySave,
@@ -366,11 +436,12 @@ private fun EarRoute(
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
     val leave = { scope.launch { viewModel.close() }.invokeOnCompletion { onBack() } }
-    BackHandler { leave() }
+    val askLeave = LocalLeaveGuard.current
+    BackHandler { askLeave { leave() } }
     EarScreen(
         state,
         EarActions(
-            onBack = { leave() },
+            onBack = { askLeave { leave() } },
             onReplay = viewModel::replay,
             onAnswer = viewModel::answer,
             onShowMe = viewModel::showMe,
@@ -396,10 +467,11 @@ private fun QuizRoute(
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
     val leave = { scope.launch { viewModel.close() }.invokeOnCompletion { onBack() } }
-    BackHandler { leave() }
+    val askLeave = LocalLeaveGuard.current
+    BackHandler { askLeave { leave() } }
     // A tap of the sustain pedal in the summary is "Done".
     LaunchedEffect(viewModel) { viewModel.pedalDone.collect { leave() } }
-    QuizScreen(state, QuizActions(onBack = { leave() }, onSkip = viewModel::skip, onDone = { leave() }))
+    QuizScreen(state, QuizActions(onBack = { askLeave { leave() } }, onSkip = viewModel::skip, onDone = { leave() }))
 }
 
 /**
@@ -409,6 +481,7 @@ private fun QuizRoute(
 @Composable
 private fun LessonRoute(
     lesson: Destination.Lesson,
+    home: () -> Destination,
     go: (Destination) -> Unit,
 ) {
     val viewModel: LessonViewModel =
@@ -418,8 +491,8 @@ private fun LessonRoute(
     val state by viewModel.state.collectAsState()
     val scope = rememberCoroutineScope()
     val leave = { to: Destination -> scope.launch { viewModel.close() }.invokeOnCompletion { go(to) } }
-    val today = Destination.Today
-    BackHandler { leave(today) }
+    val askLeave = LocalLeaveGuard.current
+    BackHandler { askLeave { leave(home()) } }
     val playIt = {
         state.usePassage?.let { passage ->
             // Back from practice returns to this lesson's Use step; Results then offers "Finish lesson".
@@ -442,21 +515,21 @@ private fun LessonRoute(
             when (exit) {
                 LessonExit.PLAY_IT -> playIt()
                 LessonExit.NEXT_LESSON -> nextLesson()
-                LessonExit.DONE -> leave(today)
+                LessonExit.DONE -> leave(home())
             }
         }
     }
     LessonScreen(
         state,
         LessonActions(
-            onBack = { leave(today) },
+            onBack = { askLeave { leave(home()) } },
             onGoTo = viewModel::goTo,
             onNext = viewModel::next,
             onSkip = viewModel::skip,
             onPlayAgain = viewModel::replaySee,
             onPlayIt = { playIt() },
             onNextLesson = { nextLesson() },
-            onDone = { leave(today) },
+            onDone = { leave(home()) },
         ),
     )
 }
@@ -605,10 +678,8 @@ private fun SettingsRoute(onBack: () -> Unit) {
 /** Today; its ViewModel lives as long as the route, so coming back from a run loads the plan afresh. */
 @Composable
 private fun TodayRoute(
-    toPractice: (Destination.Practice) -> Unit,
-    toEar: (Destination.Ear) -> Unit,
-    toLesson: (Destination.Lesson) -> Unit,
-    toQuiz: (Destination.Quiz) -> Unit,
+    flow: SessionFlowViewModel,
+    toSession: () -> Unit,
     toSongs: () -> Unit,
     toPianos: () -> Unit,
     toSettings: () -> Unit,
@@ -621,60 +692,100 @@ private fun TodayRoute(
     val release: (() -> Unit) -> Unit = { then ->
         if (viewModel.beginLeaving()) scope.launch { viewModel.releasePiano() }.invokeOnCompletion { then() }
     }
-    val onPractice = { to: Destination.Practice -> release { toPractice(to) } }
-    val onEar = { to: Destination.Ear -> release { toEar(to) } }
-    val onLesson = { to: Destination.Lesson -> release { toLesson(to) } }
-    val onQuiz = { to: Destination.Quiz -> release { toQuiz(to) } }
     val onSongs = { release { toSongs() } }
     val onPianos = { release { toPianos() } }
     val onSettings = { release { toSettings() } }
-    val start = { card: Card ->
-        when (val target = viewModel.target(card)) {
-            is TodayTarget.Practice -> {
-                onPractice(
-                    Destination.Practice(
-                        target.device,
-                        target.passageId,
-                        target.rung,
-                        Destination.Today,
-                        target.mode,
-                    ),
-                )
-            }
-
-            is TodayTarget.SightReading -> {
-                onPractice(Destination.Practice(target.device, target.passageId, from = Destination.Today))
-            }
-
-            TodayTarget.Pianos -> {
-                onPianos()
-            }
-
-            is TodayTarget.Ear -> {
-                onEar(Destination.Ear(target.device, target.skills))
-            }
-
-            is TodayTarget.Quizzes -> {
-                onQuiz(Destination.Quiz(target.device, target.quizzes))
-            }
-
-            is TodayTarget.Lesson -> {
-                onLesson(Destination.Lesson(target.device, target.skillId))
+    // Start runs the whole session (less the steps switched off); with no piano it opens Pianos.
+    val startSession = { skipped: Set<Int> ->
+        val session = state.session
+        if (state.piano == null || session == null) {
+            onPianos()
+        } else {
+            release {
+                flow.start(session, skipped)
+                toSession()
             }
         }
     }
-    // A tap of the sustain pedal starts the first card, as its button does.
-    LaunchedEffect(viewModel) { viewModel.pedalStarts.collect { start(it) } }
+    // A tap of the sustain pedal starts the session, as its button does.
+    LaunchedEffect(viewModel) { viewModel.pedalStarts.collect { startSession(emptySet()) } }
     TodayScreen(
         state,
         TodayActions(
-            onStart = start,
+            onStartSession = startSession,
             onSongs = onSongs,
             onPianos = onPianos,
             onSettings = onSettings,
             onRetry = viewModel::refresh,
             onSeeRelease = { release -> openInBrowser(context, release.pageUrl) },
             onDismissUpdate = viewModel::dismissUpdate,
+            onPauseWeek = viewModel::pauseWeek,
+        ),
+    )
+}
+
+/**
+ * The session between its steps. Each step the flow opens is a destination of its own; this route shows the card
+ * between steps and the recap. Leaving (back, Done) ends the flow; finished steps stay done.
+ */
+@Composable
+private fun SessionRoute(
+    session: Destination.Session,
+    flow: SessionFlowViewModel,
+    go: (Destination) -> Unit,
+) {
+    val state by flow.state.collectAsState()
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(session) { if (session.stepDone) flow.stepFinished() }
+    LaunchedEffect(flow) {
+        flow.opens.collect { target ->
+            // The flow closed its piano reader before it opened the step, so the step's screen can read the piano.
+            when (target) {
+                is TodayTarget.Practice -> {
+                    go(
+                        Destination.Practice(
+                            target.device,
+                            target.passageId,
+                            target.rung,
+                            Destination.Today,
+                            target.mode,
+                            flowStep = true,
+                        ),
+                    )
+                }
+
+                is TodayTarget.SightReading -> {
+                    go(Destination.Practice(target.device, target.passageId, from = Destination.Today, flowStep = true))
+                }
+
+                is TodayTarget.Ear -> {
+                    go(Destination.Ear(target.device, target.skills))
+                }
+
+                is TodayTarget.Quizzes -> {
+                    go(Destination.Quiz(target.device, target.quizzes))
+                }
+
+                is TodayTarget.Lesson -> {
+                    go(Destination.Lesson(target.device, target.skillId))
+                }
+
+                TodayTarget.Pianos -> {
+                    go(Destination.Monitor(from = Destination.Today))
+                }
+            }
+        }
+    }
+    val leave = { scope.launch { flow.releasePiano() }.invokeOnCompletion { go(Destination.Today) } }
+    BackHandler { leave() }
+    SessionFlowScreen(
+        state,
+        SessionFlowActions(
+            onPause = flow::pauseCountdown,
+            onResume = flow::resumeCountdown,
+            onSkip = flow::skipStep,
+            onGoNow = flow::goNow,
+            onDone = { leave() },
         ),
     )
 }

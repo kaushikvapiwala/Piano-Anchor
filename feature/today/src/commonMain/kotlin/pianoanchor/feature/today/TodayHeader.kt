@@ -1,14 +1,11 @@
 package pianoanchor.feature.today
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -16,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -35,9 +31,6 @@ import pianoanchor.feature.today.resources.today_piano_none_description
 import pianoanchor.feature.today.resources.today_ready
 import pianoanchor.feature.today.resources.today_transport_ble
 import pianoanchor.feature.today.resources.today_transport_usb
-import pianoanchor.feature.today.resources.today_week_goal
-
-private val DotSize = 12.dp
 
 /** The greeting and the line naming the cold-open skill: the head of the plan pane. */
 @Composable
@@ -63,7 +56,7 @@ internal fun Header(state: TodayState) {
     }
 }
 
-/** The piano chip and the weekly goal dots: the top of the side pane. */
+/** The piano chip: the top of the side pane. */
 @Composable
 internal fun PianoStatus(
     state: TodayState,
@@ -71,7 +64,6 @@ internal fun PianoStatus(
 ) {
     Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         PianoChipView(state.piano, state.connecting, onPianos)
-        WeekDots(state.daysThisWeek, state.weeklyGoalDays)
     }
 }
 
@@ -115,30 +107,6 @@ private fun PianoChipView(
             contentAlignment = Alignment.Center,
         ) {
             Text(text, style = MaterialTheme.typography.labelLarge)
-        }
-    }
-}
-
-@Composable
-private fun WeekDots(
-    done: Int,
-    goal: Int,
-) {
-    val description = stringResource(Res.string.today_week_goal, done, goal)
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.clearAndSetSemantics { contentDescription = description },
-    ) {
-        repeat(maxOf(goal, done)) { index ->
-            val color =
-                if (index <
-                    done
-                ) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.outlineVariant
-                }
-            Box(modifier = Modifier.size(DotSize).background(color, CircleShape))
         }
     }
 }

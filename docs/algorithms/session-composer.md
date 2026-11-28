@@ -53,3 +53,16 @@ loads, opens Practice in wait mode, and sits after the Song card and before the 
 ## Review segment
 `Session.moreDue` holds the due skills beyond the cold open, in plan order. Once a run is saved the skill is no longer
 due, so the next load of Today offers the next one as its cold open.
+
+## Session steps and the weekly goal
+`SessionRunner.steps` (same package) turns a `Session` into the one-tap session's steps (ADR 0028). The run order is
+warm-up (the cold open, then the quizzes), learn (the lesson), practise (the song), ear, sight-read; a missing card
+leaves its step out, and a card whose index in `Session.cards` is in `skipped` is dropped (the trim view's switches).
+Play-along will slot in after practise once it exists. The order differs from the card order the composer emits.
+
+`WeekPause` keeps the weekly days goal. A week runs Monday to Sunday; its status counts the practice days of the
+current week, the pauses left and the streak in weeks. The streak is the run of weeks before this one that either
+reached the goal or were paused, plus this week if it does. A paused week counts as met whatever was played. At most
+`WEEK_PAUSES_MAX` pauses can be unused; a pause stays used for `WEEK_PAUSE_REFILL_WEEKS` weeks counting from its own
+week, then comes back. Only the current week can be paused, any day of it including Sunday; the paused Mondays live in
+`Settings.pausedWeeks`.

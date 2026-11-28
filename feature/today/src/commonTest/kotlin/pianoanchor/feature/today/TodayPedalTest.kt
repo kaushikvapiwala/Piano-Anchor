@@ -29,15 +29,15 @@ class TodayPedalTest : TodayViewModelFixture() {
         runCurrent()
     }
 
-    private fun TestScope.collectStarts(vm: TodayViewModel): MutableList<Card> {
-        val starts = mutableListOf<Card>()
+    private fun TestScope.collectStarts(vm: TodayViewModel): MutableList<Unit> {
+        val starts = mutableListOf<Unit>()
         backgroundScope.launch(dispatcher) { vm.pedalStarts.collect { starts += it } }
         runCurrent()
         return starts
     }
 
     @Test
-    fun `a pedal tap starts the first card and the hint shows`() =
+    fun `a pedal tap starts the session and the hint shows`() =
         runTest(dispatcher) {
             val vm = viewModel()
             val starts = collectStarts(vm)
@@ -45,7 +45,7 @@ class TodayPedalTest : TodayViewModelFixture() {
 
             tapPedal()
 
-            assertEquals(listOf(assertNotNull(vm.state.value.session).cards.first()), starts)
+            assertEquals(listOf(Unit), starts)
             vm.releasePiano()
         }
 
@@ -136,6 +136,7 @@ class TodayPedalTest : TodayViewModelFixture() {
                     TimeZone.UTC,
                     updateCheck,
                     INSTALLED,
+                    SessionProgress(),
                 )
             runCurrent()
             assertEquals(0, open)

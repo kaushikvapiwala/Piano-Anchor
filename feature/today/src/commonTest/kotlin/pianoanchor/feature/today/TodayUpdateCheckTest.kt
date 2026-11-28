@@ -57,6 +57,7 @@ class TodayUpdateCheckTest : TodayViewModelFixture() {
                 TimeZone.UTC,
                 updateCheck,
                 INSTALLED,
+                SessionProgress(),
             )
             runCurrent()
             assertEquals(0, updateCheck.calls)
@@ -82,6 +83,7 @@ class TodayUpdateCheckTest : TodayViewModelFixture() {
                 TimeZone.UTC,
                 leaving,
                 INSTALLED,
+                SessionProgress(),
             )
             runCurrent()
             assertEquals(yesterday, settings.settings.first().lastUpdateCheck)
@@ -111,6 +113,7 @@ class TodayUpdateCheckTest : TodayViewModelFixture() {
                 TimeZone.UTC,
                 updateCheck,
                 INSTALLED,
+                SessionProgress(),
             )
             runCurrent()
             assertEquals(0, updateCheck.calls)
