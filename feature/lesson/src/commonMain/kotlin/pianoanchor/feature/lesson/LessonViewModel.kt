@@ -281,13 +281,12 @@ public class LessonViewModel(
     // --- See ---
 
     private suspend fun playDemo(demo: Demo) {
-        val hand =
-            HandDemo.of(
-                demo,
-                mutableState.value.scene
-                    ?.stage
-                    ?.hand ?: SceneHand.RIGHT,
-            )
+        // The card scene's stage names the concept's hand and its five-key position (only when the scene has a hand).
+        val stage =
+            mutableState.value.scene
+                ?.stage
+                ?.takeIf { it.hand != null }
+        val hand = HandDemo.of(demo, stage?.hand ?: SceneHand.RIGHT, stage?.keys)
         mutableState.update { it.copy(playing = true, seeHand = hand, seeElapsedMs = 0) }
         try {
             coroutineScope {

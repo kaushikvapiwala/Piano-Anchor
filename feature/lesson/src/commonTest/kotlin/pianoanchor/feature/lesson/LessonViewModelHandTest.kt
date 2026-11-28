@@ -138,11 +138,11 @@ class LessonViewModelHandTest {
             vm.goTo(LessonStep.SEE)
             runCurrent()
 
-            assertEquals(
-                SceneHand.LEFT,
-                vm.state.value.seeHand
-                    ?.hand,
-            )
+            val hand = checkNotNull(vm.state.value.seeHand)
+            assertEquals(SceneHand.LEFT, hand.hand)
+            // The lone C3 is the little finger of the left-hand C position (C3..G3), the thumb on G3.
+            assertEquals(MidiNote(55), hand.thumbNote)
+            assertEquals(listOf(5), hand.presses.map { it.finger })
             vm.close()
         }
 }

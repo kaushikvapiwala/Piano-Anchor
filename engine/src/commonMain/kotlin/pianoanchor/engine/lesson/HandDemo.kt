@@ -27,13 +27,19 @@ public data class HandTimeline(
 /** Which fingers play a See demo (`docs/algorithms/try-checks.md`, "See"). Pure. */
 public object HandDemo {
     /**
-     * The hand for [demo]: the thumb over the lowest white key the demo plays (right hand; the highest for the left
-     * hand), finger k over the key k - 1 white keys further up (left hand: down). Null when the demo has no tones,
-     * plays a black key, or spans more than five white keys (no fake fingering).
+     * The hand for [demo]: each tone pressed by the finger over its key. Null when the demo has no tones, plays a
+     * black key, or spans more than five white keys (no fake fingering).
+     *
+     * The thumb sits at the lowest white key of [position] (right hand; the highest for the left hand) when
+     * [position] (MIDI notes of the concept's hand position) holds at most `HAND_MAX_WHITE_SPAN` white keys and
+     * every demo note, so a demo that stops short of the position's edge still gets the position's fingering (left
+     * C position: C3 is finger 5). Otherwise the thumb is over the lowest white key the demo plays (right hand; the
+     * highest for the left hand). Finger k is over the key k - 1 white keys further up (left hand: down).
      */
     public fun of(
         demo: Demo,
         hand: SceneHand = SceneHand.RIGHT,
+        position: IntRange? = null,
     ): HandTimeline? {
         val indexes = demo.tones.map { whiteIndex(it.note) }
         val whites = indexes.filterNotNull()
@@ -41,13 +47,34 @@ public object HandDemo {
             whites.isNotEmpty() && whites.size == indexes.size &&
                 whites.max() - whites.min() + 1 <= Tunables.HAND_MAX_WHITE_SPAN
         if (!fits) return null
-        val thumb = if (hand == SceneHand.RIGHT) whites.min() else whites.max()
+        val anchor = positionAnchor(position, hand, whites)
+        val thumb = anchor ?: if (hand == SceneHand.RIGHT) whites.min() else whites.max()
         val presses =
             demo.tones.mapIndexed { i, tone ->
                 FingerPress(abs(whites[i] - thumb) + 1, tone.note, tone.startMs, tone.lengthMs)
             }
-        return HandTimeline(hand, demo.tones[whites.indexOf(thumb)].note, presses)
+        val thumbNote = if (anchor != null) noteOfWhite(anchor) else demo.tones[whites.indexOf(thumb)].note
+        return HandTimeline(hand, thumbNote, presses)
     }
+
+    /** The white-key place of the thumb in [position], or null when it is unusable for the demo's [whites]. */
+    private fun positionAnchor(
+        position: IntRange?,
+        hand: SceneHand,
+        whites: List<Int>,
+    ): Int? {
+        val inPosition = position?.mapNotNull { whiteIndex(MidiNote(it)) }.orEmpty()
+        val usable =
+            inPosition.isNotEmpty() && inPosition.size <= Tunables.HAND_MAX_WHITE_SPAN &&
+                whites.all { it in inPosition }
+        return if (usable) (if (hand == SceneHand.RIGHT) inPosition.min() else inPosition.max()) else null
+    }
+
+    private fun noteOfWhite(index: Int): MidiNote =
+        MidiNote(
+            index / WHITE_KEYS_PER_OCTAVE * NOTES_PER_OCTAVE +
+                WHITE_INDEX_IN_OCTAVE.indexOf(index % WHITE_KEYS_PER_OCTAVE),
+        )
 
     /** The place of [note] among the white keys, or null for a black key. */
     private fun whiteIndex(note: MidiNote): Int? {

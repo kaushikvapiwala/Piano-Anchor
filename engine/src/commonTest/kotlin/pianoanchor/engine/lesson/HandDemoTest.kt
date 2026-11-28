@@ -71,4 +71,33 @@ class HandDemoTest {
         assertNull(HandDemo.of(demo(48, 57), SceneHand.LEFT))
         assertNull(HandDemo.of(Demo(emptyList()), SceneHand.LEFT))
     }
+
+    @Test
+    fun aLeftPositionMakesALoneLowCTheLittleFinger() {
+        val hand = checkNotNull(HandDemo.of(demo(48), SceneHand.LEFT, 48..55))
+        assertEquals(MidiNote(55), hand.thumbNote)
+        assertEquals(listOf(5), hand.presses.map { it.finger })
+        assertEquals(MidiNote(48), hand.presses.single().note)
+    }
+
+    @Test
+    fun aRightPositionKeepsTheThumbOnItsLowestKeyForADemoInTheMiddle() {
+        val hand = checkNotNull(HandDemo.of(demo(62, 64, 65), SceneHand.RIGHT, 60..67))
+        assertEquals(MidiNote(60), hand.thumbNote)
+        assertEquals(listOf(2, 3, 4), hand.presses.map { it.finger })
+    }
+
+    @Test
+    fun aPositionWiderThanFiveWhiteKeysFallsBack() {
+        val hand = checkNotNull(HandDemo.of(demo(62, 64, 65), SceneHand.RIGHT, 48..72))
+        assertEquals(MidiNote(62), hand.thumbNote)
+        assertEquals(listOf(1, 2, 3), hand.presses.map { it.finger })
+    }
+
+    @Test
+    fun aDemoNoteOutsideThePositionFallsBack() {
+        val hand = checkNotNull(HandDemo.of(demo(62, 64), SceneHand.RIGHT, 65..72))
+        assertEquals(MidiNote(62), hand.thumbNote)
+        assertEquals(listOf(1, 2), hand.presses.map { it.finger })
+    }
 }

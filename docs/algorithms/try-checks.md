@@ -92,8 +92,12 @@ phone speaker, lighting the keys as they sound:
 | AnyKey | nothing to hear: the screen says "Watch the hand" |
 
 ### The hand
-`HandDemo.of(demo, hand)` turns a demo into a `HandTimeline`: the thumb goes over the lowest white key the demo plays
-(for the left hand the highest) and finger k over the white key k - 1 places further (left: lower). Each tone becomes
+`HandDemo.of(demo, hand, position)` turns a demo into a `HandTimeline`. The thumb goes over the lowest white key of the
+concept's hand position (for the left hand the highest), so a demo that stops short of the position's edge keeps the
+position's fingering: the single key C3 of left-hand C position is finger 5. The position is the concept card scene's
+stage keys, used only when that scene has a hand, holds at most `HAND_MAX_WHITE_SPAN` white keys and contains every
+demo note; otherwise the thumb goes over the lowest white key the demo plays (left: the highest). Finger k is over the
+white key k - 1 places further (left: lower). Each tone becomes
 a `FingerPress` for the finger over its key, so a repeated note keeps its finger and a chord presses several at once.
 There is no hand (null, and the See step looks plain) when the demo has no tones, plays a black key, or spans more
 than `HAND_MAX_WHITE_SPAN` white keys: the app never invents a fingering. The lesson passes the concept's hand (its
