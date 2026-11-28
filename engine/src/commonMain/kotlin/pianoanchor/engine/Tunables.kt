@@ -1211,6 +1211,16 @@ public object Tunables {
     public const val WEEK_PAUSE_REFILL_WEEKS: Int = 4
 
     /**
+     * Weeks of practice days one read for the weekly streak covers; a streak that fills the window is read again one
+     * window further back.
+     *
+     * Why: most streaks end within half a year, so one read usually settles it; longer streaks read further in steps.
+     *
+     * Source: our choice, 2026-11-28.
+     */
+    public const val STREAK_READ_WEEKS: Int = 26
+
+    /**
      * How far, in dp, a finger of the lesson's See hand moves down into its key while the key sounds.
      *
      * Why: a visible press without the finger leaving its key.

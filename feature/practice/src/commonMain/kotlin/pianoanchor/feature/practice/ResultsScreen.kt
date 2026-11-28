@@ -48,6 +48,7 @@ import pianoanchor.feature.practice.resources.practice_retry
 import pianoanchor.feature.practice.resources.results_caption
 import pianoanchor.feature.practice.resources.results_caption_performed
 import pianoanchor.feature.practice.resources.results_caption_tempo
+import pianoanchor.feature.practice.resources.results_continue
 import pianoanchor.feature.practice.resources.results_details
 import pianoanchor.feature.practice.resources.results_details_collapsed
 import pianoanchor.feature.practice.resources.results_details_expanded
@@ -91,8 +92,10 @@ import pianoanchor.ui.shell.withPedalHint
  * The results screen (Living Studio mock, `docs/ui/living-studio.md`): the run's caption and headline, the Pitch
  * tile and "Try again". Stateless: see [ResultsViewModel]. [onBack] leaves for the pianos; [onTryAgain] practises
  * the passage again; [onFinishLesson], set only when the run started from a lesson, adds "Finish lesson" (back to
- * the lesson's recap); [onRetry] reads the run again after [ResultsState.Unavailable]; [onLoopBars] starts a spot
- * loop on the bars of [ResultsState.Ready.spot], offered as "Loop bars 5–6" under "Try again" when there are any.
+ * the lesson's recap); [onContinue], set only for a step of the one-tap session, makes "Continue" the primary button
+ * (back to the session) and leaves "Try again" beside it; [onRetry] reads the run again after
+ * [ResultsState.Unavailable]; [onLoopBars] starts a spot loop on the bars of
+ * [ResultsState.Ready.spot], offered as "Loop bars 5–6" under "Try again" when there are any.
  * With [pedalHint], a small line by the primary button says a pedal tap does the same.
  */
 @Composable
@@ -104,6 +107,7 @@ public fun ResultsScreen(
     modifier: Modifier = Modifier,
     onLoopBars: (BarRange) -> Unit = {},
     onFinishLesson: (() -> Unit)? = null,
+    onContinue: (() -> Unit)? = null,
     pedalHint: Boolean = false,
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
@@ -115,6 +119,8 @@ public fun ResultsScreen(
                 BackButton(onClick = onBack)
                 if (state is ResultsState.Ready) Header(state)
             }
+            // A session step that can't show its results still offers "Continue", so the session is never stuck.
+            val continueAction = onContinue?.let { CardAction(stringResource(Res.string.results_continue), it) }
             when (state) {
                 ResultsState.Loading -> {
                     // The read takes a moment: show the back button only, with no spinner (screenshots stay idle).
@@ -123,6 +129,7 @@ public fun ResultsScreen(
                 ResultsState.NotFound -> {
                     MessageCard(
                         stringResource(Res.string.results_not_found),
+                        *listOfNotNull(continueAction).toTypedArray(),
                         CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -132,13 +139,14 @@ public fun ResultsScreen(
                     MessageCard(
                         stringResource(Res.string.results_unavailable),
                         CardAction(stringResource(Res.string.practice_retry), onRetry),
+                        *listOfNotNull(continueAction).toTypedArray(),
                         CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
 
                 is ResultsState.Ready -> {
-                    Ready(state, onTryAgain, onLoopBars, onFinishLesson, pedalHint)
+                    Ready(state, onTryAgain, onLoopBars, onContinue ?: onFinishLesson, onContinue != null, pedalHint)
                 }
             }
         }
@@ -232,7 +240,8 @@ private fun Ready(
     state: ResultsState.Ready,
     onTryAgain: () -> Unit,
     onLoopBars: (BarRange) -> Unit,
-    onFinishLesson: (() -> Unit)?,
+    onPrimary: (() -> Unit)?,
+    inSession: Boolean,
     pedalHint: Boolean,
 ) {
     Words(state)
@@ -250,10 +259,11 @@ private fun Ready(
     }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (onFinishLesson != null) {
-                PrimaryResultButton(stringResource(Res.string.results_finish_lesson), onFinishLesson, pedalHint)
+            if (onPrimary != null) {
+                val label = if (inSession) Res.string.results_continue else Res.string.results_finish_lesson
+                PrimaryResultButton(stringResource(label), onPrimary, pedalHint)
             }
-            if (onFinishLesson == null) {
+            if (onPrimary == null) {
                 PrimaryResultButton(stringResource(Res.string.results_try_again), onTryAgain, pedalHint)
             } else {
                 OutlinedButton(

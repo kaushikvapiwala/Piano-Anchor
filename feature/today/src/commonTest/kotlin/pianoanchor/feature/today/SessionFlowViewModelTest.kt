@@ -38,7 +38,7 @@ class SessionFlowViewModelTest : TodayViewModelFixture() {
     private val ear = Card.Ear(emptyList(), 2)
     private val session = Session(listOf(lesson, song, ear), 0, 5, 6, 2, emptyList())
 
-    private fun TestScope.flow(): SessionFlowViewModel =
+    private fun TestScope.flow(stored: SessionProgress = progress): SessionFlowViewModel =
         SessionFlowViewModel(
             LearnerModel(Curriculum.graph, learnerRepository),
             settings,
@@ -46,7 +46,7 @@ class SessionFlowViewModelTest : TodayViewModelFixture() {
             piano,
             clock,
             TimeZone.UTC,
-            progress,
+            stored,
         ).also { runCurrent() }
 
     private fun TestScope.opened(vm: SessionFlowViewModel): MutableList<TodayTarget> {
@@ -462,6 +462,96 @@ class SessionFlowViewModelTest : TodayViewModelFixture() {
             runCurrent()
 
             assertNull(assertNotNull(vm.state.value.recap).tip)
+        }
+
+    @Test
+    fun `a restart resumes after the steps stored as finished`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            started(vm)
+            vm.stepFinished()
+            runCurrent()
+            vm.exit()
+            runCurrent()
+
+            val restarted = flow(SessionProgress(settings))
+            val targets = opened(restarted)
+            started(restarted)
+
+            assertEquals(listOf(SessionStep.Practise(song, 6), SessionStep.Ear(ear, 2)), restarted.state.value.steps)
+            assertIs<TodayTarget.Practice>(targets.single())
+            restarted.exit()
+            runCurrent()
+        }
+
+    @Test
+    fun `a restart after the recap runs the whole session again`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            started(vm, skipped = setOf(1, 2))
+            vm.stepFinished()
+            runCurrent()
+
+            val restarted = flow(SessionProgress(settings))
+            started(restarted)
+
+            assertEquals(3, restarted.state.value.steps.size)
+            restarted.exit()
+            runCurrent()
+        }
+
+    @Test
+    fun `a second start while the first is running is ignored`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            val targets = opened(vm)
+
+            vm.start(session, emptySet())
+            vm.start(session, emptySet())
+            runCurrent()
+
+            assertEquals(1, targets.size)
+            vm.exit()
+            runCurrent()
+        }
+
+    @Test
+    fun `a session restarted after its recap resumes after the steps of the second run`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            started(vm, skipped = setOf(1, 2))
+            vm.stepFinished()
+            runCurrent()
+            val again = flow(SessionProgress(settings))
+            started(again)
+            again.stepFinished()
+            runCurrent()
+            again.exit()
+            runCurrent()
+
+            val third = flow(SessionProgress(settings))
+            started(third)
+
+            assertEquals(listOf(SessionStep.Practise(song, 6), SessionStep.Ear(ear, 2)), third.state.value.steps)
+            third.exit()
+            runCurrent()
+        }
+
+    @Test
+    fun `a finished step is visible to a read right after stepFinished`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            started(vm)
+            val first =
+                vm.state.value.steps
+                    .first()
+
+            vm.stepFinished()
+
+            assertEquals(setOf(first.key()), progress.finishedOn(today))
+            runCurrent()
+            vm.exit()
+            runCurrent()
         }
 
     @Test

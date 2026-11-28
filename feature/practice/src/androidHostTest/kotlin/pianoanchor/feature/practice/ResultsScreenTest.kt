@@ -64,6 +64,31 @@ class ResultsScreenTest {
         }
 
     @Test
+    fun inTheSessionContinueIsPrimaryAndTryAgainStays() =
+        runComposeUiTest {
+            val calls = mutableListOf<String>()
+            setContent {
+                PianoAnchorTheme {
+                    ResultsScreen(
+                        ready.copy(spot = BarRange(1, 2)),
+                        onBack = { calls += "back" },
+                        onTryAgain = { calls += "try again" },
+                        onRetry = {},
+                        onLoopBars = { calls += "loop" },
+                        onContinue = { calls += "continue" },
+                    )
+                }
+            }
+
+            onNodeWithText("Continue").performClick()
+            onNodeWithText("Try again").performClick()
+            onNodeWithText("Loop bars 1\u20132").performClick()
+
+            assertEquals(listOf("continue", "try again", "loop"), calls)
+            onNodeWithText("Back to Today").assertDoesNotExist()
+        }
+
+    @Test
     fun aSightReadingResultNamesTheLevelAndHowItMoved() =
         runComposeUiTest {
             var sight by mutableStateOf(SightOutcome(2, SightChange.DOWN, 1))
@@ -327,6 +352,30 @@ class ResultsScreenTest {
             )
             check(base.copy(hesitation = HesitationTile(0, null)), "Hesitation: no pauses")
             check(base.copy(hesitation = HesitationTile(2, null)), "Hesitation: 2 pauses")
+        }
+
+    @Test
+    fun inTheSessionUnavailableAndNotFoundOfferContinue() =
+        runComposeUiTest {
+            val calls = mutableListOf<String>()
+            var state by mutableStateOf<ResultsState>(ResultsState.Unavailable)
+            setContent {
+                PianoAnchorTheme {
+                    ResultsScreen(
+                        state,
+                        onBack = {},
+                        onTryAgain = {},
+                        onRetry = {},
+                        onContinue = { calls += "continue" },
+                    )
+                }
+            }
+
+            onNodeWithText("Continue").performClick()
+            state = ResultsState.NotFound
+            onNodeWithText("Continue").performClick()
+
+            assertEquals(listOf("continue", "continue"), calls)
         }
 
     @Test

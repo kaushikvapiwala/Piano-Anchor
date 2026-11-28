@@ -223,7 +223,7 @@ public class TodayViewModel(
             val history =
                 attempts.passageHistories(Curriculum.passages)
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
-            // The streak counts weeks back to the first one that missed its goal: read the whole history.
+            // The streak counts weeks back to the first one that missed its goal: read it window by window.
             val report = weekStatus.load(today, stored.weeklyGoalDays, stored.pausedWeeks)
             val days = report.playedDays
             val sightAttempts = attempts.summariesWithPassagePrefix(SightReadingGenerator.ID_PREFIX)

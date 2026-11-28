@@ -42,7 +42,7 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
             repository.update { it.copy(dailyBudget = DailyBudget.MIN_15) }
 
             assertEquals(Settings(DailyBudget.MIN_15, updateCheckOn = false), repository.settings.first())
-            assertEquals(14, driver.count("setting"))
+            assertEquals(17, driver.count("setting"))
         }
 
     @Test
@@ -169,6 +169,31 @@ class SqlSettingsRepositoryAdapterTest : SettingsRepositoryPortContractTest() {
                 setOf(LocalDate(2026, 11, 16)),
                 SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first().pausedWeeks,
             )
+        }
+
+    @Test
+    fun aStoreWrittenWithoutTheSessionProgressLoadsTheDefaults() =
+        runTest {
+            val driver = drivers.open()
+            driver.exec("INSERT INTO setting VALUES ('click_on', 'false')")
+
+            val stored = SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first()
+
+            assertEquals(Settings(clickOn = false), stored)
+        }
+
+    @Test
+    fun unreadableSessionProgressFallsBackToTheDefaults() =
+        runTest {
+            val driver = drivers.open()
+            driver.exec(
+                "INSERT INTO setting VALUES ('session_day', 'today'), ('session_finished', '\n\nlesson:a\n'), " +
+                    "('session_completed', 'maybe')",
+            )
+
+            val stored = SqlSettingsRepositoryAdapter(driver, Dispatchers.Unconfined).settings.first()
+
+            assertEquals(Settings(sessionFinished = setOf("lesson:a")), stored)
         }
 
     @Test

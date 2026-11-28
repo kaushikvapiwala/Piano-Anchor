@@ -41,9 +41,7 @@ public object WeekPause {
         require(goalDays > 0) { "goalDays ($goalDays) must be positive" }
         val weekStart = mondayOf(today)
 
-        fun counted(start: LocalDate) =
-            start in pausedWeeks ||
-                playedDays.count { it >= start && it < start.plus(1, DateTimeUnit.WEEK) } >= goalDays
+        fun counted(start: LocalDate) = counted(start, playedDays, goalDays, pausedWeeks)
 
         val refillFrom = weekStart.minus(Tunables.WEEK_PAUSE_REFILL_WEEKS * DAYS_PER_WEEK - 1, DateTimeUnit.DAY)
         val used = pausedWeeks.count { it >= refillFrom }
@@ -80,5 +78,16 @@ public object WeekPause {
         return pausedWeeks + mondayOf(today)
     }
 
-    private fun mondayOf(day: LocalDate): LocalDate = day.minus(day.dayOfWeek.ordinal, DateTimeUnit.DAY)
+    /** The Monday of the week containing [day]. */
+    public fun mondayOf(day: LocalDate): LocalDate = day.minus(day.dayOfWeek.ordinal, DateTimeUnit.DAY)
+
+    /** Whether the week starting on the Monday [weekStart] counts: paused, or at least [goalDays] of [playedDays]. */
+    public fun counted(
+        weekStart: LocalDate,
+        playedDays: Set<LocalDate>,
+        goalDays: Int,
+        pausedWeeks: Set<LocalDate>,
+    ): Boolean =
+        weekStart in pausedWeeks ||
+            playedDays.count { it >= weekStart && it < weekStart.plus(1, DateTimeUnit.WEEK) } >= goalDays
 }

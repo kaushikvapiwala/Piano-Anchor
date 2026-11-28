@@ -1,13 +1,15 @@
 package pianoanchor.engine.session
 
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import pianoanchor.core.ports.AttemptRepositoryPort
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.learner.LearnerModel
 
-private val FAR_PAST = LocalDate(2000, 1, 1)
-
-/** The week's [status] and the [playedDays] it was counted from (every day with practice, back to the first). */
+/** The week's [status] and the [playedDays] it was counted from (every day with practice in the windows read). */
 public data class WeekReport(
     val status: WeekStatus,
     val playedDays: Set<LocalDate>,
@@ -24,7 +26,9 @@ public class WeekStatusUseCase(
 ) {
     /**
      * The status of the week containing [today] for [goalDays] and [pausedWeeks]. The streak counts weeks back to the
-     * first that missed its goal, so it reads the whole history.
+     * first that missed its goal. The practice days are read in slices of [Tunables.STREAK_READ_WEEKS] weeks, newest
+     * first: when every week of the slices read so far met its goal (or was paused), the slice before them is read
+     * and added, until a week missed or a slice is empty. The result equals a read of the whole history.
      *
      * @throws pianoanchor.core.model.StorageUnavailableException when the store can't be read.
      */
@@ -33,7 +37,31 @@ public class WeekStatusUseCase(
         goalDays: Int,
         pausedWeeks: Set<LocalDate>,
     ): WeekReport {
-        val days = attempts.practiceDays(FAR_PAST, zone) + learner.reviewDays(FAR_PAST)
+        val thisMonday = WeekPause.mondayOf(today)
+        var start = thisMonday.minus(Tunables.STREAK_READ_WEEKS, DateTimeUnit.WEEK)
+        var days = daysFrom(start)
+        while (weeksCounted(start, thisMonday, days, goalDays, pausedWeeks)) {
+            val older = start.minus(Tunables.STREAK_READ_WEEKS, DateTimeUnit.WEEK)
+            val slice = daysFrom(older).filterTo(HashSet()) { it < start }
+            if (slice.isEmpty()) break
+            days += slice
+            start = older
+        }
         return WeekReport(WeekPause.status(today, days, goalDays, pausedWeeks), days)
     }
+
+    /** Whether every week from [from] up to (not including) [until] counts. */
+    private fun weeksCounted(
+        from: LocalDate,
+        until: LocalDate,
+        days: Set<LocalDate>,
+        goalDays: Int,
+        pausedWeeks: Set<LocalDate>,
+    ): Boolean =
+        generateSequence(from) { it.plus(1, DateTimeUnit.WEEK) }
+            .takeWhile { it < until }
+            .all { WeekPause.counted(it, days, goalDays, pausedWeeks) }
+
+    private suspend fun daysFrom(from: LocalDate): Set<LocalDate> =
+        attempts.practiceDays(from, zone) + learner.reviewDays(from)
 }
