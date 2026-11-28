@@ -145,6 +145,20 @@ class LessonPedalTest {
         }
 
     @Test
+    fun aPedalTapDuringTheHandsCueWaitGoesToTryAtOnce() =
+        runTest(dispatcher) {
+            val vm = viewModel(Skills.RH_C_POSITION, startAt = LessonStep.SEE)
+            while (vm.state.value.playing) wait(10)
+            wait(Tunables.HAND_HOLD_AFTER_MS)
+            assertEquals(LessonStep.SEE, vm.state.value.step)
+
+            tapPedal()
+
+            assertEquals(LessonStep.TRY, vm.state.value.step)
+            vm.close()
+        }
+
+    @Test
     fun aPedalTapDuringTheDemoGoesToTry() =
         runTest(dispatcher) {
             val vm = viewModel(Skills.MIDDLE_C, startAt = LessonStep.SEE)

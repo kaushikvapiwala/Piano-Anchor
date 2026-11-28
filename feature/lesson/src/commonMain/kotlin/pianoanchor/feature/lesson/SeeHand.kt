@@ -38,7 +38,6 @@ private const val FINGER_WIDTH_SHARE = 0.8f
 private const val FINGER_LENGTH_PITCHES = 2.1f
 private const val BADGE_SHARE = 0.45f
 private const val BADGE_LIFT = 1.3f
-private const val FADE_MS = 300
 private val BADGE_TEXT = 11.sp
 private val BADGE_STROKE = 1.5.dp
 
@@ -66,7 +65,7 @@ internal fun rememberHandFade(
             cue = false
         } else {
             delay(Tunables.HAND_HOLD_AFTER_MS)
-            if (reduceMotion) alpha.snapTo(0f) else alpha.animateTo(0f, tween(FADE_MS))
+            if (reduceMotion) alpha.snapTo(0f) else alpha.animateTo(0f, tween(Tunables.HAND_FADE_MS.toInt()))
             cue = true
         }
     }
