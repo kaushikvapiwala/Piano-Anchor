@@ -20,6 +20,12 @@ private const val TURNS_LEVEL = 5
 private const val THREE_FOUR_LEVEL = 6
 private const val HELD_LEVEL = 7
 private const val CHORD_LEVEL = 8
+
+/**
+ * Mixed into a level 13 seed to pick its base level, so the pick is not the base exercise's own first random draw
+ * (which chooses bar 2's chord and would then always agree with the pick).
+ */
+private const val PEDAL_PICK_SALT = 0x5EED_13L
 private const val SKIPS_FROM_LEVEL = 2
 private const val OCTAVE = 12
 private const val DOTTED_HALF_QUARTERS = 3
@@ -168,9 +174,9 @@ public object SightReadingGenerator {
         )
     }
 
-    /** Level 13: the level 8 or level 12 exercise of [seed] (its first coin flip picks) with a pedal span per bar. */
+    /** Level 13: the level 8 or 12 exercise of [seed] (a salted coin flip picks) with a pedal span per bar. */
     private fun pedalled(seed: Long): Passage {
-        val base = passage(if (Random(seed).nextBoolean()) CHORD_LEVEL else G_CHORDS_LEVEL, seed)
+        val base = passage(if (Random(seed xor PEDAL_PICK_SALT).nextBoolean()) CHORD_LEVEL else G_CHORDS_LEVEL, seed)
         val bar = base.timeSignature.barTicks
         return base.copy(
             id = idOf(PEDAL_LEVEL, seed),

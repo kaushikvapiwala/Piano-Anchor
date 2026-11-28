@@ -398,6 +398,25 @@ class SightReadingGeneratorTest {
     }
 
     @Test
+    fun level13VariesBarTwoChordsInBothKeys() {
+        val barTwoChords = mutableMapOf<KeySignature, MutableSet<Set<Int>>>()
+        for (seed in 0L until SEEDS) {
+            val passage = SightReadingGenerator.passage(13, seed)
+            val bar = passage.timeSignature.barTicks
+            val chord =
+                passage.steps
+                    .first { it.onsetTicks == bar }
+                    .notes
+                    .map { it.pitch.number }
+                    .filter { it < 60 }
+                    .toSet()
+            barTwoChords.getOrPut(passage.keySignature) { mutableSetOf() } += chord
+        }
+        assertTrue(barTwoChords.getValue(KeySignature.C).size > 1, "C: ${barTwoChords[KeySignature.C]}")
+        assertTrue(barTwoChords.getValue(KeySignature.G).size > 1, "G: ${barTwoChords[KeySignature.G]}")
+    }
+
+    @Test
     fun levels1To12CarryNoPedalMarks() {
         forEveryPassage { level, passage -> assertTrue(passage.pedal.isEmpty(), "level $level") }
     }

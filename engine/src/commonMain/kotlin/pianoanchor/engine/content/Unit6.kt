@@ -4,19 +4,19 @@ import pianoanchor.core.model.CurriculumUnit
 import pianoanchor.core.model.PedalSpan
 
 /** The C chord in the left hand, a dotted half note (one 3/4 bar). */
-internal const val C_DH = "[$C_TRIAD]h."
+private const val C_DH = "[$C_TRIAD]h."
 
 /**
  * The C chord in second inversion (G C E) in the left hand, a dotted half note: under the right hand's G3 it keeps
  * the same key out of one step twice (a step cannot hold a pitch twice).
  */
-internal const val C2_DH = "[G2 C3 E3]h."
+private const val C2_DH = "[G2 C3 E3]h."
 
-/** The F chord in second inversion (A C F) in the left hand, a dotted half note. */
-internal const val F1_DH = "[$F_FIRST_INVERSION]h."
+/** The F chord in first inversion (A C F) in the left hand, a dotted half note. */
+private const val F1_DH = "[$F_FIRST_INVERSION]h."
 
 /** The G chord in first inversion (B D G) in the left hand, a dotted half note. */
-internal const val G1_DH = "[$G_FIRST_INVERSION]h."
+private const val G1_DH = "[$G_FIRST_INVERSION]h."
 
 private const val F1_W = "[$F_FIRST_INVERSION]w"
 private const val FOUR_BARS = 4
