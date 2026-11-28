@@ -45,29 +45,27 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 2. **Course 2: Units 6–7 (M6.6–M6.7)** (needs a grill session per unit): the pedal and legato; scales with
     thumb-under. Built like Units 4–5; each unit adds sight-reading levels and a placement piece. The pedal unit sets
     the lesson's pedalIsMusic flag for its concepts (ADR 0027).
-3. **Lesson Recap follows passing** (follow-up of #265): the Recap still counts the current concept as done when the
-    learner skipped its Try or Use, so its "next" can differ from Today's Next card; name the next unpassed concept.
-4. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
+3. **Note-name letters in Compose resources** (follow-up of #266): the key strips' letters ("C", "C♯", "D♭")
     come from engine strings; return a pitch class and accidental from the note-name rule and map it to
     Compose string resources in the UI, so the names can be translated.
-5. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
+4. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
     Unit 0 wide strip and at font scale 2.0; a "not loaded yet" state so a beginner's strip doesn't open blank and
     letter itself a moment later; Practice takes the note-labels use case from Koin like Lesson and Quiz.
-6. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
+5. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
     keys as flats in flat keys (today a flat key reads "in F major" with no flats drawn); beam 6/8 eighths in threes
     and use dotted-quarter rests on its beats.
-7. **Rhythm Try: drift against the click** (follow-up of #273; needs an owner decision, the grill chose interval
+6. **Rhythm Try: drift against the click** (follow-up of #273; needs an owner decision, the grill chose interval
     judging): the Rhythm check judges each tap only against the one before, so a steady tempo about a third off
     still passes; decide whether to also measure taps from the first tap's onset so the error can't build up.
-8. **Session steps: Results and lasting progress** (follow-up of #268; needs an owner decision): a Practise or
+7. **Session steps: Results and lasting progress** (follow-up of #268; needs an owner decision): a Practise or
     Sight-read step of the one-tap session returns to the flow without Results (no timing tile or spot loop until
     the recap's tip), and finished steps live in memory only, so an app restart starts the day's session over;
     decide whether Results shows inside the session and whether progress is stored. Also cap Today's streak read,
     which loads every practice day since 2000 on each refresh.
-9. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
+8. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
     48..52 chromatically (C, C♯, D, D♯, E) instead of the white keys C D E F G; use an explicit key list like the
     left-hand G scene and re-record its screenshots.
-10. **See hand: "Your turn" before auto-advance** (follow-up of #269; needs an owner decision): See moves on to Try
+9. **See hand: "Your turn" before auto-advance** (follow-up of #269; needs an owner decision): See moves on to Try
     the moment the demo ends (#264), so the hand's 600 ms hold, fade and "Your turn" cue show only after "Play
     again"; decide whether See waits for the hold before it moves on.
 
