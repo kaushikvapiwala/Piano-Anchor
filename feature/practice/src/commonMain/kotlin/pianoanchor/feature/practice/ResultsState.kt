@@ -30,7 +30,8 @@ public sealed interface ResultsState {
      * perform take or an unknown passage); [rung] is the tempo-ladder rung the run was played on. [words] are what
      * the screen says first (up to two observations and a tip); [shiftBeats] is how many beats a run that started
      * late was off, to the nearest half beat. A sight-reading exercise has no [runNumber] (null) and a [sight] outcome
-     * instead. [lesson] says what the run did for a course concept (null when nothing).
+     * instead. [lesson] says what the run did for a course concept (null when nothing). [pedalMarks] is true when the
+     * passage has pedal marks, so a pedal tap does not mean "continue" here.
      */
     public data class Ready(
         val passageTitle: String,
@@ -52,6 +53,7 @@ public sealed interface ResultsState {
         val shiftBeats: Double = 0.0,
         val sight: SightOutcome? = null,
         val lesson: LessonResult? = null,
+        val pedalMarks: Boolean = false,
     ) : ResultsState
 }
 

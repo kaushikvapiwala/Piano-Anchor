@@ -161,4 +161,36 @@ class PassageTest {
         val chords = listOf(ChordMark(0, 0, ChordQuality.MAJOR), ChordMark(0, 7, ChordQuality.MAJOR))
         assertFailsWith<IllegalArgumentException> { passage().copy(chords = chords) }
     }
+
+    @Test
+    fun pedalSpansMayBeAdjacent() {
+        val spans = listOf(PedalSpan(0, 3840), PedalSpan(3840, 7680))
+        val steps = listOf(step(0, c4), step(5760, e4))
+        assertEquals(spans, passage(steps).copy(pedal = spans).pedal)
+        assertTrue(passage().pedal.isEmpty())
+    }
+
+    @Test
+    fun pedalSpansMayNotOverlapOrBeUnsorted() {
+        val steps = listOf(step(0, c4), step(5760, e4))
+        assertFailsWith<IllegalArgumentException> {
+            passage(steps).copy(pedal = listOf(PedalSpan(0, 3840), PedalSpan(3000, 7680)))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            passage(steps).copy(pedal = listOf(PedalSpan(3840, 7680), PedalSpan(0, 3840)))
+        }
+    }
+
+    @Test
+    fun pedalSpanNeedsStartBeforeEndAndNotNegative() {
+        assertFailsWith<IllegalArgumentException> { PedalSpan(100, 100) }
+        assertFailsWith<IllegalArgumentException> { PedalSpan(200, 100) }
+        assertFailsWith<IllegalArgumentException> { PedalSpan(-1, 100) }
+    }
+
+    @Test
+    fun pedalMustStayWithinThePassage() {
+        assertFailsWith<IllegalArgumentException> { passage().copy(pedal = listOf(PedalSpan(0, 3841))) }
+        assertEquals(1, passage().copy(pedal = listOf(PedalSpan(0, 3840))).pedal.size)
+    }
 }

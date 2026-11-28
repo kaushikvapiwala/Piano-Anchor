@@ -72,6 +72,35 @@ public sealed interface TryCheck {
         val notes: Set<Int>,
     ) : TryCheck
 
+    /** Play [notes] in order, joined: each key goes down as the one before comes up (no gap, no blur). */
+    public data class Legato(
+        val notes: List<Int>,
+    ) : TryCheck {
+        init {
+            require(notes.size >= 2) { "a legato check needs at least two notes: $notes" }
+        }
+    }
+
+    /** Press the pedal, play [chord], lift the hands: the sound must ring on until the pedal comes up. */
+    public data class PedalHold(
+        val chord: Set<Int>,
+    ) : TryCheck {
+        init {
+            require(chord.isNotEmpty()) { "a pedal hold needs a chord" }
+        }
+    }
+
+    /** Play [chords] in order with the pedal, changing it (up, then down again) just after each new chord. */
+    public data class PedalChange(
+        val chords: List<Set<Int>>,
+    ) : TryCheck {
+        init {
+            require(chords.size >= 2 && chords.all { it.isNotEmpty() }) {
+                "a pedal change needs at least two chords, none empty: $chords"
+            }
+        }
+    }
+
     /** Play passage [passageId] in wait mode with right notes (the Use step's check, for piece concepts). */
     public data class Passage(
         val passageId: String,

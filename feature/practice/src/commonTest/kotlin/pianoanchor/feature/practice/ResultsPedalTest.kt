@@ -11,6 +11,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import pianoanchor.core.model.Attempt
 import pianoanchor.core.model.Band
+import pianoanchor.core.model.Passage
+import pianoanchor.core.model.PedalSpan
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Passages
 import pianoanchor.engine.learner.LearnerModel
@@ -62,10 +64,20 @@ class ResultsPedalTest {
     private suspend fun TestScope.results(
         id: String,
         vararg saved: Attempt,
+        passageOf: (String) -> Passage? = { Curriculum.passage(it) },
     ): ResultsViewModel {
         saved.forEach { attempts.save(it) }
-        return ResultsViewModel(id, TempoRung.WAIT, attempts, settings, learner, piano.device, piano, dispatcher)
-            .also { runCurrent() }
+        return ResultsViewModel(
+            id,
+            TempoRung.WAIT,
+            attempts,
+            settings,
+            learner,
+            piano.device,
+            piano,
+            dispatcher,
+            passageOf,
+        ).also { runCurrent() }
     }
 
     private fun TestScope.tapPedal() {
@@ -168,5 +180,19 @@ class ResultsPedalTest {
 
             assertTrue(taps.isEmpty())
             assertFalse(vm.pedalHint.value)
+        }
+
+    @Test
+    fun aPassageWithPedalMarksIgnoresThePedalTap() =
+        runTest(dispatcher) {
+            val marked = Passages.CDE.copy(pedal = listOf(PedalSpan(0, 3840)))
+            val vm = results("a-1", attempt("a-1"), passageOf = { marked })
+            val taps = collectContinues(vm)
+
+            tapPedal()
+
+            assertTrue(taps.isEmpty())
+            assertFalse(vm.pedalHint.value)
+            vm.releasePiano()
         }
 }

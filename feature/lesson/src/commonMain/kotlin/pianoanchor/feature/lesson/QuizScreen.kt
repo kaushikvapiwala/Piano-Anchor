@@ -153,7 +153,7 @@ private fun QuizPane(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         )
-        (wrongKeyText(progress) ?: timingLine(progress))?.let {
+        (wrongKeyText(progress) ?: timingLine(progress, state.quiz?.check))?.let {
             Text(
                 it,
                 style = MaterialTheme.typography.bodyMedium,

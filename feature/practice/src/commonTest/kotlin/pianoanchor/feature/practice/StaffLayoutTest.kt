@@ -3,6 +3,7 @@ package pianoanchor.feature.practice
 import pianoanchor.core.model.KeySignature
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.PedalSpan
 import pianoanchor.core.model.ScoreNote
 import pianoanchor.core.model.Step
 import pianoanchor.core.model.TICKS_PER_QUARTER
@@ -358,5 +359,18 @@ class StaffLayoutTest {
         assertEquals(GRAND_STAFF_HEIGHT_DP, staffHeightDp(Engraving.engrave(noteText("[C3 C4]w"))))
         // Two staves of 64 dp, a 32 dp gap and 40 dp above and below.
         assertTrue(GRAND_STAFF_HEIGHT_DP >= 160f + 2 * 40f)
+    }
+
+    @Test
+    fun `pedal lines sit at the x of their ticks with a notch at each change`() {
+        val bar = 4 * Q
+        val spans = listOf(PedalSpan(0, bar), PedalSpan(bar, 2 * bar))
+        val marked = passage(*quarters(8)).copy(pedal = spans)
+        val layout = staffLayout(marked, WIDE)
+        val line = layout.pedal.single()
+        assertNear(layout.noteX[0], line.x1)
+        assertNear(layout.noteX[4], line.notchXs.single())
+        assertNear(layout.finalBarX, line.x2)
+        assertTrue(staffLayout(passage(*quarters(4)), WIDE).pedal.isEmpty())
     }
 }

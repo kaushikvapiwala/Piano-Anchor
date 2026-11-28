@@ -13,8 +13,11 @@ private const val BEATS_PER_BAR = 4
 /** An eighth note lasts `30000 / bpm` ms. */
 private const val MS_PER_EIGHTH_AT_ONE_BPM = 30_000.0
 
-/** Why a rhythm attempt was reset: a tap came too [EARLY] or too [LATE] against the pattern. */
-public enum class TryTiming { EARLY, LATE }
+/**
+ * Why an attempt was reset: a rhythm tap came too [EARLY] or too [LATE] against the pattern; a legato note came after
+ * a [GAP] or was held into the next too long ([OVERLAP]); a pedal was lifted too [EARLY] or changed too [LATE].
+ */
+public enum class TryTiming { EARLY, LATE, GAP, OVERLAP }
 
 /**
  * Progress of one Try: [done] of [total] parts, the [lastWrong] key pressed against [expected] (for the gentle hint),
@@ -32,9 +35,13 @@ public data class TryProgress(
     val timing: TryTiming? = null,
 )
 
-private data class TryState(
+internal data class TryState(
     val done: Int = 0,
     val notes: Set<Int> = emptySet(),
+    val held: Set<Int> = emptySet(),
+    val prevDown: Boolean = false,
+    val upMs: Long = 0,
+    val pedalDown: Boolean = false,
     val velocities: List<Int> = emptyList(),
     val startMs: Long = 0,
     val holding: Boolean = false,
@@ -76,13 +83,41 @@ public class TryRun private constructor(
         atMs: Long,
     ): TryRun = if (state.finished) this else TryRun(check, press(note, velocity, atMs))
 
-    /** The run after [note] came up at [atMs]; only a hold cares. */
+    /** The run after [note] came up at [atMs]; only a hold, a legato and a pedal hold care. */
     public fun onNoteOff(
+        note: Int,
+        atMs: Long,
+    ): TryRun =
+        when {
+            state.finished -> this
+            check is TryCheck.Hold -> release(check, note, atMs)
+            check is TryCheck.Legato -> TryRun(check, state.releaseLegato(check, note, atMs))
+            check is TryCheck.PedalHold -> TryRun(check, state.releaseHeld(note, atMs))
+            else -> this
+        }
+
+    /** The run after the sustain pedal (CC 64) moved to [value] (0-127) at [atMs]; other checks ignore it. */
+    public fun onPedal(
+        value: Int,
+        atMs: Long,
+    ): TryRun {
+        val down = !state.pedalDown
+        val crossed = if (down) value >= Tunables.PEDAL_DOWN_VALUE else value < Tunables.PEDAL_UP_VALUE
+        return when {
+            state.finished || !crossed -> this
+            check is TryCheck.PedalHold -> TryRun(check, state.pedalHold(check.chord, down, atMs))
+            check is TryCheck.PedalChange -> TryRun(check, state.pedalChange(check.chords, down, atMs))
+            else -> this
+        }
+    }
+
+    private fun release(
+        check: TryCheck.Hold,
         note: Int,
         atMs: Long,
     ): TryRun {
         // Only a press of the held note sets `holding`, and finishing clears it.
-        if (check !is TryCheck.Hold || !state.holding || note != check.note) return this
+        if (!state.holding || note != check.note) return this
         val needed = (check.clicks * MS_PER_MINUTE / check.bpm * (1 - Tunables.TRY_HOLD_TOLERANCE)).roundToLong()
         val next =
             if (atMs - state.startMs >= needed) {
@@ -100,6 +135,12 @@ public class TryRun private constructor(
             is TryCheck.FindAll -> targets(check).size
 
             is TryCheck.Sequence -> check.notes.size
+
+            is TryCheck.Legato -> check.notes.size
+
+            is TryCheck.PedalHold -> PEDAL_HOLD_PARTS
+
+            is TryCheck.PedalChange -> check.chords.size
 
             is TryCheck.Repeat -> check.times
 
@@ -123,6 +164,8 @@ public class TryRun private constructor(
             is TryCheck.FindAll -> state.nearestUnfound(check)
 
             is TryCheck.Sequence -> check.notes[state.done]
+
+            is TryCheck.Legato -> check.notes[state.done]
 
             is TryCheck.Repeat -> check.note
 
@@ -164,6 +207,18 @@ public class TryRun private constructor(
                     val done = state.done + 1
                     state.copy(done = done, lastWrong = null, finished = done == check.notes.size)
                 }
+            }
+
+            is TryCheck.Legato -> {
+                state.pressLegato(check, note, atMs)
+            }
+
+            is TryCheck.PedalHold -> {
+                state.pressHeld(check.chord, note, atMs)
+            }
+
+            is TryCheck.PedalChange -> {
+                state.pressChange(check.chords, note, atMs)
             }
 
             is TryCheck.Repeat -> {

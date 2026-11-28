@@ -128,3 +128,7 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Paused week | A week the learner paused (`Settings.pausedWeeks`, by its Monday): it counts as met for the weekly streak whatever was played. Two pauses at most are unused at once; each comes back four weeks after use. |
 | First full run | The oldest attempt of a passage with no spot loop whose events end the passage (`AttemptRepositoryPort.firstFullRun`). It is kept for good: no pruning may delete it. |
 | Day 1 vs today | The Progress card that plays a piece's first full run next to its latest one, each with a note-timing lane. Shown only when the two started on different calendar days. |
+| Legato | Notes joined: each key goes down as the one before comes up, with no gap and no blur. The Try check `Legato` judges a gap (`GAP`) and a long overlap (`OVERLAP`). |
+| Sustain pedal | The pedal that keeps the sound ringing after the keys come up (MIDI controller 64). Down at value 64 or more, up again below 32. A quick tap means "continue" in a lesson unless the concept uses the pedal as music. |
+| Pedal change | Lifting the pedal and pressing it again just after a new chord, so the old chord stops and the new one rings. The Try check `PedalChange` judges it (`EARLY`, `LATE`). |
+| Pedal mark | A span of the sustain pedal in a passage (`PedalSpan`, `Passage.pedal`), drawn as a line under the staff with a notch at each change. Marks are drawn, never judged. |

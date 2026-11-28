@@ -12,6 +12,7 @@ import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.Tone
 import pianoanchor.engine.Tunables
+import pianoanchor.engine.lesson.PedalCue
 import pianoanchor.testing.FakePiano
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -120,7 +121,7 @@ class MidiPlaybackTest {
     fun onStruckCountsTheNotesBegun() =
         runTest {
             var struck = 0
-            piano.playTones(piano.device, two) { struck++ }
+            piano.playTones(piano.device, two, onStruck = { struck++ })
             assertEquals(2, struck)
         }
 
@@ -143,5 +144,51 @@ class MidiPlaybackTest {
             piano.playTones(piano.device, emptyList())
             assertEquals(emptyList(), piano.sent)
             assertEquals(0, currentTime)
+        }
+
+    private fun sentBytes() = piano.sent.map { message -> message.map { it.toInt() and 0xFF } }
+
+    @Test
+    fun pedalCuesSendTheSustainControllerAroundTheNotes() =
+        runTest {
+            val pedal = listOf(PedalCue(0, true), PedalCue(400, false))
+            piano.playTones(piano.device, listOf(tone(60, 0, 400)), pedal)
+            assertEquals(
+                listOf(
+                    listOf(0xB0, 64, 127),
+                    listOf(0x90, 60, Tunables.PLAYBACK_VELOCITY),
+                    listOf(0x80, 60, 0),
+                    listOf(0xB0, 64, 0),
+                ),
+                sentBytes(),
+            )
+        }
+
+    @Test
+    fun cancellingLiftsAPedalStillDown() =
+        runTest {
+            val job = launch { piano.playTones(piano.device, two, listOf(PedalCue(0, true), PedalCue(900, false))) }
+            advanceTimeBy(200)
+            job.cancel()
+            runCurrent()
+            assertEquals(listOf(0xB0, 64, 0), sentBytes().last())
+            assertEquals(listOf(0x80, 60, 0), sentBytes()[sentBytes().size - 2])
+        }
+
+    @Test
+    fun aLiftedPedalIsNotLiftedAgainOnCancel() =
+        runTest {
+            val job =
+                launch {
+                    piano.playTones(
+                        piano.device,
+                        listOf(tone(60, 0, 3000)),
+                        listOf(PedalCue(0, true), PedalCue(100, false)),
+                    )
+                }
+            advanceTimeBy(200)
+            job.cancel()
+            runCurrent()
+            assertEquals(2, sentBytes().count { it[0] == 0xB0 })
         }
 }

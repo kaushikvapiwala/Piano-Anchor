@@ -69,7 +69,8 @@ import pianoanchor.engine.sight.SightStaircase
  *
  * With `Settings.pedalControlOn`, a tap of the sustain pedal on the piano [device] (read from [input]; the run that
  * led here has closed it) asks for the primary action on [pedalContinues] once the results show, and [pedalHint] says
- * so. [releasePiano] closes the reader before another screen opens the piano (one reader per input).
+ * so (not for a passage with pedal marks: lifting the pedal at the end is music). [releasePiano] closes the reader
+ * before another screen opens the piano (one reader per input).
  *
  * A daily sight-reading exercise has no run number and no spot loop; [ResultsState.Ready.sight] says how it moved the
  * level, from the staircase over the attempts up to and before this one, capped at the level [learner] has opened.
@@ -84,6 +85,7 @@ public class ResultsViewModel(
     private val device: MidiDevice,
     private val input: MidiInputPort,
     private val analysisDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val passageOf: (String) -> Passage? = { Curriculum.passage(it) ?: SightReadingGenerator.fromId(it) },
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<ResultsState>(ResultsState.Loading)
     public val state: StateFlow<ResultsState> = mutableState.asStateFlow()
@@ -99,8 +101,9 @@ public class ResultsViewModel(
 
     /** True when the results show "Tap the pedal to continue": a pedal tap acts, and the piano is connected. */
     public val pedalHint: StateFlow<Boolean> =
-        combine(pedalOn, connected, state) { on, link, current -> on && link && current is ResultsState.Ready }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        combine(pedalOn, connected, state) { on, link, current ->
+            on && link && current is ResultsState.Ready && !current.pedalMarks
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
         retry()
@@ -158,7 +161,7 @@ public class ResultsViewModel(
 
     private suspend fun load(): ResultsState {
         val attempt = attempts.get(attemptId) ?: return ResultsState.NotFound
-        val passage = Curriculum.passage(attempt.passageId) ?: SightReadingGenerator.fromId(attempt.passageId)
+        val passage = passageOf(attempt.passageId)
         val sight = sightOutcome(attempt)
         val strictness = storedStrictness()
         val analysed =
@@ -192,6 +195,7 @@ public class ResultsViewModel(
             shiftBeats = shiftBeats(summary?.timing, attempt.tempoBpm),
             sight = sight,
             lesson = lessonResult(attempt),
+            pedalMarks = passage?.pedal?.isNotEmpty() == true,
         )
     }
 

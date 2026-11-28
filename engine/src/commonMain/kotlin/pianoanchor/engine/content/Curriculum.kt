@@ -75,4 +75,17 @@ public object Curriculum {
 
     /** The Try check of a course skill, or null for a skill without one (More songs, ear skills). */
     public fun tryCheck(skillId: String): TryCheck? = TryChecks.all[skillId]
+
+    /** True when the concept uses the sustain pedal as music, so a pedal tap must not mean "continue" in its lesson. */
+    public fun pedalIsMusic(skillId: String): Boolean = pedalIsMusic(skillId, tryCheck(skillId), passages)
+
+    /** [pedalIsMusic] for a concept with [check] and its [passages] (any list: a piece with pedal marks counts). */
+    internal fun pedalIsMusic(
+        skillId: String,
+        check: TryCheck?,
+        passages: List<Passage>,
+    ): Boolean =
+        check is TryCheck.PedalHold ||
+            check is TryCheck.PedalChange ||
+            passages.any { skillId in it.skills && it.piece && it.pedal.isNotEmpty() }
 }

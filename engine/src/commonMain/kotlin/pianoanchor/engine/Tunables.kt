@@ -1091,6 +1091,43 @@ public object Tunables {
     public const val SIGHT_TEMPO_BPM: Int = 72
 
     /**
+     * The longest silence, in milliseconds, between one legato note coming up and the next going down.
+     *
+     * Why: a silence shorter than this between two slow notes still sounds joined to a beginner's ear.
+     *
+     * Source: starting value, owner decision 2026-11-28, tune on device.
+     */
+    public const val TRY_LEGATO_MAX_GAP_MS: Long = 80
+
+    /**
+     * The longest, in milliseconds, a legato note may still be held after the next one has gone down.
+     *
+     * Why: pianists' legato overlaps are tens of ms; longer than this the two notes audibly blur.
+     *
+     * Source: starting value; published legato key-overlap measurements report short overlaps; tune on device.
+     */
+    public const val TRY_LEGATO_MAX_OVERLAP_MS: Long = 150
+
+    /**
+     * How long, in milliseconds, the sound must ring on with the pedal down after the last key came up (the pedal
+     * hold Try).
+     *
+     * Why: long enough to hear the sound carry on after the hands leave the keys.
+     *
+     * Source: owner decision 2026-11-28, tune on device.
+     */
+    public const val TRY_PEDAL_RING_MS: Long = 1_000
+
+    /**
+     * The longest, in milliseconds, between a new chord's first note and the pedal going down again after its change.
+     *
+     * Why: the change belongs right after the chord; later the old chord blurs into the new one.
+     *
+     * Source: starting value, legato pedalling as taught; tune on device.
+     */
+    public const val TRY_PEDAL_CHANGE_MAX_MS: Long = 600
+
+    /**
      * The sustain-pedal value (controller 64) at or above which the pedal counts as down.
      *
      * Why: the midpoint of MIDI's on/off range, so a half-pressed pedal does not count as down.

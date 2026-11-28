@@ -32,4 +32,15 @@ class TryCheckTest {
         assertFailsWith<IllegalArgumentException> { TryCheck.Rhythm(60, listOf(480, 0), 60) }
         assertFailsWith<IllegalArgumentException> { TryCheck.Rhythm(60, listOf(480, -480), 60) }
     }
+
+    @Test
+    fun pedalAndLegatoChecksKeepTheirPartsAndValidate() {
+        assertEquals(listOf(60, 62), TryCheck.Legato(listOf(60, 62)).notes)
+        assertEquals(setOf(48), TryCheck.PedalHold(setOf(48)).chord)
+        assertEquals(listOf(setOf(48), setOf(53)), TryCheck.PedalChange(listOf(setOf(48), setOf(53))).chords)
+        assertFailsWith<IllegalArgumentException> { TryCheck.Legato(listOf(60)) }
+        assertFailsWith<IllegalArgumentException> { TryCheck.PedalHold(emptySet()) }
+        assertFailsWith<IllegalArgumentException> { TryCheck.PedalChange(listOf(setOf(48))) }
+        assertFailsWith<IllegalArgumentException> { TryCheck.PedalChange(listOf(setOf(48), emptySet())) }
+    }
 }

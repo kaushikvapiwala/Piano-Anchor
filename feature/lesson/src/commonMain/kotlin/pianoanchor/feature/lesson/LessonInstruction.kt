@@ -10,6 +10,9 @@ import pianoanchor.feature.lesson.resources.lesson_try_any_key
 import pianoanchor.feature.lesson.resources.lesson_try_chord
 import pianoanchor.feature.lesson.resources.lesson_try_find_all
 import pianoanchor.feature.lesson.resources.lesson_try_hold
+import pianoanchor.feature.lesson.resources.lesson_try_legato
+import pianoanchor.feature.lesson.resources.lesson_try_pedal_change
+import pianoanchor.feature.lesson.resources.lesson_try_pedal_hold
 import pianoanchor.feature.lesson.resources.lesson_try_play
 import pianoanchor.feature.lesson.resources.lesson_try_play_lit
 import pianoanchor.feature.lesson.resources.lesson_try_repeat
@@ -70,7 +73,35 @@ internal fun instruction(check: TryCheck?): String =
         is TryCheck.Chord -> {
             stringResource(Res.string.lesson_try_chord, check.notes.sorted().joinToString(" ") { MidiNote(it).name })
         }
+
+        is TryCheck.Legato, is TryCheck.PedalHold, is TryCheck.PedalChange -> {
+            pedalInstruction(check)
+        }
     }
 
 /** "C" for pitch class 0 ... "B" for 11: a note name without its octave. */
 private fun pitchClassName(pitchClass: Int): String = MidiNote(MIDDLE_C + pitchClass).name.trimEnd { it.isDigit() }
+
+/** The instruction of the legato and pedal checks. */
+@Composable
+private fun pedalInstruction(check: TryCheck): String =
+    when (check) {
+        is TryCheck.Legato -> {
+            stringResource(Res.string.lesson_try_legato, check.notes.joinToString(" ") { MidiNote(it).name })
+        }
+
+        is TryCheck.PedalChange -> {
+            stringResource(
+                Res.string.lesson_try_pedal_change,
+                check.chords.joinToString(", ") { chord -> chord.sorted().joinToString(" ") { MidiNote(it).name } },
+            )
+        }
+
+        else -> {
+            val hold = check as TryCheck.PedalHold
+            stringResource(
+                Res.string.lesson_try_pedal_hold,
+                hold.chord.sorted().joinToString(" ") { MidiNote(it).name },
+            )
+        }
+    }

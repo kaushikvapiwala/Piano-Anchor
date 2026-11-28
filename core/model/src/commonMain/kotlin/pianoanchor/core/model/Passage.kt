@@ -90,6 +90,17 @@ public data class KeySignature(
     }
 }
 
+/** The sustain pedal held from [startTicks] to [endTicks] (start < end, start >= 0). */
+public data class PedalSpan(
+    val startTicks: Int,
+    val endTicks: Int,
+) {
+    init {
+        require(startTicks >= 0) { "a pedal span must not start before 0, was $startTicks" }
+        require(endTicks > startTicks) { "a pedal span must end after it starts, was $startTicks to $endTicks" }
+    }
+}
+
 /**
  * A piece of music to practise. [id] is stable (stored with attempts) and not blank; [steps] is not empty and
  * their onsets strictly increase. [tempoBpm] is the written tempo in quarter notes per minute
@@ -97,7 +108,8 @@ public data class KeySignature(
  * exercises (may be empty: such a passage is never scheduled). A [piece] is a tune or song, listed on the Songs
  * screen; an exercise is not. [keySignature] is the key the staff draws (C by default). [chords] is the chord line
  * the play-along backing sounds (`docs/algorithms/play-along.md`): empty when the passage has none, else sorted by
- * strictly increasing onset.
+ * strictly increasing onset. [pedal] is where the sustain pedal is held (marks only, never judged): sorted by start,
+ * none overlapping (one may end where the next starts: a change), all within the passage.
  */
 public data class Passage(
     val id: String,
@@ -110,6 +122,7 @@ public data class Passage(
     val piece: Boolean = false,
     val keySignature: KeySignature = KeySignature.C,
     val chords: List<ChordMark> = emptyList(),
+    val pedal: List<PedalSpan> = emptyList(),
 ) {
     init {
         require(id.isNotBlank()) { "passage id must not be blank" }
@@ -124,8 +137,26 @@ public data class Passage(
                 "passage \"$id\": chord onsets must strictly increase, got ${a.onsetTicks} then ${b.onsetTicks}"
             }
         }
+        pedal.zipWithNext().forEach { (a, b) ->
+            require(b.startTicks >= a.endTicks) {
+                "passage \"$id\": pedal spans must be sorted and not overlap, got $a then $b"
+            }
+        }
+        require(pedal.isEmpty() || pedal.last().endTicks <= lengthTicks()) {
+            "passage \"$id\": pedal span ${pedal.last()} runs past the end of the passage"
+        }
         require(tempoBpm in MIN_TEMPO_BPM..MAX_TEMPO_BPM) {
             "passage \"$id\": tempo must be in $MIN_TEMPO_BPM..$MAX_TEMPO_BPM BPM, was $tempoBpm"
         }
+    }
+
+    /** The end of the last bar that has a note in it, in ticks: where a pedal span may end at the latest. */
+    private fun lengthTicks(): Int {
+        val end =
+            steps.fold(0) { end, step ->
+                maxOf(end, step.onsetTicks + step.notes.fold(0) { longest, note -> maxOf(longest, note.lengthTicks) })
+            }
+        val bar = timeSignature.barTicks
+        return (end + bar - 1) / bar * bar
     }
 }

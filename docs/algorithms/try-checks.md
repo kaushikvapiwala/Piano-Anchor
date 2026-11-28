@@ -8,7 +8,7 @@ through `Curriculum.tryCheck(skillId)`.
 
 ## Progress
 `TryProgress` carries `done` of `total` parts, the `expected` key (the next one to play, or null where no single key is
-next: any key, chords), the `lastWrong` key for the gentle hint, `finished`, `wrongCount` and `timing` (why the last rhythm reset happened: `EARLY` or `LATE`, else null, for the
+next: any key, chords), the `lastWrong` key for the gentle hint, `finished`, `wrongCount` and `timing` (why the last attempt reset in time: `EARLY` or `LATE` for a rhythm or a pedal, `GAP` or `OVERLAP` for a legato, else null, for the
 hint). Once finished, further
 events change nothing. A note-off is ignored except by a hold. Timing is not judged, except where it is the concept
 itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
@@ -41,6 +41,27 @@ itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
 - **Chord:** all notes within `CHORD_CLUSTER_MS` of the cluster's first. A note later than that, or outside the chord,
   fails the cluster (`wrongCount` + 1, `done` back to 0); a late chord note starts a new cluster. A repeat inside the
   cluster is ignored.
+- **Legato:** `Legato(notes)`, at least two notes, like Sequence: the next note is expected and a wrong key waits
+  (`lastWrong`). A note after the first must go down within `TRY_LEGATO_MAX_GAP_MS` of the note before coming up, else
+  the attempt fails with `timing` = `GAP` (`wrongCount` + 1, `done` 0; the press counts as note 1 of a fresh attempt
+  when it is the first note). A note may go down while the one before is still held (an overlap), but the older one must
+  come up within `TRY_LEGATO_MAX_OVERLAP_MS` of that press, judged at its note-off, or at the next press if it is still
+  down: else `OVERLAP` and the same reset. The pedal is not read. The run finishes when the last note goes down after a
+  clean join; its own release is not judged.
+- **Pedal hold:** `PedalHold(chord)`, `total` 3. Part 1: every chord note goes down within `CHORD_CLUSTER_MS` while the
+  pedal is down (pedal first, or pedal down within that window after the cluster's first note). Part 2: every chord key
+  comes up with the pedal still down. Part 3: the pedal stays down `TRY_PEDAL_RING_MS` after the last key came up,
+  judged when the pedal comes up. A pedal lifted too soon (`timing` = `EARLY`), a note outside the chord, or a cluster
+  or pedal that is late each add to `wrongCount` and reset `done` to 0. A late cluster is noticed at the next event.
+  A pedal pressed and lifted with no note played is not an attempt.
+- **Pedal change:** `PedalChange(chords)`, at least two chords, `total` = number of chords, `expected` null. Chord 1 is
+  part 1 of a pedal hold. Each later chord: its notes within `CHORD_CLUSTER_MS`; the pedal must come up at or after its
+  first note and down again within `TRY_PEDAL_CHANGE_MAX_MS` of that note. A pedal lifted before the chord's first note
+  fails with `EARLY` (the sound breaks); no change in the window, or the next chord started first, fails with `LATE`
+  (the chords blur). With no timer, a missed window is judged at the next event past it. Both reset `done` to 0.
+- **The pedal in the run:** `TryRun.onPedal(value, atMs)` takes CC 64. The pedal is down at `PEDAL_DOWN_VALUE` or more
+  and up again below `PEDAL_UP_VALUE`; only those crossings count. Checks that do not read the pedal ignore it. The
+  lesson screen feeds the pedal to the run in Try only. The three kinds use no click and no count-in.
 - **Passage:** piece concepts play the concept's first passage in wait mode with right notes. The practice screen
   checks it, so `TryRun` rejects it.
 
@@ -112,3 +133,16 @@ key (or a hold released early) sets the count to 0 and the check goes on; a chec
 count. The screen shows "Clean 2 of 3" beside the check's own progress (not when 1 is needed). Each finished check
 shows its tick for `LESSON_TRY_DONE_PAUSE_MS`, then the next check starts, or the lesson moves to Use after the last. A `Passage` check has no
 Try step: it is part of Use.
+
+### Legato and pedal demos
+A legato demo plays its notes in order, each for a full beat at 60 BPM into the next. A pedal hold plays the chord for
+`TRY_PEDAL_RING_MS` plus a beat, with a pedal-down cue at the start and a pedal-up cue at the end. A pedal change plays
+each chord for two beats, with an up-then-down cue just after each new chord. `Demo.pedal` lists the cues
+(`PedalCue(atMs, down)`). On a piano output the demo sends CC 64 (127 or 0) at each cue and lifts a pedal still down
+if it stops; on the phone speaker the notes just sound. The See step draws the cue under the key strip with the same
+pedal line as the staff and tells TalkBack "Pedal down" or "Pedal up". None of these uses the click.
+
+## Pedal in lessons
+`Curriculum.pedalIsMusic(skillId)` is true when the concept's Try is a pedal hold or a pedal change, or its piece
+passage has pedal marks; the lesson then ignores pedal taps as "continue" (`docs/adr/0027-hands-free-lessons.md`).
+Results do the same for a passage with pedal marks. Marks are drawn on the staff and never judged.
