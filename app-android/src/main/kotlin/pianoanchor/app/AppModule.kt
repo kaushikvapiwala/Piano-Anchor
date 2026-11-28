@@ -97,6 +97,7 @@ val appModule =
                 get(),
                 get(),
                 get(),
+                get(),
                 start.rung,
                 start.mode,
                 start.spot,

@@ -1,10 +1,16 @@
 package pianoanchor.ui.shell
 
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -16,6 +22,23 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import pianoanchor.engine.Tunables
+
+/** How a key strip's letters appear: a fade over `Tunables.KEY_LETTERS_FADE_MS`, at once with [reduceMotion]. */
+fun <T> keyLettersFade(reduceMotion: Boolean): AnimationSpec<T> =
+    if (reduceMotion) snap() else tween(Tunables.KEY_LETTERS_FADE_MS, easing = FastOutSlowInEasing)
+
+/**
+ * How visible a key strip's letter layer is: 0 until the note labels have loaded ([loaded]), then fading in over
+ * `Tunables.KEY_LETTERS_FADE_MS` (at once with [reduceMotion]). A strip that is already loaded when it first
+ * composes shows its letters at once, so only letters that arrive later fade in. Read the state's value only
+ * inside `graphicsLayer { }`, so the fade redraws without recomposing every key.
+ */
+@Composable
+fun rememberLetterAlpha(
+    loaded: Boolean,
+    reduceMotion: Boolean = rememberReduceMotion(),
+): State<Float> = animateFloatAsState(if (loaded) 1f else 0f, keyLettersFade(reduceMotion))
 
 /** The letter size before it is capped by the key: 12 sp, so it grows with the learner's font scale. */
 private val LETTER_SIZE = 12.sp

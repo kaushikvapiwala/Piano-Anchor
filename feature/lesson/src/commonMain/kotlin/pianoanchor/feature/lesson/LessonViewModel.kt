@@ -160,9 +160,10 @@ public class LessonViewModel(
     }
 
     init {
+        // First, so the letters are usually read before the first content frame.
+        viewModelScope.launch { loadNoteLabels() }
         reader = viewModelScope.launch { readPiano() }
         viewModelScope.launch { watchPedalSetting() }
-        viewModelScope.launch { loadNoteLabels() }
         viewModelScope.launch {
             val saved = if (startAt == null) savedStep() else null
             // A lesson reopened at Use (back from Practice) stays there: it opens Practice only when the learner gets

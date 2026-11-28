@@ -88,7 +88,7 @@ public data class PracticeState(
     val sightReading: Boolean = false,
     val unaided: Boolean = false,
     val finishedBand: Band? = null,
-    val noteLabels: NoteLabels = NoteLabels(),
+    val noteLabels: NoteLabels? = null,
     val backingOn: Boolean = false,
 ) {
     init {

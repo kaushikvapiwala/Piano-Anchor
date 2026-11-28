@@ -1,6 +1,7 @@
 package pianoanchor.feature.practice
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -56,9 +59,12 @@ import pianoanchor.feature.practice.resources.practice_last_key_wrong_timed
 import pianoanchor.ui.shell.KeyLetters
 import pianoanchor.ui.shell.PianoAnchorColors
 import pianoanchor.ui.shell.keyLetterColor
+import pianoanchor.ui.shell.keyLettersFade
 import pianoanchor.ui.shell.keyLettersHeight
 import pianoanchor.ui.shell.keyNameText
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.rememberLetterAlpha
+import pianoanchor.ui.shell.rememberReduceMotion
 import kotlin.math.abs
 
 private val WHITE_KEY = 60.dp to 76.dp
@@ -189,14 +195,25 @@ private fun Keys(
     val stripWidth = WHITE_PITCH * whites.size - (WHITE_PITCH - WHITE_KEY.first)
     val whiteHeight = if (tall) TALL_WHITE_HEIGHT else WHITE_KEY.second
     val blackHeight = if (tall) TALL_BLACK_HEIGHT else BLACK_KEY.second
+    val letterAlpha = rememberLetterAlpha(state.noteLabels != null)
     Box(Modifier.horizontalScroll(rememberScrollState()).size(stripWidth, whiteHeight)) {
         whites.forEachIndexed { i, note ->
-            Key(note, state, note in waiting, colors, WHITE_KEY.first, whiteHeight, WHITE_PITCH * i, black = false)
+            Key(
+                note,
+                state,
+                note in waiting,
+                colors,
+                WHITE_KEY.first,
+                whiteHeight,
+                WHITE_PITCH * i,
+                black = false,
+                letterAlpha,
+            )
         }
         notes.filter { it.isBlack }.forEach { note ->
             val whitesBelow = whites.count { it.number < note.number }
             val x = WHITE_PITCH * whitesBelow - (WHITE_PITCH - WHITE_KEY.first) / 2 - BLACK_KEY.first / 2
-            Key(note, state, note in waiting, colors, BLACK_KEY.first, blackHeight, x, black = true)
+            Key(note, state, note in waiting, colors, BLACK_KEY.first, blackHeight, x, black = true, letterAlpha)
         }
     }
 }
@@ -211,6 +228,7 @@ private fun Key(
     height: Dp,
     x: Dp,
     black: Boolean,
+    letterAlpha: State<Float>,
 ) {
     val lit = state.isLit(note)
     val glow = note in state.glowKeys && !lit
@@ -241,7 +259,7 @@ private fun Key(
                 .then(outline(glow, black, accent, colors, shape))
                 .semantics { contentDescription = name },
     ) {
-        KeyContent(note, state, target, target && !lit && !glow, fill, colors, width, black)
+        KeyContent(note, state, target, target && !lit && !glow, fill, colors, width, black, letterAlpha)
     }
 }
 
@@ -256,17 +274,20 @@ private fun BoxScope.KeyContent(
     colors: PianoAnchorColors,
     width: Dp,
     black: Boolean,
+    letterAlpha: State<Float>,
 ) {
     val letter = state.keyLetter(note, target)?.let { keyNameText(it) }
     val flat = if (letter != null && black) NoteNameRule.flatLabel(note.number)?.let { keyNameText(it) } else null
     if (banded) {
         // A lettered band is as tall as its letters and their padding, so the letters sit wholly on the band.
-        val bandHeight =
+        val bandTarget =
             if (letter == null) {
                 TARGET_BAND
             } else {
                 maxOf(TARGET_BAND, keyLettersHeight(letter, flat, width) + LETTER_BOTTOM * 2)
             }
+        // Grows with the letters' fade-in, so the band never jumps a frame ahead of them.
+        val bandHeight by animateDpAsState(bandTarget, keyLettersFade(rememberReduceMotion()))
         Box(
             Modifier
                 .testTag(TARGET_BAND_TAG)
@@ -285,7 +306,10 @@ private fun BoxScope.KeyContent(
                 if (black) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
             ),
             width,
-            Modifier.align(Alignment.BottomCenter).padding(bottom = LETTER_BOTTOM),
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = LETTER_BOTTOM)
+                .graphicsLayer { alpha = letterAlpha.value },
         )
     }
 }
@@ -300,7 +324,7 @@ private fun PracticeState.keyLetter(
 ): KeyName? {
     if (mode == RunMode.PERFORM) return null
     val hinted = hint?.let { setOf(it.played, it.expected) }.orEmpty()
-    return noteLabels.label(note.number, if (target) setOf(note.number) else emptySet(), hinted)
+    return noteLabels?.label(note.number, if (target) setOf(note.number) else emptySet(), hinted)
 }
 
 /** Held, flashing or playing for the learner (hear it first). */

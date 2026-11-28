@@ -27,7 +27,7 @@ private val LETTER = Regex("[A-G][♯♭]?")
 class KeyLettersTest {
     /** The letters on show, in key order (the letters hide from TalkBack, so the unmerged tree is read). */
     private fun ComposeUiTest.lettersOf(
-        labels: NoteLabels,
+        labels: NoteLabels?,
         glow: Set<Int> = emptySet(),
         wrong: Int? = null,
     ): List<String> {
@@ -41,6 +41,12 @@ class KeyLettersTest {
             useUnmergedTree = true,
         ).fetchSemanticsNodes().flatMap { node -> node.config[SemanticsProperties.Text].map { it.text } }
     }
+
+    @Test
+    fun noLettersAreComposedUntilTheLabelsLoad() =
+        runComposeUiTest {
+            assertEquals(emptyList(), lettersOf(null))
+        }
 
     @Test
     fun allWhiteKeysAreLetteredBeforeKeyNamesArePassed() =

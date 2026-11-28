@@ -2,7 +2,10 @@ package pianoanchor.feature.lesson
 
 import android.provider.Settings
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Before
@@ -16,6 +19,8 @@ import pianoanchor.core.model.LessonStep
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
+import pianoanchor.engine.lesson.NoteLabels
+import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.lesson.TryRun
 import pianoanchor.ui.shell.PianoAnchorTheme
 
@@ -43,16 +48,58 @@ class LessonScreenScreenshotTest {
         state: LessonState,
         moreOpen: Boolean = false,
         reduceMotion: Boolean = true,
+        fontScale: Float = 1f,
     ) {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             captureRoboImage("screenshots/LessonScreen_${name}_$theme.png") {
                 PianoAnchorTheme(darkTheme = dark) {
-                    LessonScreen(state, LessonActions(), startMoreOpen = moreOpen, reduceMotion = reduceMotion)
+                    val density = LocalDensity.current
+                    CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                        LessonScreen(state, LessonActions(), startMoreOpen = moreOpen, reduceMotion = reduceMotion)
+                    }
                 }
             }
         }
     }
+
+    private fun letters(
+        stage: NoteNameStage,
+        sharps: Boolean = true,
+    ) = NoteLabels(stage, sharpsPassed = sharps, hints = true)
+
+    @Test
+    fun tryWithEveryWhiteKeyLettered() =
+        capture(
+            "letters_all_white",
+            lessonState(LessonStep.TRY, progress = sequenceProgress(60))
+                .copy(noteLabels = letters(NoteNameStage.ALL_WHITE)),
+        )
+
+    @Test
+    fun tryWithOnlyTheKeyToPlayLettered() =
+        capture(
+            "letters_target_only",
+            lessonState(LessonStep.TRY, progress = sequenceProgress(60))
+                .copy(noteLabels = letters(NoteNameStage.TARGET_ONLY)),
+        )
+
+    @Test
+    fun theWideStripOfHighAndLowLettered() =
+        capture(
+            "letters_wide",
+            lessonState(LessonStep.TRY, Skills.HIGH_AND_LOW)
+                .copy(noteLabels = letters(NoteNameStage.ALL_WHITE, sharps = false)),
+        )
+
+    @Test
+    fun lettersAtDoubleFontScale() =
+        capture(
+            "letters_font_2x",
+            lessonState(LessonStep.TRY, progress = sequenceProgress(60))
+                .copy(noteLabels = letters(NoteNameStage.ALL_WHITE)),
+            fontScale = 2f,
+        )
 
     @Test
     fun why() = capture("why", lessonState(LessonStep.WHY))

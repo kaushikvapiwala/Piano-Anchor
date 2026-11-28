@@ -56,7 +56,7 @@ public data class LessonState(
     val pedalControl: Boolean = false,
     val cleanReps: Int = 0,
     val repsNeeded: Int = 1,
-    val noteLabels: NoteLabels = NoteLabels(),
+    val noteLabels: NoteLabels? = null,
     val seeHand: HandTimeline? = null,
     val seeElapsedMs: Long = 0,
     val pedalCue: Boolean? = null,

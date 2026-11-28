@@ -27,6 +27,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
+import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.lesson.NoteNameStage
 import pianoanchor.engine.lesson.TryTiming
@@ -83,6 +84,7 @@ class LessonViewModelTest {
         skill: Skill = Skills.MIDDLE_C,
         startAt: LessonStep? = null,
         pedalIsMusic: Boolean = false,
+        runFirst: Boolean = true,
     ): LessonViewModel =
         LessonViewModel(
             piano.device,
@@ -98,7 +100,7 @@ class LessonViewModelTest {
             piano.clock,
             startAt,
             pedalIsMusic = pedalIsMusic,
-        ).also { runCurrent() }
+        ).also { if (runFirst) runCurrent() }
 
     private suspend fun savedStep(skill: Skill = Skills.MIDDLE_C) = settings.settings.first().lessonSteps[skill.id]
 
@@ -125,7 +127,26 @@ class LessonViewModelTest {
         runTest(dispatcher) {
             val vm = viewModel()
 
-            assertEquals(NoteNameStage.ALL_WHITE, vm.state.value.noteLabels.stage)
+            assertEquals(
+                NoteNameStage.ALL_WHITE,
+                vm.state.value.noteLabels
+                    ?.stage,
+            )
+            vm.close()
+        }
+
+    @Test
+    fun theLabelsAreNullUntilStorageAnswersThenLoaded() =
+        runTest(dispatcher) {
+            val vm = viewModel(runFirst = false)
+
+            assertNull(vm.state.value.noteLabels)
+            runCurrent()
+
+            assertEquals(
+                NoteLabels(NoteNameStage.ALL_WHITE, sharpsPassed = false, hints = true),
+                vm.state.value.noteLabels,
+            )
             vm.close()
         }
 

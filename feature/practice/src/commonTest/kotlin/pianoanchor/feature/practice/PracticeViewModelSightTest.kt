@@ -16,6 +16,7 @@ import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.RunMode
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
+import pianoanchor.engine.lesson.NoteLabelsUseCase
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.sight.SightReadingGenerator
 import pianoanchor.testing.FakeAttemptRepository
@@ -68,6 +69,12 @@ class PracticeViewModelSightTest {
             LearnerModel(Curriculum.graph, FakeLearnerRepository()),
             TimeZone.UTC,
             FakeSettingsRepository(),
+            NoteLabelsUseCase(
+                FakeSettingsRepository(),
+                attempts,
+                LearnerModel(Curriculum.graph, FakeLearnerRepository()),
+                TimeZone.UTC,
+            ),
             TempoRung.P100,
             RunMode.PERFORM,
             player = PassagePlayer(piano.device, piano, tone),

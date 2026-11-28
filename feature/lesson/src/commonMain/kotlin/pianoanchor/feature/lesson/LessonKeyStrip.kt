@@ -15,12 +15,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
@@ -39,6 +41,7 @@ import pianoanchor.ui.shell.KeyLetters
 import pianoanchor.ui.shell.keyLetterColor
 import pianoanchor.ui.shell.keyNameText
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.rememberLetterAlpha
 import pianoanchor.ui.shell.rememberReduceMotion
 
 internal val WHITE_KEY_WIDTH = 24.dp
@@ -148,6 +151,7 @@ internal fun LessonKeyStrip(
             state.glowKeys,
             wrong,
             labels = state.noteLabels,
+            reduceMotion = reduceMotion,
             hand = overlay,
             handSpace = if (timeline == null) 0.dp else HAND_SPACE,
         )
@@ -170,7 +174,8 @@ internal fun LessonKeyStrip(
 /**
  * A strip of the keys in [range]: [litKeys] light up, [glowKeys] glow in the accent and the [wrong] key shows grey.
  * [labels] decide the letters: the glowing keys are the ones to play, and a wrong key letters itself and them. A
- * [hand] is drawn over the keys in the [handSpace] above them.
+ * [hand] is drawn over the keys in the [handSpace] above them. [labels] null (not loaded yet) draws no letters; they
+ * fade in when it is set, at once with [reduceMotion].
  */
 @Composable
 internal fun KeyStrip(
@@ -179,7 +184,8 @@ internal fun KeyStrip(
     glowKeys: Set<Int>,
     wrong: Int?,
     modifier: Modifier = Modifier,
-    labels: NoteLabels = NoteLabels(),
+    labels: NoteLabels? = NoteLabels(),
+    reduceMotion: Boolean = rememberReduceMotion(),
     hand: HandOverlay? = null,
     handSpace: Dp = 0.dp,
 ) {
@@ -187,6 +193,7 @@ internal fun KeyStrip(
     // The hint shows only while the check is live (a glow); a stale wrong key letters nothing.
     val hinted = if (wrong == null || glowKeys.isEmpty()) emptySet() else glowKeys + wrong
     val whites = notes.filterNot { it.isBlack }
+    val letterAlpha = rememberLetterAlpha(labels != null, reduceMotion)
     val width = WHITE_PITCH * whites.size - (WHITE_PITCH - WHITE_KEY_WIDTH)
     Box(modifier.horizontalScroll(rememberScrollState()).size(width, WHITE_KEY_HEIGHT + handSpace)) {
         Box(Modifier.align(Alignment.BottomStart).size(width, WHITE_KEY_HEIGHT)) {
@@ -196,11 +203,12 @@ internal fun KeyStrip(
                     litKeys,
                     glowKeys,
                     wrong,
-                    labels.label(note.number, glowKeys, hinted)?.let { keyNameText(it) },
+                    labels?.label(note.number, glowKeys, hinted)?.let { keyNameText(it) },
                     WHITE_KEY_WIDTH,
                     WHITE_KEY_HEIGHT,
                     WHITE_PITCH * i,
                     black = false,
+                    letterAlpha,
                 )
             }
             notes.filter { it.isBlack }.forEach { note ->
@@ -211,11 +219,12 @@ internal fun KeyStrip(
                     litKeys,
                     glowKeys,
                     wrong,
-                    labels.label(note.number, glowKeys, hinted)?.let { keyNameText(it) },
+                    labels?.label(note.number, glowKeys, hinted)?.let { keyNameText(it) },
                     BLACK_KEY_WIDTH,
                     BLACK_KEY_HEIGHT,
                     x,
                     black = true,
+                    letterAlpha,
                 )
             }
         }
@@ -235,6 +244,7 @@ private fun Key(
     height: Dp,
     x: Dp,
     black: Boolean,
+    letterAlpha: State<Float>,
 ) {
     val colors = MaterialTheme.pianoAnchorColors
     val accent = MaterialTheme.colorScheme.primary
@@ -275,7 +285,10 @@ private fun Key(
                     if (black) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
                 width,
-                Modifier.align(Alignment.BottomCenter).padding(bottom = LETTER_BOTTOM),
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = LETTER_BOTTOM)
+                    .graphicsLayer { alpha = letterAlpha.value },
             )
         }
     }

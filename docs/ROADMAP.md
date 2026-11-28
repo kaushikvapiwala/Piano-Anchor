@@ -40,26 +40,23 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Note names: screenshots and first frame** (follow-up of #266): goldens for the lesson strip and the
-    Unit 0 wide strip and at font scale 2.0; a "not loaded yet" state so a beginner's strip doesn't open blank and
-    letter itself a moment later; Practice takes the note-labels use case from Koin like Lesson and Quiz.
-2. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
+1. **Staff notation: flat keys and compound metres** (follow-up of #272): draw flat key signatures and spell black
     keys as flats in flat keys (today a flat key reads "in F major" with no flats drawn); beam 6/8 eighths in threes
     and use dotted-quarter rests on its beats.
-3. **Rhythm Try: drift from the first tap** (spec #296): judge each tap also against where it should fall counting
+2. **Rhythm Try: drift from the first tap** (spec #296): judge each tap also against where it should fall counting
     from the first tap, so a steady tempo off the click can't pass.
-4. **Session steps: Results and stored progress** (spec #297): Practise and Sight-read steps of the one-tap session
+3. **Session steps: Results and stored progress** (spec #297): Practise and Sight-read steps of the one-tap session
     end on Results with "Continue"; the day's finished steps are stored so a restart resumes; the streak read is
     bounded.
-5. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
+4. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
     48..52 chromatically (C, C♯, D, D♯, E) instead of the white keys C D E F G; use an explicit key list like the
     left-hand G scene and re-record its screenshots.
-6. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
+5. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
     fade and a short "Your turn" moment.
-7. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
+6. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
     major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
     placement piece; closes course 2.
-8. **Wrong-key hint names from Compose resources** (found reviewing #304): the hint text beside the strips still
+7. **Wrong-key hint names from Compose resources** (found reviewing #304): the hint text beside the strips still
     names notes with English letters from `MidiNote.spoken()`, so a translated build would name the same key two ways;
     spell the hint's notes with the key-name string resources the strips use.
 
@@ -83,7 +80,8 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
   a tip, and "Pause this week" keeps the streak.
 - **Note names on keys (#266):** a new learner sees C to B on every white key; after the "C D E, then F G A B"
   concept passes only the key to play keeps its letter, and after its quiz none; Settings → "Note names on keys" →
-  Off clears them; letters stay readable in light and dark.
+  Off clears them; letters stay readable in light and dark and fade in just after a lesson or practice screen opens
+  (#306), with no jump in the target band.
 - **Lesson mastery (#265):** a Try needs 3 clean reps (2 for long ones), the lesson's Use piece runs with no hints and
   passes the concept, and the next day's quiz turns the tick into a ★ on Songs.
 - **First release and dogfood (M3 exit):** cut v0.1.0 by following `docs/RELEASING.md` (keystore, secrets, the
