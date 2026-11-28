@@ -43,10 +43,7 @@ Checks that need a phone and a piano are under "Owner device checks", not here.
 1. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
     major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
     placement piece; closes course 2.
-2. **Wrong-key hint names from Compose resources** (spec #309; found reviewing #304): the hint text beside the strips still
-    names notes with English letters from `MidiNote.spoken()`, so a translated build would name the same key two ways;
-    spell the hint's notes with the key-name string resources the strips use.
-3. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
+2. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
     flat, so a leading-tone sharp (C♯ in D minor) reads as D♭; and the lesson cards' staff still spells sharps in every
     key. Spell by the key's scale degrees and make the card staff use the engine's spelled step.
 
