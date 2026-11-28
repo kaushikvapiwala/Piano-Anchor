@@ -19,13 +19,19 @@ that with one button and a weekly goal.
 3. The weekly goal replaces the day streak. `WeekPause` counts days, streak weeks and pauses; `Settings.pausedWeeks`
    stores the Mondays of paused weeks. At most two pauses are unused, one returns four weeks after use. A paused week
    counts as met.
-4. Finished steps are kept in memory (`SessionProgress`, one per app run), not stored: a restart of the app starts the
-   day's session again. No new port, no new library.
+4. Finished steps are stored with the settings (`Settings.sessionDay`, `sessionFinished`, `sessionCompleted`, written
+   through `SessionProgress`), so a restart of the app resumes the day's session after its finished steps, and a day
+   whose recap was reached starts over. If the store fails, the run carries on from a copy in memory. No new port, no
+   new library. (Amended 2026-11-28: it was memory-only.)
 5. The recap's tip is a typed value (passage title and bars), and the sentence is built from string resources, so
    no UI text lives in the engine.
 6. `rememberReduceMotion` moved from the lesson feature to `ui/shell` so both features share it.
 
 ## Consequences
-Today's per-card layout, its strings and goldens are removed. The practise step ends when its run is saved, without the
-Results screen. The play-along step and persisted session progress are left for later specs. The new thresholds are in
+Today's per-card layout, its strings and goldens are removed. A Practise or Sight-read step ends on the Results screen
+(amended 2026-11-28): the same headline, tiles and spot loop as outside the session, but the primary button reads
+"Continue", which marks the step finished and returns to the session; "Try again" and the spot loop stay inside the
+step, and back asks "Leave today's session?". A pedal tap presses Continue unless the passage has pedal marks. The
+play-along step still ends when its run is saved. The weekly streak reads practice days in windows of
+`STREAK_READ_WEEKS` weeks, going further back only while every week of the window met its goal. The new thresholds are in
 `Tunables`.

@@ -150,7 +150,8 @@ private sealed interface Destination {
      * bars of the passage one rung below [rung] (a spot loop); "Play it" then plays the whole passage at [rung].
      * [fromLesson] is the concept whose lesson opened it: Results then offers "Finish lesson". A [placement] run is a
      * piece of the onboarding's placement test, hosted in the onboarding (no Results). A [flowStep] is a step of the
-     * one-tap session: finishing it returns to the session without Results. [backing] is the session's play-along
+     * one-tap session: finishing it opens Results with "Continue" back to the session (a [backing] play-along step
+     * returns to the session at once). [backing] is the session's play-along
      * step: chords and click, on a timed rung.
      */
     data class Practice(
@@ -316,7 +317,7 @@ private fun Navigation(
         }
 
         is Destination.Results -> {
-            ResultsRoute(current, go = { go(it) })
+            ResultsRoute(current, home, go = { go(it) })
         }
     }
 }
@@ -361,7 +362,7 @@ private fun PracticeDestination(
             current,
             onBack = { go(current.from) },
             onFinished = { id, rung, _ ->
-                go(if (current.flowStep) home() else Destination.Results(id, rung, current))
+                go(if (current.flowStep && current.backing) home() else Destination.Results(id, rung, current))
             },
             onPlayWhole = { rung -> go(current.copy(rung = rung, spot = null)) },
         )
@@ -599,6 +600,7 @@ private fun CalibrationRoute(
 @Composable
 private fun ResultsRoute(
     results: Destination.Results,
+    home: () -> Destination,
     go: (Destination) -> Unit,
 ) {
     val viewModel: ResultsViewModel =
@@ -612,20 +614,26 @@ private fun ResultsRoute(
     val leave: (Destination) -> Unit = { to ->
         scope.launch { viewModel.releasePiano() }.invokeOnCompletion { go(to) }
     }
-    val onBack = { leave(results.practice.from) }
+    val askLeave = LocalLeaveGuard.current
+    val inSession = results.practice.flowStep
+    // Back from a session step asks "Leave today's session?" like the step itself does.
+    val onBack = { askLeave { leave(results.practice.from) } }
     val onTryAgain = { leave(results.practice) }
     val lesson = results.practice.fromLesson
     val onFinishLesson =
         lesson?.let { skillId -> { leave(Destination.Lesson(results.practice.device, skillId, LessonStep.RECAP)) } }
+    // The session marks the step finished when it gets control back.
+    val onContinue = if (inSession) ({ leave(home()) }) else null
     BackHandler(onBack = onBack)
     // A tap of the sustain pedal does what the primary button does.
-    LaunchedEffect(viewModel) { viewModel.pedalContinues.collect { (onFinishLesson ?: onTryAgain)() } }
+    LaunchedEffect(viewModel) { viewModel.pedalContinues.collect { (onContinue ?: onFinishLesson ?: onTryAgain)() } }
     ResultsScreen(
         state,
         onBack = onBack,
         onTryAgain = onTryAgain,
         onRetry = viewModel::retry,
         onFinishLesson = onFinishLesson,
+        onContinue = onContinue,
         pedalHint = pedalHint,
         onLoopBars = { spot ->
             (state as? ResultsState.Ready)?.let {

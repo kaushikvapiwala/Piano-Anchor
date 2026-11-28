@@ -64,6 +64,31 @@ class ResultsScreenTest {
         }
 
     @Test
+    fun inTheSessionContinueIsPrimaryAndTryAgainStays() =
+        runComposeUiTest {
+            val calls = mutableListOf<String>()
+            setContent {
+                PianoAnchorTheme {
+                    ResultsScreen(
+                        ready.copy(spot = BarRange(1, 2)),
+                        onBack = { calls += "back" },
+                        onTryAgain = { calls += "try again" },
+                        onRetry = {},
+                        onLoopBars = { calls += "loop" },
+                        onContinue = { calls += "continue" },
+                    )
+                }
+            }
+
+            onNodeWithText("Continue").performClick()
+            onNodeWithText("Try again").performClick()
+            onNodeWithText("Loop bars 1\u20132").performClick()
+
+            assertEquals(listOf("continue", "try again", "loop"), calls)
+            onNodeWithText("Back to Today").assertDoesNotExist()
+        }
+
+    @Test
     fun aSightReadingResultNamesTheLevelAndHowItMoved() =
         runComposeUiTest {
             var sight by mutableStateOf(SightOutcome(2, SightChange.DOWN, 1))

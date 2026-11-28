@@ -69,3 +69,9 @@ reached the goal or were paused, plus this week if it does. A paused week counts
 `WEEK_PAUSES_MAX` pauses can be unused; a pause stays used for `WEEK_PAUSE_REFILL_WEEKS` weeks counting from its own
 week, then comes back. Only the current week can be paused, any day of it including Sunday; the paused Mondays live in
 `Settings.pausedWeeks`.
+
+`WeekStatusUseCase` feeds it the practice days without reading the whole history: it reads the days of the last
+`STREAK_READ_WEEKS` weeks and, only when every earlier week of that window met its goal or was paused, the window
+before it, and so on until a week missed or nothing older turns up. The streak equals the one an unbounded read gives.
+The session's own progress (finished steps of the learner day, whether its recap was reached) is stored in `Settings`
+and a new day replaces it on its first write.
