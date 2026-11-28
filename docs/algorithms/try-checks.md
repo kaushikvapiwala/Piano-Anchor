@@ -91,6 +91,20 @@ phone speaker, lighting the keys as they sound:
 | Passage | the passage at its written tempo |
 | AnyKey | nothing to hear: the screen says "Watch the hand" |
 
+### The hand
+`HandDemo.of(demo, hand, position)` turns a demo into a `HandTimeline`. The thumb goes over the lowest white key of the
+concept's hand position (for the left hand the highest), so a demo that stops short of the position's edge keeps the
+position's fingering: the single key C3 of left-hand C position is finger 5. The position is the concept card scene's
+stage keys, used only when that scene has a hand, holds at most `HAND_MAX_WHITE_SPAN` white keys and contains every
+demo note; otherwise the thumb goes over the lowest white key the demo plays (left: the highest). Finger k is over the
+white key k - 1 places further (left: lower). Each tone becomes
+a `FingerPress` for the finger over its key, so a repeated note keeps its finger and a chord presses several at once.
+There is no hand (null, and the See step looks plain) when the demo has no tones, plays a black key, or spans more
+than `HAND_MAX_WHITE_SPAN` white keys: the app never invents a fingering. The lesson passes the concept's hand (its
+card scene's, right when it has none). The ViewModel exposes the timeline and the time into the demo; the screen
+puts a finger down while its press is active, keeps the hand `HAND_HOLD_AFTER_MS` after the last press, fades it and
+shows "Your turn". A See step that moves on by itself drops the hand with the step.
+
 A Try with a click (Repeat, Hold, StressBeatOne, Rhythm) starts the metronome with a one-bar count-in ("3, 2, 1") before notes
 count. A Try passes after `tryRepsNeeded` clean checks in a row: `LESSON_TRY_REPS`, or `LESSON_TRY_REPS_LONG` when the
 check has `LESSON_TRY_LONG_NOTES` or more notes, or 1 for a check the app can't verify (`AnyKey`, `Passage`). A wrong

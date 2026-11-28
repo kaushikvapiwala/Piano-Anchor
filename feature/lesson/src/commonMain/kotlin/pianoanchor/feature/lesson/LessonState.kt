@@ -7,6 +7,7 @@ import pianoanchor.core.model.Passage
 import pianoanchor.core.model.Skill
 import pianoanchor.core.model.TryCheck
 import pianoanchor.engine.content.Curriculum
+import pianoanchor.engine.lesson.HandTimeline
 import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.engine.lesson.TryProgress
 
@@ -35,7 +36,8 @@ public data class RecapText(
  * See, held in Try) and the [recap] (only in the Recap step). [countIn] is the numeral of the count-in (3, 2, 1) of a
  * Try with a click, null otherwise. [pedalControl] is true while a pedal tap may continue the lesson (the setting is on
  * and the concept does not use the pedal as music). A Try passes after [repsNeeded] clean checks in a row: [cleanReps]
- * is how many it has so far (a wrong key resets it to 0).
+ * is how many it has so far (a wrong key resets it to 0). In See, [seeHand] is the hand that plays the demo (null: no
+ * hand) and [seeElapsedMs] the time into the demo, which decides which fingers are down (0 when not playing).
  */
 public data class LessonState(
     val skill: Skill,
@@ -51,6 +53,8 @@ public data class LessonState(
     val cleanReps: Int = 0,
     val repsNeeded: Int = 1,
     val noteLabels: NoteLabels = NoteLabels(),
+    val seeHand: HandTimeline? = null,
+    val seeElapsedMs: Long = 0,
 ) {
     /** True when the step shows "Tap the pedal to continue": a tap acts here and the piano is connected. */
     val pedalHint: Boolean

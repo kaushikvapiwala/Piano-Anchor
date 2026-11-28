@@ -93,7 +93,6 @@ internal fun CardFrame(
     val palette = ScenePalette(colors, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary)
     val outline = MaterialTheme.colorScheme.outlineVariant
     val ink = MaterialTheme.colorScheme.onSurface
-    val handInk = MaterialTheme.colorScheme.onSurfaceVariant
     val ring = MaterialTheme.colorScheme.onSurface
     val captionStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, color = ink)
     val chipStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = palette.onAccent)
@@ -113,7 +112,7 @@ internal fun CardFrame(
         scene.stage.staff?.let { drawStaff(it, stage, colors.staffLine) }
         drawKeys(stage, colors)
         active.forEach { drawAction(it, scene, stage, palette, outline, ring, measurer, captionStyle, chipStyle) }
-        scene.stage.hand?.let { drawHand(it, active, stage, handInk, palette, measurer, chipStyle) }
+        scene.stage.hand?.let { drawHand(it, active, stage, palette, measurer, chipStyle) }
     }
 }
 

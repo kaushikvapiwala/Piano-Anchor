@@ -34,6 +34,11 @@ the Use piece is played clean once with no key hints, and the concept is Learned
 later day. This changes only what "passed" and "Learned" mean (`docs/course/beginner-course.md`, "Mastery"); nothing is
 locked by them.
 
+## Amendment (2026-11-28): fingers only, a hand in See
+The drawn hand loses its palm everywhere (card scenes too): five rounded finger outlines with number badges. The See
+step gains a hand that plays the demo on the key strip (design board R2, DecideHand A). Still Compose drawing, no new
+library, no hand in Try, Practice or songs.
+
 ## Consequences
 The content model gains concept cards and lesson steps, the practice flow gains See, Try and Recap, and the skill
 graph's `unlocked` becomes a suggestion. Existing passages are moved into the new map. The work is split into ROADMAP

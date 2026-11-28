@@ -1162,4 +1162,31 @@ public object Tunables {
      * Source: owner decision 2026-11-25.
      */
     public const val WEEK_PAUSE_REFILL_WEEKS: Int = 4
+
+    /**
+     * How far, in dp, a finger of the lesson's See hand moves down into its key while the key sounds.
+     *
+     * Why: a visible press without the finger leaving its key.
+     *
+     * Source: design board R2 (Piano Coach Mockup, Lesson).
+     */
+    public const val HAND_PRESS_DEPTH_DP: Int = 4
+
+    /**
+     * How long the See hand stays after the last press, in milliseconds, before it fades and the "Your turn" cue shows.
+     *
+     * Why: lets the last press register before the cue.
+     *
+     * Source: design board R2 (Piano Coach Mockup, Lesson).
+     */
+    public const val HAND_HOLD_AFTER_MS: Long = 600
+
+    /**
+     * The most white keys a See demo may span for the hand to show: one hand position, no finger crossing.
+     *
+     * Why: five fingers cover five white keys; a wider demo would need a position change the hand can't draw.
+     *
+     * Source: the five-finger position of beginner method books.
+     */
+    public const val HAND_MAX_WHITE_SPAN: Int = 5
 }

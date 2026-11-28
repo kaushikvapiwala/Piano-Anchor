@@ -308,7 +308,11 @@ the current step; only this pane changes between steps. A key strip runs along t
   current name in bold. Any dot jumps to its step. TalkBack reads "Step 3 of 5, Try, current". When the Try is a
   passage the Try dot reads "In Use" (TalkBack "Step 3 of 5, Try, in Use") and jumps to Use.
 - **Why**: the card's animation (when the concept has one; the left pane shows it in the other steps), the card's Why line and "Next". **See**: "Watch and listen: the keys light as they sound." with "Play again"
-  (off while sounding) and "Skip"; a concept with nothing to hear says "Watch the hand" with "Next". **Try**: the
+  (off while sounding) and "Skip"; when a hand can play the demo (`HandDemo`: white keys only, at most five of them),
+  five fingers with number badges sit over the key strip, the thumb on the lowest key (the left hand: the highest),
+  and each presses its key (4 dp down, darker fill, solid badge) as it sounds; after the last press the hand stays
+  0.6 s and fades, then a "Your turn" chip shows above the strip. Reduced motion: nothing moves or fades, only the
+  pressed finger's fill and badge change. TalkBack reads "Fingers 1, 2, 3 play C, D, E" on the strip; a concept with nothing to hear says "Watch the hand" with "Next". **Try**: the
   per-check instruction, the progress ("3 of 8", "✓ Well done" when passed), "That was D♯4. Waiting for D4." after a
   wrong key (a polite live region) and a big count-in numeral for checks with a click; "Skip" is always there; a
   dropped piano is explained in place. **Use**: the first passage's title, "Play it" (opens Practice in wait mode, which
@@ -363,8 +367,8 @@ new kind of action extends the vocabulary in its own spec and this section; it n
   accent chip with on-accent text; the staff uses the practice staff's colour; the hand is an outline in
   on-surface-variant.
 - **Strokes**: one weight, 2 dp, for the hand, outlines, key borders and the staff.
-- **Hand**: a flat outline of a rounded palm and five finger arcs, the same in every scene, with the thumb over the
-  pose's key (mirrored for the left hand). A curved pose changes the finger arcs only.
+- **Hand**: five rounded plum-outline fingers and no palm (a curved pose bends them), the same in every scene, with the thumb over the
+  pose's key (mirrored for the left hand). A curved pose bends the fingers only.
 - **Captions**: at most 24 characters, one at a time, so they fit the narrow pane at font scale 2.0. They are content
   text and not translated yet.
 - **Goldens**: every scene at its midpoint frame, light and dark (`CardScene_*` in `feature/lesson/screenshots/`).
@@ -441,7 +445,11 @@ the current step; only this pane changes between steps. A key strip runs along t
   current name in bold. Any dot jumps to its step. TalkBack reads "Step 3 of 5, Try, current". When the Try is a
   passage the Try dot reads "In Use" (TalkBack "Step 3 of 5, Try, in Use") and jumps to Use.
 - **Why**: the card's animation (when the concept has one; the left pane shows it in the other steps), the card's Why line and "Next". **See**: "Watch and listen: the keys light as they sound." with "Play again"
-  (off while sounding) and "Skip"; a concept with nothing to hear says "Watch the hand" with "Next". **Try**: the
+  (off while sounding) and "Skip"; when a hand can play the demo (`HandDemo`: white keys only, at most five of them),
+  five fingers with number badges sit over the key strip, the thumb on the lowest key (the left hand: the highest),
+  and each presses its key (4 dp down, darker fill, solid badge) as it sounds; after the last press the hand stays
+  0.6 s and fades, then a "Your turn" chip shows above the strip. Reduced motion: nothing moves or fades, only the
+  pressed finger's fill and badge change. TalkBack reads "Fingers 1, 2, 3 play C, D, E" on the strip; a concept with nothing to hear says "Watch the hand" with "Next". **Try**: the
   per-check instruction, the progress ("3 of 8", "✓ Well done" when passed), "That was D♯4. Waiting for D4." after a
   wrong key (a polite live region) and a big count-in numeral for checks with a click; "Skip" is always there; a
   dropped piano is explained in place. **Use**: the first passage's title, "Play it" (opens Practice in wait mode, which
@@ -496,8 +504,8 @@ new kind of action extends the vocabulary in its own spec and this section; it n
   accent chip with on-accent text; the staff uses the practice staff's colour; the hand is an outline in
   on-surface-variant.
 - **Strokes**: one weight, 2 dp, for the hand, outlines, key borders and the staff.
-- **Hand**: a flat outline of a rounded palm and five finger arcs, the same in every scene, with the thumb over the
-  pose's key (mirrored for the left hand). A curved pose changes the finger arcs only.
+- **Hand**: five rounded plum-outline fingers and no palm (a curved pose bends them), the same in every scene, with the thumb over the
+  pose's key (mirrored for the left hand). A curved pose bends the fingers only.
 - **Captions**: at most 24 characters, one at a time, so they fit the narrow pane at font scale 2.0. They are content
   text and not translated yet.
 - **Goldens**: every scene at its midpoint frame, light and dark (`CardScene_*` in `feature/lesson/screenshots/`).

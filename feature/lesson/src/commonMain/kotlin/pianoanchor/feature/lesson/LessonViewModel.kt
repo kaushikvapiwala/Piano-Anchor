@@ -24,6 +24,7 @@ import pianoanchor.core.model.MidiDeviceUnavailableException
 import pianoanchor.core.model.NoteOff
 import pianoanchor.core.model.NoteOn
 import pianoanchor.core.model.Passage
+import pianoanchor.core.model.SceneHand
 import pianoanchor.core.model.StorageUnavailableException
 import pianoanchor.core.model.Tone
 import pianoanchor.core.model.TryCheck
@@ -39,6 +40,7 @@ import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.learner.LearnerModel
 import pianoanchor.engine.lesson.CourseProgress
 import pianoanchor.engine.lesson.Demo
+import pianoanchor.engine.lesson.HandDemo
 import pianoanchor.engine.lesson.LessonDemo
 import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.engine.lesson.NoteLabelsUseCase
@@ -208,6 +210,8 @@ public class LessonViewModel(
                 litKeys = emptySet(),
                 recap = null,
                 countIn = null,
+                seeHand = null,
+                seeElapsedMs = 0,
             )
         }
         if (persist) viewModelScope.launch { save(step) }
@@ -277,7 +281,13 @@ public class LessonViewModel(
     // --- See ---
 
     private suspend fun playDemo(demo: Demo) {
-        mutableState.update { it.copy(playing = true) }
+        // The card scene's stage names the concept's hand and its five-key position (only when the scene has a hand).
+        val stage =
+            mutableState.value.scene
+                ?.stage
+                ?.takeIf { it.hand != null }
+        val hand = HandDemo.of(demo, stage?.hand ?: SceneHand.RIGHT, stage?.keys)
+        mutableState.update { it.copy(playing = true, seeHand = hand, seeElapsedMs = 0) }
         try {
             coroutineScope {
                 launch { lightKeys(demo.tones) }
@@ -290,7 +300,7 @@ public class LessonViewModel(
         } finally {
             withContext(NonCancellable) {
                 if (demo.clickBpm != null) metronome.stop()
-                mutableState.update { it.copy(playing = false, litKeys = emptySet()) }
+                mutableState.update { it.copy(playing = false, litKeys = emptySet(), seeElapsedMs = 0) }
             }
         }
     }
@@ -323,7 +333,10 @@ public class LessonViewModel(
             delay(change.atMs - at)
             at = change.atMs
             mutableState.update {
-                it.copy(litKeys = if (change.on) it.litKeys + change.note else it.litKeys - change.note)
+                it.copy(
+                    litKeys = if (change.on) it.litKeys + change.note else it.litKeys - change.note,
+                    seeElapsedMs = change.atMs,
+                )
             }
         }
     }

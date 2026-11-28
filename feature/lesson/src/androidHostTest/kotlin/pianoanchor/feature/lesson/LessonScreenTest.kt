@@ -1,5 +1,8 @@
 package pianoanchor.feature.lesson
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -13,6 +16,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import pianoanchor.core.model.LessonStep
+import pianoanchor.engine.Tunables
 import pianoanchor.engine.content.Skills
 import pianoanchor.ui.shell.PianoAnchorTheme
 import kotlin.test.assertEquals
@@ -94,6 +98,52 @@ class LessonScreenTest {
             setContent { PianoAnchorTheme { LessonScreen(state, LessonActions()) } }
 
             onNodeWithText("Play again").assertIsNotEnabled()
+        }
+
+    @Test
+    fun theStripNamesTheFingersAndNotesOfTheHand() =
+        runComposeUiTest {
+            val state = lessonState(LessonStep.SEE, seeHand = cPositionHand(), playing = true)
+            setContent { PianoAnchorTheme { LessonScreen(state, LessonActions(), reduceMotion = true) } }
+
+            onNodeWithContentDescription("Fingers 1, 2, 3, 4, 5 play C, D, E, F, G").assertExists()
+        }
+
+    @Test
+    fun yourTurnShowsOnceTheHandHasFaded() =
+        runComposeUiTest {
+            val state = lessonState(LessonStep.SEE, seeHand = cPositionHand())
+            setContent { PianoAnchorTheme { LessonScreen(state, LessonActions(), reduceMotion = true) } }
+
+            mainClock.advanceTimeBy(Tunables.HAND_HOLD_AFTER_MS + 100)
+
+            onNodeWithText("Your turn").assertIsDisplayed()
+        }
+
+    @Test
+    fun yourTurnWaitsForTheHoldAndNeverShowsDuringTheDemo() =
+        runComposeUiTest {
+            var state by mutableStateOf(lessonState(LessonStep.SEE, seeHand = cPositionHand(), playing = true))
+            setContent { PianoAnchorTheme { LessonScreen(state, LessonActions(), reduceMotion = false) } }
+            mainClock.advanceTimeBy(Tunables.HAND_HOLD_AFTER_MS * 2)
+            onNodeWithText("Your turn").assertDoesNotExist()
+
+            state = state.copy(playing = false)
+            mainClock.advanceTimeBy(Tunables.HAND_HOLD_AFTER_MS / 2)
+            onNodeWithText("Your turn").assertDoesNotExist()
+            mainClock.advanceTimeBy(Tunables.HAND_HOLD_AFTER_MS + 1_000)
+            onNodeWithText("Your turn").assertExists()
+        }
+
+    @Test
+    fun noHandMeansNoFingerDescriptionAndNoCue() =
+        runComposeUiTest {
+            val state = lessonState(LessonStep.SEE, skill = Skills.HAND_SHAPE)
+            setContent { PianoAnchorTheme { LessonScreen(state, LessonActions(), reduceMotion = true) } }
+
+            mainClock.advanceTimeBy(Tunables.HAND_HOLD_AFTER_MS + 100)
+
+            onNodeWithText("Your turn").assertDoesNotExist()
         }
 
     @Test

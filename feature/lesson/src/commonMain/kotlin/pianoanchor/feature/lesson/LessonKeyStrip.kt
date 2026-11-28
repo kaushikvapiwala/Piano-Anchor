@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -19,21 +21,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.TryCheck
 import pianoanchor.engine.lesson.NoteLabels
 import pianoanchor.engine.lesson.NoteNameRule
+import pianoanchor.feature.lesson.resources.Res
+import pianoanchor.feature.lesson.resources.lesson_see_your_turn
 import pianoanchor.ui.shell.KeyLetters
 import pianoanchor.ui.shell.keyLetterColor
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.rememberReduceMotion
 
-private val WHITE_KEY_WIDTH = 24.dp
-private val WHITE_PITCH = 26.dp
+internal val WHITE_KEY_WIDTH = 24.dp
+internal val WHITE_PITCH = 26.dp
 private val BLACK_KEY_WIDTH = 16.dp
 private val WHITE_KEY_HEIGHT = 76.dp
 private val BLACK_KEY_HEIGHT = 46.dp
@@ -50,8 +58,21 @@ private val BLACK_PITCH_CLASSES = setOf(1, 3, 6, 8, 10)
 
 private val MidiNote.isBlack: Boolean get() = number % NOTES_PER_OCTAVE in BLACK_PITCH_CLASSES
 
-/** The keys the strip shows for [state]: whole octaves (C to B) around the notes of its Try and Use, at least two. */
-internal fun lessonKeyRange(state: LessonState): IntRange = keyRange(state.check, passageNotes(state))
+/**
+ * The keys the strip shows for [state]: whole octaves (C to B) around the notes of its Try and Use, at least two, plus
+ * the hand position of the concept's card scene (its stage keys when it draws a hand), so the See hand always has its
+ * five keys on the strip.
+ */
+internal fun lessonKeyRange(state: LessonState): IntRange =
+    keyRange(state.check, passageNotes(state) + handPosition(state))
+
+private fun handPosition(state: LessonState): List<Int> =
+    state.scene
+        ?.stage
+        ?.takeIf { it.hand != null }
+        ?.keys
+        ?.let { listOf(it.first, it.last) }
+        .orEmpty()
 
 /** The keys a strip shows for [check] and any [extra] notes: whole octaves (C to B) around them, at least two. */
 internal fun keyRange(
@@ -91,20 +112,55 @@ private fun passageNotes(state: LessonState): List<Int> =
 
 /**
  * The key strip along the bottom: keys light while they sound or are held, the key of a wrong press shows grey and
- * the expected key glows in the accent ([LessonState.glowKeys]).
+ * the expected key glows in the accent ([LessonState.glowKeys]). In See, the demo's hand ([LessonState.seeHand]) plays
+ * over the keys, then fades and "Your turn" shows; the strip's description names the fingers and notes. [reduceMotion]
+ * keeps the hand still (only the pressed finger's fill and badge change); [fade] is its hold and fade after the demo.
  */
 @Composable
 internal fun LessonKeyStrip(
     state: LessonState,
     modifier: Modifier = Modifier,
+    reduceMotion: Boolean = rememberReduceMotion(),
+    fade: HandFade =
+        rememberHandFade(state.seeHand != null && state.step == LessonStep.SEE, state.playing, reduceMotion),
 ) {
     val wrong = state.tryProgress?.lastWrong.takeIf { state.step == LessonStep.TRY }
-    KeyStrip(lessonKeyRange(state), state.litKeys, state.glowKeys, wrong, modifier, state.noteLabels)
+    val timeline = state.seeHand.takeIf { state.step == LessonStep.SEE }
+    val overlay =
+        timeline
+            ?.let { HandOverlay(it, state.seeElapsedMs, state.playing, fade.alpha, reduceMotion) }
+            .takeUnless { fade.cue }
+    val description = timeline?.let { seeFingersDescription(it) }
+    Box(modifier.then(if (description == null) Modifier else Modifier.semantics { contentDescription = description })) {
+        KeyStrip(
+            lessonKeyRange(state),
+            state.litKeys,
+            state.glowKeys,
+            wrong,
+            labels = state.noteLabels,
+            hand = overlay,
+            handSpace = if (timeline == null) 0.dp else HAND_SPACE,
+        )
+        if (fade.cue) {
+            Text(
+                stringResource(Res.string.lesson_see_your_turn),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimary,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
+    }
 }
 
 /**
  * A strip of the keys in [range]: [litKeys] light up, [glowKeys] glow in the accent and the [wrong] key shows grey.
- * [labels] decide the letters: the glowing keys are the ones to play, and a wrong key letters itself and them.
+ * [labels] decide the letters: the glowing keys are the ones to play, and a wrong key letters itself and them. A
+ * [hand] is drawn over the keys in the [handSpace] above them.
  */
 @Composable
 internal fun KeyStrip(
@@ -114,41 +170,47 @@ internal fun KeyStrip(
     wrong: Int?,
     modifier: Modifier = Modifier,
     labels: NoteLabels = NoteLabels(),
+    hand: HandOverlay? = null,
+    handSpace: Dp = 0.dp,
 ) {
     val notes = range.map(::MidiNote)
     // The hint shows only while the check is live (a glow); a stale wrong key letters nothing.
     val hinted = if (wrong == null || glowKeys.isEmpty()) emptySet() else glowKeys + wrong
     val whites = notes.filterNot { it.isBlack }
     val width = WHITE_PITCH * whites.size - (WHITE_PITCH - WHITE_KEY_WIDTH)
-    Box(modifier.horizontalScroll(rememberScrollState()).size(width, WHITE_KEY_HEIGHT)) {
-        whites.forEachIndexed { i, note ->
-            Key(
-                note,
-                litKeys,
-                glowKeys,
-                wrong,
-                labels.label(note.number, glowKeys, hinted),
-                WHITE_KEY_WIDTH,
-                WHITE_KEY_HEIGHT,
-                WHITE_PITCH * i,
-                black = false,
-            )
+    Box(modifier.horizontalScroll(rememberScrollState()).size(width, WHITE_KEY_HEIGHT + handSpace)) {
+        Box(Modifier.align(Alignment.BottomStart).size(width, WHITE_KEY_HEIGHT)) {
+            whites.forEachIndexed { i, note ->
+                Key(
+                    note,
+                    litKeys,
+                    glowKeys,
+                    wrong,
+                    labels.label(note.number, glowKeys, hinted),
+                    WHITE_KEY_WIDTH,
+                    WHITE_KEY_HEIGHT,
+                    WHITE_PITCH * i,
+                    black = false,
+                )
+            }
+            notes.filter { it.isBlack }.forEach { note ->
+                val whitesBelow = whites.count { it.number < note.number }
+                val x = WHITE_PITCH * whitesBelow - (WHITE_PITCH - WHITE_KEY_WIDTH) / 2 - BLACK_KEY_WIDTH / 2
+                Key(
+                    note,
+                    litKeys,
+                    glowKeys,
+                    wrong,
+                    labels.label(note.number, glowKeys, hinted),
+                    BLACK_KEY_WIDTH,
+                    BLACK_KEY_HEIGHT,
+                    x,
+                    black = true,
+                )
+            }
         }
-        notes.filter { it.isBlack }.forEach { note ->
-            val whitesBelow = whites.count { it.number < note.number }
-            val x = WHITE_PITCH * whitesBelow - (WHITE_PITCH - WHITE_KEY_WIDTH) / 2 - BLACK_KEY_WIDTH / 2
-            Key(
-                note,
-                litKeys,
-                glowKeys,
-                wrong,
-                labels.label(note.number, glowKeys, hinted),
-                BLACK_KEY_WIDTH,
-                BLACK_KEY_HEIGHT,
-                x,
-                black = true,
-            )
-        }
+        val thumb = whites.indexOfFirst { it.number == hand?.timeline?.thumbNote?.number }
+        if (hand != null && thumb >= 0) SeeHand(hand, thumb)
     }
 }
 

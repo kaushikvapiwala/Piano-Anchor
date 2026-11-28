@@ -58,6 +58,7 @@ import pianoanchor.feature.lesson.resources.lesson_step_why
 import pianoanchor.ui.shell.BackButton
 import pianoanchor.ui.shell.displayFontFamily
 import pianoanchor.ui.shell.pianoAnchorColors
+import pianoanchor.ui.shell.rememberReduceMotion
 
 private const val LEFT_PANE_WEIGHT = 0.4f
 private const val RIGHT_PANE_WEIGHT = 0.6f
@@ -69,7 +70,8 @@ private val MORE_HEIGHT = 44.dp
  * The five-step lesson, landscape (`docs/ui/living-studio.md`, "Lesson"): the concept's card on the left (title, the
  * one-line What and a "More" button that opens Why, How and When, the row of step dots), the step's content on the
  * right, and the key strip along the bottom. Only the right pane changes between steps. The dots are buttons that jump
- * to any step. [startMoreOpen] opens "More" at first. Stateless; the card is static.
+ * to any step. [startMoreOpen] opens "More" at first; [reduceMotion] keeps the See hand still.
+ * Stateless; the card is static.
  */
 @Composable
 public fun LessonScreen(
@@ -77,6 +79,7 @@ public fun LessonScreen(
     actions: LessonActions,
     modifier: Modifier = Modifier,
     startMoreOpen: Boolean = false,
+    reduceMotion: Boolean = rememberReduceMotion(),
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.pianoAnchorColors.page) {
         Column(Modifier.safeDrawingPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -84,7 +87,7 @@ public fun LessonScreen(
                 CardPane(state, actions, Modifier.weight(LEFT_PANE_WEIGHT).fillMaxHeight(), startMoreOpen)
                 Box(Modifier.weight(RIGHT_PANE_WEIGHT).fillMaxHeight()) { StepPane(state, actions) }
             }
-            LessonKeyStrip(state, Modifier.padding(top = 6.dp))
+            LessonKeyStrip(state, Modifier.padding(top = 6.dp), reduceMotion)
         }
     }
 }
