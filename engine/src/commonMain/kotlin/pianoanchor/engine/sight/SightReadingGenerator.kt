@@ -163,12 +163,13 @@ private fun slots(
     }
 
 /**
- * Level 14: the right hand walks the white keys C4 to C5 by steps and skips of a third, in quarters and halves, from
- * C4 or C5 to C4 or C5, and climbs past G4 at least once.
+ * Level 14: the right hand walks the white keys C4 to C5 by steps and skips of a third (never the same key twice), in
+ * quarters and halves with no rests, from C4 or C5 to C4 or C5, and climbs past G4 at least once.
  */
 private fun scaleRun(seed: Long): Passage {
     val random = Random(seed)
-    val slots = slots(SCALE_LEVEL, FOUR_FOUR.barTicks, random)
+    // Level 14 uses level 1's rhythm cells: quarters and halves, no rests.
+    val slots = slots(1, FOUR_FOUR.barTicks, random)
     val indices = scaleWalk(slots.size, random)
     return Passage(
         id = SightReadingGenerator.idOf(SCALE_LEVEL, seed),
@@ -184,7 +185,7 @@ private fun scaleRun(seed: Long): Passage {
 }
 
 /**
- * Key indices (0..7) for [count] notes: the first and last on a C (0 or 7), each next within [MAX_SKIP] of the one
+ * Key indices (0..7) for [count] notes: the first and last on a C (0 or 7), each next one or two keys from the one
  * before, at least one above the G. Backtracks out of dead ends.
  */
 private fun scaleWalk(
@@ -198,7 +199,7 @@ private fun scaleWalk(
             path.takeIf { p -> p.last() in edges && p.any { it >= FIRST_ABOVE_G } }.orEmpty()
         } else {
             SCALE_INDICES
-                .filter { if (path.isEmpty()) it in edges else abs(it - path.last()) <= MAX_SKIP }
+                .filter { if (path.isEmpty()) it in edges else abs(it - path.last()) in 1..MAX_SKIP }
                 .shuffled(random)
                 .asSequence()
                 .map { extend(path + it) }

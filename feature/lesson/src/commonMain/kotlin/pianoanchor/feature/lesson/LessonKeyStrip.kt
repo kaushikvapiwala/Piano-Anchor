@@ -97,8 +97,8 @@ internal fun keyRange(
                 listOf(check.range.first, check.range.last)
             }
 
-            is TryCheck.Sequence -> {
-                check.notes
+            is TryCheck.Sequence, is TryCheck.EvenSequence -> {
+                orderedNotes(check)
             }
 
             is TryCheck.Repeat -> {
@@ -125,7 +125,7 @@ internal fun keyRange(
                 check.notes.toList()
             }
 
-            is TryCheck.Legato, is TryCheck.PedalHold, is TryCheck.PedalChange, is TryCheck.EvenSequence -> {
+            is TryCheck.Legato, is TryCheck.PedalHold, is TryCheck.PedalChange -> {
                 pedalCheckNotes(check)
             }
 
@@ -139,11 +139,17 @@ internal fun keyRange(
     return low.coerceAtLeast(LOWEST_KEY)..high.coerceAtMost(HIGHEST_KEY)
 }
 
-/** The notes of a legato, even-sequence or pedal check. */
+/** The notes of a sequence, plain or even (kept apart from [pedalCheckNotes] to keep [keyRange] simple). */
+private fun orderedNotes(check: TryCheck): List<Int> =
+    when (check) {
+        is TryCheck.EvenSequence -> check.notes
+        else -> (check as TryCheck.Sequence).notes
+    }
+
+/** The notes of a legato or pedal check. */
 private fun pedalCheckNotes(check: TryCheck): List<Int> =
     when (check) {
         is TryCheck.Legato -> check.notes
-        is TryCheck.EvenSequence -> check.notes
         is TryCheck.PedalChange -> check.chords.flatten()
         else -> (check as TryCheck.PedalHold).chord.toList()
     }

@@ -308,7 +308,7 @@ internal object ConceptCards {
                 what = "The C major scale an octave below middle C with the left hand.",
                 why = "Both hands need to run along the keys; the left hand crosses the other way.",
                 how =
-                    "Up 5 4 3 2 1, finger 3 crosses over the thumb to A, 2 1; down 1 2 3, thumb under to F, 1 2 3 4 5.",
+                    "Up 5 4 3 2 1, finger 3 crosses over the thumb to A, 2 1; down 1 2 3, thumb under to G, 2 3 4 5.",
                 whenMet = "Now, slowly and evenly with the click.",
             ),
             ConceptCard(

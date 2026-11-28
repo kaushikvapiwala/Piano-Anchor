@@ -47,7 +47,7 @@ itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
   `TRY_RHYTHM_TOLERANCE x 30000 / bpm` ms). A miss adds to `wrongCount`, sets `timing` to `EARLY` or `LATE` and restarts
   the attempt; the press counts as note 1 only when it is `notes[0]`, else `done` is 0 and `notes[0]` is expected. Note 1
   starts at any moment after the count-in. `total` is `notes.size`. The lesson hints are "Steady: wait for the click."
-  (early) and "Keep going with the click; let the thumb slide under early." (late). The app cannot see fingers, so an
+  (early) and "Keep going with the click." (late). The app cannot see fingers, so an
   even scale stands in for a smooth thumb-under.
 - **Chord:** all notes within `CHORD_CLUSTER_MS` of the cluster's first. A note later than that, or outside the chord,
   fails the cluster (`wrongCount` + 1, `done` back to 0); a late chord note starts a new cluster. A repeat inside the
@@ -108,7 +108,7 @@ itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
 | legato-touch | C D E F G F E D C joined (`Legato`) |
 | sustain-pedal | the C chord (C3 E3 G3) with the pedal, hands lifted, left to ring (`PedalHold`) |
 | pedal-changes | C, F, G, C chords (C3 E3 G3; A2 C3 F3; B2 D3 G3) with a pedal change after each (`PedalChange`) |
-| thumb-under | C D E F G F E D C evenly at 60 BPM (`EvenSequence`; C D E, thumb under to F, G and back) |
+| thumb-under | C D E F G A G F E D C evenly at 60 BPM (`EvenSequence`; C D E, thumb under to F, up to A and back) |
 | c-major-scale | C4 to C5 and back, 15 notes evenly at 60 BPM (`EvenSequence`) |
 | g-major-scale | G4 to G5 with F#5 and back, 15 notes evenly at 60 BPM (`EvenSequence`) |
 | lh-c-scale | C3 to C4 and back, 15 notes evenly at 60 BPM (`EvenSequence`) |
@@ -126,7 +126,7 @@ phone speaker, lighting the keys as they sound:
 | FindAll | every target, low to high |
 | Sequence | the notes in order |
 | Repeat, Hold, StressBeatOne | on the click, one beat after it starts; StressBeatOne accents beat 1 by velocity |
-| EvenSequence | the notes in order on the click, one beat after it starts, each sounding a full beat (legato); no hand for a scale (more than `HAND_MAX_WHITE_SPAN` white keys), the card's How gives the fingering |
+| EvenSequence | the notes in order on the click, one beat after it starts, each sounding a full beat (legato); the lesson shows no hand (a position-based hand would draw the wrong fingering), the card's How gives the fingering |
 | Rhythm | the pattern on the click, one beat after it starts, each note sounding half its written length |
 | SoftThenLoud | the note at velocity `LESSON_DEMO_SOFT_VELOCITY`, then at `LESSON_DEMO_LOUD_VELOCITY` |
 | Chord | the notes together |

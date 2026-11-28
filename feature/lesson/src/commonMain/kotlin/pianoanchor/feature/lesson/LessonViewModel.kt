@@ -311,7 +311,17 @@ public class LessonViewModel(
             mutableState.value.scene
                 ?.stage
                 ?.takeIf { it.hand != null }
-        val hand = HandDemo.of(demo, stage?.hand ?: SceneHand.RIGHT, stage?.keys)
+        // A scale's fingering crosses the thumb, which a position-based hand would draw wrongly: no hand.
+        val hand =
+            if (mutableState.value.check is TryCheck.EvenSequence) {
+                null
+            } else {
+                HandDemo.of(
+                    demo,
+                    stage?.hand ?: SceneHand.RIGHT,
+                    stage?.keys,
+                )
+            }
         mutableState.update { it.copy(playing = true, seeHand = hand, seeElapsedMs = 0) }
         try {
             coroutineScope {

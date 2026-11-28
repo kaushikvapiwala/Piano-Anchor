@@ -83,7 +83,7 @@ class TryChecksTest {
     @Test
     fun `the unit 7 checks are the five rows of the spec`() {
         assertEquals(
-            TryCheck.EvenSequence(listOf(60, 62, 64, 65, 67, 65, 64, 62, 60), 60),
+            TryCheck.EvenSequence(listOf(60, 62, 64, 65, 67, 69, 67, 65, 64, 62, 60), 60),
             Curriculum.tryCheck("thumb-under"),
         )
         assertEquals(

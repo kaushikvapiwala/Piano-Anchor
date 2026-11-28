@@ -207,7 +207,7 @@ Unit 7.
 ### Unit 7: Scales with thumb-under (the thumb passes under the hand; closes course 2)
 | # | Concept | Why here | Try |
 |---|---|---|---|
-| 37 | Thumb under | Five fingers reach more than five keys, so tunes can climb past the hand position. | C D E F G F E D C evenly on the click: C D E, thumb under to F, G and back. |
+| 37 | Thumb under | Five fingers reach more than five keys, so tunes can climb past the hand position. | C D E F G A G F E D C evenly on the click: C D E, thumb under to F, up to A and back. |
 | 38 | The C major scale | Most music is built from scales, so playing them smoothly makes tunes easy. | C4 to C5 and back, 15 notes evenly at 60 BPM. |
 | 39 | The G major scale | The same steps as C starting on G, which is why the key of G needs F♯. | G4 to G5 and back, evenly at 60 BPM. |
 | 40 | Left-hand C scale | Both hands need to run along the keys; the left hand crosses the other way. | C3 to C4 and back, evenly at 60 BPM. |

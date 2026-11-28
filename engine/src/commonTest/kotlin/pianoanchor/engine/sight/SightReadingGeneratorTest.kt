@@ -462,7 +462,7 @@ class SightReadingGeneratorTest {
                             .pitch.number,
                     )
                 }.zipWithNext()
-                .forEach { (a, b) -> assertTrue(kotlin.math.abs(a - b) <= 2, "seed $seed: $a to $b") }
+                .forEach { (a, b) -> assertTrue(kotlin.math.abs(a - b) in 1..2, "seed $seed: $a to $b") }
         }
     }
 
@@ -480,16 +480,16 @@ class SightReadingGeneratorTest {
     }
 
     @Test
-    fun level14FillsFourBarsWithQuartersHalvesAndWholesAndRests() {
+    fun level14FillsFourFullBarsWithQuartersAndHalvesOnly() {
         for (seed in 0L until SEEDS) {
             val passage = SightReadingGenerator.passage(14, seed)
             val bar = passage.timeSignature.barTicks
-            val allowed = listOf(TICKS_PER_QUARTER, 2 * TICKS_PER_QUARTER, 4 * TICKS_PER_QUARTER)
+            val allowed = listOf(TICKS_PER_QUARTER, 2 * TICKS_PER_QUARTER)
             assertTrue(passage.steps.all { step -> step.notes.single().lengthTicks in allowed }, "seed $seed")
             bars(passage).forEach { (n, steps) ->
                 assertEquals(n * bar, steps.first().onsetTicks, "seed $seed bar $n starts on beat 1")
                 val played = steps.sumOf { it.notes.single().lengthTicks }
-                assertTrue(played == bar || played == bar - TICKS_PER_QUARTER, "seed $seed bar $n plays $played")
+                assertEquals(bar, played, "seed $seed bar $n")
             }
         }
     }

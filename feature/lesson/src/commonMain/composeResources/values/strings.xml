@@ -42,7 +42,7 @@
     <string name="lesson_try_early">That one came early. Keep the taps even with the click.</string>
     <string name="lesson_try_late">That one came late. Keep the taps even with the click.</string>
     <string name="lesson_try_even_early">Steady: wait for the click.</string>
-    <string name="lesson_try_even_late">Keep going with the click; let the thumb slide under early.</string>
+    <string name="lesson_try_even_late">Keep going with the click.</string>
     <string name="lesson_try_gap">Press the next key as you lift the last one.</string>
     <string name="lesson_try_overlap">Lift the last key as the next one goes down.</string>
     <string name="lesson_try_pedal_early">Change the pedal just after the new chord, not before.</string>

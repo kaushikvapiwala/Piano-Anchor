@@ -32,8 +32,8 @@ same seed, so the pedal line is the only new thing to read. The spans fill each 
 every bar line. Notes are judged as before and the pedal never (marks are drawn, not graded). Levels 1 to 12 carry no
 pedal marks and their exercises are unchanged for a seed.
 
-Level 14 walks the eight white keys C4 to C5 (indices 0 to 7) by steps and skips of a third, using level 3's rhythm
-cells. The first and last note are C4 or C5, and the walk must climb past G4 at least once (backtracking rejects a walk
+Level 14 walks the eight white keys C4 to C5 (indices 0 to 7) by steps and skips of a third (never the same key twice), using level 1's rhythm
+cells (quarters and halves, no rests). The first and last note are C4 or C5, and the walk must climb past G4 at least once (backtracking rejects a walk
 that stays low), so the exercise uses the octave rather than the old five-key position. It draws from its own seeded
 random, so levels 1 to 13 give the same exercise for a seed as before.
 
