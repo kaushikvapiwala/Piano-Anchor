@@ -4,10 +4,14 @@ import pianoanchor.engine.Tunables
 
 // The pedal kinds keep `pedalDown` (with hysteresis), the `notes` of the chord's cluster and `startMs`, its first note.
 
-/** A failed pedal attempt: back to the start with the pedal as it is, one more wrong ([note] is the stray key). */
+/**
+ * A failed pedal attempt: back to the start with the pedal as it is, one more wrong ([note] is the stray key). [atStart]
+ * says the first chord or pedal came too late.
+ */
 internal fun TryState.failed(
     why: TryTiming?,
     note: Int? = null,
+    atStart: Boolean = false,
 ): TryState =
     copy(
         done = 0,
@@ -16,9 +20,10 @@ internal fun TryState.failed(
         lastWrong = note,
         wrongCount = wrongCount + 1,
         timing = why,
+        lateStart = atStart,
     )
 
-/** The cluster with [note] added at [atMs]; the first note starts the window. */
+/** The cluster with [note] added at [atMs]; the first note starts the window. A reset just before it stays shown. */
 internal fun TryState.withClusterNote(
     note: Int,
     atMs: Long,
@@ -27,9 +32,10 @@ internal fun TryState.withClusterNote(
         notes = notes + note,
         held = held + note,
         startMs = if (notes.isEmpty()) atMs else startMs,
-        lastWrong = null,
-        timing = null,
     )
+
+/** The run with the last reset forgotten: a press that is not a reset shows no hint. */
+internal fun TryState.cleared(): TryState = copy(lastWrong = null, timing = null, lateStart = false)
 
 /** True once the cluster of the first chord has run past `CHORD_CLUSTER_MS` without the chord and pedal meeting. */
 internal fun TryState.clusterLapsed(atMs: Long): Boolean =
@@ -100,8 +106,8 @@ private fun TryState.afterWindow(
     val pending = changePending(chord)
     val window = if (pending) Tunables.TRY_PEDAL_CHANGE_MAX_MS else Tunables.CHORD_CLUSTER_MS.toLong()
     return when {
-        notes.isEmpty() || atMs - startMs <= window -> this
+        notes.isEmpty() || atMs - startMs <= window -> cleared()
         pending -> failed(TryTiming.LATE)
-        else -> failed(null)
+        else -> failed(TryTiming.LATE, atStart = done == 0)
     }
 }

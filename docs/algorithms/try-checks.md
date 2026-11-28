@@ -52,16 +52,18 @@ itself (hold length, the beat-1 accent, the spacing of a rhythm's taps).
   pedal is down (pedal first, or pedal down within that window after the cluster's first note). Part 2: every chord key
   comes up with the pedal still down. Part 3: the pedal stays down `TRY_PEDAL_RING_MS` after the last key came up,
   judged when the pedal comes up. A pedal lifted too soon (`timing` = `EARLY`), a note outside the chord, or a cluster
-  or pedal that is late each add to `wrongCount` and reset `done` to 0. A late cluster is noticed at the next event.
+  or pedal that is late each add to `wrongCount` and reset `done` to 0. A late cluster is noticed at the next event and resets with `timing` = `LATE` and `lateStart` (its own hint: press the pedal with the chord, or just before it).
   A pedal pressed and lifted with no note played is not an attempt.
 - **Pedal change:** `PedalChange(chords)`, at least two chords, `total` = number of chords, `expected` null. Chord 1 is
   part 1 of a pedal hold. Each later chord: its notes within `CHORD_CLUSTER_MS`; the pedal must come up at or after its
   first note and down again within `TRY_PEDAL_CHANGE_MAX_MS` of that note. A pedal lifted before the chord's first note
   fails with `EARLY` (the sound breaks); no change in the window, or the next chord started first, fails with `LATE`
   (the chords blur). With no timer, a missed window is judged at the next event past it. Both reset `done` to 0.
+- **Legato, last pair:** the last note finishes the run at its press only when the note before has already come up; if
+  it is still down the run waits and finishes when that note comes up within `TRY_LEGATO_MAX_OVERLAP_MS` (else `OVERLAP`).
 - **The pedal in the run:** `TryRun.onPedal(value, atMs)` takes CC 64. The pedal is down at `PEDAL_DOWN_VALUE` or more
   and up again below `PEDAL_UP_VALUE`; only those crossings count. Checks that do not read the pedal ignore it. The
-  lesson screen feeds the pedal to the run in Try only. The three kinds use no click and no count-in.
+  lesson screen feeds the pedal to the run in Try only. A rep that starts while the pedal is held is seeded with it down (`TryRun(check, pedalDown)`). The three kinds use no click and no count-in.
 - **Passage:** piece concepts play the concept's first passage in wait mode with right notes. The practice screen
   checks it, so `TryRun` rejects it.
 
@@ -136,7 +138,7 @@ Try step: it is part of Use.
 
 ### Legato and pedal demos
 A legato demo plays its notes in order, each for a full beat at 60 BPM into the next. A pedal hold plays the chord for
-`TRY_PEDAL_RING_MS` plus a beat, with a pedal-down cue at the start and a pedal-up cue at the end. A pedal change plays
+one beat, with a pedal-down cue at the start and a pedal-up cue `TRY_PEDAL_RING_MS` after the keys come up. A pedal change plays
 each chord for two beats, with an up-then-down cue just after each new chord. `Demo.pedal` lists the cues
 (`PedalCue(atMs, down)`). On a piano output the demo sends CC 64 (127 or 0) at each cue and lifts a pedal still down
 if it stops; on the phone speaker the notes just sound. The See step draws the cue under the key strip with the same

@@ -151,10 +151,9 @@ class LessonViewModelPedalTryTest {
         }
 
     @Test
-    fun otherControllersAndOtherStepsDoNotReachTheRun() =
+    fun otherControllersDoNotReachTheRun() =
         runTest(dispatcher) {
             val vm = viewModel(TryCheck.PedalHold(chord))
-            pedal(127)
             toTry(vm)
 
             pedal(127, controller = 1)
@@ -244,6 +243,56 @@ class LessonViewModelPedalTryTest {
             vm.goTo(LessonStep.TRY)
             runCurrent()
             assertEquals(false, showsPedalCue(vm.state.value))
+            vm.close()
+        }
+
+    @Test
+    fun aRepThatStartsWithThePedalStillHeldTracksIt() =
+        runTest(dispatcher) {
+            val f = setOf(53, 57, 60)
+            val vm = viewModel(TryCheck.PedalChange(listOf(chord, f)))
+            toTry(vm)
+
+            pedal(127)
+            playChord(chord)
+            wait(500)
+            playChord(f)
+            pedal(0)
+            pedal(127)
+            assertEquals(
+                true,
+                vm.state.value.tryProgress
+                    ?.finished,
+            )
+            advanceTimeBy(Tunables.LESSON_TRY_DONE_PAUSE_MS)
+            runCurrent()
+            assertEquals(
+                false,
+                vm.state.value.tryProgress
+                    ?.finished,
+            )
+
+            // The pedal is still down from the first rep: lifting it later is a real change.
+            playChord(chord)
+            wait(500)
+            playChord(f)
+            pedal(0)
+            pedal(127)
+
+            assertEquals(2, vm.state.value.cleanReps)
+            assertEquals(
+                0,
+                vm.state.value.tryProgress
+                    ?.wrongCount,
+            )
+            vm.close()
+        }
+
+    @Test
+    fun aPedalCheckOnAnyConceptTurnsPedalControlOff() =
+        runTest(dispatcher) {
+            val vm = viewModel(TryCheck.PedalChange(listOf(chord, setOf(53, 57, 60))))
+            assertEquals(false, vm.state.value.pedalControl)
             vm.close()
         }
 }

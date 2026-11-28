@@ -125,13 +125,19 @@ internal data class BeamShape(
     val up: Boolean,
 )
 
-/** The height of the staff box that fits [engraved]'s staves: taller when both staves are drawn. */
-internal fun staffHeightDp(engraved: Engraved): Float =
-    if (Staff.entries.all { staff -> engraved.chords.any { it.staff == staff } }) {
-        GRAND_STAFF_HEIGHT_DP
-    } else {
-        SINGLE_STAFF_HEIGHT_DP
-    }
+/**
+ * The height of the staff box that fits [engraved]'s staves: taller when both staves are drawn, and by
+ * [PEDAL_SPACE_DP] when it has pedal lines.
+ */
+internal fun staffHeightDp(engraved: Engraved): Float {
+    val staves =
+        if (Staff.entries.all { staff -> engraved.chords.any { it.staff == staff } }) {
+            GRAND_STAFF_HEIGHT_DP
+        } else {
+            SINGLE_STAFF_HEIGHT_DP
+        }
+    return if (engraved.pedal.isEmpty()) staves else staves + PEDAL_SPACE_DP
+}
 
 /** The staff positions the key signature's sharps sit on, for [staff]: none for C and for flat keys (not drawn yet). */
 internal fun keySignaturePositions(

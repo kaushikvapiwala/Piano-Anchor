@@ -44,6 +44,7 @@
     <string name="lesson_try_overlap">Lift the last key as the next one goes down.</string>
     <string name="lesson_try_pedal_early">Change the pedal just after the new chord, not before.</string>
     <string name="lesson_try_pedal_late">Lift and press the pedal right after each new chord.</string>
+    <string name="lesson_try_pedal_start">Press the pedal with the chord, or just before it.</string>
     <string name="lesson_try_pedal_hold_early">Keep the pedal down while the sound rings.</string>
     <string name="lesson_pedal_down">Pedal down</string>
     <string name="lesson_pedal_up">Pedal up</string>

@@ -402,7 +402,7 @@ class TryRunTest {
     @Test
     fun `pedal hold a release after the cluster window without the pedal fails the attempt`() {
         val run = TryRun(TryCheck.PedalHold(d)).press(48, at = 0).press(52, at = 10).off(48, 500)
-        assertEquals(TryProgress(0, 3, null, null, false, 1), run.progress)
+        assertEquals(TryProgress(0, 3, null, null, false, 1, TryTiming.LATE, true), run.progress)
     }
 
     @Test
@@ -443,7 +443,7 @@ class TryRunTest {
     @Test
     fun `pedal hold chord long before the pedal does not meet part one`() {
         val run = TryRun(TryCheck.PedalHold(d)).chord(d, 0).pedal(127, 500)
-        assertEquals(TryProgress(0, 3, null, null, false, 1), run.progress)
+        assertEquals(TryProgress(0, 3, null, null, false, 1, TryTiming.LATE, true), run.progress)
         assertEquals(0, run.release(d, 600).progress.done)
     }
 
@@ -474,7 +474,7 @@ class TryRunTest {
         val wrong = TryRun(TryCheck.PedalHold(d)).pedal(127, 0).press(48, at = 10).press(60, at = 20)
         assertEquals(TryProgress(0, 3, null, 60, false, 1), wrong.progress)
         val late = TryRun(TryCheck.PedalHold(d)).pedal(127, 0).press(48, at = 10).press(52, at = 500)
-        assertEquals(TryProgress(0, 3, null, null, false, 1), late.progress)
+        assertEquals(TryProgress(0, 3, null, null, false, 1, TryTiming.LATE, true), late.progress)
         assertEquals(
             1,
             late
@@ -549,7 +549,7 @@ class TryRunTest {
         val wrong = TryRun(change).pedal(127, 0).press(40, at = 10)
         assertEquals(TryProgress(0, 4, null, 40, false, 1), wrong.progress)
         val late = TryRun(change).pedal(127, 0).press(48, at = 0).press(52, at = 500)
-        assertEquals(TryProgress(0, 4, null, null, false, 1), late.progress)
+        assertEquals(TryProgress(0, 4, null, null, false, 1, TryTiming.LATE, true), late.progress)
         assertEquals(
             1,
             late
@@ -580,7 +580,7 @@ class TryRunTest {
         val after = TryRun(change).chord(c, 0).pedal(127, 60)
         assertEquals(1, after.progress.done)
         val tooLate = TryRun(change).chord(c, 0).pedal(127, 500)
-        assertEquals(TryProgress(0, 4, null, null, false, 1), tooLate.progress)
+        assertEquals(TryProgress(0, 4, null, null, false, 1, TryTiming.LATE, true), tooLate.progress)
     }
 
     @Test
@@ -593,5 +593,51 @@ class TryRunTest {
                 .pedal(0, 50)
                 .press(67, at = 100)
         assertEquals(plain.progress, noisy.progress)
+    }
+
+    @Test
+    fun `legato the last note pressed while the one before is held finishes when it comes up in time`() {
+        val held =
+            TryRun(legato)
+                .press(60, at = 0)
+                .press(62, at = 500)
+                .off(60, 510)
+                .press(64, at = 1_000)
+        assertEquals(
+            TryProgress(3, 3, null, null, false, 0),
+            held
+                .off(62, 1_050)
+                .also {
+                    assertTrue(it.progress.finished)
+                }.progress
+                .copy(finished = false),
+        )
+        val late =
+            TryRun(
+                legato,
+            ).press(60, at = 0).press(62, at = 500).off(60, 510).press(64, at = 1_000).off(62, 3_000)
+        assertEquals(TryProgress(0, 3, 60, null, false, 1, TryTiming.OVERLAP), late.progress)
+        val waiting =
+            TryRun(legato)
+                .press(60, at = 0)
+                .press(62, at = 500)
+                .off(60, 510)
+                .press(64, at = 1_000)
+        assertEquals(false, waiting.progress.finished)
+        assertEquals(1, waiting.press(65, at = 1_010).progress.wrongCount)
+    }
+
+    @Test
+    fun `a run seeded with the pedal down sees the first lift as a crossing`() {
+        val run = TryRun(TryCheck.PedalHold(d), pedalDown = true).chord(d, 0)
+        assertEquals(1, run.progress.done)
+        val lifted =
+            TryRun(
+                TryCheck.PedalChange(listOf(d, setOf(53, 57, 60))),
+                pedalDown = true,
+            ).chord(d, 0).pedal(0, 100)
+        assertEquals(TryTiming.EARLY, lifted.progress.timing)
+        assertEquals(1, lifted.progress.wrongCount)
+        assertSame(TryRun(TryCheck.PedalHold(d), pedalDown = true).let { it }.progress.done, 0)
     }
 }

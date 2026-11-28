@@ -373,4 +373,10 @@ class StaffLayoutTest {
         assertNear(layout.finalBarX, line.x2)
         assertTrue(staffLayout(passage(*quarters(4)), WIDE).pedal.isEmpty())
     }
+
+    @Test
+    fun `pedal lines add their space to the staff height`() {
+        val marked = passage(*quarters(4)).copy(pedal = listOf(PedalSpan(0, 4 * Q)))
+        assertEquals(SINGLE_STAFF_HEIGHT_DP + PEDAL_SPACE_DP, staffHeightDp(Engraving.engrave(marked)))
+    }
 }

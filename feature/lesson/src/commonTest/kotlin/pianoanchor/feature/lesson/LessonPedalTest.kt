@@ -79,8 +79,8 @@ class LessonPedalTest {
             ),
             piano.clock,
             startAt,
-            pedalIsMusic,
-            usePassage,
+            pedalIsMusic = pedalIsMusic,
+            usePassage = usePassage,
         ).also { runCurrent() }
 
     private fun TestScope.finishDemo() {

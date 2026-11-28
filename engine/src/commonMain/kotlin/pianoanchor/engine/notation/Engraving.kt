@@ -101,14 +101,8 @@ public data class Engraved(
 
 /** Turns a passage's steps into the symbols a staff draws. Pure music-theory rules; no drawing. */
 public object Engraving {
-    /**
-     * Engraves [passage]; see `docs/algorithms/engraving.md` for every rule. A pedal line is cut at each of
-     * [systemBreakTicks] (where a new system of bars starts), so no line crosses a break.
-     */
-    public fun engrave(
-        passage: Passage,
-        systemBreakTicks: List<Int> = emptyList(),
-    ): Engraved {
+    /** Engraves [passage]; see `docs/algorithms/engraving.md` for every rule. */
+    public fun engrave(passage: Passage): Engraved {
         val barTicks = passage.timeSignature.barTicks
         val lastNoteEnd = passage.steps.fold(0) { end, step -> maxOf(end, step.onsetTicks + step.notes.longest()) }
         val endTicks = (lastNoteEnd + barTicks - 1) / barTicks * barTicks
@@ -126,33 +120,23 @@ public object Engraving {
             chords = chords.sortedWith(compareBy({ it.stepIndex }, { it.staff })),
             rests = rests.sortedWith(compareBy({ it.onsetTicks }, { it.staff })),
             key = passage.keySignature,
-            pedal = pedalLines(passage.pedal, systemBreakTicks),
+            pedal = pedalLines(passage.pedal),
             pedalStaff = if (chords.any { it.staff == Staff.BASS }) Staff.BASS else Staff.TREBLE,
             pedalEachBar = passage.pedal.isNotEmpty() && (0 until endTicks step barTicks).all { it in starts },
         )
     }
 }
 
-/**
- * The pedal spans as lines: spans that meet join into one line with a notch at the joint; a span across a break, and a
- * joint on one, end a line and start the next.
- */
-private fun pedalLines(
-    spans: List<PedalSpan>,
-    breaks: List<Int>,
-): List<EngravedPedalLine> {
-    val pieces =
-        spans.flatMap { span ->
-            val cuts = breaks.filter { it > span.startTicks && it < span.endTicks }.sorted()
-            (listOf(span.startTicks) + cuts + span.endTicks).zipWithNext()
-        }
+/** The pedal spans as lines: spans that meet join into one line with a notch at the joint. */
+private fun pedalLines(spans: List<PedalSpan>): List<EngravedPedalLine> {
     val lines = ArrayList<EngravedPedalLine>()
-    pieces.forEach { (from, to) ->
+    spans.forEach { span ->
         val last = lines.lastOrNull()
-        if (last != null && last.toTicks == from && from !in breaks) {
-            lines[lines.lastIndex] = last.copy(toTicks = to, changeTicks = last.changeTicks + from)
+        if (last != null && last.toTicks == span.startTicks) {
+            lines[lines.lastIndex] =
+                last.copy(toTicks = span.endTicks, changeTicks = last.changeTicks + span.startTicks)
         } else {
-            lines += EngravedPedalLine(from, to, emptyList())
+            lines += EngravedPedalLine(span.startTicks, span.endTicks, emptyList())
         }
     }
     return lines

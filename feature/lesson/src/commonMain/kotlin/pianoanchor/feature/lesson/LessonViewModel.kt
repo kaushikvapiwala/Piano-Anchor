@@ -104,9 +104,9 @@ public class LessonViewModel(
     private val noteLabels: NoteLabelsUseCase,
     private val time: ClockPort,
     private val startAt: LessonStep? = null,
-    private val pedalIsMusic: Boolean = Curriculum.pedalIsMusic(skillId),
-    private val usePassage: Passage? = usePassageOf(skillId),
     tryCheck: TryCheck? = Curriculum.tryCheck(skillId),
+    private val pedalIsMusic: Boolean = Curriculum.pedalIsMusic(skillId, tryCheck),
+    private val usePassage: Passage? = usePassageOf(skillId),
 ) : ViewModel() {
     private val skill = requireNotNull(Curriculum.graph.byId(skillId)) { "unknown skill $skillId" }
     private val card = requireNotNull(Curriculum.card(skillId)) { "skill $skillId has no concept card" }
@@ -148,6 +148,9 @@ public class LessonViewModel(
     /** False during a Try's count-in: notes are not counted. */
     private var accepting = false
     private var speakerOnly = false
+
+    /** Whether the sustain pedal is down (with hysteresis), from every CC 64 the piano sent. */
+    private var pedalHeld = false
     private var closed = false
 
     /** Letters the strip's keys as the learner's setting and progress say, once they are read. */
@@ -401,7 +404,7 @@ public class LessonViewModel(
      */
     private suspend fun beginRep(check: TryCheck) {
         accepting = false
-        run = TryRun(check)
+        run = TryRun(check, pedalHeld)
         mutableState.update { it.copy(tryProgress = run?.progress) }
         val bpm = clickOf(check)
         if (bpm == null) {
@@ -491,7 +494,10 @@ public class LessonViewModel(
 
     /** The sustain pedal (controller 64) reaches the Try's run; other controllers and steps are ignored. */
     private fun onControlChange(event: ControlChange) {
-        if (mutableState.value.step != LessonStep.TRY || event.controller != SUSTAIN_CONTROLLER) return
+        if (event.controller != SUSTAIN_CONTROLLER) return
+        // Kept in every step, so a rep that starts with the pedal held knows it is down.
+        pedalHeld = if (pedalHeld) event.value >= Tunables.PEDAL_UP_VALUE else event.value >= Tunables.PEDAL_DOWN_VALUE
+        if (mutableState.value.step != LessonStep.TRY) return
         advance { it.onPedal(event.value, event.timestampNanos / NANOS_PER_MILLI) }
     }
 

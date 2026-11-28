@@ -330,8 +330,7 @@ class EngravingTest {
     private fun pedalled(
         text: String,
         spans: List<PedalSpan>,
-        breaks: List<Int> = emptyList(),
-    ) = Engraving.engrave(passage(NoteText.parse(text, FOUR_FOUR)).copy(pedal = spans), breaks)
+    ) = Engraving.engrave(passage(NoteText.parse(text, FOUR_FOUR)).copy(pedal = spans))
 
     @Test
     fun aPassageWithoutPedalMarksHasNoPedalLines() {
@@ -357,24 +356,5 @@ class EngravingTest {
         )
         assertFalse(engraved.pedalEachBar)
         assertEquals(Staff.TREBLE, engraved.pedalStaff)
-    }
-
-    @Test
-    fun aSpanAcrossASystemBreakIsTwoLines() {
-        val engraved = pedalled("C4w | D4w", listOf(PedalSpan(0, 2 * bar)), breaks = listOf(bar))
-        assertEquals(
-            listOf(EngravedPedalLine(0, bar, emptyList()), EngravedPedalLine(bar, 2 * bar, emptyList())),
-            engraved.pedal,
-        )
-    }
-
-    @Test
-    fun aChangeOnASystemBreakEndsTheLineInsteadOfNotching() {
-        val spans = listOf(PedalSpan(0, bar), PedalSpan(bar, 2 * bar), PedalSpan(2 * bar, 3 * bar))
-        val engraved = pedalled("C4w | D4w | E4w", spans, breaks = listOf(2 * bar, 5 * bar))
-        assertEquals(
-            listOf(EngravedPedalLine(0, 2 * bar, listOf(bar)), EngravedPedalLine(2 * bar, 3 * bar, emptyList())),
-            engraved.pedal,
-        )
     }
 }

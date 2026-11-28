@@ -16,7 +16,7 @@ internal fun TryState.pressHeld(
     atMs: Long,
 ): TryState {
     if (note !in chord) return failed(null, note)
-    val live = if (clusterLapsed(atMs)) failed(null) else this
+    val live = if (clusterLapsed(atMs)) failed(TryTiming.LATE, atStart = true) else cleared()
     return if (live.done >= 1) {
         live.copy(held = live.held + note, done = 1)
     } else {
@@ -29,7 +29,7 @@ internal fun TryState.releaseHeld(
     note: Int,
     atMs: Long,
 ): TryState {
-    val live = if (clusterLapsed(atMs)) failed(null) else this
+    val live = if (clusterLapsed(atMs)) failed(TryTiming.LATE, atStart = true) else this
     val rest = live.held - note
     return when {
         note !in live.held -> live
@@ -44,7 +44,7 @@ internal fun TryState.pedalHold(
     down: Boolean,
     atMs: Long,
 ): TryState {
-    val live = if (clusterLapsed(atMs)) failed(null) else this
+    val live = if (clusterLapsed(atMs)) failed(TryTiming.LATE, atStart = true) else this
     return when {
         down -> {
             live.copy(pedalDown = true).chordWithPedal(chord.size, atMs)

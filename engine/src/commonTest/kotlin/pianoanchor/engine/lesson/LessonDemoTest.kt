@@ -102,12 +102,11 @@ class LessonDemoTest {
     }
 
     @Test
-    fun pedalHoldKeepsTheChordForTheRingPlusABeatBetweenPedalCues() {
+    fun pedalHoldPlaysTheChordForABeatAndLiftsThePedalAfterTheRing() {
         val demo = LessonDemo.of(TryCheck.PedalHold(setOf(55, 48, 52)))
         assertEquals(listOf(48, 52, 55), notes(demo))
-        val length = Tunables.TRY_PEDAL_RING_MS + 1000
-        assertTrue(demo.tones.all { it.startMs == 0L && it.lengthMs == length })
-        assertEquals(listOf(PedalCue(0, true), PedalCue(length, false)), demo.pedal)
+        assertTrue(demo.tones.all { it.startMs == 0L && it.lengthMs == 1000L })
+        assertEquals(listOf(PedalCue(0, true), PedalCue(1000 + Tunables.TRY_PEDAL_RING_MS, false)), demo.pedal)
         assertNull(demo.clickBpm)
     }
 

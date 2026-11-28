@@ -114,10 +114,9 @@ public object LessonDemo {
 
             else -> {
                 val hold = check as TryCheck.PedalHold
-                val length = Tunables.TRY_PEDAL_RING_MS + PEDAL_BEAT_MS
                 Demo(
-                    hold.chord.sorted().map { Tone(note(it), 0, length) },
-                    pedal = listOf(PedalCue(0, true), PedalCue(length, false)),
+                    hold.chord.sorted().map { Tone(note(it), 0, PEDAL_BEAT_MS) },
+                    pedal = listOf(PedalCue(0, true), PedalCue(PEDAL_BEAT_MS + Tunables.TRY_PEDAL_RING_MS, false)),
                 )
             }
         }

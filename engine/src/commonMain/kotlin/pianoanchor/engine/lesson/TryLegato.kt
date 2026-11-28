@@ -14,7 +14,8 @@ internal fun TryState.pressLegato(
     atMs: Long,
 ): TryState =
     when {
-        note != legato.notes[done] -> {
+        // Past the last note (waiting for the one before it to come up) no key is right.
+        note != legato.notes.getOrNull(done) -> {
             wrong(note)
         }
 
@@ -39,7 +40,7 @@ internal fun TryState.pressLegato(
                 startMs = atMs,
                 lastWrong = null,
                 timing = null,
-                finished = next == legato.notes.size,
+                finished = next == legato.notes.size && !holding,
             )
         }
     }
@@ -59,7 +60,7 @@ internal fun TryState.releaseLegato(
             if (atMs - startMs > Tunables.TRY_LEGATO_MAX_OVERLAP_MS) {
                 brokenLegato(legato, null, atMs, TryTiming.OVERLAP)
             } else {
-                copy(prevDown = false)
+                copy(prevDown = false, finished = done == legato.notes.size)
             }
         }
 

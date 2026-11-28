@@ -97,7 +97,7 @@ class LessonViewModelTest {
             NoteLabelsUseCase(settings, attempts, LearnerModel(Curriculum.graph, learnerRepository), TimeZone.UTC),
             piano.clock,
             startAt,
-            pedalIsMusic,
+            pedalIsMusic = pedalIsMusic,
         ).also { runCurrent() }
 
     private suspend fun savedStep(skill: Skill = Skills.MIDDLE_C) = settings.settings.first().lessonSteps[skill.id]

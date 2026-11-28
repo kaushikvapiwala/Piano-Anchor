@@ -23,7 +23,8 @@ public enum class TryTiming { EARLY, LATE, GAP, OVERLAP }
  * Progress of one Try: [done] of [total] parts, the [lastWrong] key pressed against [expected] (for the gentle hint),
  * [finished]. [expected] is the next key to play, or null where no single key is next. [wrongCount] counts wrong
  * keys and failed attempts. [timing] is why the last rhythm reset happened (for the hint), null when the last press
- * was not a reset.
+ * was not a reset. [lateStart] is true when the reset was a chord or pedal that came too late at the start of a
+ * pedal attempt (before the first chord was met), for its own hint.
  */
 public data class TryProgress(
     val done: Int,
@@ -33,6 +34,7 @@ public data class TryProgress(
     val finished: Boolean,
     val wrongCount: Int,
     val timing: TryTiming? = null,
+    val lateStart: Boolean = false,
 )
 
 internal data class TryState(
@@ -49,6 +51,7 @@ internal data class TryState(
     val lastWrong: Int? = null,
     val finished: Boolean = false,
     val timing: TryTiming? = null,
+    val lateStart: Boolean = false,
 ) {
     /** This state after the wrong key [note]. */
     fun wrong(note: Int): TryState = copy(wrongCount = wrongCount + 1, lastWrong = note, timing = null)
@@ -64,6 +67,9 @@ public class TryRun private constructor(
 ) {
     public constructor(check: TryCheck) : this(check, TryState())
 
+    /** A run that starts with the sustain pedal already [pedalDown] (a rep that begins while the pedal is held). */
+    public constructor(check: TryCheck, pedalDown: Boolean) : this(check, TryState(pedalDown = pedalDown))
+
     /** Where the run stands now. */
     public val progress: TryProgress =
         TryProgress(
@@ -74,6 +80,7 @@ public class TryRun private constructor(
             finished = state.finished,
             wrongCount = state.wrongCount,
             timing = state.timing,
+            lateStart = state.lateStart,
         )
 
     /** The run after [note] went down at [atMs] with [velocity] (1-127). */
@@ -165,7 +172,7 @@ public class TryRun private constructor(
 
             is TryCheck.Sequence -> check.notes[state.done]
 
-            is TryCheck.Legato -> check.notes[state.done]
+            is TryCheck.Legato -> check.notes.getOrNull(state.done)
 
             is TryCheck.Repeat -> check.note
 

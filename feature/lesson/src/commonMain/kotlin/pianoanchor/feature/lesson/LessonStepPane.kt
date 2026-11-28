@@ -58,6 +58,7 @@ import pianoanchor.feature.lesson.resources.lesson_try_overlap
 import pianoanchor.feature.lesson.resources.lesson_try_pedal_early
 import pianoanchor.feature.lesson.resources.lesson_try_pedal_hold_early
 import pianoanchor.feature.lesson.resources.lesson_try_pedal_late
+import pianoanchor.feature.lesson.resources.lesson_try_pedal_start
 import pianoanchor.feature.lesson.resources.lesson_try_progress
 import pianoanchor.feature.lesson.resources.lesson_try_wrong_any
 import pianoanchor.feature.lesson.resources.lesson_use_play
