@@ -40,15 +40,13 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
-    fade and a short "Your turn" moment.
-2. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
+1. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
     major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
     placement piece; closes course 2.
-3. **Wrong-key hint names from Compose resources** (spec #309; found reviewing #304): the hint text beside the strips still
+2. **Wrong-key hint names from Compose resources** (spec #309; found reviewing #304): the hint text beside the strips still
     names notes with English letters from `MidiNote.spoken()`, so a translated build would name the same key two ways;
     spell the hint's notes with the key-name string resources the strips use.
-4. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
+3. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
     flat, so a leading-tone sharp (C♯ in D minor) reads as D♭; and the lesson cards' staff still spells sharps in every
     key. Spell by the key's scale degrees and make the card staff use the engine's spelled step.
 
@@ -66,7 +64,8 @@ pick these; nothing in "Next up" waits for them. Installing a build and capturin
   land on bar 1 with the click, under the piano; the chords restart with each restart of the run and stop with it;
   "Chords + click" turns them off.
 - **See hand (#269):** in a lesson's See step the drawn fingers (no palm) press the key strip in time with the
-  sound; the left-hand C position shows finger 5 on C3; reduce motion keeps the hand still.
+  sound; the left-hand C position shows finger 5 on C3; reduce motion keeps the hand still; after the demo the hand holds, fades and
+  shows "Your turn" before Try starts (#298).
 - **One-tap session (#268):** Start on Today runs the day's steps in a row with the 10 s card between them (Pause,
   Skip step, a pedal tap goes now), back mid-step asks "Leave today's session?", the recap names minutes, steps and
   a tip, and "Pause this week" keeps the streak. Since #297 a Practise or Sight-read step ends on Results with "Continue" (or a
