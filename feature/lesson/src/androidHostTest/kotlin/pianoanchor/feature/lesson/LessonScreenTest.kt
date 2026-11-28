@@ -259,6 +259,18 @@ class LessonScreenTest {
         }
 
     @Test
+    fun recapOfAConceptNotPassedYetSaysSoAndOffersOnlyDone() =
+        runComposeUiTest {
+            val state = lessonState(LessonStep.RECAP, recap = RecapText("Middle C", null, notPassed = true))
+            setContent { PianoAnchorTheme { LessonScreen(state, LessonActions()) } }
+
+            onNodeWithText("Middle C isn’t passed yet: play its Try and Use to pass it. It stays next on Today.")
+                .assertIsDisplayed()
+            onNodeWithText("Done").assertIsDisplayed()
+            onNodeWithText("Next lesson").assertDoesNotExist()
+        }
+
+    @Test
     fun aDroppedPianoIsExplainedInTry() =
         runComposeUiTest {
             val state =

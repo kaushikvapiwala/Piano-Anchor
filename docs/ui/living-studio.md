@@ -321,7 +321,7 @@ the current step; only this pane changes between steps. A key strip runs along t
   per-check instruction, the progress ("3 of 8", "✓ Well done" when passed), "That was D♯4. Waiting for D4." after a
   wrong key (a polite live region) and a big count-in numeral for checks with a click; "Skip" is always there; a
   dropped piano is explained in place. **Use**: the first passage's title, "Play it" (opens Practice in wait mode, which
-  ends in Results with "Finish lesson") and "Next". **Recap**: "You’ve learned <concept>. Next: <next concept>." with
+  ends in Results with "Finish lesson") and "Next". **Recap**: "You’ve learned <concept>. Next: <next concept>." (the next concept not passed yet, as on Today's Next card; when this one isn't passed, "<concept> isn’t passed yet: play its Try and Use to pass it. It stays next on Today." and only "Done") with
   "Next lesson" and "Done", or "You've finished the course!" with "Done".
 - **Hands-free** (ADR 0027): with "Pedal to continue" on and the piano connected, a tap of the sustain pedal does
   what the step's main button does (Why and See: go on, Use: "Play it", Recap: "Next lesson", or "Done" at the end of
@@ -461,7 +461,7 @@ the current step; only this pane changes between steps. A key strip runs along t
   per-check instruction, the progress ("3 of 8", "✓ Well done" when passed), "That was D♯4. Waiting for D4." after a
   wrong key (a polite live region) and a big count-in numeral for checks with a click; "Skip" is always there; a
   dropped piano is explained in place. **Use**: the first passage's title, "Play it" (opens Practice in wait mode, which
-  ends in Results with "Finish lesson") and "Next". **Recap**: "You’ve learned <concept>. Next: <next concept>." with
+  ends in Results with "Finish lesson") and "Next". **Recap**: "You’ve learned <concept>. Next: <next concept>." (the next concept not passed yet, as on Today's Next card; when this one isn't passed, "<concept> isn’t passed yet: play its Try and Use to pass it. It stays next on Today." and only "Done") with
   "Next lesson" and "Done", or "You've finished the course!" with "Done".
 - **Hands-free** (ADR 0027): with "Pedal to continue" on and the piano connected, a tap of the sustain pedal does
   what the step's main button does (Why and See: go on, Use: "Play it", Recap: "Next lesson", or "Done" at the end of

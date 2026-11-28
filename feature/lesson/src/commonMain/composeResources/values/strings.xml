@@ -45,6 +45,7 @@
     <string name="lesson_use_play_it">Play it</string>
     <string name="lesson_recap">You’ve learned %1$s. Next: %2$s.</string>
     <string name="lesson_recap_done">You've finished the course!</string>
+    <string name="lesson_recap_not_passed">%1$s isn’t passed yet: play its Try and Use to pass it. It stays next on Today.</string>
     <string name="lesson_next_lesson">Next lesson</string>
     <string name="lesson_done">Done</string>
     <string name="lesson_keys_label">Keys</string>

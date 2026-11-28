@@ -564,14 +564,20 @@ class LessonViewModelTest {
     @Test
     fun recapNamesTheNextUnpassedSkill() =
         runTest(dispatcher) {
+            // Every concept before Middle C passed, Middle C not: it is still the next one, as on Today's Next card.
+            passBefore(Skills.MIDDLE_C)
             val vm = viewModel(startAt = LessonStep.RECAP)
+            assertEquals(RecapText("Middle C", nextTitle = null, notPassed = true), vm.state.value.recap)
 
-            // Nothing passed: this concept counts as done, so the first other one is next.
-            assertEquals(
-                RecapText("Middle C", "Sit, hand shape, fingers 1–5", Skills.HAND_SHAPE.id),
-                vm.state.value.recap,
-            )
+            pass(Skills.MIDDLE_C)
+            val passed = viewModel(startAt = LessonStep.RECAP)
+            val after = CourseProgress.skills(Curriculum).let { it[it.indexOf(Skills.MIDDLE_C) + 1] }
+            assertEquals(RecapText("Middle C", after.title, after.id), passed.state.value.recap)
+        }
 
+    @Test
+    fun aPassedConceptsRecapNamesTheFollowingConcept() =
+        runTest(dispatcher) {
             passBefore(Skills.RH_C_POSITION)
             pass(Skills.RH_C_POSITION)
             val later = viewModel(Skills.RH_C_POSITION, startAt = LessonStep.RECAP)
@@ -588,6 +594,7 @@ class LessonViewModelTest {
             val unit1 = Curriculum.units[1].skills
             LearnerModel(Curriculum.graph, learnerRepository)
                 .place(Curriculum.units[0].skills.toSet(), kotlinx.datetime.LocalDate(2026, 11, 15))
+            pass(Skills.RH_C_POSITION)
             val vm = viewModel(Skills.RH_C_POSITION, startAt = LessonStep.RECAP)
 
             assertEquals(
@@ -601,6 +608,7 @@ class LessonViewModelTest {
     fun recapSaysTheCourseIsFinishedAtTheEnd() =
         runTest(dispatcher) {
             passBefore(Skills.MELODY_CHORDS_IN_G)
+            pass(Skills.MELODY_CHORDS_IN_G)
 
             val vm = viewModel(Skills.MELODY_CHORDS_IN_G, startAt = LessonStep.RECAP)
 

@@ -481,10 +481,16 @@ public class LessonViewModel(
                 )
             } catch (_: StorageUnavailableException) {
                 // Without the passes, the next concept is the one after this in map order.
-                CourseProgress.skills(Curriculum).takeWhile { it != skill }.mapTo(HashSet()) { it.id }
+                CourseProgress.skills(Curriculum).takeWhile { it != skill }.mapTo(HashSet()) { it.id } + skillId
             }
-        // This concept counts as done: the learner has just been through it.
-        val next = CourseProgress.next(Curriculum, passed + skillId)
-        mutableState.update { it.copy(recap = RecapText(skill.title, next?.title, next?.id)) }
+        // The first unpassed concept, as on Today's Next card: this one again when its Try or Use wasn't passed.
+        val next = CourseProgress.next(Curriculum, passed)
+        val recap =
+            if (next?.id == skillId) {
+                RecapText(skill.title, nextTitle = null, notPassed = true)
+            } else {
+                RecapText(skill.title, next?.title, next?.id)
+            }
+        mutableState.update { it.copy(recap = recap) }
     }
 }

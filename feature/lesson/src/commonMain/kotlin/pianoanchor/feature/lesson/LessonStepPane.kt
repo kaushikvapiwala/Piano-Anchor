@@ -44,6 +44,7 @@ import pianoanchor.feature.lesson.resources.lesson_next_lesson
 import pianoanchor.feature.lesson.resources.lesson_play_again
 import pianoanchor.feature.lesson.resources.lesson_recap
 import pianoanchor.feature.lesson.resources.lesson_recap_done
+import pianoanchor.feature.lesson.resources.lesson_recap_not_passed
 import pianoanchor.feature.lesson.resources.lesson_see_count
 import pianoanchor.feature.lesson.resources.lesson_see_listen
 import pianoanchor.feature.lesson.resources.lesson_see_watch_hand
@@ -262,7 +263,9 @@ private fun RecapPane(
     val recap = state.recap
     if (recap != null) {
         Body(
-            if (recap.nextTitle == null) {
+            if (recap.notPassed) {
+                stringResource(Res.string.lesson_recap_not_passed, recap.learned)
+            } else if (recap.nextTitle == null) {
                 stringResource(Res.string.lesson_recap_done)
             } else {
                 stringResource(

@@ -22,12 +22,14 @@ public enum class LessonConnection {
 
 /**
  * The Recap line: what the learner can now do ([learned], the concept's title) and the [nextTitle] of the next
- * unpassed concept ([nextSkillId]), both null at the end of the course.
+ * unpassed concept ([nextSkillId]), both null at the end of the course and when this concept is [notPassed] yet (its
+ * Try or Use was skipped): it is then still the next one, as on Today's Next card.
  */
 public data class RecapText(
     val learned: String,
     val nextTitle: String?,
     val nextSkillId: String? = null,
+    val notPassed: Boolean = false,
 )
 
 /**
