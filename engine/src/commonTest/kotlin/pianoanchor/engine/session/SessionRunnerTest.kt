@@ -54,4 +54,43 @@ class SessionRunnerTest {
 
         assertTrue(steps.none { it is SessionStep.Ear })
     }
+
+    private val chordSong =
+        Card.Song(Curriculum.passages.first { it.id == "builtin:hot-cross-buns" }, TempoRung.P70, 10)
+
+    @Test
+    fun `a song with chords adds a play-along step after practise, taking its minutes from the song`() {
+        val steps = SessionRunner.steps(session(lesson, chordSong, ear))
+
+        assertEquals(
+            listOf(
+                SessionStep.Learn(lesson, 5),
+                SessionStep.Practise(chordSong, 6),
+                SessionStep.PlayAlong(chordSong, 4),
+                SessionStep.Ear(ear, 2),
+            ),
+            steps,
+        )
+        assertEquals(10 + 5 + 2, steps.sumOf { it.minutes })
+    }
+
+    @Test
+    fun `a short song gives half of its minutes to the play-along`() {
+        val short = chordSong.copy(minutes = 5)
+
+        assertEquals(
+            listOf(SessionStep.Practise(short, 3), SessionStep.PlayAlong(short, 2)),
+            SessionRunner.steps(session(short)),
+        )
+    }
+
+    @Test
+    fun `a song without chords has no play-along step`() {
+        assertTrue(SessionRunner.steps(session(song)).none { it is SessionStep.PlayAlong })
+    }
+
+    @Test
+    fun `skipping a song with chords drops both of its steps`() {
+        assertTrue(SessionRunner.steps(session(chordSong), skipped = setOf(0)).isEmpty())
+    }
 }

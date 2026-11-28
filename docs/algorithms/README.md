@@ -10,4 +10,5 @@ with the code it explains. Update the note in the same PR whenever the approach 
 ## Index
 
 - `docs/algorithms/sight-reading.md`: the generated sight-reading exercises and the staircase that picks their level.
+- `docs/algorithms/play-along.md`: chord lines, the chord backing and how a timed run and the session use it.
 - `docs/algorithms/note-names.md`: which keys of a strip get a letter, and how the letters fade as key names are learned.

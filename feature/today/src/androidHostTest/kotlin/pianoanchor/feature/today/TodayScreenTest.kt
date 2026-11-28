@@ -110,12 +110,28 @@ class TodayScreenTest {
             }
 
             onNodeWithText("Choose steps").performClick()
-            onNodeWithText("Start 3 steps · 14 min").assertIsDisplayed()
+            onNodeWithText("Start 4 steps · 14 min").assertIsDisplayed()
             onNodeWithContentDescription("Learn: ${Skills.HAND_SHAPE.title}, 5 minutes").performClick()
-            onNodeWithText("Start 2 steps · 9 min").assertIsDisplayed()
-            onNodeWithText("Start 2 steps · 9 min").performClick()
+            onNodeWithText("Start 3 steps · 9 min").assertIsDisplayed()
+            onNodeWithText("Start 3 steps · 9 min").performClick()
 
             assertEquals(listOf(setOf(0)), starts)
+        }
+
+    @Test
+    fun aSongsPractiseAndPlayAlongStepsSwitchTogether() =
+        runComposeUiTest {
+            val starts = mutableListOf<Set<Int>>()
+            setContent {
+                PianoAnchorTheme { TodayScreen(state(), TodayActions(onStartSession = { starts += it })) }
+            }
+
+            onNodeWithText("Choose steps").performClick()
+            onNodeWithContentDescription("Play along: ${passage.title}, 3 minutes").performClick()
+            onNodeWithText("Start 2 steps · 8 min").assertIsDisplayed()
+            onNodeWithText("Start 2 steps · 8 min").performClick()
+
+            assertEquals(listOf(setOf(1)), starts)
         }
 
     @Test
@@ -125,7 +141,7 @@ class TodayScreenTest {
 
             onNodeWithText("Choose steps").performClick()
             onNodeWithContentDescription("Learn: ${Skills.HAND_SHAPE.title}, 5 minutes").performClick()
-            onNodeWithContentDescription("Practise: ${passage.title}, 6 minutes").performClick()
+            onNodeWithContentDescription("Practise: ${passage.title}, 3 minutes").performClick()
             onNodeWithContentDescription("Ear training, 3 minutes").performClick()
 
             onNodeWithText("Start 0 steps · 0 min").assertIsNotEnabled()

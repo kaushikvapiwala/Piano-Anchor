@@ -29,6 +29,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import pianoanchor.core.model.BarRange
+import pianoanchor.core.model.ChordMark
+import pianoanchor.core.model.ChordQuality
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.RunMode
 import pianoanchor.core.model.TimeSignature
@@ -197,6 +199,28 @@ class PracticeScreenTest {
 
             state.value = start.copy(clickOn = false)
             onNodeWithContentDescription("Click off").assertExists()
+        }
+
+    @Test
+    fun theChordsChipShowsOnlyForPassagesWithChordsAndToggles() =
+        runComposeUiTest {
+            var toggles = 0
+            val chorded = Passages.CDE.copy(chords = listOf(ChordMark(0, 0, ChordQuality.MAJOR)))
+            val state = mutableStateOf(PracticeState.start(Passages.CDE))
+            setContent {
+                PianoAnchorTheme {
+                    PracticeScreen(state.value, {}, {}, {}, {}, {}, onToggleBacking = { toggles++ })
+                }
+            }
+
+            onNodeWithText("Chords + click").assertDoesNotExist()
+
+            state.value = PracticeState.start(chorded)
+            onNodeWithText("Chords + click").assertIsNotSelected().performClick()
+            assertEquals(1, toggles)
+
+            state.value = PracticeState.start(chorded).copy(backingOn = true)
+            onNodeWithText("Chords + click").assertIsSelected()
         }
 
     @Test

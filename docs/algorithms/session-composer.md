@@ -58,7 +58,10 @@ due, so the next load of Today offers the next one as its cold open.
 `SessionRunner.steps` (same package) turns a `Session` into the one-tap session's steps (ADR 0028). The run order is
 warm-up (the cold open, then the quizzes), learn (the lesson), practise (the song), ear, sight-read; a missing card
 leaves its step out, and a card whose index in `Session.cards` is in `skipped` is dropped (the trim view's switches).
-Play-along will slot in after practise once it exists. The order differs from the card order the composer emits.
+A song whose passage has a chord line also adds a play-along step right after practise, taking `PLAY_ALONG_MINUTES`
+(at most half) from the song's minutes, so the session's total does not change (`docs/algorithms/play-along.md`); the
+song's two steps share one card, so skipping the card drops both. The order differs from the card order the composer
+emits.
 
 `WeekPause` keeps the weekly days goal. A week runs Monday to Sunday; its status counts the practice days of the
 current week, the pauses left and the streak in weeks. The streak is the run of weeks before this one that either

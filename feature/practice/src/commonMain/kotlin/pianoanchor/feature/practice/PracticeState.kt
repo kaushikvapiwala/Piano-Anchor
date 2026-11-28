@@ -49,7 +49,8 @@ private const val COUNT_IN_NUMERALS = 3
  * A [sightReading] exercise runs in wait mode from the staff alone: the screen hides the tempo chips, the perform
  * switch and the Hint button; so does a placement piece, and so does an [unaided] run (the Use step of a lesson), which
  * also glows no next key in Unit 0. [finishedBand] is the band of the attempt that set
- * [finishedAttemptId].
+ * [finishedAttemptId]. A passage with a chord line ([hasChords]) shows the "Chords + click" chip; [backingOn] is
+ * whether its chords play with the click in a timed run (`docs/algorithms/play-along.md`).
  */
 public data class PracticeState(
     val passage: Passage,
@@ -88,12 +89,16 @@ public data class PracticeState(
     val unaided: Boolean = false,
     val finishedBand: Band? = null,
     val noteLabels: NoteLabels = NoteLabels(),
+    val backingOn: Boolean = false,
 ) {
     init {
         require(steps.size == passage.steps.size) {
             "practice state has ${steps.size} step views for ${passage.steps.size} steps of \"${passage.id}\""
         }
     }
+
+    /** Whether the passage has a chord line: the screen then offers the "Chords + click" chip. */
+    val hasChords: Boolean get() = passage.chords.isNotEmpty()
 
     /** Whether the screen shows live verdicts (colours, timing tags, the last key's text) and the Hint button. */
     val showsVerdicts: Boolean get() = mode == RunMode.PRACTICE

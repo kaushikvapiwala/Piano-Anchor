@@ -45,6 +45,7 @@ import pianoanchor.core.ports.MetronomePort
 import pianoanchor.core.ports.MidiInputPort
 import pianoanchor.core.ports.MidiOutputPort
 import pianoanchor.core.ports.SettingsRepositoryPort
+import pianoanchor.core.ports.TonePort
 import pianoanchor.engine.Tunables
 import pianoanchor.engine.analysis.PlayedNotes
 import pianoanchor.engine.analysis.releasesAllKeys
@@ -65,6 +66,7 @@ import pianoanchor.engine.matcher.beatNanos
 import pianoanchor.engine.matcher.offersSlowerRung
 import pianoanchor.engine.midi.defaultLinkLatencyNanos
 import pianoanchor.engine.midi.measureLinkLatencyNanos
+import pianoanchor.engine.playalong.Backing
 import pianoanchor.engine.profile
 import pianoanchor.engine.sight.SightReadingGenerator
 import kotlin.math.abs
@@ -119,6 +121,12 @@ import kotlin.time.Instant
  * band, no Unit 0 glow of the next key, no Hint button. The wrong-key line still
  * shows (it is feedback, not a hint), and the attempt is saved with `hintShown` false, so a clean run passes the
  * concept.
+ *
+ * A passage with a chord line shows the "Chords + click" chip ([toggleBacking]). With the backing on, a timed run plays
+ * [Backing.tones] through [backingTone] (the speaker, never the piano input) so that its first tone lands on bar 1
+ * beat 1, one count-in bar after the click starts (`docs/algorithms/play-along.md`). Every restart of the run cancels
+ * the backing and plays it again with the new count-in; the end of the run, leaving and turning the chip off stop it.
+ * [initialBacking] is the play-along step's: backing on, and a wait-mode start moves to the slowest timed rung.
  */
 @Suppress("TooManyFunctions")
 public class PracticeViewModel(
@@ -141,6 +149,8 @@ public class PracticeViewModel(
     private val pieceId: String = passage.id,
     private val placement: Boolean = false,
     private val unaided: Boolean = false,
+    private val backingTone: TonePort? = null,
+    initialBacking: Boolean = false,
     private val newId: () -> String,
 ) : ViewModel() {
     /**
@@ -155,6 +165,9 @@ public class PracticeViewModel(
      */
     private val noHints: Boolean get() = plain || mutableState.value.unaided
 
+    /** Whether this is the play-along step: the passage has chords to play and a speaker to play them on. */
+    private val playsAlong = initialBacking && passage.chords.isNotEmpty() && backingTone != null
+
     private val mutableState =
         MutableStateFlow(
             PracticeState
@@ -164,6 +177,7 @@ public class PracticeViewModel(
                     staffHidden = isUnitZero(passage),
                     sightReading = plain,
                     unaided = unaided && spot == null && initialRung == TempoRung.WAIT,
+                    backingOn = playsAlong,
                 ),
         )
     public val state: StateFlow<PracticeState> = mutableState.asStateFlow()
@@ -204,6 +218,9 @@ public class PracticeViewModel(
     /** The click pattern of the timed run in progress, null outside one. */
     private var pattern: ClickPattern? = null
 
+    /** The chords of the timed run in progress, null outside one or when the backing is off. */
+    private var backing: Job? = null
+
     /** Mistake restarts in a row on this rung and mode; a clean finish, a rung or a mode change resets it. */
     private var restartsInARow = 0
 
@@ -212,7 +229,8 @@ public class PracticeViewModel(
         viewModelScope.launch { refreshDoneRungs() }
         viewModelScope.launch { seedClickOn() }
         viewModelScope.launch { loadNoteLabels() }
-        start(if (spot == null) initialRung else initialRung.below(), initialMode)
+        val first = if (playsAlong && initialRung == TempoRung.WAIT) TempoRung.P60 else initialRung
+        start(if (spot == null) first else first.below(), initialMode)
     }
 
     /** Discards the run and starts over on the same rung, reopening the piano once the old run has closed it. */
@@ -273,6 +291,7 @@ public class PracticeViewModel(
                     mode = mode,
                     doneRungs = it.doneRungs,
                     clickOn = it.clickOn,
+                    backingOn = it.backingOn,
                     spotLoop = it.spotLoop,
                     canListen = player != null && !plain,
                     sightReading = plain,
@@ -428,6 +447,18 @@ public class PracticeViewModel(
             // The run ended (and stopped the click) while this start ran: don't leave it clicking.
             if (on && pattern !== running) metronome.stop()
         }
+    }
+
+    /**
+     * Turns the chords on or off ("Chords + click" chip). Off stops the chords playing now; on takes effect from the
+     * next count-in, since the chords can only start on the first beat of the passage. Ignored for a passage with no
+     * chord line.
+     */
+    public fun toggleBacking() {
+        if (passage.chords.isEmpty()) return
+        val on = !mutableState.value.backingOn
+        mutableState.update { it.copy(backingOn = on) }
+        if (!on) backing?.cancel()
     }
 
     /** Letters the keys as the learner's setting and progress say; the strip shows none until this has read them. */
@@ -959,6 +990,7 @@ public class PracticeViewModel(
             endNanos = timing.endNanos + latencyOffsetNanos.coerceAtLeast(0)
             val click = ClickPattern(firstBeatNanos, beatNanos, beatsPerBar)
             pattern = click
+            startBacking(scope)
             if (mutableState.value.clickOn) click.start(metronome)
             scope.launch {
                 runClock(timing)
@@ -967,6 +999,21 @@ public class PracticeViewModel(
                     ended.complete(RunOutcome.Completed)
                 }
             }
+        }
+
+        /**
+         * Plays the chords so that the first lands on bar 1 beat 1 ([startNanos]) of the clock the click follows. It
+         * lives in [scope], so the end of the run, a restart or leaving stops it; [toggleBacking] stops it too.
+         */
+        private fun startBacking(scope: CoroutineScope) {
+            val speaker = backingTone
+            val tones = Backing.tones(passage, bpm)
+            if (speaker == null || tones.isEmpty() || !mutableState.value.backingOn) return
+            backing =
+                scope.launch {
+                    delay((startNanos - time.nowNanos()).nanoseconds)
+                    speaker.play(tones)
+                }
         }
 
         /** A wrong or missed [note] stops the run: nothing more is read and [play] returns. */

@@ -63,6 +63,7 @@ internal val UNIT_1: CurriculumUnit =
                                     "has long expired. The notes are our own arrangement in right-hand C position.",
                         ),
                     piece = true,
+                    chords = "C | C | C | G | C",
                 ),
                 builtinPassage(
                     id = "mary-had-a-little-lamb",
@@ -87,6 +88,7 @@ internal val UNIT_1: CurriculumUnit =
                                     "public domain. The notes are our own arrangement in right-hand C position.",
                         ),
                     piece = true,
+                    chords = "C | C | G | C | C | C | G C | C",
                 ),
                 builtinPassage(
                     id = "au-clair-de-la-lune",
@@ -107,6 +109,7 @@ internal val UNIT_1: CurriculumUnit =
                                     "expired. The notes are our own arrangement in right-hand C position.",
                         ),
                     piece = true,
+                    chords = "C | C G | C G | C",
                 ),
                 builtinPassage(
                     id = "steady-skipping",
@@ -139,6 +142,7 @@ internal val UNIT_1: CurriculumUnit =
                                     "C position.",
                         ),
                     piece = true,
+                    chords = "C | F G | C | G | C | F G | C | C",
                 ),
                 builtinPassage(
                     id = "staff-steps",
@@ -164,6 +168,7 @@ internal val UNIT_1: CurriculumUnit =
                         ),
                     rights = odeToJoyRights(),
                     piece = true,
+                    chords = "C F | C | C G | C G | C F | C | C G | G C",
                 ),
                 builtinPassage(
                     id = "soft-then-loud",

@@ -1,5 +1,7 @@
 package pianoanchor.engine.session
 
+import pianoanchor.engine.Tunables
+
 /** One step of the one-tap session: a [card] run for about [minutes] (`docs/algorithms/session-composer.md`). */
 public sealed interface SessionStep {
     public val card: Card
@@ -23,6 +25,15 @@ public sealed interface SessionStep {
         override val minutes: Int,
     ) : SessionStep
 
+    /**
+     * The play-along: today's song over a chord backing and the click (`docs/algorithms/play-along.md`). Its [card] is
+     * the song card of the Practise step before it.
+     */
+    public data class PlayAlong(
+        override val card: Card.Song,
+        override val minutes: Int,
+    ) : SessionStep
+
     /** The ear screen. */
     public data class Ear(
         override val card: Card.Ear,
@@ -39,9 +50,12 @@ public sealed interface SessionStep {
 /** Turns Today's cards into the one-tap session's steps. Pure. */
 public object SessionRunner {
     /**
-     * The session's cards as steps, in run order: warm-up (the cold open, then the quizzes), learn, practise, ear,
-     * sight-read. Cards whose index in [Session.cards] is in [skipped] are left out. An empty session gives an empty
-     * list.
+     * The session's cards as steps, in run order: warm-up (the cold open, then the quizzes), learn, practise, play
+     * along, ear, sight-read. A song whose passage has a chord line adds a play-along step right after its Practise
+     * step, taking [Tunables.PLAY_ALONG_MINUTES] from the song's minutes (at most half of them, so Practise keeps
+     * some).
+     * Cards whose index in [Session.cards] is in [skipped] are left out (a skipped song drops both of its steps). An
+     * empty session gives an empty list.
      */
     public fun steps(
         session: Session,
@@ -49,8 +63,16 @@ public object SessionRunner {
     ): List<SessionStep> =
         session.cards
             .filterIndexed { index, _ -> index !in skipped }
-            .map(::stepOf)
+            .flatMap(::stepsOf)
             .sortedBy(::runOrder)
+
+    private fun stepsOf(card: Card): List<SessionStep> =
+        if (card is Card.Song && card.passage.chords.isNotEmpty()) {
+            val along = minOf(Tunables.PLAY_ALONG_MINUTES, card.minutes / 2)
+            listOf(SessionStep.Practise(card, card.minutes - along), SessionStep.PlayAlong(card, along))
+        } else {
+            listOf(stepOf(card))
+        }
 
     private fun stepOf(card: Card): SessionStep =
         when (card) {

@@ -50,7 +50,7 @@ internal fun SessionStep.key(): String =
         is Card.ColdOpen -> "cold:${card.passage.id}"
         is Card.Quizzes -> "quizzes"
         is Card.Lesson -> "lesson:${card.skill.id}"
-        is Card.Song -> "song:${card.passage.id}"
+        is Card.Song -> "${if (this is SessionStep.PlayAlong) "along" else "song"}:${card.passage.id}"
         is Card.Ear -> "ear"
         is Card.SightReading -> "sight:${card.passage.id}"
     }

@@ -144,7 +144,8 @@ private sealed interface Destination {
      * bars of the passage one rung below [rung] (a spot loop); "Play it" then plays the whole passage at [rung].
      * [fromLesson] is the concept whose lesson opened it: Results then offers "Finish lesson". A [placement] run is a
      * piece of the onboarding's placement test, hosted in the onboarding (no Results). A [flowStep] is a step of the
-     * one-tap session: finishing it returns to the session without Results.
+     * one-tap session: finishing it returns to the session without Results. [backing] is the session's play-along
+     * step: chords and click, on a timed rung.
      */
     data class Practice(
         val device: MidiDevice,
@@ -156,6 +157,7 @@ private sealed interface Destination {
         val fromLesson: String? = null,
         val placement: Boolean = false,
         val flowStep: Boolean = false,
+        val backing: Boolean = false,
     ) : Destination
 
     /**
@@ -386,6 +388,7 @@ private fun PracticeRoute(
                     practice.spot,
                     practice.placement,
                     practice.fromLesson != null,
+                    practice.backing,
                 ),
             )
         }
@@ -417,6 +420,7 @@ private fun PracticeRoute(
         onKeepLooping = viewModel::keepLooping,
         onSlower = viewModel::slowerRung,
         onKeepTrying = viewModel::keepTrying,
+        onToggleBacking = viewModel::toggleBacking,
         onListen = viewModel::listen,
         onSkipListening = viewModel::skipListening,
     )
@@ -750,6 +754,7 @@ private fun SessionRoute(
                             Destination.Today,
                             target.mode,
                             flowStep = true,
+                            backing = target.backing,
                         ),
                     )
                 }

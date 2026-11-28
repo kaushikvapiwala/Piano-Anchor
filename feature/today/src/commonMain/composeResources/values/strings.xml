@@ -36,6 +36,7 @@
     <string name="session_step_warm_up_quizzes">Warm-up: quick quizzes</string>
     <string name="session_step_learn">Learn: %1$s</string>
     <string name="session_step_practise">Practise: %1$s</string>
+    <string name="session_step_play_along">Play along: %1$s</string>
     <string name="session_step_ear">Ear training</string>
     <string name="session_step_sight">Sight-reading</string>
     <string name="today_week_title">This week · %1$s of %2$s days</string>

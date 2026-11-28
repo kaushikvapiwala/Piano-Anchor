@@ -81,7 +81,8 @@ import pianoanchor.ui.shell.pianoAnchorColors
  * and the live key strip.
  * Stateless: see [PracticeViewModel]. [onBack] leaves the run (the back button, "End run" and the disconnected card's
  * "Back to pianos"); [onSelectRung] picks a rung of the tempo ladder (discarding the run); [onToggleClick] mutes or
- * unmutes the metronome; [onHint] shows the key band on the waiting step (the
+ * unmutes the metronome; [onToggleBacking] turns the "Chords + click" chip (shown when the passage has a chord line) on
+ * or off; [onHint] shows the key band on the waiting step (the
  * lightbulb button); [onRetrySave] and [onDiscard] are the save-failed card's Retry and Discard.
  * A spot loop ([PracticeState.spotLoop]) shows its progress as the subtitle and the last loop's result under the
  * staff; its "bars are clean" card has [onPlayWhole] ("Play it") and [onKeepLooping].
@@ -106,12 +107,18 @@ public fun PracticeScreen(
     onKeepTrying: () -> Unit = {},
     onListen: () -> Unit = {},
     onSkipListening: () -> Unit = {},
+    onToggleBacking: () -> Unit = {},
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.safeDrawingPadding(), contentAlignment = Alignment.Center) {
             Column(Modifier.fillMaxSize()) {
                 TopBar(state, onBack, onSelectRung, onToggleClick, onHint, onSelectMode)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                if (state.hasChords) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalArrangement = Arrangement.End) {
+                        BackingChip(state.backingOn, onToggleBacking)
+                    }
+                }
                 StatusCards(
                     state,
                     onBack,
