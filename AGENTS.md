@@ -36,6 +36,8 @@ Read `docs/ARCHITECTURE.md` before changing structure; domain terms are in `docs
   Test doubles live in `testing/` and are named `Fake*`.
 - Thresholds live in `engine/src/commonMain/kotlin/pianoanchor/engine/Tunables.kt`, each with `Why:` and `Source:` in its KDoc. No magic numbers.
 - Every `*ViewModel` and `*UseCase` has a `*Test`. Use cases only for logic shared by several callers.
+- Logic two ViewModels need goes into one engine helper both call; never copy it from another ViewModel (a copy
+  drops its rules, as the recap tip lost the sight-reading exclusion in #268).
 - An input has one reader at a time (`AndroidMidiAdapter.events` throws on a second open): when a screen hands a
   piano to another, the old reader closes it (`cancelAndJoin`) before the next one opens it.
 - In docs, backtick only paths that exist (`docsCheck` fails otherwise); name planned files and modules in plain words.
