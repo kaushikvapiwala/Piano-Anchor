@@ -12,6 +12,7 @@ import kotlin.time.Instant
  * Driven port: the learner's completed attempts, kept across app restarts and keyed by [Attempt.id].
  * Contract: `pianoanchor.testing.AttemptRepositoryPortContractTest`.
  */
+@Suppress("TooManyFunctions") // One small read per question the screens ask of the attempt log.
 public interface AttemptRepositoryPort {
     /**
      * Stores [attempt], with its events and played notes. Throws [IllegalArgumentException] when its id is already
@@ -82,6 +83,32 @@ public interface AttemptRepositoryPort {
         from: LocalDate,
         zone: TimeZone,
     ): Set<LocalDate>
+
+    /**
+     * The oldest full-run attempt ([Attempt.spot] null) of [passageId] that covered every step (its events end the
+     * passage with a [pianoanchor.core.model.PassageComplete]), by [Attempt.startedAt] (ties by id), or null when there
+     * is none. Never pruned: any future pruning of old attempts must keep each passage's first full run, which "Day 1
+     * vs today" replays. Throws [StorageUnavailableException] when the store can't be read.
+     */
+    public suspend fun firstFullRun(passageId: String): Attempt?
+
+    /**
+     * The newest full-run attempt ([Attempt.spot] null) of [passageId] that covered every step (as [firstFullRun]), by
+     * [Attempt.startedAt] (ties by id), or null when there is none. Throws [StorageUnavailableException] when the store
+     * can't be read.
+     */
+    public suspend fun latestFullRun(passageId: String): Attempt?
+
+    /**
+     * Minutes played per calendar day in [zone] from [from] (inclusive): the durations of the attempts of any passage
+     * (spot loops included) that started that day, summed and rounded half up to whole minutes. Days without attempts
+     * are absent (a day of only a few seconds is present with 0). Throws [StorageUnavailableException] when the store
+     * can't be read.
+     */
+    public suspend fun minutesByDay(
+        from: LocalDate,
+        zone: TimeZone,
+    ): Map<LocalDate, Int>
 
     /**
      * Summaries of the attempts whose passage id starts with [prefix], oldest first by [AttemptSummary.startedAt],

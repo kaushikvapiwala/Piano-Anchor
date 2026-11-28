@@ -1191,6 +1191,15 @@ public object Tunables {
     public const val HAND_MAX_WHITE_SPAN: Int = 5
 
     /**
+     * The longest take, in milliseconds, "Day 1 vs today" replays; later notes are dropped and a crossing one is cut.
+     *
+     * Why: pieces in courses 1-2 are under two minutes, so the cap only stops a stuck run from playing for ever.
+     *
+     * Source: course content lengths.
+     */
+    public const val TAKE_REPLAY_MAX_MS: Long = 120_000
+
+    /**
      * The lowest root of a play-along chord, as a MIDI note: a chord's root sounds in the octave from here (C3 to B3).
      *
      * Why: roots from C3 to B3 keep the chords below a right-hand melody around C4 to G5, so the backing never covers

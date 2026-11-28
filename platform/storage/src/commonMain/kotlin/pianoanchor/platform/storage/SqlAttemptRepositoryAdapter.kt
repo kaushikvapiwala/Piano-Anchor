@@ -37,6 +37,8 @@ private const val WRONG_NOTE = "wrong_note"
 private const val CHORD_INCOMPLETE = "chord_incomplete"
 private const val PASSAGE_COMPLETE = "passage_complete"
 private const val NOTE_SEPARATOR = ","
+private const val NANOS_PER_MINUTE = 60_000_000_000L
+private const val NANOS_PER_HALF_MINUTE = NANOS_PER_MINUTE / 2
 
 /**
  * [AttemptRepositoryPort] in the on-device SQLite database. [driver] comes from `createPianoAnchorDatabaseDriver`
@@ -44,6 +46,7 @@ private const val NOTE_SEPARATOR = ","
  * events and its played notes are written in one transaction. [Attempt.startedAt] is stored as epoch milliseconds, so
  * anything finer is dropped.
  */
+@Suppress("TooManyFunctions") // One method per port read.
 public class SqlAttemptRepositoryAdapter(
     driver: SqlDriver,
     private val dispatcher: CoroutineDispatcher,
@@ -172,6 +175,39 @@ public class SqlAttemptRepositoryAdapter(
                     .selectStartedSince(from.atStartOfDayIn(zone).toEpochMilliseconds())
                     .executeAsList()
                     .mapTo(LinkedHashSet()) { Instant.fromEpochMilliseconds(it).toLocalDateTime(zone).date }
+            }
+        }
+
+    override suspend fun firstFullRun(passageId: String): Attempt? =
+        withContext(dispatcher) {
+            storage("firstFullRun") {
+                queries.transactionWithResult {
+                    queries.selectFirstFullRun(passageId).executeAsOneOrNull()?.let(::withEvents)
+                }
+            }
+        }
+
+    override suspend fun latestFullRun(passageId: String): Attempt? =
+        withContext(dispatcher) {
+            storage("latestFullRun") {
+                queries.transactionWithResult {
+                    queries.selectLatestFullRun(passageId).executeAsOneOrNull()?.let(::withEvents)
+                }
+            }
+        }
+
+    override suspend fun minutesByDay(
+        from: LocalDate,
+        zone: TimeZone,
+    ): Map<LocalDate, Int> =
+        withContext(dispatcher) {
+            storage("minutesByDay") {
+                queries
+                    .selectDurationsSince(from.atStartOfDayIn(zone).toEpochMilliseconds())
+                    .executeAsList()
+                    .groupBy({ Instant.fromEpochMilliseconds(it.started_at_ms).toLocalDateTime(zone).date }) {
+                        it.duration_nanos
+                    }.mapValues { (_, nanos) -> ((nanos.sum() + NANOS_PER_HALF_MINUTE) / NANOS_PER_MINUTE).toInt() }
             }
         }
 

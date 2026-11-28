@@ -11,6 +11,7 @@ import pianoanchor.core.model.Band
 import pianoanchor.core.model.BarRange
 import pianoanchor.core.model.ChordIncomplete
 import pianoanchor.core.model.HintLevel
+import pianoanchor.core.model.MatchEvent
 import pianoanchor.core.model.MidiNote
 import pianoanchor.core.model.PassageComplete
 import pianoanchor.core.model.PlayedNote
@@ -53,12 +54,14 @@ abstract class AttemptRepositoryPortContractTest {
         hintShown: Boolean = true,
         mode: RunMode = RunMode.PRACTICE,
         spot: BarRange? = null,
+        durationNanos: Long = 3_000,
+        events: List<MatchEvent> = this.events,
     ) = Attempt(
         id = id,
         passageId = passageId,
         deviceId = "usb-1",
         startedAt = Instant.fromEpochSeconds(startedAtSeconds),
-        durationNanos = 3_000,
+        durationNanos = durationNanos,
         stepCount = 2,
         wrongNotes = 1,
         incompleteChords = 1,
@@ -384,6 +387,120 @@ abstract class AttemptRepositoryPortContractTest {
                 repository.practiceDays(LocalDate(2026, 11, 13), plusTwo),
             )
             assertEquals(emptySet(), repository.practiceDays(LocalDate(2026, 11, 16), TimeZone.UTC))
+        }
+
+    // A run that stopped short: its events never end the passage.
+    private val unfinished = events.dropLast(1)
+
+    @Test
+    fun firstFullRunIsTheOldestCompleteFullRun() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-early-spot", startedAtSeconds = 100, spot = BarRange(1, 2)))
+            repository.save(attempt("a-early-unfinished", startedAtSeconds = 200, events = unfinished))
+            repository.save(attempt("a-3", startedAtSeconds = 3_000))
+            repository.save(attempt("a-2", startedAtSeconds = 2_000))
+            repository.save(attempt("a-other", startedAtSeconds = 50, passageId = "other"))
+            repository.save(attempt("a-4", startedAtSeconds = 4_000))
+            assertEquals(attempt("a-2", startedAtSeconds = 2_000), repository.firstFullRun("c-d-e"))
+        }
+
+    @Test
+    fun latestFullRunIsTheNewestCompleteFullRun() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-1", startedAtSeconds = 1_000))
+            repository.save(attempt("a-2", startedAtSeconds = 2_000))
+            repository.save(attempt("a-late-spot", startedAtSeconds = 9_000, spot = BarRange(1, 2)))
+            repository.save(attempt("a-late-unfinished", startedAtSeconds = 8_000, events = unfinished))
+            repository.save(attempt("a-other", startedAtSeconds = 9_500, passageId = "other"))
+            assertEquals(attempt("a-2", startedAtSeconds = 2_000), repository.latestFullRun("c-d-e"))
+        }
+
+    @Test
+    fun fullRunsBreakStartTiesById() =
+        runTest {
+            val repository = createSubject()
+            repository.save(attempt("a-b", startedAtSeconds = 1_000))
+            repository.save(attempt("a-a", startedAtSeconds = 1_000))
+            assertEquals("a-a", assertNotNull(repository.firstFullRun("c-d-e")).id)
+            assertEquals("a-b", assertNotNull(repository.latestFullRun("c-d-e")).id)
+        }
+
+    @Test
+    fun fullRunsAreNullWhenThereAreNoCompleteOnes() =
+        runTest {
+            val repository = createSubject()
+            assertNull(repository.firstFullRun("c-d-e"))
+            assertNull(repository.latestFullRun("c-d-e"))
+            repository.save(attempt("a-spot", startedAtSeconds = 1_000, spot = BarRange(1, 2)))
+            repository.save(attempt("a-unfinished", startedAtSeconds = 2_000, events = unfinished))
+            assertNull(repository.firstFullRun("c-d-e"))
+            assertNull(repository.latestFullRun("c-d-e"))
+        }
+
+    @Test
+    fun theFirstFullRunKeepsItsEventsAndNotes() =
+        runTest {
+            val repository = createSubject()
+            val notes =
+                listOf(PlayedNote(MidiNote(60), velocity = 64, downNanos = 0, upNanos = 400, soundingEndNanos = 900))
+            val saved = attempt("a-1", startedAtSeconds = 1_000, playedNotes = notes)
+            repository.save(saved)
+            assertEquals(saved, repository.firstFullRun("c-d-e"))
+            assertEquals(saved, repository.latestFullRun("c-d-e"))
+        }
+
+    @Suppress("MagicNumber") // Dates, durations and timestamps of the scenario.
+    @Test
+    fun minutesByDaySumsPerLocalDayAndRoundsHalfUp() =
+        runTest {
+            val repository = createSubject()
+            val plusTwo = TimeZone.of("Etc/GMT-2")
+            val minute = 60_000_000_000L
+            // 2026-11-13 23:30 UTC is already the 14th at UTC+2. 90 s + 90 s = 3 min; 30 s rounds up to 1 min.
+            repository.save(
+                attempt(
+                    "a-0",
+                    Instant.parse("2026-11-12T10:00:00Z").epochSeconds,
+                    durationNanos =
+                        minute * 3 / 2,
+                ),
+            )
+            repository.save(
+                attempt(
+                    "a-1",
+                    Instant.parse("2026-11-12T11:00:00Z").epochSeconds,
+                    durationNanos =
+                        minute * 3 / 2,
+                ),
+            )
+            repository.save(
+                attempt(
+                    "a-2",
+                    Instant.parse("2026-11-13T23:30:00Z").epochSeconds,
+                    passageId = "other",
+                    spot = BarRange(1, 2),
+                    durationNanos = minute / 2,
+                ),
+            )
+            repository.save(
+                attempt(
+                    "a-3",
+                    Instant.parse("2026-11-15T08:00:00Z").epochSeconds,
+                    durationNanos =
+                        minute / 2 - 1,
+                ),
+            )
+            assertEquals(
+                mapOf(LocalDate(2026, 11, 12) to 3, LocalDate(2026, 11, 13) to 1, LocalDate(2026, 11, 15) to 0),
+                repository.minutesByDay(LocalDate(2026, 11, 1), TimeZone.UTC),
+            )
+            assertEquals(
+                mapOf(LocalDate(2026, 11, 14) to 1, LocalDate(2026, 11, 15) to 0),
+                repository.minutesByDay(LocalDate(2026, 11, 13), plusTwo),
+            )
+            assertEquals(emptyMap(), repository.minutesByDay(LocalDate(2026, 11, 16), TimeZone.UTC))
         }
 
     @Test

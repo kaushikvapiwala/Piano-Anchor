@@ -114,3 +114,24 @@ selectSummariesByPrefixFrom:
 SELECT id, passage_id, started_at_ms, band FROM attempt
 WHERE passage_id >= :prefix AND instr(passage_id, :prefix) = 1
 ORDER BY started_at_ms, id;
+
+-- A full run (no spot) that covered every step: its events end the passage. The first one of each passage is never
+-- pruned (Day 1 vs today replays it); any future pruning must keep it. Served by attempt_passage_started and the
+-- attempt_event key.
+selectFirstFullRun:
+SELECT * FROM attempt
+WHERE passage_id = ? AND spot_first_bar IS NULL
+  AND EXISTS (SELECT 1 FROM attempt_event e WHERE e.attempt_id = attempt.id AND e.kind = 'passage_complete')
+ORDER BY started_at_ms ASC, id ASC
+LIMIT 1;
+
+selectLatestFullRun:
+SELECT * FROM attempt
+WHERE passage_id = ? AND spot_first_bar IS NULL
+  AND EXISTS (SELECT 1 FROM attempt_event e WHERE e.attempt_id = attempt.id AND e.kind = 'passage_complete')
+ORDER BY started_at_ms DESC, id DESC
+LIMIT 1;
+
+-- Start and duration of every attempt since a cutoff (minutes per day are summed per local day in code).
+selectDurationsSince:
+SELECT started_at_ms, duration_nanos FROM attempt WHERE started_at_ms >= ?;

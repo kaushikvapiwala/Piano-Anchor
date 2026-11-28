@@ -39,6 +39,7 @@ include(
     ":feature:lesson",
     ":feature:settings",
     ":feature:songs",
+    ":feature:progress",
     ":feature:today",
     ":app-android",
     ":app-desktop",

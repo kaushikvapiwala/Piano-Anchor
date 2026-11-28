@@ -126,3 +126,5 @@ Domain terms used in code, tests and docs. Add a term when you introduce it.
 | Play-along | Playing a song over a soft chord backing and the click after a one-bar count-in (`Backing`, `docs/algorithms/play-along.md`): the session's step after Practise, and the "Chords + click" chip of Practice. |
 | Session step | One part of the one-tap session (`SessionStep`): warm-up, learn, practise, play along, ear or sight-read. Today's Start session runs them in that order, with a 10-second card between steps and a recap at the end. |
 | Paused week | A week the learner paused (`Settings.pausedWeeks`, by its Monday): it counts as met for the weekly streak whatever was played. Two pauses at most are unused at once; each comes back four weeks after use. |
+| First full run | The oldest attempt of a passage with no spot loop whose events end the passage (`AttemptRepositoryPort.firstFullRun`). It is kept for good: no pruning may delete it. |
+| Day 1 vs today | The Progress card that plays a piece's first full run next to its latest one, each with a note-timing lane. Shown only when the two started on different calendar days. |

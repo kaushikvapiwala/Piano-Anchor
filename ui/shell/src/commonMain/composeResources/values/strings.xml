@@ -3,10 +3,12 @@
     <string name="welcome">A patient piano coach. Connect your piano to begin.</string>
     <string name="nav_today">Today</string>
     <string name="nav_songs">Songs</string>
+    <string name="nav_progress">Progress</string>
     <string name="nav_pianos">Pianos</string>
     <string name="nav_settings">Settings</string>
     <string name="nav_today_glyph">●</string>
     <string name="nav_songs_glyph">♫</string>
+    <string name="nav_progress_glyph">▲</string>
     <string name="nav_pianos_glyph">♪</string>
     <string name="nav_settings_glyph">⚙</string>
     <string name="back">Back</string>
