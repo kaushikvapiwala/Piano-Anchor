@@ -495,6 +495,51 @@ class LearnerModelTest {
         }
 
     @Test
+    fun learnedSinceListsSkillsThatBecameLearnedFromThatDayOn() =
+        runTest {
+            check("d", 0)
+            check("d", 3)
+            check("a", 5)
+            check("a", 8)
+            check("e", 9)
+            assertTrue(state("a").learned && state("d").learned)
+
+            assertEquals(listOf("a", "d"), model.learnedSince(day(0)).map { it.id })
+            assertEquals(listOf("a"), model.learnedSince(day(4)).map { it.id })
+            assertEquals(emptyList(), model.learnedSince(day(9)))
+        }
+
+    @Test
+    fun learnedSinceIgnoresSkillsLearnedEarlierEvenWhenReviewedSince() =
+        runTest {
+            check("a", 0)
+            check("a", 3)
+            check("a", 20)
+
+            assertEquals(emptyList(), model.learnedSince(day(10)))
+        }
+
+    @Test
+    fun learnedSinceIgnoresPlacements() =
+        runTest {
+            model.place(setOf("a"), day(5))
+
+            assertEquals(emptyList(), model.learnedSince(day(0)))
+        }
+
+    @Test
+    fun learnedSinceSkipsStatesWithoutReviewsAndUnknownSkills() =
+        runTest {
+            val old = LearnerModel(skillGraphOf("gone" to emptySet()), repository)
+            old.record(passage("gone"), attempt(Band.CLEAN), day(0))
+            old.record(passage("gone"), attempt(Band.CLEAN), day(3))
+            val orphan = state("gone").copy(skillId = "orphan")
+            repository.replaceStates(repository.states().values + orphan)
+
+            assertEquals(emptyList(), model.learnedSince(day(0)))
+        }
+
+    @Test
     fun reviewDaysListsTheDaysOfEarReviewsFromTheGivenDayOn() =
         runTest {
             model.recordEarSet("a", Band.CLEAN, LocalDate(2026, 11, 10), "1")

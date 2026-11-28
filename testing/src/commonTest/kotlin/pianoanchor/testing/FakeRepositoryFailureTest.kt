@@ -53,6 +53,11 @@ class FakeRepositoryFailureTest {
             assertFailsWith<StorageUnavailableException> {
                 attempts.practiceDays(LocalDate(2026, 11, 1), TimeZone.UTC)
             }
+            assertFailsWith<StorageUnavailableException> { attempts.firstFullRun("c-d-e") }
+            assertFailsWith<StorageUnavailableException> { attempts.latestFullRun("c-d-e") }
+            assertFailsWith<StorageUnavailableException> {
+                attempts.minutesByDay(LocalDate(2026, 11, 1), TimeZone.UTC)
+            }
         }
 
     @Test

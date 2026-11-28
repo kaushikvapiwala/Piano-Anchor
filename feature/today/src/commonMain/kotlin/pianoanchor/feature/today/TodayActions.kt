@@ -9,6 +9,7 @@ import pianoanchor.core.model.Release
 public data class TodayActions(
     val onStartSession: (skipped: Set<Int>) -> Unit = {},
     val onSongs: () -> Unit = {},
+    val onProgress: () -> Unit = {},
     val onPianos: () -> Unit = {},
     val onSettings: () -> Unit = {},
     val onRetry: () -> Unit = {},

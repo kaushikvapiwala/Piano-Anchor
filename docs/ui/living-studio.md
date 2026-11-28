@@ -555,3 +555,16 @@ weekly goal dots, "Practised 9 of the last 16 days" and the update banner.
 - **Storage error**: an `errorContainer` card with Retry.
 - Nothing animates (the mock's breathing dot is static).
 
+## Progress tab
+Landscape, with the rail (Today, Songs, Progress, Pianos, Settings; each item 48 dp high with a text label). Two
+scrolling columns beside it.
+- **Left**: the heading, a storage error card when a read failed (same card as Songs, with Retry), the week card
+  ("This week · 3 of 4 days", a dot per goal day, the streak in weeks, "This week is paused" when paused and the dots
+  of the pauses left; read-only, pausing stays on Today) and "Minutes by day": seven plum bars Monday to Sunday with
+  a day label, today's bar outlined, a dash for a day without practice. Each column reads aloud as "Monday, 12 minutes".
+- **Right**: "What you learned this week" (up to five skill titles, then "+N more", or a short line when none) and,
+  when a piece has two full runs on different days, "Day 1 vs today": the piece title, then a row per take with its
+  date, a Play button (Stop while it sounds) and a lane of dots, one per played note, blue on the beat and timing
+  orange off it (`timing` token). TalkBack reads each lane as "Day 1: 12 notes, 3 off the beat". The card is hidden
+  when there is nothing to compare.
+Playing one take stops the other; leaving the tab stops playback. Goldens: `feature/progress/screenshots/`.

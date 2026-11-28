@@ -58,6 +58,7 @@ dependencies {
     implementation(project(":feature:lesson"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:songs"))
+    implementation(project(":feature:progress"))
     implementation(project(":feature:today"))
     implementation(project(":engine"))
     implementation(project(":platform:android-midi"))

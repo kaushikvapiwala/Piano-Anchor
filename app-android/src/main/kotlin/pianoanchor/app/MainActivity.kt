@@ -68,6 +68,9 @@ import pianoanchor.feature.practice.PracticeViewModel
 import pianoanchor.feature.practice.ResultsScreen
 import pianoanchor.feature.practice.ResultsState
 import pianoanchor.feature.practice.ResultsViewModel
+import pianoanchor.feature.progress.ProgressActions
+import pianoanchor.feature.progress.ProgressScreen
+import pianoanchor.feature.progress.ProgressViewModel
 import pianoanchor.feature.settings.SettingsActions
 import pianoanchor.feature.settings.SettingsScreen
 import pianoanchor.feature.settings.SettingsViewModel
@@ -126,6 +129,9 @@ private sealed interface Destination {
 
     /** The Songs screen, opened from the rail; back returns to Today. */
     data object Songs : Destination
+
+    /** The Progress tab, opened from the rail; back returns to Today. */
+    data object Progress : Destination
 
     /** The first-launch onboarding, until it is finished. */
     data object Onboarding : Destination
@@ -261,18 +267,14 @@ private fun Navigation(
                     go(Destination.Session(stepDone = false))
                 },
                 toSongs = { go(Destination.Songs) },
+                toProgress = { go(Destination.Progress) },
                 toPianos = { go(Destination.Monitor(from = current)) },
                 toSettings = { go(Destination.Settings(from = current)) },
             )
         }
 
-        Destination.Songs -> {
-            SongsRoute(
-                onPractice = { go(it) },
-                onToday = back,
-                onPianos = { go(Destination.Monitor(from = current)) },
-                onSettings = { go(Destination.Settings(from = current)) },
-            )
+        Destination.Songs, Destination.Progress -> {
+            RailTab(current, back, go)
         }
 
         is Destination.Monitor -> {
@@ -314,6 +316,34 @@ private fun Navigation(
         is Destination.Results -> {
             ResultsRoute(current, go = { go(it) })
         }
+    }
+}
+
+/** The Songs and Progress tabs, which lead to each other, to Today (back), to the pianos and to the settings. */
+@Composable
+private fun RailTab(
+    current: Destination,
+    back: () -> Unit,
+    go: (Destination) -> Unit,
+) {
+    val toProgress = { go(Destination.Progress) }
+    val toPianos = { go(Destination.Monitor(from = current)) }
+    val toSettings = { go(Destination.Settings(from = current)) }
+    if (current == Destination.Songs) {
+        SongsRoute(
+            onPractice = { go(it) },
+            onToday = back,
+            onProgress = toProgress,
+            onPianos = toPianos,
+            onSettings = toSettings,
+        )
+    } else {
+        ProgressRoute(
+            onToday = back,
+            onSongs = { go(Destination.Songs) },
+            onPianos = toPianos,
+            onSettings = toSettings,
+        )
     }
 }
 
@@ -681,6 +711,7 @@ private fun TodayRoute(
     flow: SessionFlowViewModel,
     toSession: () -> Unit,
     toSongs: () -> Unit,
+    toProgress: () -> Unit,
     toPianos: () -> Unit,
     toSettings: () -> Unit,
 ) {
@@ -693,6 +724,7 @@ private fun TodayRoute(
         if (viewModel.beginLeaving()) scope.launch { viewModel.releasePiano() }.invokeOnCompletion { then() }
     }
     val onSongs = { release { toSongs() } }
+    val onProgress = { release { toProgress() } }
     val onPianos = { release { toPianos() } }
     val onSettings = { release { toSettings() } }
     // Start runs the whole session (less the steps switched off); with no piano it opens Pianos.
@@ -714,6 +746,7 @@ private fun TodayRoute(
         TodayActions(
             onStartSession = startSession,
             onSongs = onSongs,
+            onProgress = onProgress,
             onPianos = onPianos,
             onSettings = onSettings,
             onRetry = viewModel::refresh,
@@ -795,6 +828,7 @@ private fun SessionRoute(
 private fun SongsRoute(
     onPractice: (Destination.Practice) -> Unit,
     onToday: () -> Unit,
+    onProgress: () -> Unit,
     onPianos: () -> Unit,
     onSettings: () -> Unit,
 ) {
@@ -818,8 +852,38 @@ private fun SongsRoute(
                 }
             },
             onToday = onToday,
+            onProgress = onProgress,
             onPianos = onPianos,
             onSettings = onSettings,
+            onRetry = viewModel::refresh,
+        ),
+    )
+}
+
+/**
+ * Progress; its ViewModel lives as long as the route, so coming back loads the week afresh, and leaving the tab stops
+ * the take that sounds.
+ */
+@Composable
+private fun ProgressRoute(
+    onToday: () -> Unit,
+    onSongs: () -> Unit,
+    onPianos: () -> Unit,
+    onSettings: () -> Unit,
+) {
+    val viewModel: ProgressViewModel = koinViewModel(viewModelStoreOwner = rememberRouteViewModelStoreOwner())
+    val state by viewModel.state.collectAsState()
+    DisposableEffect(viewModel) { onDispose { viewModel.stop() } }
+    BackHandler(onBack = onToday)
+    ProgressScreen(
+        state,
+        ProgressActions(
+            onToday = onToday,
+            onSongs = onSongs,
+            onPianos = onPianos,
+            onSettings = onSettings,
+            onPlay = viewModel::play,
+            onStop = viewModel::stop,
             onRetry = viewModel::refresh,
         ),
     )

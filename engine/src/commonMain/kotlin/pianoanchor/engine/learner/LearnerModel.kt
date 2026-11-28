@@ -253,6 +253,30 @@ public class LearnerModel(
             .keys
             .filterTo(HashSet()) { id -> repository.reviews(id).any { it.attemptId == PLACEMENT_ATTEMPT_ID } }
 
+    /**
+     * The skills that became learned by a review on a learner day from [from] on (inclusive), in skill-graph order (a
+     * skill the graph doesn't know is left out): those whose replayed reviews first reach learned that day. A skill
+     * placed as already learned (attempt id [PLACEMENT_ATTEMPT_ID]) is not "learned" by playing, so it is left out.
+     * Throws StorageUnavailableException like the repository.
+     */
+    public suspend fun learnedSince(from: LocalDate): List<Skill> {
+        val ids = repository.states().filterValues { it.learned }.keys
+        val learnedNow =
+            ids.filter { id ->
+                var state: SkillState? = null
+                var flip: Review? = null
+                for (review in repository.reviews(id)) {
+                    state = review.applyTo(state)
+                    if (state.learned) {
+                        flip = review
+                        break
+                    }
+                }
+                flip != null && flip.attemptId != PLACEMENT_ATTEMPT_ID && flip.day >= from
+            }
+        return graph.skills.filter { it.id in learnedNow }
+    }
+
     /** Rebuilds every cached state by replaying the review log through FSRS. */
     public suspend fun replay() {
         val ids = (graph.skills.map { it.id } + repository.states().keys).distinct()

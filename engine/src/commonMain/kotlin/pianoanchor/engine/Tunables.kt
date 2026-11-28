@@ -1189,4 +1189,13 @@ public object Tunables {
      * Source: the five-finger position of beginner method books.
      */
     public const val HAND_MAX_WHITE_SPAN: Int = 5
+
+    /**
+     * The longest take, in milliseconds, "Day 1 vs today" replays; later notes are dropped and a crossing one is cut.
+     *
+     * Why: pieces in courses 1-2 are under two minutes, so the cap only stops a stuck run from playing for ever.
+     *
+     * Source: course content lengths.
+     */
+    public const val TAKE_REPLAY_MAX_MS: Long = 120_000
 }

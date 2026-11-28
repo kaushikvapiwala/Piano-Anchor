@@ -46,6 +46,7 @@ import pianoanchor.engine.midi.PedalTapDetector
 import pianoanchor.engine.session.SessionComposer
 import pianoanchor.engine.session.SessionRunner
 import pianoanchor.engine.session.WeekPause
+import pianoanchor.engine.session.WeekStatusUseCase
 import pianoanchor.engine.session.passageHistories
 import pianoanchor.engine.sight.SightLevels
 import pianoanchor.engine.sight.SightReadingGenerator
@@ -58,7 +59,6 @@ private const val MORNING_FROM_HOUR = 5
 private const val AFTERNOON_FROM_HOUR = 12
 private const val EVENING_FROM_HOUR = 18
 private const val NANOS_PER_MILLI = 1_000_000.0
-private val FAR_PAST = LocalDate(2000, 1, 1)
 
 /**
  * Today: composes the day's session from [learner]'s plan and the budget in [settings], with each passage's history
@@ -90,6 +90,7 @@ public class TodayViewModel(
     private val installedVersion: String,
     private val progress: SessionProgress,
 ) : ViewModel() {
+    private val weekStatus = WeekStatusUseCase(attempts, learner, zone)
     private val mutableState = MutableStateFlow(TodayState())
     public val state: StateFlow<TodayState> = mutableState.asStateFlow()
 
@@ -223,7 +224,8 @@ public class TodayViewModel(
                 attempts.passageHistories(Curriculum.passages)
             val windowStart = today.minus(PRACTICE_WINDOW_DAYS - 1, DateTimeUnit.DAY)
             // The streak counts weeks back to the first one that missed its goal: read the whole history.
-            val days = attempts.practiceDays(FAR_PAST, zone) + learner.reviewDays(FAR_PAST)
+            val report = weekStatus.load(today, stored.weeklyGoalDays, stored.pausedWeeks)
+            val days = report.playedDays
             val sightAttempts = attempts.summariesWithPassagePrefix(SightReadingGenerator.ID_PREFIX)
             val learned = learner.learnedSkills()
             val session =
@@ -247,7 +249,7 @@ public class TodayViewModel(
                     steps = SessionRunner.steps(session).filter { step -> step.key() !in finished },
                     doneToday = progress.completedOn(day),
                     greeting = greetingAt(local.hour),
-                    week = WeekPause.status(today, days, stored.weeklyGoalDays, stored.pausedWeeks),
+                    week = report.status,
                     practicedDays = days.count { day -> day in windowStart..today },
                     storageFailed = false,
                 )

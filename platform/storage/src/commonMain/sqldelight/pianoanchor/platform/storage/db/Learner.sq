@@ -1,6 +1,6 @@
 -- The learner's review log (source of truth) and the cached state per skill (LearnerRepositoryPort). Days are ISO
 -- yyyy-mm-dd text, which sorts as dates do. rating is the Rating enum's name; learned is 0 or 1. No foreign key to
--- attempt: attempts may be pruned, reviews outlive them. One review per skill per day, enforced by the key. unaided is
+-- attempt: attempts may be pruned, reviews outlive them (but never the first full run of a passage: Day 1 vs today replays it). One review per skill per day, enforced by the key. unaided is
 -- 0 or 1: reviews stored before hints faded are 1.
 CREATE TABLE review (
     skill_id TEXT NOT NULL,

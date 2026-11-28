@@ -75,6 +75,7 @@ public fun SongsScreen(
                 RailDestination.SONGS,
                 onToday = actions.onToday,
                 onSongs = {},
+                onProgress = actions.onProgress,
                 onPianos = actions.onPianos,
                 onSettings = actions.onSettings,
             )

@@ -6,6 +6,7 @@ import pianoanchor.engine.content.PieceView
 public data class SongsActions(
     val onOpen: (PieceView) -> Unit = {},
     val onToday: () -> Unit = {},
+    val onProgress: () -> Unit = {},
     val onPianos: () -> Unit = {},
     val onSettings: () -> Unit = {},
     val onRetry: () -> Unit = {},
