@@ -94,10 +94,15 @@ public object NoteNameRule {
                     NoteNameStage.TARGET_ONLY -> note in target
                     NoteNameStage.NONE -> false
                 }
+        val name = keyNameOf(note)
+        return name.takeIf { shown && (name.accidental == KeyAccidental.NATURAL || sharpsPassed) }
+    }
+
+    /** The sharp-spelled name of any [note] (C♯ for 61), with no stage rules. */
+    public fun keyNameOf(note: Int): KeyName {
         val pitchClass = note.mod(SEMITONES)
         val black = pitchClass in BLACK_PITCH_CLASSES
-        val accidental = if (black) KeyAccidental.SHARP else KeyAccidental.NATURAL
-        return KeyName(SHARP_LETTERS[pitchClass], accidental).takeIf { shown && (!black || sharpsPassed) }
+        return KeyName(SHARP_LETTERS[pitchClass], if (black) KeyAccidental.SHARP else KeyAccidental.NATURAL)
     }
 
     /**
