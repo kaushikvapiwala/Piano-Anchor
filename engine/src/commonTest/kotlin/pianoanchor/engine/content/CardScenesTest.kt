@@ -118,6 +118,12 @@ class CardScenesTest {
     }
 
     @Test
+    fun `the left-hand C position scene lights the white keys C D E F G with fingers 5 to 1`() {
+        assertEquals(listOf(48, 50, 52, 53, 55), lights("lh-c-position").map { it.note })
+        assertEquals(listOf(5, 4, 3, 2, 1), lights("lh-c-position").map { it.finger })
+    }
+
+    @Test
     fun `key of G lights F then F sharp strong then the key's notes`() {
         val lights = lights("key-of-g")
         assertEquals(listOf(65, 66), lights.take(2).map { it.note })

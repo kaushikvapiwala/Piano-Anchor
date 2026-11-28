@@ -40,18 +40,15 @@ The task queue for `/next-task` (`.claude/skills/next-task/`): one item per sess
 Remove an item in the PR that finishes it; add follow-ups here. Dependencies in brackets, as spec issue numbers
 (renumbering items doesn't break them); `docsCheck` fails when an item comes before an item whose spec it depends on.
 Checks that need a phone and a piano are under "Owner device checks", not here.
-1. **Left-hand C position card keys** (found reviewing #274): the left-hand C position card scene lights
-    48..52 chromatically (C, C♯, D, D♯, E) instead of the white keys C D E F G; use an explicit key list like the
-    left-hand G scene and re-record its screenshots.
-2. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
+1. **See hand: wait for "Your turn"** (spec #298): when See shows a hand, it moves on to Try after the hold, the
     fade and a short "Your turn" moment.
-3. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
+2. **Course 2: Unit 7, scales with thumb-under (M6.7)** (spec #300) [#295, #296]: an even-scale Try, the C and G
     major scales (right hand) and the left-hand C scale, Joy to the World, sight-reading level 14 and an eighth
     placement piece; closes course 2.
-4. **Wrong-key hint names from Compose resources** (spec #309; found reviewing #304): the hint text beside the strips still
+3. **Wrong-key hint names from Compose resources** (spec #309; found reviewing #304): the hint text beside the strips still
     names notes with English letters from `MidiNote.spoken()`, so a translated build would name the same key two ways;
     spell the hint's notes with the key-name string resources the strips use.
-5. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
+4. **Staff spelling: leading tones and the card staff** (found reviewing #307): flat keys spell every black key as a
     flat, so a leading-tone sharp (C♯ in D minor) reads as D♭; and the lesson cards' staff still spells sharps in every
     key. Spell by the key's scale degrees and make the card staff use the engine's spelled step.
 
