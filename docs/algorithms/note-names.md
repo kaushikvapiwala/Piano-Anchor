@@ -4,6 +4,9 @@ Beginners match the screen to the piano by letter, but the letters should not be
 (`engine/src/commonMain/kotlin/pianoanchor/engine/lesson/NoteNameRule.kt`) decides which keys of a strip carry one; the
 strips only draw what it returns.
 
+The rule returns a name as data (`KeyName`: a letter plus natural, sharp or flat), never text. The UI spells it from
+its string resources (`keyNameText` in `ui/shell`), so the letters and the accidental signs can be translated.
+
 ## Stages
 
 The stage follows the course concept "C D E, then F G A B" (the white-key names skill) and `CourseProgress`:
