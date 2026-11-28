@@ -142,6 +142,9 @@ private const val RHODY_GAP_MS = 40
 private val G_POSITION_NOTES = listOf(67, 69, 71, 72, 74)
 private val LEFT_G_POSITION_NOTES = listOf(43, 45, 47, 48, 50)
 
+/** The white keys of the left-hand C position, C3 up to G3. */
+private val LEFT_C_POSITION_NOTES = listOf(LOW_C, 50, E_ABOVE_LOW_C, F_ABOVE_LOW_C, G_ABOVE_LOW_C)
+
 /** The notes of the key of G the scene lights after the F sharp, from F sharp up to D. */
 private val G_KEY_NOTES = listOf(F_SHARP_4) + G_POSITION_NOTES
 
@@ -347,7 +350,7 @@ internal object CardScenes {
         CardScene(
             SceneStage(LOW_C..G_ABOVE_LOW_C, hand = SceneHand.LEFT),
             listOf(cue(0, CARD_SCENE_LOOP_MS, SceneAction.HandPose(curved = true, overNote = G_ABOVE_LOW_C))) +
-                (LOW_C..52).mapIndexed { i, note ->
+                LEFT_C_POSITION_NOTES.mapIndexed { i, note ->
                     cue(FIRST_FINGER_MS_LEFT + i * RUN_MS, RUN_MS, LightKey(note, finger = 5 - i))
                 },
             "The left hand sits curved on the low C and its fingers 5 down to 1 light up the keys in turn.",
