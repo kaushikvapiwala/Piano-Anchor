@@ -2,6 +2,7 @@ package pianoanchor.feature.lesson
 
 import pianoanchor.core.model.LessonStep
 import pianoanchor.core.model.Skill
+import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.content.Skills
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,4 +27,15 @@ class LessonKeyRangeTest {
 
     @Test
     fun aKeyBelowMiddleCStillShowsTwoOctaves() = assertEquals(36..59, range(Skills.LH_C_POSITION))
+
+    @Test
+    fun everyConceptWithAHandShowsItsWholeHandPosition() {
+        val withHand = Curriculum.graph.skills.filter { Curriculum.scene(it.id)?.stage?.hand != null }
+        assertEquals(true, withHand.isNotEmpty())
+        withHand.forEach { skill ->
+            val stage = Curriculum.scene(skill.id)!!.stage.keys
+            val keys = range(skill)
+            assertEquals(true, stage.first in keys && stage.last in keys, "${skill.id}: $stage not in $keys")
+        }
+    }
 }

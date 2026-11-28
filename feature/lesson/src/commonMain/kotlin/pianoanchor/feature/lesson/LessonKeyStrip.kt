@@ -58,8 +58,21 @@ private val BLACK_PITCH_CLASSES = setOf(1, 3, 6, 8, 10)
 
 private val MidiNote.isBlack: Boolean get() = number % NOTES_PER_OCTAVE in BLACK_PITCH_CLASSES
 
-/** The keys the strip shows for [state]: whole octaves (C to B) around the notes of its Try and Use, at least two. */
-internal fun lessonKeyRange(state: LessonState): IntRange = keyRange(state.check, passageNotes(state))
+/**
+ * The keys the strip shows for [state]: whole octaves (C to B) around the notes of its Try and Use, at least two, plus
+ * the hand position of the concept's card scene (its stage keys when it draws a hand), so the See hand always has its
+ * five keys on the strip.
+ */
+internal fun lessonKeyRange(state: LessonState): IntRange =
+    keyRange(state.check, passageNotes(state) + handPosition(state))
+
+private fun handPosition(state: LessonState): List<Int> =
+    state.scene
+        ?.stage
+        ?.takeIf { it.hand != null }
+        ?.keys
+        ?.let { listOf(it.first, it.last) }
+        .orEmpty()
 
 /** The keys a strip shows for [check] and any [extra] notes: whole octaves (C to B) around them, at least two. */
 internal fun keyRange(
