@@ -355,6 +355,30 @@ class ResultsScreenTest {
         }
 
     @Test
+    fun inTheSessionUnavailableAndNotFoundOfferContinue() =
+        runComposeUiTest {
+            val calls = mutableListOf<String>()
+            var state by mutableStateOf<ResultsState>(ResultsState.Unavailable)
+            setContent {
+                PianoAnchorTheme {
+                    ResultsScreen(
+                        state,
+                        onBack = {},
+                        onTryAgain = {},
+                        onRetry = {},
+                        onContinue = { calls += "continue" },
+                    )
+                }
+            }
+
+            onNodeWithText("Continue").performClick()
+            state = ResultsState.NotFound
+            onNodeWithText("Continue").performClick()
+
+            assertEquals(listOf("continue", "continue"), calls)
+        }
+
+    @Test
     fun unavailableOffersRetryAndBackToPianos() =
         runComposeUiTest {
             val calls = mutableListOf<String>()

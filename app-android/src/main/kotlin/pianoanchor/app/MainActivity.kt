@@ -617,7 +617,10 @@ private fun ResultsRoute(
     val askLeave = LocalLeaveGuard.current
     val inSession = results.practice.flowStep
     // Back from a session step asks "Leave today's session?" like the step itself does.
-    val onBack = { askLeave { leave(results.practice.from) } }
+    val onBack = {
+        val toFrom = { leave(results.practice.from) }
+        if (inSession) askLeave(toFrom) else toFrom()
+    }
     val onTryAgain = { leave(results.practice) }
     val lesson = results.practice.fromLesson
     val onFinishLesson =

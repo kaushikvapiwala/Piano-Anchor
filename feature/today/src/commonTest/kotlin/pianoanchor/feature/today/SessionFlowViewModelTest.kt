@@ -501,6 +501,60 @@ class SessionFlowViewModelTest : TodayViewModelFixture() {
         }
 
     @Test
+    fun `a second start while the first is running is ignored`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            val targets = opened(vm)
+
+            vm.start(session, emptySet())
+            vm.start(session, emptySet())
+            runCurrent()
+
+            assertEquals(1, targets.size)
+            vm.exit()
+            runCurrent()
+        }
+
+    @Test
+    fun `a session restarted after its recap resumes after the steps of the second run`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            started(vm, skipped = setOf(1, 2))
+            vm.stepFinished()
+            runCurrent()
+            val again = flow(SessionProgress(settings))
+            started(again)
+            again.stepFinished()
+            runCurrent()
+            again.exit()
+            runCurrent()
+
+            val third = flow(SessionProgress(settings))
+            started(third)
+
+            assertEquals(listOf(SessionStep.Practise(song, 6), SessionStep.Ear(ear, 2)), third.state.value.steps)
+            third.exit()
+            runCurrent()
+        }
+
+    @Test
+    fun `a finished step is visible to a read right after stepFinished`() =
+        runTest(dispatcher) {
+            val vm = flow()
+            started(vm)
+            val first =
+                vm.state.value.steps
+                    .first()
+
+            vm.stepFinished()
+
+            assertEquals(setOf(first.key()), progress.finishedOn(today))
+            runCurrent()
+            vm.exit()
+            runCurrent()
+        }
+
+    @Test
     fun `exit keeps the finished steps done and a new start resumes after them`() =
         runTest(dispatcher) {
             val vm = flow()

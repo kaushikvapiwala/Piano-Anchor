@@ -79,31 +79,41 @@ public class SessionFlowViewModel(
     private var stepsDone = 0
     private var finishedPassages = emptyList<Card.PassageCard>()
     private var awaitingStep = false
+    private var starting: Job? = null
 
     private val day: LocalDate get() = learnerDay(clock.now(), zone)
 
     /**
      * Starts the run of [session] without the steps of the cards at the indices [skipped] in [Session.cards] and
-     * without the steps already finished today, and opens the first step.
+     * without the steps already finished today, and opens the first step. A start while an earlier one is still
+     * running (a double tap) is ignored.
      */
     public fun start(
         session: Session,
         skipped: Set<Int>,
     ) {
+        if (starting?.isActive == true) return
         startedAt = clock.now()
         stepsDone = 0
         finishedPassages = emptyList()
         awaitingStep = false
         mutableState.value = SessionFlowState(emptyList(), 0)
-        viewModelScope.launch {
-            // A day already completed starts the whole session again; one left midway resumes after its finished
-            // steps, also after a restart of the app.
-            val finished = if (progress.completedOn(day)) emptySet() else progress.finishedOn(day)
-            val steps = SessionRunner.steps(session, skipped).filter { it.key() !in finished }
-            mutableState.value = SessionFlowState(steps, 0)
-            learnedBefore = learnedNow()
-            if (steps.isEmpty()) showRecap() else open(0)
-        }
+        starting =
+            viewModelScope.launch {
+                // A day already completed starts the whole session again (and forgets the earlier run); one left midway
+                // resumes after its finished steps, also after a restart of the app.
+                val finished =
+                    if (progress.completedOn(day)) {
+                        progress.restart(day)
+                        emptySet()
+                    } else {
+                        progress.finishedOn(day)
+                    }
+                val steps = SessionRunner.steps(session, skipped).filter { it.key() !in finished }
+                mutableState.value = SessionFlowState(steps, 0)
+                learnedBefore = learnedNow()
+                if (steps.isEmpty()) showRecap() else open(0)
+            }
     }
 
     /** The step on screen is done: the card between steps shows, or the recap after the last. */
@@ -114,9 +124,11 @@ public class SessionFlowViewModel(
         awaitingStep = false
         stepsDone++
         (step.card as? Card.PassageCard)?.let { finishedPassages = finishedPassages + it }
+        // Noted before the coroutine runs, so a read by Today right after this call already sees the step.
+        progress.recordFinished(day, step)
         val next = flow.steps.getOrNull(flow.current + 1)
         viewModelScope.launch {
-            progress.markFinished(day, step)
+            progress.flush()
             if (next == null) showRecap() else showBetween(next, Tunables.SESSION_NEXT_COUNTDOWN_S, paused = false)
         }
     }

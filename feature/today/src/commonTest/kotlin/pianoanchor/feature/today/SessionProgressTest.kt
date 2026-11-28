@@ -2,6 +2,9 @@ package pianoanchor.feature.today
 
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import pianoanchor.core.model.Settings
+import pianoanchor.core.model.StorageUnavailableException
+import pianoanchor.core.ports.SettingsRepositoryPort
 import pianoanchor.engine.content.Curriculum
 import pianoanchor.engine.matcher.TempoRung
 import pianoanchor.engine.session.Card
@@ -72,4 +75,56 @@ class SessionProgressTest {
             settings.failing = false
             assertEquals(emptySet(), SessionProgress(settings).finishedOn(day))
         }
+
+    @Test
+    fun `a mark whose write failed survives a read that succeeds without it`() =
+        runTest {
+            val flaky = FlakyWrites(settings)
+            val progress = SessionProgress(flaky)
+            flaky.failWrites = true
+
+            progress.markFinished(day, step)
+
+            assertEquals(setOf(step.key()), progress.finishedOn(day))
+            flaky.failWrites = false
+            progress.markCompleted(day)
+            val restarted = SessionProgress(settings)
+            assertEquals(setOf(step.key()), restarted.finishedOn(day))
+            assertTrue(restarted.completedOn(day))
+        }
+
+    @Test
+    fun `a recorded step is visible before it is flushed`() =
+        runTest {
+            val progress = SessionProgress(settings)
+
+            progress.recordFinished(day, step)
+
+            assertEquals(setOf(step.key()), progress.finishedOn(day))
+        }
+
+    @Test
+    fun `restart forgets the day's steps and completion`() =
+        runTest {
+            val progress = SessionProgress(settings)
+            progress.markFinished(day, step)
+            progress.markCompleted(day)
+
+            progress.restart(day)
+
+            assertEquals(emptySet(), SessionProgress(settings).finishedOn(day))
+            assertFalse(SessionProgress(settings).completedOn(day))
+        }
+}
+
+/** Settings whose writes can be made to fail while reads still work. */
+private class FlakyWrites(
+    private val inner: FakeSettingsRepository,
+) : SettingsRepositoryPort by inner {
+    var failWrites = false
+
+    override suspend fun update(change: (Settings) -> Settings) {
+        if (failWrites) throw StorageUnavailableException("update failed")
+        inner.update(change)
+    }
 }

@@ -119,6 +119,8 @@ public fun ResultsScreen(
                 BackButton(onClick = onBack)
                 if (state is ResultsState.Ready) Header(state)
             }
+            // A session step that can't show its results still offers "Continue", so the session is never stuck.
+            val continueAction = onContinue?.let { CardAction(stringResource(Res.string.results_continue), it) }
             when (state) {
                 ResultsState.Loading -> {
                     // The read takes a moment: show the back button only, with no spinner (screenshots stay idle).
@@ -127,6 +129,7 @@ public fun ResultsScreen(
                 ResultsState.NotFound -> {
                     MessageCard(
                         stringResource(Res.string.results_not_found),
+                        *listOfNotNull(continueAction).toTypedArray(),
                         CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -136,6 +139,7 @@ public fun ResultsScreen(
                     MessageCard(
                         stringResource(Res.string.results_unavailable),
                         CardAction(stringResource(Res.string.practice_retry), onRetry),
+                        *listOfNotNull(continueAction).toTypedArray(),
                         CardAction(stringResource(Res.string.practice_back_to_pianos), onBack),
                         modifier = Modifier.fillMaxWidth(),
                     )
