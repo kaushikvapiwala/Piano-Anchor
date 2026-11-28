@@ -856,6 +856,16 @@ public object Tunables {
     public const val CARD_SCENE_FADE_MS: Int = 150
 
     /**
+     * How long a key strip's letters (and a target band grown to hold them) fade in once the note labels have loaded,
+     * in milliseconds.
+     *
+     * Why: the letters arrive just after the screen opens, so they ease in instead of popping in mid-frame.
+     *
+     * Source: matches the app's one motion length for appearing elements (`CARD_SCENE_FADE_MS`).
+     */
+    public const val KEY_LETTERS_FADE_MS: Int = 150
+
+    /**
      * The longest caption of a card animation, in characters.
      *
      * Why: fits the lesson's left pane at font scale 2.0.

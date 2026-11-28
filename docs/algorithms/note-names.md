@@ -39,10 +39,11 @@ hint letters.
 ## First frame
 
 The lesson and practice ViewModels hold the labels as `null` until `NoteLabelsUseCase.load()` has returned, and each
-starts that load first when it opens, so it usually finishes before the first content frame. While the labels are
+starts that load first when it opens. The load reads storage off the main thread, so the letters normally fade in
+just after the screen opens rather than in its first frame. While the labels are
 `null` the strip draws its keys, glow and hand but composes no letter layer (and no placeholder: a default view would
 be wrong for a learner past the beginner stage, and the letters would vanish a moment later). When the labels arrive
-the letters fade in over `CARD_SCENE_FADE_MS` (at once with reduce motion); a strip that already has its labels when
+the letters fade in over `KEY_LETTERS_FADE_MS` (at once with reduce motion); a strip that already has its labels when
 it first composes shows them at once. So `null` only ever means "not loaded yet": a storage failure still gives the
 beginner view.
 
